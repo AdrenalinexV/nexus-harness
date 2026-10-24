@@ -9,6 +9,7 @@ Exit codes are the harness's own, so this is usable from a script or a CI step:
 """
 import argparse
 import json
+import os
 import sys
 from pathlib import Path
 
@@ -70,11 +71,36 @@ def cmd_run(args):
 
 
 def cmd_serve(args):
-    from .ui import Cockpit, serve
+    from .cockpit import Cockpit
+    from .ui import serve
     config = _config(args)
-    cockpit = Cockpit(config)
-    serve(cockpit, args.host, args.port)
+    serve(Cockpit(config), args.host, args.port, os.environ.get("NEXUS_HARNESS_TOKEN"))
     return 0
+
+
+def cmd_chat(args):
+    """One conversational turn from a shell: the same engine the window uses."""
+    from .chat import Chat
+    from .memory import Memory
+    from .transcripts import Transcripts
+    config = _config(args)
+    bus = Bus()
+    router = Router(config)
+    chat = Chat(router, config, default_registry(config.default_root, config),
+                Gate(config.default_root, config), ContextRouter(config.lang), bus=bus,
+                memory=Memory(), transcripts=Transcripts(config.default_root),
+                judge=Judge(router, config.lang))
+    chat.new(args.message[:60])
+    turn = chat.send(args.message)
+    print(turn["reply"] or "(sin respuesta)")
+    if turn.get("verdict"):
+        print("[gate] exit %s · %s" % (turn["verdict"]["exit"],
+                                       " ".join("%s=%s" % (check["name"], check["ok"])
+                                                for check in turn["verdict"]["checks"])))
+    if turn.get("judgement", {}).get("verdict"):
+        print("[juez] %s: %s" % (turn["judgement"]["verdict"],
+                                 turn["judgement"].get("reason", "")[:160]))
+    return 0 if turn.get("exit", 0) == 0 else int(turn["exit"])
 
 
 def cmd_selftest(args):
@@ -188,6 +214,12 @@ def build_parser():
     serve.add_argument("--port", type=int, default=None)
     serve.add_argument("--project", default=None)
     serve.set_defaults(func=cmd_serve)
+
+    chat = sub.add_parser("chat", help="one conversational turn")
+    chat.add_argument("message")
+    chat.add_argument("--project", default=None)
+    chat.add_argument("--test-command", default=None)
+    chat.set_defaults(func=cmd_chat)
 
     selftest = sub.add_parser("selftest", help="run the deterministic suites")
     selftest.add_argument("suites", nargs="*")

@@ -6,7 +6,8 @@ Each module exposes `run() -> list[str]`; an empty list is a pass. `runner.run()
 import importlib
 import time
 
-SUITES = ("providers", "tools", "context_router", "triad_loop", "session_relay", "ui", "bridge")
+SUITES = ("providers", "tools", "context_router", "triad_loop", "session_relay",
+          "chat", "memory", "ui", "bridge")
 
 
 def run(names=None, stream=None):

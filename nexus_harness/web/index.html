@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Nexus-Harness</title>
+<link rel="stylesheet" href="app.css">
+</head>
+<body>
+<div class="app">
+
+  <aside class="sidebar">
+    <div class="brand">NEXUS<span>·</span>HARNESS</div>
+    <label class="field">Proyecto<select id="project"></select></label>
+    <button id="new-chat" class="primary">Nueva conversación</button>
+    <div class="side-title">Conversaciones</div>
+    <ul id="sessions" class="sessions"></ul>
+    <div class="side-title">Puente móvil</div>
+    <div id="bridge" class="mini">0 en cola</div>
+    <div class="spacer"></div>
+    <div class="side-title">Modelos</div>
+    <label class="field">Director<select id="role-director"></select></label>
+    <label class="field">Obrero<select id="role-worker"></select></label>
+    <label class="field">Juez<select id="role-judge"></select></label>
+    <div id="engine" class="foot"></div>
+  </aside>
+
+  <main class="main">
+    <header class="topbar">
+      <div id="title" class="title">sin conversación</div>
+      <div class="top-right">
+        <span id="status" class="pill info">en reposo</span>
+        <button id="stop" class="ghost" disabled>Detener</button>
+      </div>
+    </header>
+
+    <section id="thread" class="thread" aria-live="polite">
+      <div class="empty" id="empty">
+        <h1>¿Qué construimos?</h1>
+        <p>Pide una tarea o haz una pregunta. El gate (lint Nexus, ley de 400, tests) se ejecuta en
+           cuanto se toca un fichero; si sale rojo, el obrero lo repara antes de contestarte.</p>
+      </div>
+    </section>
+
+    <section class="composer">
+      <textarea id="input" rows="2" placeholder="Escribe una tarea o una pregunta…  (Ctrl+Enter envía)"></textarea>
+      <div class="composer-right">
+        <button id="send" class="primary">Enviar</button>
+        <input id="test-command" placeholder="comando de test (opcional)">
+      </div>
+    </section>
+  </main>
+
+  <aside class="rail">
+    <div class="card">
+      <h3>Último turno</h3>
+      <div id="last-turn" class="mono dim">todavía nada</div>
+    </div>
+    <div class="card">
+      <h3>Gate</h3>
+      <div id="gate" class="mono dim">pendiente</div>
+      <h3 style="margin-top:10px">Juez</h3>
+      <div id="judge" class="mono dim">pendiente</div>
+    </div>
+    <div class="card">
+      <h3>Skills en RAM <span id="skills-count" class="tag"></span></h3>
+      <div id="skills" class="chips"></div>
+    </div>
+    <div class="card">
+      <h3>Presupuesto</h3>
+      <div class="bar"><i id="budget-fill"></i><b id="budget-mark"></b></div>
+      <div id="budget-text" class="mono dim">unmeasured</div>
+    </div>
+    <div class="card">
+      <h3>Memoria <span id="memory-count" class="tag"></span></h3>
+      <ul id="memory" class="memory"></ul>
+      <div class="row">
+        <input id="memory-input" placeholder="hecho duradero…">
+        <button id="memory-add" class="ghost">+</button>
+      </div>
+    </div>
+    <div class="card">
+      <h3>Actividad</h3>
+      <div id="activity" class="activity mono"></div>
+    </div>
+  </aside>
+</div>
+<script src="app.js"></script>
+</body>
+</html>

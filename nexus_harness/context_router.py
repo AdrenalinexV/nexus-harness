@@ -54,6 +54,7 @@ class ContextRouter:
         self._always = None
         self._pack = None
         self._error = ""
+        self.last = None      # the most recent `Injection`, so the cockpit can show what travelled
 
     def _load(self):
         if self._always is not None or self._error:
@@ -87,5 +88,6 @@ class ContextRouter:
                              % (type(exc).__name__, exc))
         entries = list(self._always) + picked
         brief = routing.brief(entries, self.lang)
-        return Injection(names=[entry["name"] for entry in entries], entries=entries, brief=brief,
-                         tokens=len(brief) // CHARS_PER_TOKEN, available=True)
+        self.last = Injection(names=[entry["name"] for entry in entries], entries=entries,
+                              brief=brief, tokens=len(brief) // CHARS_PER_TOKEN, available=True)
+        return self.last
