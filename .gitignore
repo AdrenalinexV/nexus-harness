@@ -4,3 +4,8 @@ __pycache__/
 .nexus/harness/sessions/
 .pytest_cache/
 .nexus/NEXT_SESSION_PROMPT.md
+dist/
+.build/
+apps/desktop/node_modules/
+apps/desktop/src-tauri/target/
+apps/desktop/src-tauri/engine/*.exe

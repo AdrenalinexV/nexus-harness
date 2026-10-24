@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Nexus Harness</title>
+<style>
+  :root { color-scheme: dark; }
+  body { margin:0; height:100vh; display:grid; place-items:center; background:#0a0d12;
+         color:#e7eef7; font:14px system-ui,-apple-system,"Segoe UI",sans-serif; }
+  .box { text-align:center; max-width:420px; padding:24px; }
+  h1 { font-size:18px; letter-spacing:.4px; margin:0 0 8px; }
+  h1 span { color:#4fd1c5; }
+  p { color:#8794a7; font-size:12.5px; line-height:1.6; margin:0; }
+  .spinner { width:22px; height:22px; margin:18px auto 0; border-radius:50%;
+             border:2px solid #222a36; border-top-color:#4fd1c5; animation:spin 1s linear infinite; }
+  @keyframes spin { to { transform:rotate(360deg); } }
+</style>
+</head>
+<body>
+  <div class="box">
+    <h1>NEXUS<span>·</span>HARNESS</h1>
+    <p>Arrancando el motor… esta ventana se sustituye por la app en cuanto el motor responde.</p>
+    <div class="spinner"></div>
+  </div>
+</body>
+</html>

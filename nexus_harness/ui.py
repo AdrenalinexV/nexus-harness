@@ -15,6 +15,7 @@ front-end, not one per shell.
 """
 import json
 import secrets
+import sys
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import parse_qs, urlparse
@@ -22,7 +23,10 @@ from urllib.parse import parse_qs, urlparse
 from . import __version__
 from .cockpit import Cockpit
 
-WEB = Path(__file__).resolve().parent / "web"
+# PyInstaller unpacks data under `sys._MEIPASS`; a source checkout has `web/` next to this file. One
+# expression, so the frozen engine and the checkout serve the same front-end.
+_FROZEN = getattr(sys, "_MEIPASS", "")
+WEB = (Path(_FROZEN) / "web") if _FROZEN else (Path(__file__).resolve().parent / "web")
 TYPES = {".html": "text/html; charset=utf-8", ".css": "text/css; charset=utf-8",
          ".js": "text/javascript; charset=utf-8", ".svg": "image/svg+xml",
          ".png": "image/png", ".ico": "image/x-icon", ".json": "application/json",
