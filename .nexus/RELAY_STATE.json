@@ -2,8 +2,65 @@
   "protocol": "nexus.relay/1",
   "goal": "Construir Nexus-Harness: harness autonomo nativo con gobernanza Nexus",
   "created_at": "2026-10-24T17:11:58Z",
-  "updated_at": "2026-10-24T17:54:30Z",
+  "updated_at": "2026-10-24T19:55:37Z",
   "phases": [
+    {
+      "id": "f6",
+      "title": "App de escritorio instalable",
+      "items": [
+        "Tauri + sidecar",
+        "installer NSIS"
+      ],
+      "status": "done",
+      "evidence": [
+        {
+          "command": "python tools/verify.py",
+          "exit": 0,
+          "at": "2026-10-24T19:55:37Z"
+        },
+        {
+          "command": "dist/nexus-harness-engine.exe selftest",
+          "exit": 0,
+          "at": "2026-10-24T19:55:37Z"
+        },
+        {
+          "command": "Nexus Harness_0.1.0_x64-setup.exe /S (instalacion por usuario)",
+          "exit": 0,
+          "at": "2026-10-24T19:55:37Z"
+        },
+        {
+          "command": "app instalada: ventana + engine en puerto libre (netstat)",
+          "exit": 0,
+          "at": "2026-10-24T19:55:37Z"
+        }
+      ],
+      "note": "Tauri 2 + motor congelado; instalador 10 MB; API con token",
+      "closed_at": "2026-10-24T19:55:37Z"
+    },
+    {
+      "id": "f7",
+      "title": "Chat agentico nativo",
+      "items": [
+        "chat.py",
+        "memoria",
+        "transcripciones"
+      ],
+      "status": "done",
+      "evidence": [
+        {
+          "command": "python -m nexus_harness chat (modelo real)",
+          "exit": 0,
+          "at": "2026-10-24T19:55:37Z"
+        },
+        {
+          "command": "selftest chat+memory (2 suites)",
+          "exit": 0,
+          "at": "2026-10-24T19:55:37Z"
+        }
+      ],
+      "note": "chat con gate por turno, memoria durable, transcripciones persistidas, stop",
+      "closed_at": "2026-10-24T19:55:37Z"
+    },
     {
       "id": "f1",
       "title": "Forense y arquitectura",
@@ -140,6 +197,16 @@
       "phase": "f5",
       "at": "2026-10-24T17:54:30Z",
       "evidence": 4
+    },
+    {
+      "phase": "f6",
+      "at": "2026-10-24T19:55:37Z",
+      "evidence": 4
+    },
+    {
+      "phase": "f7",
+      "at": "2026-10-24T19:55:37Z",
+      "evidence": 2
     }
   ],
   "queue": [],
