@@ -2,7 +2,7 @@
   "protocol": "nexus.relay/1",
   "goal": "Construir Nexus-Harness: harness autonomo nativo con gobernanza Nexus",
   "created_at": "2026-10-24T17:11:58Z",
-  "updated_at": "2026-10-24T17:11:58Z",
+  "updated_at": "2026-10-24T17:20:30Z",
   "phases": [
     {
       "id": "f1",
@@ -32,19 +32,36 @@
       "id": "f2",
       "title": "Nucleo (providers, tools, contexto, triada)",
       "items": [],
-      "status": "pending",
-      "evidence": [],
-      "note": "",
-      "closed_at": null
+      "status": "done",
+      "evidence": [
+        {
+          "command": "python tools/lint_harness.py",
+          "exit": 0,
+          "at": "2026-10-24T17:20:30Z"
+        },
+        {
+          "command": "python -c 'selftests providers tools context_router triad_loop'",
+          "exit": 0,
+          "at": "2026-10-24T17:20:30Z"
+        }
+      ],
+      "note": "providers+transports+toolbox+context_router+gate+judge+triad_loop",
+      "closed_at": "2026-10-24T17:20:30Z"
     },
     {
       "id": "f3",
       "title": "Auto-relevo de sesiones",
       "items": [],
-      "status": "pending",
-      "evidence": [],
-      "note": "",
-      "closed_at": null
+      "status": "done",
+      "evidence": [
+        {
+          "command": "python -c 'selftests session_relay'",
+          "exit": 0,
+          "at": "2026-10-24T17:20:30Z"
+        }
+      ],
+      "note": "session_01 -> session_02 con 3 fases, exit 0",
+      "closed_at": "2026-10-24T17:20:30Z"
     },
     {
       "id": "f4",
@@ -65,12 +82,22 @@
       "closed_at": null
     }
   ],
-  "active": "f2",
+  "active": "f4",
   "checkpoints": [
     {
       "phase": "f1",
       "at": "2026-10-24T17:11:58Z",
       "evidence": 2
+    },
+    {
+      "phase": "f2",
+      "at": "2026-10-24T17:20:30Z",
+      "evidence": 2
+    },
+    {
+      "phase": "f3",
+      "at": "2026-10-24T17:20:30Z",
+      "evidence": 1
     }
   ],
   "queue": [],

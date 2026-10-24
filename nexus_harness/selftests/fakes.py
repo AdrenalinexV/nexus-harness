@@ -85,6 +85,12 @@ class FakeRouter:
     def probe(self):
         return {"lmstudio": [], "ollama": []}
 
+    def catalog(self):
+        """Same shape as the real catalogue, with no probe: a suite must not depend on a server."""
+        return {"options": ["fake:director", "fake:worker", "fake:judge"],
+                "local": {"lmstudio": [], "ollama": []},
+                "cloud_ready": [], "roles": self.describe()}
+
 
 @dataclass
 class FakeInjection:
