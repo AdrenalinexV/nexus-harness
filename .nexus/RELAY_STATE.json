@@ -2,7 +2,7 @@
   "protocol": "nexus.relay/1",
   "goal": "Construir Nexus-Harness: harness autonomo nativo con gobernanza Nexus",
   "created_at": "2026-10-24T17:11:58Z",
-  "updated_at": "2026-10-24T17:49:05Z",
+  "updated_at": "2026-10-24T17:54:30Z",
   "phases": [
     {
       "id": "f1",
@@ -87,13 +87,34 @@
       "id": "f5",
       "title": "Auditoria adversaria y verificacion total",
       "items": [],
-      "status": "pending",
-      "evidence": [],
-      "note": "",
-      "closed_at": null
+      "status": "done",
+      "evidence": [
+        {
+          "command": "python tools/lint_harness.py",
+          "exit": 0,
+          "at": "2026-10-24T17:54:30Z"
+        },
+        {
+          "command": "python -m nexus_harness selftest",
+          "exit": 0,
+          "at": "2026-10-24T17:54:30Z"
+        },
+        {
+          "command": "python -m nexus_harness run (NexusSandbox, LM Studio)",
+          "exit": 0,
+          "at": "2026-10-24T17:54:30Z"
+        },
+        {
+          "command": "curl /api/health (127.0.0.1:8765)",
+          "exit": 0,
+          "at": "2026-10-24T17:54:30Z"
+        }
+      ],
+      "note": "auditoria adversaria kat-coder 35B: 6 defectos corregidos con test de regresion; cabina verde",
+      "closed_at": "2026-10-24T17:54:30Z"
     }
   ],
-  "active": "f5",
+  "active": null,
   "checkpoints": [
     {
       "phase": "f1",
@@ -114,6 +135,11 @@
       "phase": "f4",
       "at": "2026-10-24T17:23:06Z",
       "evidence": 2
+    },
+    {
+      "phase": "f5",
+      "at": "2026-10-24T17:54:30Z",
+      "evidence": 4
     }
   ],
   "queue": [],
