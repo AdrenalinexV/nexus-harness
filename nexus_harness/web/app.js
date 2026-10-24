@@ -14,6 +14,10 @@ const LABEL = {
   'tool.call': 'TOOL', 'skills.injected': 'SKILLS', 'gate.verdict': 'GATE', 'judge.verdict': 'JUEZ',
   'worker.reasoning': 'RAZÓN', 'worker.error': 'ERROR', 'memory.add': 'MEMORIA',
   'memory.remove': 'MEMORIA-', 'bridge.claim': 'PUENTE', 'bridge.close': 'PUENTE',
+  'tool.parallel': 'PARALELO', 'subagent.start': 'SUBAGENTES', 'subagent.result': 'SUBAGENTE',
+  'subagent.tool': 'SUB-TOOL', 'subagent.end': 'SUBAGENTES', 'subagent.limit': 'SUB-LÍMITE',
+  'chat.stopping': 'DETENIENDO', 'run.stopping': 'DETENIENDO', 'worker.stopped': 'DETENIDO',
+  'session.relay': 'RELEVO',
 };
 
 function esc(text) {

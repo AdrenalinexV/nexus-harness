@@ -24,7 +24,7 @@ one inherits.
 
 ## Module map and line budget
 
-Measured on 2026-10-24: 40 Python files, 4 500 lines, the longest module 290 lines
+Measured on 2026-10-24 (v0.2.0): 55 Python files, 7 291 lines, the longest module 344 lines
 (`triad_loop.py`). `python tools/lint_harness.py` reports 0 findings.
 
 Every module answers one question. The budget column is the ceiling enforced by
@@ -41,9 +41,15 @@ doing two jobs.
 | `transports/anthropic.py` | Messages API: `tool_use` / `tool_result` blocks | 140 |
 | `message.py` | What is a message, a tool call, a reply, a usage count? | 110 |
 | `tools.py` | What tools exist, what are their JSON schemas, how are they dispatched? | 150 |
-| `toolbox/shell.py` | Run a command with a timeout and a clean capture. | 100 |
-| `toolbox/files.py` | Read with line numbers, search with a bound, list. | 140 |
-| `toolbox/edit.py` | Apply a patch deterministically; refuse ambiguity; enforce the line law. | 170 |
+| `toolbox/file_ops.py` | Bytes in, bytes out: atomic write, SHA-256 check, syntax gate, BOM/CRLF. | 230 |
+| `toolbox/fuzzy_match.py` | Locate the block the model meant: eight rungs, each still deterministic. | 300 |
+| `toolbox/patch_v4a.py` | Multi-file `*** Begin Patch` envelopes, validated on an overlay, applied with rollback. | 350 |
+| `toolbox/repo_search.py` | Read with line numbers, search with `rg` or a Python fallback, list. | 180 |
+| `toolbox/edit.py` | One block or many; idempotent when already applied; line law enforced. | 130 |
+| `toolbox/output_clip.py` | Head+tail clipping that keeps the full log on disk. | 60 |
+| `toolbox/shell_session.py` | Run a command; remember the cwd and the exports; never open a console. | 190 |
+| `toolbox/process_manager.py` | Background processes: spawn, poll, write, kill, tree-kill on Windows. | 280 |
+| `subagents.py` | `delegate_task`: parallel children, closed history, bounded turns, worktrees. | 240 |
 | `toolbox/web.py` | Fetch a page as text without a browser or an API key. | 130 |
 | `context_router.py` | Which specialists does this turn touch, and what text travels with it? | 140 |
 | `gate.py` | Is the tree actually green: lint, tests, line law. | 170 |

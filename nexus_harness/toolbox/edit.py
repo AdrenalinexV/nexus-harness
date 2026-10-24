@@ -1,153 +1,108 @@
-"""Deterministic patching: exact text, one match, and the line law enforced after the write.
+"""The edit tools: one block, many blocks, or a whole V4A patch -- each verified before it lands.
 
-Aider's format is the good idea here (`<<<<<<< SEARCH / ======= / >>>>>>> REPLACE` blocks), and so is
-its whitespace tolerance. Its 0.8-similarity fallback is not: when two chunks score alike, applying
-one of them silently corrupts the file. So the ladder here stops at the first rung that is still
-deterministic:
+Every path here ends in `file_ops.atomic_write`, which means every edit passes the same three doors:
+the line law, the syntax gate, and a SHA-256 re-read. None of them is optional and none can be skipped
+by a tool argument, because the one thing an autonomous editor must not have is a way to disable its
+own verification.
 
-1. exact match, byte for byte -- so a CRLF file stays a CRLF file;
-2. exact match after normalising line endings and trailing whitespace, written back in the file's own
-   newline style so the diff stays about the change;
-3. refuse, and say what was looked for and how many candidates there were.
+The order inside one edit is deliberate:
 
-Every write is verified before it is kept: if the result would exceed the line limit, the call fails
-and nothing is written. The law wins over the edit.
+1. **already applied?** A re-sent edit returns an idempotent success without touching the file.
+2. **find exactly one region** via `fuzzy_match`'s ladder, or refuse with the closest blocks.
+3. **rewrite in the file's own newline style**, keeping a BOM if it had one.
+4. **prove the result**: line law, parser, bytes on disk.
 """
 import re
 
-from . import files
+from . import file_ops, fuzzy_match
 
-MAX_LINES = 400
+MAX_LINES = file_ops.MAX_LINES
 BLOCK = re.compile(r"<{5,}\s*SEARCH[^\n]*\n(.*?)\n={5,}[^\n]*\n(.*?)\n>{5,}\s*REPLACE[^\n]*", re.S)
 FENCE = re.compile(r"^```[a-zA-Z0-9_+-]*$", re.M)
+CREATE_HINT = ("%s does not exist. Use write_file, or pass an empty old_string with the full "
+               "content of the new file.")
 
 
-def normalize(text):
-    """Line endings unified and trailing blanks removed: the two differences that are never semantic."""
-    return "\n".join(line.rstrip() for line in str(text).replace("\r\n", "\n").split("\n"))
+def _guard(root, target, text):
+    """The three doors, in order: line law, syntax, then the write itself."""
+    total = file_ops.line_count(text)
+    if total > MAX_LINES:
+        raise ValueError("%s would be %d lines > %d; split the module instead"
+                         % (file_ops.relative(root, target), total, MAX_LINES))
+    broken = file_ops.syntax_check(target, text)
+    if broken:
+        raise ValueError("%s would not parse, so nothing was written: %s"
+                         % (file_ops.relative(root, target), broken))
+    bom = target.is_file() and file_ops.read_raw(target)[1]
+    return file_ops.atomic_write(target, text, bom=bom), total
 
 
-def newline_of(text):
-    """The style the file already speaks, so patching it does not rewrite every other line."""
-    return "\r\n" if text.count("\r\n") * 2 >= text.count("\n") else "\n"
-
-
-def occurrences(haystack, needle):
-    """Every start offset of `needle` in `haystack`, without overlapping."""
-    found, start = [], haystack.find(needle)
-    while start != -1:
-        found.append(start)
-        start = haystack.find(needle, start + max(1, len(needle)))
-    return found
-
-
-def line_of(text, offset):
-    return text.count("\n", 0, offset) + 1
-
-
-def _ambiguous(haystack, hits):
-    lines = ", ".join(str(line_of(haystack, hit)) for hit in hits[:6])
-    return ValueError("search text appears %d times (lines %s): include more context"
-                      % (len(hits), lines))
-
-
-def _locate(original, search):
-    """`(offset, rung, haystack)` for exactly one match, or a `ValueError` a model can act on."""
-    hits = occurrences(original, search)
-    if len(hits) == 1:
-        return hits[0], "exact", original
-    if len(hits) > 1:
-        raise _ambiguous(original, hits)
-    haystack, needle = normalize(original), normalize(search)
-    hits = occurrences(haystack, needle)
-    if len(hits) == 1:
-        return hits[0], "normalised", haystack
-    if len(hits) > 1:
-        raise _ambiguous(haystack, hits)
-    first = search.strip().splitlines()[0][:80] if search.strip() else "(empty)"
-    raise ValueError("search text not found; it starts with %r. Read the file and copy the exact "
-                     "block, or use write_file for a new file." % first)
-
-
-def _write(target, text):
-    with open(target, "w", encoding="utf-8", newline="") as handle:
-        handle.write(text)
-
-
-def apply_text(root, path, search, replace, max_lines=MAX_LINES):
-    """`(new_text, meta)` after one replacement, or a refusal. Never partially applied."""
-    target = files.resolve(root, path)
-    original = files.read_text(target) if target.is_file() else None
-    search, replace = str(search), str(replace)
+def patch_replace(root, path, old_string, new_string, replace_all=False):
+    """Replace one block (or every exact one). `(text, meta)`; raises `ValueError` to refuse."""
+    target = file_ops.resolve(root, path)
+    original = file_ops.read_raw(target)[0] if target.is_file() else None
+    old_string, new_string = str(old_string or ""), str(new_string or "")
     if original is None:
-        if normalize(search).strip():
-            raise ValueError("%s does not exist; create it with an empty search block or write_file"
-                             % files.relative(root, target))
-        updated = replace
-        meta = {"match": "created", "created": True}
-    else:
-        style = newline_of(original)
-        offset, rung, haystack = _locate(original, search)
-        needle = search if rung == "exact" else normalize(search)
-        inserted = replace.replace("\r\n", "\n")
-        if rung == "exact" and style == "\r\n":
-            # The haystack is the file as written (CRLF); only the inserted text needs converting.
-            # The normalised rung rebuilds the whole file from LF, so it converts ONCE at the end --
-            # converting here too would produce `\r\r\n` on every line of the patch.
-            inserted = inserted.replace("\n", "\r\n")
-        updated = haystack[:offset] + inserted + haystack[offset + len(needle):]
-        if rung == "normalised" and style == "\r\n":
-            updated = updated.replace("\n", "\r\n")
-        meta = {"match": rung, "created": False}
-    total = files.line_count(updated)
-    if total > max_lines:
-        raise ValueError("patch would leave %s at %d lines > %d; split the module instead"
-                         % (files.relative(root, target), total, max_lines))
-    target.parent.mkdir(parents=True, exist_ok=True)
-    _write(target, updated)
-    meta.update({"files": [files.relative(root, target)], "lines": total})
-    return updated, meta
-
-
-def patch(root, path, search, replace):
-    _updated, meta = apply_text(root, path, search, replace)
-    verb = "created" if meta["created"] else "patched"
-    return ("%s %s (%d lines, %s match)"
-            % (verb, meta["files"][0], meta["lines"], meta["match"]), meta)
+        if old_string.strip():
+            raise ValueError(CREATE_HINT % file_ops.relative(root, target))
+        digest, total = _guard(root, target, new_string)
+        return ("created %s (%d lines, sha256 %s)"
+                % (file_ops.relative(root, target), total, digest[:12]),
+                {"files": [file_ops.relative(root, target)], "lines": total, "match": "created",
+                 "sha256": digest})
+    if fuzzy_match.is_already_applied(original, old_string, new_string):
+        return ("no change needed: %s already contains that text (idempotent)"
+                % file_ops.relative(root, target),
+                {"files": [file_ops.relative(root, target)], "match": "already_applied",
+                 "lines": file_ops.line_count(original)})
+    updated, count, strategy, error = fuzzy_match.find_and_replace(
+        original, old_string, new_string, replace_all=bool(replace_all),
+        newline=file_ops.newline_of(original))
+    if error:
+        raise ValueError(error)
+    digest, total = _guard(root, target, updated)
+    text = ("patched %s (%d lines, %s match x%d, sha256 %s)"
+            % (file_ops.relative(root, target), total, strategy, count, digest[:12]))
+    if strategy in fuzzy_match.SIMILARITY:
+        text += ("\nnote: the span was located approximately by '%s' -- review the diff, a "
+                 "shifted boundary can duplicate or drop a line next to the edit." % strategy)
+    return text, {"files": [file_ops.relative(root, target)], "lines": total, "match": strategy,
+                  "replacements": count, "sha256": digest}
 
 
 def parse_blocks(raw):
-    """Every SEARCH/REPLACE pair in a model answer, fences included or not."""
-    text = FENCE.sub("", str(raw or ""))
-    return [(match.group(1), match.group(2)) for match in BLOCK.finditer(text)]
+    """Every SEARCH/REPLACE pair in a model answer, fences stripped."""
+    return [(match.group(1), match.group(2))
+            for match in BLOCK.finditer(FENCE.sub("", str(raw or "")))]
 
 
 def apply_blocks(root, path, raw, max_lines=MAX_LINES):
-    """All blocks against one file, all-or-nothing: a failed block restores the original bytes."""
+    """Aider's multi-block edit against one file, all-or-nothing on the original bytes."""
     blocks = parse_blocks(raw)
     if not blocks:
-        raise ValueError("no SEARCH/REPLACE blocks found in the edit")
-    target = files.resolve(root, path)
-    original = files.read_text(target) if target.is_file() else None
+        raise ValueError("no SEARCH/REPLACE blocks found: expected <<<<<<< SEARCH ... "
+                         "======= ... >>>>>>> REPLACE")
+    target = file_ops.resolve(root, path)
+    snapshot = file_ops.read_raw(target) if target.is_file() else None
     try:
-        for search, replace in blocks:
-            apply_text(root, path, search, replace, max_lines)
+        for old, new in blocks:
+            patch_replace(root, path, old, new)
     except ValueError:
-        if original is None:
+        if snapshot is None:
             target.unlink(missing_ok=True)
         else:
-            _write(target, original)
+            file_ops.atomic_write(target, snapshot[0], bom=snapshot[1])
         raise
-    total = files.line_count(files.read_text(target))
+    total = file_ops.line_count(file_ops.read_raw(target)[0])
     return ("applied %d block(s) to %s (%d lines)"
-            % (len(blocks), files.relative(root, target), total),
-            {"files": [files.relative(root, target)], "lines": total, "blocks": len(blocks)})
+            % (len(blocks), file_ops.relative(root, target), total),
+            {"files": [file_ops.relative(root, target)], "lines": total, "blocks": len(blocks)})
 
 
 HANDLERS = {
-    "patch": lambda root, args, config: patch(root, args.get("path", ""),
-                                              str(args.get("search", "")),
-                                              str(args.get("replace", ""))),
-    "apply_blocks": lambda root, args, config: apply_blocks(root, args.get("path", ""),
-                                                            str(args.get("blocks", ""))),
+    "patch_replace": lambda root, args, config: patch_replace(
+        root, args.get("path", ""), args.get("old_string", args.get("search", "")),
+        str(args.get("new_string", args.get("replace", ""))), args.get("replace_all", False)),
+    "apply_blocks": lambda root, args, config: apply_blocks(
+        root, args.get("path", ""), str(args.get("blocks", ""))),
 }

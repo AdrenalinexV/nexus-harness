@@ -17,7 +17,9 @@ import threading
 from dataclasses import dataclass, field
 
 from .message import Message, as_text
-from .tools import Observation
+from .subagents import Delegate
+from .toolbox import process_manager
+from .tools import Observation, parallel_reads
 
 CHAT_SYSTEM = """Eres Nexus-Harness, un agente de ingeniería que trabaja en el proyecto abierto.
 
@@ -59,7 +61,7 @@ class Chat:
     """One conversation, many turns, one gate at the end of any turn that changed something."""
 
     def __init__(self, router, config, registry, gate, skills, bus=None, memory=None,
-                 transcripts=None, judge=None, clock=None):
+                 transcripts=None, judge=None, clock=None, delegate=None):
         self.router = router
         self.config = config
         self.registry = registry
@@ -76,6 +78,10 @@ class Chat:
         self._stop = threading.Event()
         self.last_turn = Turn()
         self.used = 0
+        self.children = []
+        registry.stop = self._stop
+        registry.delegate = delegate or Delegate(
+            router, config, stop=self._stop, bus=bus, root=config.default_root)
 
     # -- lifecycle ---------------------------------------------------------------------------
     def _emit(self, kind, detail="", **payload):
@@ -107,8 +113,10 @@ class Chat:
         return session
 
     def stop(self):
+        """Detener: the loop, the subagents and every background process this turn started."""
         self._stop.set()
-        self._emit("chat.stopping", "interrupción pedida")
+        killed = process_manager.kill_all_managers()
+        self._emit("chat.stopping", "interrupción pedida", processes_killed=killed)
 
     @property
     def stopped(self):
@@ -155,11 +163,7 @@ class Chat:
                 self._emit("chat.assistant", reply.text[:1500], step=step)
             if not reply.wants_tools:
                 break
-            for call in reply.tool_calls:
-                observation = (self.registry.call(call.name, call.arguments)
-                               if not call.parse_error
-                               else Observation(ok=False, text="argumentos ilegibles: %s"
-                                                % call.parse_error))
+            for index, call, observation in self._dispatch(reply.tool_calls):
                 self.touched.update(observation.files)
                 self.history.append(Message(role="tool", content=as_text(observation),
                                             tool_call_id=call.id, name=call.name))
@@ -168,6 +172,25 @@ class Chat:
         else:
             self._emit("chat.limit", "max_steps=%d" % int(max_steps or self.config.max_steps))
         return text, steps
+
+    def _dispatch(self, calls):
+        """Run the model's tool calls: read-only ones together, everything else in order."""
+        calls = list(calls or [])
+        ready = [(call, index) for index, call in enumerate(calls) if not call.parse_error]
+        results = {}
+        if len(ready) > 1:
+            self._emit("tool.parallel", "%d llamadas en paralelo" % len(ready),
+                       names=[call.name for call, _ in ready])
+            for observation, (_call, index) in zip(parallel_reads(self.registry, ready, self._stop),
+                                                   ready):
+                results[index] = observation
+        elif ready:
+            call, index = ready[0]
+            results[index] = self.registry.call(call.name, call.arguments)
+        for index, call in enumerate(calls):
+            yield (index, call,
+                   results.get(index) or Observation(ok=False, text="argumentos ilegibles: %s"
+                                                     % call.parse_error))
 
     def send(self, text):
         """One operator turn. Blocking; the cockpit runs it in a thread and streams events."""

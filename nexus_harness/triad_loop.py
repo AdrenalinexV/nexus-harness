@@ -12,12 +12,15 @@ handing the worker the exact failure it produced, with no human in between.
 
 Exit codes are the protocol's: `0` green, `10` red, `20` the harness could not verify.
 """
+import threading
 import time
 from dataclasses import dataclass, field
 
 from .gate import EXIT_GREEN, EXIT_UNAVAILABLE, Gate
 from .judge import Judge
 from .message import Message, as_text
+from .subagents import Delegate
+from .toolbox import process_manager
 from .tools import default_registry
 
 DIRECTOR_PROMPT = """Eres el Director de un harness de ingeniería autónomo.
@@ -93,6 +96,21 @@ class Triad:
         self.relay = relay
         self.touched = set()
         self.injections = []
+        self._stop = threading.Event()
+        self.registry.stop = self._stop
+        if getattr(self.registry, "delegate", None) is None:
+            self.registry.delegate = Delegate(router, config, stop=self._stop, bus=bus,
+                                              root=config.default_root)
+
+    def stop(self):
+        """Same Detener contract as the chat: loop, subagents and background processes."""
+        self._stop.set()
+        killed = process_manager.kill_all_managers()
+        self._emit("run.stopping", "interrupción pedida", processes_killed=killed)
+
+    @property
+    def stopped(self):
+        return self._stop.is_set()
 
     # -- plumbing ---------------------------------------------------------------------------
     def _emit(self, kind, detail="", **payload):
@@ -125,6 +143,9 @@ class Triad:
         """Run the worker loop until it stops asking for tools. Returns (text, steps)."""
         text, steps = "", 0
         for step in range(max_steps):
+            if self._stop.is_set():
+                self._emit("worker.stopped", "interrupción pedida en el paso %d" % step)
+                break
             messages[0] = Message(role="system", content=self._system(WORKER_PROMPT, self.touched))
             try:
                 reply = self._ask("worker", messages, tools=self.registry.schemas())

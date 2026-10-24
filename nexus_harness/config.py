@@ -34,6 +34,10 @@ DEFAULTS = {
     "relay_threshold": 0.70,
     "max_steps": 14,
     "max_repairs": 3,
+    "max_children": 3,
+    "subagent_steps": 8,
+    "subagent_depth": 1,
+    "tool_workers": 4,
     "shell_timeout": 180,
     "test_command": None,
     "lang": "es",
@@ -87,6 +91,10 @@ class HarnessConfig:
     relay_threshold: float = 0.70
     max_steps: int = 14
     max_repairs: int = 3
+    max_children: int = 3
+    subagent_steps: int = 8
+    subagent_depth: int = 1
+    tool_workers: int = 4
     shell_timeout: int = 180
     test_command: object = None
     lang: str = "es"
@@ -146,5 +154,7 @@ class HarnessConfig:
                 "port": self.port, "host": self.host, "budget_limit": self.budget_limit,
                 "relay_threshold": self.relay_threshold, "max_steps": self.max_steps,
                 "max_repairs": self.max_repairs, "test_command": self.test_command,
+                "max_children": self.max_children, "subagent_steps": self.subagent_steps,
+                "tool_workers": self.tool_workers,
                 "lang": self.lang, "source": self.source,
                 "secret_names": sorted(self.secrets)}

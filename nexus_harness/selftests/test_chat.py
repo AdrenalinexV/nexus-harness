@@ -9,7 +9,7 @@ from ..config import HarnessConfig
 from ..events import Bus
 from ..gate import Check, Verdict
 from ..memory import Memory
-from ..toolbox import files
+from ..toolbox import file_ops as files
 from ..tools import default_registry
 from ..transcripts import Transcripts
 from ..judge import Judge
@@ -63,8 +63,8 @@ def test_talk_only_does_not_gate(failures):
 
 def test_edit_runs_gate_and_repairs(failures):
     with TempProject() as root:
-        patch = reply(tools=[("c1", "patch", {"path": "calc.py", "search": "return a - b",
-                                              "replace": "return a + b"})])
+        patch = reply(tools=[("c1", "patch_replace", {
+            "path": "calc.py", "old_string": "return a - b", "new_string": "return a + b"})])
         worker = ScriptedProvider([patch, reply("Corregido: el test lo demuestra.")])
         gate = FakeGate(verdicts=[verdict(False), verdict(True)])
         judge = ScriptedProvider([reply('{"verdict": "approve", "reason": "verde"}')])

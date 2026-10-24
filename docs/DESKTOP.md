@@ -5,7 +5,7 @@ corre el motor de este repositorio, congelado, y el protocolo Nexus vive en él:
 plugin, no depende de tener Python en el equipo destino.
 
 ```
-NexusHarness-Setup-0.1.0.exe          instalador NSIS, por usuario, sin permisos de administrador
+NexusHarness-Setup-0.2.0.exe          instalador NSIS, por usuario, sin permisos de administrador
 └── %LOCALAPPDATA%\Nexus Harness\
     ├── nexus-harness-desktop.exe     ventana nativa (Tauri 2 / WebView2)
     ├── engine\nexus-harness-engine.exe   motor congelado (Python + NexusProtocol dentro)
@@ -49,14 +49,14 @@ cp dist/nexus-harness-engine.exe apps/desktop/src-tauri/engine/
 cd apps/desktop && npm install && npx tauri icon src-tauri/app-icon.png && npx tauri build
 ```
 
-Salida: `apps/desktop/src-tauri/target/release/bundle/nsis/Nexus Harness_0.1.0_x64-setup.exe`.
+Salida: `apps/desktop/src-tauri/target/release/bundle/nsis/Nexus Harness_0.2.0_x64-setup.exe`.
 
 ## Firma
 
 El instalador sale **sin firmar**: Windows mostrará «editor desconocido» la primera vez (SmartScreen).
 Una firma autofirmada no elimina ese aviso; solo cambia el nombre del editor, y añade un certificado que
 hay que instalar en el equipo para que sea creíble. Si algún día hay un certificado de firma de código
-real, el paso es `signtool sign /fd sha256 /f cert.pfx /p <pass> "Nexus Harness_0.1.0_x64-setup.exe"`
+real, el paso es `signtool sign /fd sha256 /f cert.pfx /p <pass> "Nexus Harness_0.2.0_x64-setup.exe"`
 antes de distribuir; Tauri también acepta `bundle.windows.certificateThumbprint`.
 
 ## Límites conocidos

@@ -17,6 +17,7 @@ import time
 from dataclasses import replace
 from pathlib import Path
 
+from . import __version__
 from .bridge import Bridge
 from .chat import Chat
 from .config import HarnessConfig
@@ -53,6 +54,7 @@ class Cockpit:
         self._busy = False
         self.last = None
         self.chat = None
+        self._triad = None
         self._catalog = (0.0, None)
 
     # -- catalogue ---------------------------------------------------------------------------
@@ -137,10 +139,15 @@ class Cockpit:
                 self._busy = False
 
     def stop(self):
+        """Detener reaches the chat, the triad run and every process behind them."""
+        stopped = False
         if self.chat is not None:
             self.chat.stop()
-            return True
-        return False
+            stopped = True
+        if self._triad is not None:
+            self._triad.stop()
+            stopped = True
+        return stopped
 
     def chat_state(self):
         chat = self.chat if self.chat is not None else self.chat_for(self.root)
@@ -213,6 +220,7 @@ class Cockpit:
         triad = Triad(self.router, config, registry=default_registry(root, config),
                       gate=Gate(root, config), judge=Judge(self.router, config.lang),
                       skills=ContextRouter(config.lang), bus=self.bus, relay=relay)
+        self._triad = triad
         try:
             self.last = triad.run(goal).as_dict()
         except Exception as exc:
@@ -220,6 +228,7 @@ class Cockpit:
             self.last = {"goal": goal, "ok": False, "exit": 10,
                          "summary": "%s: %s" % (type(exc).__name__, exc)}
         finally:
+            self._triad = None
             with self._lock:
                 self._busy = False
 
@@ -278,7 +287,7 @@ class Cockpit:
         pending = self.bridge.pending()
         chat = self.chat_state() if self.chat is not None else {
             "session": None, "last": None, "project": str(self.root), "messages": []}
-        return {"running": self._busy,
+        return {"version": __version__, "running": self._busy,
                 "config": dict(self.config.public(), root=str(self.root)),
                 "roles": self.router.describe(), "models": self.catalog(),
                 "run": self.run_payload(), "relay": self.relay_status(),

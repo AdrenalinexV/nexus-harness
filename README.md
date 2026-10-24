@@ -4,13 +4,13 @@ An autonomous engineering harness in pure Python, where the Nexus Protocol is no
 from outside but the turn loop itself: skills routing runs before every model call, the deterministic
 lint is the gate, and a session that fills its budget hands itself over to a clean one without asking.
 
-**It ships as a desktop app**: `NexusHarness-Setup-0.1.0.exe` installs a native window with the engine
+**It ships as a desktop app**: `NexusHarness-Setup-0.2.0.exe` installs a native window with the engine
 frozen inside (no Python on the target machine). See [docs/DESKTOP.md](docs/DESKTOP.md).
 
 ```
 python -m nexus_harness run "make the login endpoint reject empty passwords" --project C:/Proyectos/x
 python -m nexus_harness serve            # cockpit on http://127.0.0.1:8765
-python -m nexus_harness selftest         # 7 deterministic suites, no network
+python -m nexus_harness selftest         # 12 deterministic suites, no network
 python -m nexus_harness models           # what LM Studio / Ollama actually offer
 python -m nexus_harness gate --project .  # lint + line law + tests, exit 0/10/20
 python -m nexus_harness bridge --tick     # run one /task queued from the phone
@@ -20,6 +20,29 @@ python tools/adversary_audit.py           # kat-coder reviews the modules, read-
 
 `Nexus-Harness.bat` is the desktop launcher: no arguments starts the cockpit and opens it; arguments
 go straight to the CLI (`Nexus-Harness.bat run "..."`).
+
+## What 0.2.0 adds (the industrial core)
+
+Reverse-engineered from the harness this project runs on, then rebuilt to one rule: nothing is
+"approximately written". Every edit ends in `file_ops.atomic_write`, which means the same three doors
+for all of them -- the 400-line law, a parser (`ast` / `json` / `tomllib` / YAML), and a SHA-256 read-back.
+
+- **`patch_replace`** walks eight matching rungs (exact -> trimmed -> whitespace -> indentation ->
+  unicode -> similarity >= 0.90) and refuses with the closest existing block instead of guessing.
+  A re-sent edit is an idempotent success, never a second rewrite.
+- **`apply_patch`** takes V4A envelopes (`*** Begin Patch`, Update/Add/Delete/Move File, `@@ hint @@`):
+  validated against an in-memory overlay first, applied with rollback, atomic across files.
+- **`shell`** remembers the working directory between calls and exports `export K=V` into the next
+  one; long runs go to `background` and are driven with `process_manage(list|poll|write|kill)`, with
+  `CREATE_NO_WINDOW` on every Windows spawn and `taskkill /T /F` to kill the tree.
+- **Output** is clipped head+tail (12 000 chars) and the full log lands in `.nexus/harness/logs/`.
+- **`search_files`** uses ripgrep when present, a Python walk otherwise; `.nexus/skills-dormant` and
+  build trees are always excluded; `read_file` pages with line numbers and refuses binaries by magic.
+- **`delegate_task`** runs children in parallel (`ThreadPoolExecutor`), each with a closed history,
+  a bounded turn budget, read-only tools unless `allow_edit`, optional `git worktree` isolation, and
+  the same stop event as the Detener button.
+- **Read-only tool calls in one turn run together**; edits and shells stay sequential, and every
+  child's touched files flow into the same gate before the turn can claim green.
 
 ## The cockpit
 

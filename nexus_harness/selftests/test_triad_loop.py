@@ -17,8 +17,8 @@ from ..tools import default_registry
 from ..triad_loop import Triad
 
 TEST_COMMAND = 'python -c "import calc, sys; sys.exit(0 if calc.add(2, 3) == 5 else 1)"'
-PATCH = reply(tools=[("c1", "patch", {"path": "calc.py", "search": "return a - b",
-                                     "replace": "return a + b"})])
+PATCH = reply(tools=[("c1", "patch_replace", {
+    "path": "calc.py", "old_string": "return a - b", "new_string": "return a + b"})])
 
 
 def config_for(root, **overrides):

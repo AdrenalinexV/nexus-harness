@@ -8,8 +8,8 @@ the numbers.
 
 ```
 $ python tools/verify.py
-lint      exit 0   files=40 findings=0 max_lines=400
-selftest  exit 0   suites=7 failures=0
+lint      exit 0   files=55 findings=0 max_lines=400
+selftest  exit 0   suites=12 failures=0
 verify: GREEN
 ```
 
@@ -17,14 +17,19 @@ verify: GREEN
 
 ```
 $ python -m nexus_harness selftest
-providers        OK
-tools            OK
-context_router   OK
-triad_loop       OK
-session_relay    OK
-ui               OK
-bridge           OK
-suites=7 failures=0
+providers        OK    0.00s
+tools            OK    0.11s
+edit_v4a         OK    0.03s
+shell_session    OK    1.31s
+subagents        OK    0.01s
+context_router   OK    0.01s
+triad_loop       OK    1.63s
+session_relay    OK    0.87s
+chat             OK    0.03s
+memory           OK    0.24s
+ui               OK    0.82s
+bridge           OK    0.05s
+suites=12 failures=0
 ```
 
 What each one actually proves:
@@ -38,6 +43,9 @@ What each one actually proves:
 | `session_relay` | Phase 1 crosses 70 %, `session_01` is archived, `NEXT_SESSION_PROMPT.md` is generated, `session_02` continues and all three phases close with exit 0. |
 | `ui` | A real HTTP server on an ephemeral port serves the page, `/api/state` carries no secrets, a run is accepted, finishes and is published, a bad role is 400, an unknown route is 404. |
 | `bridge` | A queued `/task` is claimed once, run, and closed with the exit the runner produced; the cap holds; an unknown project stays queued; a crashing runner closes red. |
+| `edit_v4a` | A block re-typed with two spaces where the file has four still lands; the same edit twice is an idempotent success with the bytes untouched; a patch that would leave a `.py` unparseable is refused and the file keeps its bytes; a V4A patch with Update + Add + Delete applies whole, and one whose second operation is impossible rolls the first one back. |
+| `shell_session` | `cd sub` in one call is honoured by the next; `export K=V` reaches the following command; 40 000 chars of output come back clipped head+tail with the full log in `.nexus/harness/logs/`; a background process is spawned, polled alive, fed on stdin and killed. |
+| `subagents` | Two children meet at a `threading.Barrier` (real overlap, not a stopwatch); turns stop at `subagent_steps`; a pre-set stop event means zero model calls; a child cannot delegate; a read-only child gets no editing tools and no `delegate_task`. |
 
 ## From the cockpit, through a real browser
 
@@ -128,6 +136,44 @@ steps   : 1 · exit 0 · messages: user, assistant
 That run found and fixed two real bugs the suites now cover: the cockpit re-targeted the conversation
 to the default project on every state poll (throwing away the project the operator had chosen), and the
 UI never refreshed the thread after a turn, so the answer only appeared if you clicked something else.
+
+## v0.2.0 — the frozen engine, the installer and a live process
+
+Everything below was run on this machine on 2026-10-24, in this order.
+
+```
+$ python tools/verify.py
+lint      exit 0   files=55 findings=0 max_lines=400
+selftest  exit 0   suites=12 failures=0
+verify: GREEN
+
+$ cd .build && pyinstaller --noconfirm --distpath ../dist --workpath pyi nexus-harness-engine.spec
+Build complete! The results are available in: C:\Proyectos\Nexus-Harness\dist
+$ dist/nexus-harness-engine.exe --version      -> nexus-harness 0.2.0
+$ dist/nexus-harness-engine.exe selftest       -> suites=12 failures=0   (exit 0, frozen)
+
+$ cd apps/desktop && npm run build
+Finished 1 bundle: Nexus Harness_0.2.0_x64-setup.exe (11.43 MiB)
+$ copy to dist/NexusHarness-Setup-0.2.0.exe    -> 11 981 628 bytes
+
+$ "dist/NexusHarness-Setup-0.2.0.exe" /S /D=%LOCALAPPDATA%\NexusHarnessVerify   -> exit 0
+  installed: engine\nexus-harness-engine.exe, nexus-harness-desktop.exe, uninstall.exe
+  installed engine --version                   -> nexus-harness 0.2.0
+  installed engine selftest                    -> suites=12 failures=0
+  PE subsystem: nexus-harness-desktop.exe = GUI (2, no console); engine = console (3),
+                hidden at spawn by CREATE_NO_WINDOW (apps/desktop/src-tauri/src/main.rs:90-91)
+  GET /api/state (X-Nexus-Token)               -> version "0.2.0", 13 keys
+  GET /api/state without the token             -> 401
+  GET /?token=...                              -> page contains id="activity" (ACTIVIDAD panel)
+  the isolated copy was uninstalled with uninstall.exe /S  -> exit 0
+```
+
+**One thing that did not happen, and why:** the install into the default per-user directory
+(`%LOCALAPPDATA%\Nexus Harness`) could not replace its engine, because three
+`nexus-harness-engine.exe` processes were running and holding the file open. The installer itself
+returned 0 and updated `nexus-harness-desktop.exe`, but NSIS cannot overwrite a locked binary. The
+verification above therefore used `/D=` into a throwaway directory, then removed it. Replacing the
+default installation needs those processes closed first (or a reboot, which reschedules the copy).
 
 ## What is **not** verified here
 

@@ -1,81 +1,79 @@
-"""The arsenal: one registry, nine actions, and a failure the model can read.
+"""The arsenal: one registry, one schema shape, and a failure the model can read.
 
-A tool is a name, a JSON schema and a callable. The schemas are the OpenAI shape because all three
-wires accept it, so there is no per-vendor tool table to drift.
+A tool is a name, a JSON schema and a handler `(root, args, config) -> (text, meta)`. The schemas are
+the OpenAI shape because all three wires accept it, so there is no per-vendor tool table to drift.
 
-Failures are observations (`ok=False`, text starting with the reason), never exceptions that escape
-the loop: a model that cannot see the error cannot repair it, and a traceback in the transcript
-teaches nothing.
+Two rules are structural, not stylistic:
+
+* **Failures are observations** (`ok=False`, text starting with the reason), never exceptions that
+  escape the loop. A model that cannot see the error cannot repair it, and a traceback in the
+  transcript teaches nothing.
+* **Read-only calls may run concurrently.** `READ_ONLY` names them, and `parallel_reads` is the only
+  place that decides it: an edit or a shell command is never dispatched beside another, because two
+  writes racing on one file is the failure mode the whole gate exists to catch.
 """
+from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass, field
 
-from .toolbox import edit, files, shell, web
+from .toolbox import edit, file_ops, patch_v4a, process_manager, repo_search, shell_session, web
 
-ROOT_HANDLERS = (files.HANDLERS, edit.HANDLERS, shell.HANDLERS, web.HANDLERS)
+ROOT_HANDLERS = (repo_search.HANDLERS, file_ops.HANDLERS, edit.HANDLERS, patch_v4a.HANDLERS,
+                 shell_session.HANDLERS, process_manager.HANDLERS, web.HANDLERS)
+READ_ONLY = frozenset({"read_file", "search_files", "list_dir"})
+MAX_PARALLEL = 4
+
+
+def _schema(name, description, properties, required=None):
+    return {"type": "function", "function": {
+        "name": name, "description": description,
+        "parameters": {"type": "object", "properties": properties,
+                       "required": required or []}}}
+
 
 SCHEMAS = [
-    {"type": "function", "function": {
-        "name": "read_file",
-        "description": "Read a file with line numbers. Use offset/limit on large files.",
-        "parameters": {"type": "object", "properties": {
-            "path": {"type": "string", "description": "Path relative to the project root"},
-            "offset": {"type": "integer", "description": "First line (1-based)"},
-            "limit": {"type": "integer", "description": "How many lines (default 1200)"}},
-            "required": ["path"]}}},
-    {"type": "function", "function": {
-        "name": "write_file",
-        "description": "Create or overwrite a file. Refused above 400 lines: split the module.",
-        "parameters": {"type": "object", "properties": {
-            "path": {"type": "string"}, "content": {"type": "string"}},
-            "required": ["path", "content"]}}},
-    {"type": "function", "function": {
-        "name": "list_dir",
-        "description": "List a directory (skips .git, node_modules, caches).",
-        "parameters": {"type": "object", "properties": {
-            "path": {"type": "string"}, "depth": {"type": "integer"}},
-            "required": []}}},
-    {"type": "function", "function": {
-        "name": "search",
-        "description": "Regex search across the project. Returns file:line: text, capped.",
-        "parameters": {"type": "object", "properties": {
-            "pattern": {"type": "string"}, "path": {"type": "string"},
-            "file_glob": {"type": "string", "description": "e.g. *.py"},
-            "limit": {"type": "integer"}},
-            "required": ["pattern"]}}},
-    {"type": "function", "function": {
-        "name": "patch",
-        "description": ("Replace ONE exact block of text. The search text must appear exactly once "
-                        "and byte-for-byte; wrong indentation or two matches is an error, not a "
-                        "guess."),
-        "parameters": {"type": "object", "properties": {
-            "path": {"type": "string"}, "search": {"type": "string"},
-            "replace": {"type": "string"}},
-            "required": ["path", "search", "replace"]}}},
-    {"type": "function", "function": {
-        "name": "apply_blocks",
-        "description": ("Apply several <<<<<<< SEARCH / ======= / >>>>>>> REPLACE blocks to one file, "
-                        "all-or-nothing."),
-        "parameters": {"type": "object", "properties": {
-            "path": {"type": "string"}, "blocks": {"type": "string"}},
-            "required": ["path", "blocks"]}}},
-    {"type": "function", "function": {
-        "name": "shell",
-        "description": ("Run a shell command in the project root. Returns output and the exit code; "
-                        "destructive shapes are refused."),
-        "parameters": {"type": "object", "properties": {
-            "command": {"type": "string"}, "timeout": {"type": "integer"}},
-            "required": ["command"]}}},
-    {"type": "function", "function": {
-        "name": "fetch_url",
-        "description": "Fetch a URL and return its readable text (no browser, no API key).",
-        "parameters": {"type": "object", "properties": {"url": {"type": "string"}},
-                       "required": ["url"]}}},
-    {"type": "function", "function": {
-        "name": "web_search",
-        "description": "Search the web and return titles with links.",
-        "parameters": {"type": "object", "properties": {
-            "query": {"type": "string"}, "limit": {"type": "integer"}},
-            "required": ["query"]}}},
+    _schema("read_file", "Read a file with line numbers. Use offset/limit on large files.",
+            {"path": {"type": "string", "description": "Path relative to the project root"},
+             "offset": {"type": "integer", "description": "First line (1-based)"},
+             "limit": {"type": "integer", "description": "How many lines (default 1200)"}},
+            ["path"]),
+    _schema("write_file", "Create or overwrite a file. Refused above 400 lines: split the module.",
+            {"path": {"type": "string"}, "content": {"type": "string"}}, ["path", "content"]),
+    _schema("list_dir", "List a directory (skips .git, node_modules, .nexus, caches).",
+            {"path": {"type": "string"}, "depth": {"type": "integer"}}, []),
+    _schema("search_files",
+            "Regex search across the project (ripgrep when available). Returns file:line: text.",
+            {"pattern": {"type": "string"}, "path": {"type": "string"},
+             "file_glob": {"type": "string", "description": "e.g. *.py"},
+             "context": {"type": "integer", "description": "Lines of context around a match"},
+             "limit": {"type": "integer"}}, ["pattern"]),
+    _schema("patch_replace",
+            "Replace ONE block of text. Tolerates whitespace/indentation drift; refuses when the "
+            "match is ambiguous or the result would not parse.",
+            {"path": {"type": "string"}, "old_string": {"type": "string"},
+             "new_string": {"type": "string"},
+             "replace_all": {"type": "boolean", "description": "Exact matches only"}},
+            ["path", "old_string", "new_string"]),
+    _schema("apply_blocks",
+            "Apply several <<<<<<< SEARCH / ======= / >>>>>>> REPLACE blocks to one file, "
+            "all-or-nothing.", {"path": {"type": "string"}, "blocks": {"type": "string"}},
+            ["path", "blocks"]),
+    _schema("apply_patch",
+            "Apply a V4A patch (*** Begin Patch ... *** End Patch) with Update/Add/Delete/Move File "
+            "operations and optional @@ hint @@ anchors. Multi-file, atomic, rolled back on failure.",
+            {"patch": {"type": "string"}}, ["patch"]),
+    _schema("shell",
+            "Run a shell command in the project root. The working directory persists between calls; "
+            "the exit code comes back in the metadata. Use background for servers and long builds.",
+            {"command": {"type": "string"}, "timeout": {"type": "integer"},
+             "background": {"type": "boolean"}}, ["command"]),
+    _schema("process_manage",
+            "Inspect or control a background process started with shell(background=true).",
+            {"action": {"type": "string", "enum": ["list", "poll", "write", "kill"]},
+             "session_id": {"type": "string"}, "data": {"type": "string"}}, ["action"]),
+    _schema("fetch_url", "Fetch a URL and return its readable text (no browser, no API key).",
+            {"url": {"type": "string"}}, ["url"]),
+    _schema("web_search", "Search the web and return titles with links.",
+            {"query": {"type": "string"}, "limit": {"type": "integer"}}, ["query"]),
 ]
 
 
@@ -92,44 +90,76 @@ class Observation:
         return list(self.meta.get("files") or [])
 
 
+def parallel_reads(registry, calls, stop=None, workers=MAX_PARALLEL):
+    """Dispatch independent read-only calls together; everything else stays sequential.
+
+    Returns observations in the order the model asked for them -- the transcript must not reorder
+    tool results, or the `tool` messages stop matching their `tool_calls`.
+    """
+    pairs = list(calls)
+    if len(pairs) < 2 or any(call.name not in READ_ONLY for call, _ in pairs):
+        return [registry.call(call.name, call.arguments) for call, _ in pairs]
+
+    def one(pair):
+        call, _index = pair
+        if stop is not None and stop.is_set():
+            return Observation(ok=False, text="stopped before this read ran")
+        return registry.call(call.name, call.arguments)
+
+    with ThreadPoolExecutor(max_workers=min(workers, len(pairs))) as pool:
+        return list(pool.map(one, pairs))
+
+
 class Registry:
     """Name -> (schema, handler). The root is fixed for the life of a run, so paths cannot wander."""
 
-    def __init__(self, root, config=None, schemas=None, handlers=None):
+    def __init__(self, root, config=None, schemas=None, handlers=None, delegate=None, stop=None):
         self.root = root
         self.config = config
         self.schemas_list = list(schemas if schemas is not None else SCHEMAS)
+        self.stop = stop
         table = {}
         for module_handlers in (handlers if handlers is not None else ROOT_HANDLERS):
             table.update(module_handlers)
         self.handlers = table
+        self.delegate = delegate
+        if delegate is not None:
+            self.schemas_list.append(delegate.schema())
 
     def names(self):
-        return sorted(name for name in self.handlers
-                      if name in {schema["function"]["name"] for schema in self.schemas_list})
+        known = {schema["function"]["name"] for schema in self.schemas_list}
+        return sorted(name for name in self.handlers if name in known)
 
     def schemas(self, allowed=None):
         if allowed is None:
             return [schema for schema in self.schemas_list
-                    if schema["function"]["name"] in self.handlers]
+                    if schema["function"]["name"] in self.handlers
+                    or schema["function"]["name"] == "delegate_task"]
         keep = set(allowed)
         return [schema for schema in self.schemas_list if schema["function"]["name"] in keep]
 
     def call(self, name, arguments):
-        handler = self.handlers.get(name)
-        if handler is None:
-            return Observation(ok=False, text="unknown tool %r (have: %s)"
-                               % (name, ", ".join(self.names())))
+        arguments = dict(arguments or {})
         try:
-            text, meta = handler(self.root, dict(arguments or {}), self.config)
+            if name == "delegate_task":
+                if self.delegate is None:
+                    return Observation(ok=False, text="subagents are not enabled in this session")
+                text, meta = self.delegate.run(arguments)
+                return Observation(ok=True, text=str(text), meta=dict(meta or {}))
+            handler = self.handlers.get(name)
+            if handler is None:
+                return Observation(ok=False, text="unknown tool %r (have: %s)"
+                                   % (name, ", ".join(sorted(self.handlers))))
+            text, meta = handler(self.root, arguments, self.config)
             return Observation(ok=True, text=str(text), meta=dict(meta or {}))
         except ValueError as exc:
             return Observation(ok=False, text=str(exc))
         except OSError as exc:
             return Observation(ok=False, text="%s: %s" % (type(exc).__name__, exc))
         except Exception as exc:  # a tool must never take the loop down with it
-            return Observation(ok=False, text="%s failed: %s" % (name, exc))
+            return Observation(ok=False, text="%s failed: %s: %s"
+                               % (name, type(exc).__name__, exc))
 
 
-def default_registry(root, config=None):
-    return Registry(root, config)
+def default_registry(root, config=None, delegate=None, stop=None):
+    return Registry(root, config, delegate=delegate, stop=stop)
