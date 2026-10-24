@@ -1,0 +1,6 @@
+__pycache__/
+*.pyc
+.venv/
+.nexus/harness/sessions/
+.nexus/harness/events.jsonl
+.pytest_cache/
