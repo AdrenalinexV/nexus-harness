@@ -4,6 +4,9 @@ An autonomous engineering harness in pure Python, where the Nexus Protocol is no
 from outside but the turn loop itself: skills routing runs before every model call, the deterministic
 lint is the gate, and a session that fills its budget hands itself over to a clean one without asking.
 
+**It ships as a desktop app**: `NexusHarness-Setup-0.1.0.exe` installs a native window with the engine
+frozen inside (no Python on the target machine). See [docs/DESKTOP.md](docs/DESKTOP.md).
+
 ```
 python -m nexus_harness run "make the login endpoint reject empty passwords" --project C:/Proyectos/x
 python -m nexus_harness serve            # cockpit on http://127.0.0.1:8765

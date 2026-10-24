@@ -97,6 +97,38 @@ $ curl -s http://127.0.0.1:8765/api/health                               -> {"ok
 $ curl -s http://127.0.0.1:8765/api/state | head -c 120                  -> {"running": false, "config": {...}}
 ```
 
+## The desktop app, installed
+
+```
+$ "Nexus Harness_0.1.0_x64-setup.exe" /S        -> exit 0, installed per-user
+$ %LOCALAPPDATA%\Nexus Harness\nexus-harness-desktop.exe
+   nexus-harness-desktop  (MainWindowTitle: "Nexus Harness")
+   nexus-harness-engine   (child, no console window)
+   TCP 127.0.0.1:55973 LISTENING               <- engine picked a free port
+   GET /                       -> 200 (the app, not a splash)
+   GET /api/state (no token)   -> 401          <- per-launch token enforced
+```
+
+The frozen engine was also exercised on its own:
+
+```
+$ dist/nexus-harness-engine.exe selftest
+suites=9 failures=0
+```
+
+and a real chat turn through the frozen engine, from the UI, in `NexusSandbox`:
+
+```
+project : C:\Proyectos\NexusSandbox
+reply   : "Un cambio está bien cuando un test (o comando) que antes fallaba ahora pasa..."
+skills  : nexus-verification, nexus-clean-code
+steps   : 1 · exit 0 · messages: user, assistant
+```
+
+That run found and fixed two real bugs the suites now cover: the cockpit re-targeted the conversation
+to the default project on every state poll (throwing away the project the operator had chosen), and the
+UI never refreshed the thread after a turn, so the answer only appeared if you clicked something else.
+
 ## What is **not** verified here
 
 - **Cloud providers** (`openai`, `deepseek`, `openrouter`, `anthropic`): no key for them is in

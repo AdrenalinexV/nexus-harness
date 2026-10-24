@@ -19,6 +19,10 @@ if str(NEXUS_SOURCE) not in sys.path:
 
 from nexus.checks import rules_lint  # noqa: E402  (path is prepared above, by design)
 
+# Build output is not source. PyInstaller's work dir and Cargo's `target` hold thousands of generated
+# files; grading them would drown the law in findings that say nothing about this repository.
+rules_lint.SKIP_DIRS |= {".build", "dist", "target", "build", "engine"}
+
 
 def main(argv=None):
     parser = argparse.ArgumentParser(prog="lint_harness")

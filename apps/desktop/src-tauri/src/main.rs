@@ -22,6 +22,13 @@ use std::sync::Mutex;
 use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 use tauri::{Manager, WebviewUrl, WebviewWindowBuilder};
 
+/// A windowed app must not flash a console per launch. The engine keeps its console subsystem (the
+/// CLI is useful on its own), and the shell asks Windows to hide it for this process tree.
+#[cfg(windows)]
+const CREATE_NO_WINDOW: u32 = 0x0800_0000;
+#[cfg(windows)]
+use std::os::windows::process::CommandExt;
+
 struct Engine(Mutex<Option<Child>>);
 
 fn free_port() -> u16 {
@@ -74,23 +81,28 @@ fn main() {
             let port = free_port();
             let token = launch_token();
             if let Some(path) = engine_path(&app.handle()) {
-                let child = Command::new(path)
+                let mut command = Command::new(path);
+                command
                     .args(["serve", "--host", "127.0.0.1", "--port", &port.to_string()])
                     .env("NEXUS_HARNESS_TOKEN", &token)
                     .stdout(Stdio::null())
-                    .stderr(Stdio::null())
-                    .spawn()
-                    .ok();
+                    .stderr(Stdio::null());
+                #[cfg(windows)]
+                command.creation_flags(CREATE_NO_WINDOW);
+                let child = command.spawn().ok();
                 *app.state::<Engine>().0.lock().expect("engine lock") = child;
             }
             let url = format!("http://127.0.0.1:{}/?token={}", port, token);
             let parsed = url::Url::parse(&url)?;
             wait_for_engine(port, Duration::from_secs(30));
-            WebviewWindowBuilder::new(app, "main", WebviewUrl::External(parsed))
+            let window = WebviewWindowBuilder::new(app, "main", WebviewUrl::External(parsed))
                 .title("Nexus Harness")
                 .inner_size(1320.0, 860.0)
                 .min_inner_size(980.0, 620.0)
+                .center()
+                .focused(true)
                 .build()?;
+            let _ = window.set_focus();
             Ok(())
         })
         .on_window_event(|window, event| {

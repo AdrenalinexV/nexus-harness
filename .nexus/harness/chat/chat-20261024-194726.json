@@ -1,0 +1,19 @@
+{
+  "protocol": "nexus.harness.chat/1",
+  "id": "chat-20261024-194726",
+  "title": "En una sola frase: que compruebas antes de decir que una tar",
+  "created_at": "2026-10-24T19:47:26Z",
+  "updated_at": "2026-10-24T19:47:30Z",
+  "messages": [
+    {
+      "role": "user",
+      "content": "En una sola frase: que compruebas antes de decir que una tarea esta hecha?"
+    },
+    {
+      "role": "assistant",
+      "content": "Un comando ejecutado *después* del cambio, cuyo código de salida (0 = verde) es la única evidencia válida; sin él, no hay afirmación, solo \"could not verify\"."
+    }
+  ],
+  "turns": 1,
+  "exit": 0
+}

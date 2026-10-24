@@ -75,6 +75,7 @@ class Chat:
         self.touched = set()
         self._stop = threading.Event()
         self.last_turn = Turn()
+        self.used = 0
 
     # -- lifecycle ---------------------------------------------------------------------------
     def _emit(self, kind, detail="", **payload):
@@ -145,6 +146,7 @@ class Chat:
                 messages, tools=self.registry.schemas() if tools else None,
                 temperature=self.config.temperature, max_tokens=self.config.max_tokens)
             steps += 1
+            self.used += int(getattr(reply.usage, "total", 0) or 0)
             if reply.reasoning:
                 self._emit("worker.reasoning", reply.reasoning[:1000], model=reply.model)
             self.history.append(reply.as_message())
@@ -227,8 +229,14 @@ class Chat:
                                           if message.role == "user"), "")[:90]
         self.transcripts.save(self.session)
 
+    def budget(self):
+        limit = int(getattr(self.config, "budget_limit", 0) or 0)
+        state = "unmeasured" if not limit else "measured"
+        return {"used": self.used, "limit": limit, "ratio": (self.used / limit) if limit else None,
+                "state": state, "threshold": getattr(self.config, "relay_threshold", 0.7)}
+
     def state(self):
-        return {"session": self.session, "turns": len([m for m in self.history
-                                                       if m.role == "user"]),
+        return {"session": self.session, "budget": self.budget(),
+                "turns": len([m for m in self.history if m.role == "user"]),
                 "messages": [message.to_openai() for message in self.history],
                 "last": self.last_turn.as_dict(), "stopped": self.stopped}

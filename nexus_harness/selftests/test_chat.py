@@ -102,8 +102,28 @@ def test_stop_and_reload(failures):
               other.send("tres")["stopped"], False, failures)
 
 
+def test_project_survives_a_state_read(failures):
+    """Opening a conversation in another project must survive the cockpit's own polling."""
+    from ..cockpit import Cockpit
+    with TempProject() as root:
+        (root / "otro").mkdir()
+        (root / "otro" / "calc.py").write_text("x = 1\n", encoding="utf-8")
+        config = HarnessConfig(default_root=root, workspace=root, secrets={},
+                               roles={"director": "fake:d", "worker": "fake:w", "judge": "fake:j"})
+        cockpit = Cockpit(config)
+        cockpit.router = FakeRouter(workers=ScriptedProvider([reply("hola")]))
+        session = cockpit.new_chat("otra", project="otro")
+        cockpit.state()
+        cockpit.chat_state()
+        chat = cockpit.chat_for()
+        check("the chat keeps its project", str(chat.config.default_root),
+              str(root / "otro"), failures)
+        check("and its session", chat.session["id"], session["id"], failures)
+
+
 def run():
     failures = []
+    test_project_survives_a_state_read(failures)
     test_talk_only_does_not_gate(failures)
     test_edit_runs_gate_and_repairs(failures)
     test_stop_and_reload(failures)

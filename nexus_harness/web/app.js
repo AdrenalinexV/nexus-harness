@@ -102,7 +102,9 @@ function fillSelect(el, options, value) {
 function paintState(s) {
   const run = s.run || {};
   const last = (s.chat && s.chat.last) || {};
-  const budget = (run.budget && run.budget.limit) ? run.budget : ((s.relay || {}).budget || {});
+  const budget = (run.budget && run.budget.limit) ? run.budget
+    : ((s.chat && s.chat.budget && s.chat.budget.limit) ? s.chat.budget
+      : ((s.relay || {}).budget || {}));
   const limit = budget.limit || 0, used = budget.used || 0;
   const ratio = budget.ratio == null ? 0 : Math.min(1, budget.ratio);
   $('budget-fill').style.width = (ratio * 100).toFixed(1) + '%';
@@ -112,6 +114,11 @@ function paintState(s) {
   $('status').textContent = s.running ? 'trabajando' : green ? 'verde' : last.exit ? 'rojo' : 'en reposo';
   $('status').className = 'pill ' + (s.running ? 'warn' : green ? 'ok' : last.exit ? 'bad' : 'info');
   $('stop').disabled = !s.running;
+  const chosen = $('project').value && $('project').value !== '— elige un proyecto —';
+  $('send').disabled = !chosen;
+  $('input').placeholder = chosen
+    ? 'Escribe una tarea o una pregunta…  (Ctrl+Enter envía)'
+    : 'Elige un proyecto en la barra lateral para empezar';
   $('bridge').textContent = `${(s.bridge || {}).pending || 0} en cola`;
   $('title').textContent = (s.chat && s.chat.session && (s.chat.session.title || s.chat.session.id))
     || 'sin conversación';
@@ -131,7 +138,14 @@ function paintState(s) {
     : 'todavía nada';
   if (last.skills) setSkills(last.skills);
   $('memory-count').textContent = `${(s.memory || {}).count || 0}`;
-  fillSelect($('project'), (s.models || {}).projects || [], s.config.root.split(/[\\/]/).pop());
+  const projects = (s.models || {}).projects || [];
+  // The conversation's project is the authority, not the engine's start directory.
+  const chatProject = (s.chat && s.chat.project) || s.config.root;
+  const current = chatProject.split(/[\\/]/).pop();
+  const known = projects.includes(current);
+  const placeholder = '— elige un proyecto —';
+  fillSelect($('project'), known ? projects : [placeholder].concat(projects),
+             known ? current : placeholder);
   const options = (s.models || {}).options || [];
   for (const role of ['director', 'worker', 'judge']) {
     const info = (s.roles || {})[role] || {};
@@ -210,8 +224,10 @@ async function stopTurn() {
 }
 
 async function newChat() {
+  const project = $('project').value;
+  if (!project || project === '— elige un proyecto —') return;
   const {ok, data} = await api('/api/chat/new',
-    {method: 'POST', body: JSON.stringify({project: $('project').value})});
+    {method: 'POST', body: JSON.stringify({project})});
   if (!ok) return;
   currentSession = data.session ? data.session.id : null;
   renderThread([]);
@@ -282,4 +298,5 @@ $('memory-add').onclick = async () => {
   await refreshMemory();
   setInterval(pollEvents, 800);
   setInterval(refreshState, 2500);
+  setInterval(refreshChat, 2500);
 })();

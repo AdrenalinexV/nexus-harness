@@ -53,9 +53,14 @@ doing two jobs.
 | `session_store.py` | What is on disk for a session, and how is it archived? | 130 |
 | `session_relay.py` | When does this session hand over, and what does the next one inherit? | 250 |
 | `bridge.py` | How does a `/task` from a phone become a run? | 150 |
-| `ui.py` | The local server: routes, JSON API, one page. | 260 |
-| `ui_html.py` / `ui_css.py` / `ui_js.py` | The cockpit itself, split so no file owns two languages. | 200 each |
-| `cli.py` | The second client: `run`, `serve`, `selftest`, `lint`, `models`. | 230 |
+| `ui.py` | The local server: static front-end, JSON API, cross-site and token guards. | 260 |
+| `cli.py` | The clients' front door: `chat`, `run`, `serve`, `selftest`, `lint`, `models`. | 260 |
+| `chat.py` | A conversation with tools: gate only when a turn touched files, repair in-turn, stop. | 280 |
+| `cockpit.py` | The brain both clients share: one job at a time, chat + run, state for the UI. | 300 |
+| `memory.py` | Durable facts, capped twice, travelling in every prompt. | 120 |
+| `transcripts.py` | Conversations on disk, so closing the window is not losing the chat. | 120 |
+| `web/` | The single front-end (index, css, js) served by the engine and loaded by the desktop shell. | — |
+| `apps/desktop/` | Tauri 2 shell: free port, launch token, sidecar engine, NSIS installer. | — |
 
 ## The four contracts
 

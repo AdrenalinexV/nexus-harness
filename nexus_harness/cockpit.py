@@ -84,7 +84,14 @@ class Cockpit:
 
     # -- chat --------------------------------------------------------------------------------
     def chat_for(self, root=None):
-        """The conversation for a project. Switching project starts a different conversation."""
+        """The conversation for a project. Switching project starts a different conversation.
+
+        With no explicit root, an existing conversation is returned as it is: re-targeting it to the
+        default project on every `state()` call would throw away the conversation the operator just
+        opened in another repository (a bug this line exists to keep fixed).
+        """
+        if root is None and self.chat is not None:
+            return self.chat
         target = Path(root or self.root)
         if self.chat is not None and Path(self.chat.config.default_root) == target:
             return self.chat
@@ -136,10 +143,9 @@ class Cockpit:
         return False
 
     def chat_state(self):
-        if self.chat is None:
-            self.chat_for()
-        state = self.chat.state()
-        state["project"] = str(self.chat.config.default_root)
+        chat = self.chat if self.chat is not None else self.chat_for(self.root)
+        state = chat.state()
+        state["project"] = str(chat.config.default_root)
         state["busy"] = self._busy
         return state
 
@@ -277,7 +283,7 @@ class Cockpit:
                 "roles": self.router.describe(), "models": self.catalog(),
                 "run": self.run_payload(), "relay": self.relay_status(),
                 "chat": {"session": chat.get("session"), "last": chat.get("last"),
-                         "project": chat.get("project"),
+                         "project": chat.get("project"), "budget": chat.get("budget"),
                          "turns": len([m for m in chat.get("messages", [])
                                        if m.get("role") == "user"])},
                 "sessions": self.sessions(),
