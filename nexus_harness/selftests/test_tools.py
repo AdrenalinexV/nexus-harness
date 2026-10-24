@@ -88,6 +88,23 @@ def add(a, b):
           failures)
 
 
+def test_crlf(failures, root):
+    """A Windows repository keeps its CRLF, and the normalised rung must not double the `\\r`."""
+    registry = default_registry(root)
+    (root / "crlf.py").write_bytes(b"def f():\r\n    return 1\r\n")
+    registry.call("patch", {"path": "crlf.py", "search": "    return 1",
+                            "replace": "    return 2"})
+    raw = (root / "crlf.py").read_bytes()
+    check("an exact patch keeps CRLF", raw, b"def f():\r\n    return 2\r\n", failures)
+    (root / "crlf2.py").write_bytes(b"def g():\r\n    return 1   \r\n")
+    normalised = registry.call("patch", {"path": "crlf2.py", "search": "    return 1\n",
+                                         "replace": "    return 9\n"})
+    check("the normalised rung applies", normalised.ok, True, failures)
+    raw = (root / "crlf2.py").read_bytes()
+    check("with no doubled carriage return", b"\r\r\n" in raw, False, failures)
+    check("and the newline style intact", b"    return 9\r\n" in raw, True, failures)
+
+
 def test_shell(failures, root):
     registry = default_registry(root)
     ok = registry.call("shell", {"command": "echo hola"})
@@ -108,6 +125,7 @@ def run():
         test_shell(failures, root)
     with TempProject() as root:
         test_patch(failures, root)
+        test_crlf(failures, root)
     with TempProject() as root:
         test_blocks(failures, root)
     return failures

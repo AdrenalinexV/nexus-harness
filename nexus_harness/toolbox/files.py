@@ -41,11 +41,18 @@ def line_count(text):
     return text.count("\n") + (0 if text.endswith("\n") or not text else 1)
 
 
+def read_text(path):
+    """The file exactly as it is on disk: `Path.read_text` would rewrite CRLF to LF in memory, and a
+    patcher that cannot see the real bytes cannot keep them."""
+    with open(path, "r", encoding="utf-8", errors="replace", newline="") as handle:
+        return handle.read()
+
+
 def read(root, path, offset=1, limit=MAX_READ):
     target = resolve(root, path)
     if not target.is_file():
         raise ValueError("%s is not a file" % relative(root, target))
-    text = target.read_text(encoding="utf-8", errors="replace")
+    text = read_text(target)
     lines = text.splitlines()
     start = max(1, int(offset))
     window = lines[start - 1:start - 1 + max(1, min(int(limit), MAX_READ))]
@@ -61,7 +68,10 @@ def write(root, path, content):
     if total > MAX_LINES:
         raise ValueError("%s would be %d lines > %d" % (relative(root, target), total, MAX_LINES))
     target.parent.mkdir(parents=True, exist_ok=True)
-    target.write_text(content, encoding="utf-8")
+    # `newline=""`: what the model wrote is what lands. `write_text` would turn every LF into CRLF on
+    # Windows, so a 40-line file would read as 40 lines and diff as 40 changes.
+    with open(target, "w", encoding="utf-8", newline="") as handle:
+        handle.write(content)
     return "wrote %s (%d lines)" % (relative(root, target), total), \
         {"files": [relative(root, target)], "lines": total}
 

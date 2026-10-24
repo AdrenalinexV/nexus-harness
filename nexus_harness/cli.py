@@ -178,6 +178,8 @@ def build_parser():
     run.add_argument("goal")
     run.add_argument("--project", default=None)
     run.add_argument("--max-repairs", type=int, default=None)
+    run.add_argument("--test-command", default=None,
+                     help="the project's own proof command; absent means 'not configured'")
     run.add_argument("--json", action="store_true")
     run.set_defaults(func=cmd_run)
 

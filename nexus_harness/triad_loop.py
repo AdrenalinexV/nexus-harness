@@ -115,7 +115,7 @@ class Triad:
         return reply
 
     # -- one phase --------------------------------------------------------------------------
-    def _work(self, messages, goal_hint, max_steps):
+    def _work(self, messages, max_steps):
         """Run the worker loop until it stops asking for tools. Returns (text, steps)."""
         text, steps = "", 0
         for step in range(max_steps):
@@ -205,7 +205,7 @@ class Triad:
             messages = [Message(role="system", content=self._system(WORKER_PROMPT, self.touched)),
                         Message(role="user", content="%s\n\nPLAN DEL DIRECTOR:\n%s" % (hint, plan))]
             for attempt in range(max_repairs + 1):
-                text, steps = self._work(messages, hint, max_steps)
+                text, steps = self._work(messages, max_steps)
                 steps_total += steps
                 verdict = self._verify()
                 self._verdict = verdict
@@ -229,7 +229,7 @@ class Triad:
             if judgement.verdict == "reject" and repairs < max_repairs:
                 repairs += 1
                 messages.append(Message(role="user", content=JUDGE_REJECT % judgement.reason))
-                text, steps = self._work(messages, hint, max_steps)
+                text, steps = self._work(messages, max_steps)
                 steps_total += steps
                 verdict = self._verify()
                 self._verdict = verdict

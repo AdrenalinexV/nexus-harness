@@ -14,8 +14,10 @@ A gate that cannot run (no Nexus install) returns exit `20` and says so. Fail-cl
 to be green, not that it invents a verdict.
 """
 import os
+import shutil
 import subprocess
 import sys
+import tempfile
 import time
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -108,14 +110,23 @@ class Gate:
         if not command:
             return Check("tests", True, "no test_command configured for this project", None,
                          blocking=False)
+        # A patch that keeps the file's size and lands in the same second as the previous run leaves
+        # Python's bytecode cache "valid": the test then exercises the OLD module and the gate reports
+        # red on code that is already fixed. A fresh cache prefix per run makes the compiler read the
+        # source every time, which is the only thing a gate is allowed to believe.
+        cache = Path(tempfile.mkdtemp(prefix="nexus-gate-pyc-"))
+        environment = dict(os.environ, PYTHONPYCACHEPREFIX=str(cache))
         try:
             completed = subprocess.run(command, shell=True, cwd=str(self.root), capture_output=True,
-                                       text=True, errors="replace", timeout=self.timeout)
+                                       text=True, errors="replace", timeout=self.timeout,
+                                       env=environment)
         except subprocess.TimeoutExpired:
             return Check("tests", False, "%r timed out after %ss" % (command, self.timeout),
                          exit=EXIT_RED)
         except OSError as exc:
             return Check("tests", False, "could not run %r: %s" % (command, exc), exit=EXIT_RED)
+        finally:
+            shutil.rmtree(cache, ignore_errors=True)
         output = ((completed.stdout or "") + (completed.stderr or "")).strip()
         tail = output[-MAX_FAILURE_TEXT:]
         return Check("tests", completed.returncode == 0,

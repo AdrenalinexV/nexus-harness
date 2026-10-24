@@ -109,6 +109,20 @@ def test_unready_role_is_reported(failures):
               "worker.blocked" in [event["kind"] for event in bus.all()], True, failures)
 
 
+def test_gate_sees_a_same_size_fix(failures):
+    """The trap: `a - b` -> `a + b` keeps the size, so stale bytecode passes Python's cache check."""
+    import os
+    with TempProject() as root:
+        config = config_for(root)
+        gate = Gate(root, config)
+        check("buggy code is red", gate.run(["calc.py"]).ok, False, failures)
+        stamp = os.stat(root / "calc.py").st_mtime
+        (root / "calc.py").write_bytes(b"def add(a, b):\r\n    return a + b\r\n")
+        os.utime(root / "calc.py", (stamp, stamp))
+        verdict = gate.run(["calc.py"])
+        check("a same-size fix in the same second is green", verdict.ok, True, failures)
+
+
 def check(name, got, expected, failures):
     if got != expected:
         failures.append("%s: %r, esperaba %r" % (name, got, expected))
@@ -117,6 +131,6 @@ def check(name, got, expected, failures):
 def run():
     failures = []
     for test in (test_repair_then_green, test_stuck_worker_ends_red, test_judge_rejects_once,
-                 test_unready_role_is_reported):
+                 test_unready_role_is_reported, test_gate_sees_a_same_size_fix):
         test(failures)
     return failures

@@ -77,7 +77,7 @@ def _write(target, text):
 def apply_text(root, path, search, replace, max_lines=MAX_LINES):
     """`(new_text, meta)` after one replacement, or a refusal. Never partially applied."""
     target = files.resolve(root, path)
-    original = target.read_text(encoding="utf-8") if target.is_file() else None
+    original = files.read_text(target) if target.is_file() else None
     search, replace = str(search), str(replace)
     if original is None:
         if normalize(search).strip():
@@ -90,7 +90,10 @@ def apply_text(root, path, search, replace, max_lines=MAX_LINES):
         offset, rung, haystack = _locate(original, search)
         needle = search if rung == "exact" else normalize(search)
         inserted = replace.replace("\r\n", "\n")
-        if style == "\r\n":
+        if rung == "exact" and style == "\r\n":
+            # The haystack is the file as written (CRLF); only the inserted text needs converting.
+            # The normalised rung rebuilds the whole file from LF, so it converts ONCE at the end --
+            # converting here too would produce `\r\r\n` on every line of the patch.
             inserted = inserted.replace("\n", "\r\n")
         updated = haystack[:offset] + inserted + haystack[offset + len(needle):]
         if rung == "normalised" and style == "\r\n":
@@ -125,7 +128,7 @@ def apply_blocks(root, path, raw, max_lines=MAX_LINES):
     if not blocks:
         raise ValueError("no SEARCH/REPLACE blocks found in the edit")
     target = files.resolve(root, path)
-    original = target.read_text(encoding="utf-8") if target.is_file() else None
+    original = files.read_text(target) if target.is_file() else None
     try:
         for search, replace in blocks:
             apply_text(root, path, search, replace, max_lines)
@@ -135,7 +138,7 @@ def apply_blocks(root, path, raw, max_lines=MAX_LINES):
         else:
             _write(target, original)
         raise
-    total = files.line_count(target.read_text(encoding="utf-8"))
+    total = files.line_count(files.read_text(target))
     return ("applied %d block(s) to %s (%d lines)"
             % (len(blocks), files.relative(root, target), total),
             {"files": [files.relative(root, target)], "lines": total, "blocks": len(blocks)})
