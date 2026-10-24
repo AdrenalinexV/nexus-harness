@@ -14,8 +14,10 @@ Static files come from `web/` next to this module (and are bundled by PyInstalle
 front-end, not one per shell.
 """
 import json
+import os
 import secrets
 import sys
+import threading
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import parse_qs, urlparse
@@ -142,6 +144,13 @@ class Handler(BaseHTTPRequestHandler):
             return self._json(409 if busy else 400, {"ok": False, "reason": payload})
         if path == "/api/stop":
             return self._json(200, {"ok": True, "stopped": self.cockpit.stop()})
+        if path == "/api/shutdown":
+            # The desktop shell closes the window and asks the engine to leave: without this, killing
+            # PyInstaller's bootloader parent leaves the real engine running and holding its own exe,
+            # which is exactly what stops the next installer from replacing it.
+            self._json(200, {"ok": True, "version": __version__})
+            threading.Thread(target=self.server.stop_engine, daemon=True).start()
+            return None
         if path == "/api/chat/new":
             session = self.cockpit.new_chat(body.get("title") or "", body.get("project"))
             return self._json(200, {"ok": True, "session": session})
@@ -176,6 +185,15 @@ class Handler(BaseHTTPRequestHandler):
 
 class Server(ThreadingHTTPServer):
     daemon_threads = True
+    allow_reuse_address = True
+
+    def stop_engine(self):
+        """Leave for real: close the socket, then exit the process (not just the HTTP loop)."""
+        try:
+            self.shutdown()
+            self.server_close()
+        finally:
+            os._exit(0)
 
     def __init__(self, address, cockpit, token=""):
         super().__init__(address, Handler)

@@ -10,12 +10,18 @@
 //! * **A token per launch.** The engine refuses `/api/*` without it, so another local process cannot
 //!   drive the harness through the loopback interface.
 //!
+//! Closing the window must actually stop the engine. A PyInstaller one-file build is two processes
+//! (bootloader + engine), so `Child::kill()` alone leaves the engine alive and holding its own exe --
+//! which is what stops the next installer from replacing it. The shell therefore asks the engine to
+//! leave over HTTP (`POST /api/shutdown`) and falls back to a tree kill (`taskkill /T /F`).
+//!
 //! The window loads the engine's own page, which is the same front-end the CLI serves: one UI, not
 //! one per shell.
 
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
-use std::net::TcpListener;
+use std::io::Write;
+use std::net::{TcpListener, TcpStream};
 use std::path::PathBuf;
 use std::process::{Child, Command, Stdio};
 use std::sync::Mutex;
@@ -29,7 +35,13 @@ const CREATE_NO_WINDOW: u32 = 0x0800_0000;
 #[cfg(windows)]
 use std::os::windows::process::CommandExt;
 
-struct Engine(Mutex<Option<Child>>);
+struct Running {
+    child: Child,
+    port: u16,
+    token: String,
+}
+
+struct Engine(Mutex<Option<Running>>);
 
 fn free_port() -> u16 {
     TcpListener::bind("127.0.0.1:0")
@@ -74,6 +86,33 @@ fn wait_for_engine(port: u16, timeout: Duration) -> bool {
     false
 }
 
+/// Ask the engine to exit on its own: it closes its socket and calls `os._exit(0)`, so the bootloader
+/// parent goes with it.
+fn shutdown_request(port: u16, token: &str) -> bool {
+    let Ok(mut stream) = TcpStream::connect(("127.0.0.1", port)) else {
+        return false;
+    };
+    let _ = stream.set_write_timeout(Some(Duration::from_secs(2)));
+    let request = format!(
+        "POST /api/shutdown HTTP/1.1\r\nHost: 127.0.0.1\r\nX-Nexus-Token: {}\r\n\
+         Content-Length: 0\r\nConnection: close\r\n\r\n",
+        token
+    );
+    stream.write_all(request.as_bytes()).is_ok()
+}
+
+/// Last resort: the whole tree, because the bootloader and the engine are two PIDs.
+fn tree_kill(pid: u32) {
+    let mut command = Command::new("taskkill");
+    command
+        .args(["/PID", &pid.to_string(), "/T", "/F"])
+        .stdout(Stdio::null())
+        .stderr(Stdio::null());
+    #[cfg(windows)]
+    command.creation_flags(CREATE_NO_WINDOW);
+    let _ = command.status();
+}
+
 fn main() {
     tauri::Builder::default()
         .manage(Engine(Mutex::new(None)))
@@ -89,8 +128,10 @@ fn main() {
                     .stderr(Stdio::null());
                 #[cfg(windows)]
                 command.creation_flags(CREATE_NO_WINDOW);
-                let child = command.spawn().ok();
-                *app.state::<Engine>().0.lock().expect("engine lock") = child;
+                if let Ok(child) = command.spawn() {
+                    *app.state::<Engine>().0.lock().expect("engine lock") =
+                        Some(Running { child, port, token: token.clone() });
+                }
             }
             let url = format!("http://127.0.0.1:{}/?token={}", port, token);
             let parsed = url::Url::parse(&url)?;
@@ -108,11 +149,15 @@ fn main() {
         .on_window_event(|window, event| {
             if let tauri::WindowEvent::Destroyed = event {
                 if let Some(state) = window.try_state::<Engine>() {
-                    if let Ok(mut slot) = state.0.lock() {
-                        if let Some(mut child) = slot.take() {
-                            let _ = child.kill();
-                            let _ = child.wait();
+                    let running = state.0.lock().ok().and_then(|mut slot| slot.take());
+                    if let Some(mut running) = running {
+                        shutdown_request(running.port, &running.token);
+                        std::thread::sleep(Duration::from_millis(400));
+                        if running.child.try_wait().ok().flatten().is_none() {
+                            tree_kill(running.child.id());
                         }
+                        let _ = running.child.kill();
+                        let _ = running.child.wait();
                     }
                 }
             }

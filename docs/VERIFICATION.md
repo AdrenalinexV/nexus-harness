@@ -168,6 +168,23 @@ $ "dist/NexusHarness-Setup-0.2.0.exe" /S /D=%LOCALAPPDATA%\NexusHarnessVerify   
   the isolated copy was uninstalled with uninstall.exe /S  -> exit 0
 ```
 
+A later build (after the shutdown fix below) was installed the same way and proved graceful exit:
+
+```
+$ "dist/NexusHarness-Setup-0.2.0.exe" /S /D=%LOCALAPPDATA%\NexusHarnessVerify  -> exit 0
+  installed engine --version    -> nexus-harness 0.2.0
+  installed engine selftest     -> suites=12 failures=0
+  POST /api/shutdown (token)    -> 200, the engine exits by itself in ~1.0 s, the port closes
+  uninstall.exe /S              -> exit 0, directory removed with no locked file left behind
+```
+
+That last line is the fix for a real production defect found while installing: a PyInstaller one-file
+build is two processes, so `Child::kill()` on the bootloader left the engine alive, holding its own
+`.exe`. That is why the first install reported success and kept the old engine: three such orphans had
+it open. The engine now exposes `POST /api/shutdown` (token-guarded) which closes the socket and calls
+`os._exit(0)`, and the shell calls it on `WindowEvent::Destroyed` before falling back to
+`taskkill /T /F`.
+
 **One thing that did not happen, and why:** the install into the default per-user directory
 (`%LOCALAPPDATA%\Nexus Harness`) could not replace its engine, because three
 `nexus-harness-engine.exe` processes were running and holding the file open. The installer itself
