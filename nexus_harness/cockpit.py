@@ -17,7 +17,7 @@ import time
 from dataclasses import replace
 from pathlib import Path
 
-from . import __version__
+from . import __version__, panels
 from .bridge import Bridge
 from .chat import Chat
 from .config import HarnessConfig
@@ -25,6 +25,7 @@ from .context_router import ContextRouter
 from .events import Bus
 from .gate import Gate
 from .judge import Judge
+from .mcp_client import McpManager
 from .memory import Memory
 from .providers import Router
 from .session_relay import SessionRelay
@@ -55,6 +56,8 @@ class Cockpit:
         self.last = None
         self.chat = None
         self._triad = None
+        self.mcp_manager = None
+        self._mcp_started = False
         self._catalog = (0.0, None)
 
     # -- catalogue ---------------------------------------------------------------------------
@@ -84,6 +87,25 @@ class Cockpit:
         self.refresh_catalog()
         return True, info.__dict__
 
+    # -- connectors and configuration ---------------------------------------------------------
+    def mcp(self):
+        """The MCP manager, started once. A dead connector is reported, never fatal."""
+        if not self._mcp_started:
+            self._mcp_started = True
+            self.mcp_manager = McpManager(root=self.root).start()
+        return self.mcp_manager
+
+    def reload_config(self, root=None):
+        """Re-read `~/.nexus/harness.json` after onboarding, and drop what was built from the old one."""
+        target = Path(root or self.config.default_root)
+        self.config = HarnessConfig.load(root=target)
+        self.root = target
+        self.router = Router(self.config)
+        self.chat = None
+        self._catalog = (0.0, None)
+        self.bus.emit("config.reloaded", str(target))
+        return self.config.public()
+
     # -- chat --------------------------------------------------------------------------------
     def chat_for(self, root=None):
         """The conversation for a project. Switching project starts a different conversation.
@@ -98,7 +120,8 @@ class Cockpit:
         if self.chat is not None and Path(self.chat.config.default_root) == target:
             return self.chat
         config = replace(self.config, default_root=target)
-        self.chat = Chat(self.router, config, default_registry(target, config), Gate(target, config),
+        registry = default_registry(target, config, mcp=self.mcp())
+        self.chat = Chat(self.router, config, registry, Gate(target, config),
                          ContextRouter(config.lang), bus=self.bus, memory=self.memory,
                          transcripts=Transcripts(target), judge=Judge(self.router, config.lang))
         return self.chat
@@ -111,7 +134,39 @@ class Cockpit:
         chat = self.chat_for(self._project_root(project))
         return chat.load(session_id)
 
-    def send(self, text):
+    # -- product panels ----------------------------------------------------------------------
+    def onboarding_state(self):
+        return panels.onboarding_status(self)
+
+    def onboarding_apply(self, payload):
+        return panels.onboarding_apply(self, payload)
+
+    def mcp_state(self):
+        return panels.mcp_status(self)
+
+    def mcp_reload(self):
+        self.mcp()
+        return panels.mcp_reload(self)
+
+    def skills_list(self):
+        return panels.skills_list(self)
+
+    def skill_read(self, name):
+        return panels.skills_read(self, name)
+
+    def skill_save(self, name, text):
+        return panels.skills_save(self, name, text)
+
+    def daemon_state(self):
+        return panels.daemon_status(self)
+
+    def daemon_toggle(self, provider=""):
+        return panels.daemon_toggle(self, provider or "telegram")
+
+    def daemon_stop(self):
+        return panels.daemon_stop(self)
+
+    def send(self, text, attachments=None):
         """Start one chat turn. Returns (accepted, payload); refuses while something is in flight."""
         text = str(text or "").strip()
         if not text:
@@ -120,18 +175,21 @@ class Cockpit:
             if self._busy:
                 return False, "a job is already in flight"
             self._busy = True
-        thread = threading.Thread(target=self._send_worker, args=(text,), daemon=True)
+        # The conversation is built HERE, not inside the thread: the reply must be able to name the
+        # session it went to, and a thread that has not started yet is not a session.
+        chat = self.chat_for()
+        thread = threading.Thread(target=self._send_worker, args=(text, attachments), daemon=True)
         try:
             thread.start()
         except RuntimeError as exc:
             with self._lock:
                 self._busy = False
             return False, "could not start the turn: %s" % exc
-        return True, {"text": text[:200], "session": (self.chat.session or {}).get("id")}
+        return True, {"text": text[:200], "session": (chat.session or {}).get("id")}
 
-    def _send_worker(self, text):
+    def _send_worker(self, text, attachments=None):
         try:
-            self.chat_for().send(text)
+            self.chat_for().send(text, attachments)
         except Exception as exc:  # the window must still show what happened
             self.bus.emit("worker.error", "%s: %s" % (type(exc).__name__, exc))
         finally:

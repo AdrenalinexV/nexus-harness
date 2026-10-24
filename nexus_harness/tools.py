@@ -113,10 +113,13 @@ def parallel_reads(registry, calls, stop=None, workers=MAX_PARALLEL):
 class Registry:
     """Name -> (schema, handler). The root is fixed for the life of a run, so paths cannot wander."""
 
-    def __init__(self, root, config=None, schemas=None, handlers=None, delegate=None, stop=None):
+    def __init__(self, root, config=None, schemas=None, handlers=None, delegate=None, stop=None,
+                 mcp=None):
         self.root = root
         self.config = config
-        self.schemas_list = list(schemas if schemas is not None else SCHEMAS)
+        self.mcp = mcp
+        self.base_schemas = list(schemas if schemas is not None else SCHEMAS)
+        self.schemas_list = list(self.base_schemas)
         self.stop = stop
         table = {}
         for module_handlers in (handlers if handlers is not None else ROOT_HANDLERS):
@@ -125,22 +128,42 @@ class Registry:
         self.delegate = delegate
         if delegate is not None:
             self.schemas_list.append(delegate.schema())
+        self.refresh_mcp()
+
+    def refresh_mcp(self):
+        """Re-read the MCP servers' tools and fold them back into the schema table."""
+        self.schemas_list = list(self.base_schemas)
+        if self.delegate is not None:
+            self.schemas_list.append(self.delegate.schema())
+        if self.mcp is not None:
+            try:
+                self.schemas_list.extend(self.mcp.schemas())
+            except Exception:  # a broken connector must not cost the model its own tools
+                return self.schemas_list
+        return self.schemas_list
+
+    def available(self, name):
+        """A tool the model may call: a handler, the delegate, or a live MCP connector."""
+        return (name in self.handlers or name == "delegate_task"
+                or (self.mcp is not None and self.mcp.handles(name)))
 
     def names(self):
-        known = {schema["function"]["name"] for schema in self.schemas_list}
-        return sorted(name for name in self.handlers if name in known)
+        return sorted(schema["function"]["name"] for schema in self.schemas_list
+                      if self.available(schema["function"]["name"]))
 
     def schemas(self, allowed=None):
         if allowed is None:
             return [schema for schema in self.schemas_list
-                    if schema["function"]["name"] in self.handlers
-                    or schema["function"]["name"] == "delegate_task"]
+                    if self.available(schema["function"]["name"])]
         keep = set(allowed)
         return [schema for schema in self.schemas_list if schema["function"]["name"] in keep]
 
     def call(self, name, arguments):
         arguments = dict(arguments or {})
         try:
+            if self.mcp is not None and self.mcp.handles(name):
+                return Observation(ok=True, text=self.mcp.call(name, arguments),
+                                   meta={"files": [], "mcp": True})
             if name == "delegate_task":
                 if self.delegate is None:
                     return Observation(ok=False, text="subagents are not enabled in this session")
@@ -161,5 +184,5 @@ class Registry:
                                % (name, type(exc).__name__, exc))
 
 
-def default_registry(root, config=None, delegate=None, stop=None):
-    return Registry(root, config, delegate=delegate, stop=stop)
+def default_registry(root, config=None, delegate=None, stop=None, mcp=None):
+    return Registry(root, config, delegate=delegate, stop=stop, mcp=mcp)

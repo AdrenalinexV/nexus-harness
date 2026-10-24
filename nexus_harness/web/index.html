@@ -12,12 +12,21 @@
   <aside class="sidebar">
     <div class="brand">NEXUS<span>·</span>HARNESS</div>
     <label class="field">Proyecto<select id="project"></select></label>
-    <button id="new-chat" class="primary">Nueva conversación</button>
+    <div class="row">
+      <button id="new-chat" class="primary">Nueva conversación</button>
+      <button id="onboarding" class="ghost" title="Configurar modelos, claves y proyecto">⚙︎</button>
+    </div>
     <div class="side-title">Conversaciones</div>
     <ul id="sessions" class="sessions"></ul>
     <div class="side-title">Puente móvil</div>
-    <div id="bridge" class="mini">0 en cola</div>
+    <div class="row">
+      <div id="bridge" class="mini">0 en cola</div>
+      <button id="daemon" class="ghost" title="Arrancar / detener el listener">OFF</button>
+    </div>
     <div class="spacer"></div>
+    <div class="side-title">Conectores MCP <span id="mcp-count" class="tag"></span></div>
+    <ul id="mcp" class="sessions"></ul>
+    <button id="mcp-reload" class="ghost wide">Recargar conectores</button>
     <div class="side-title">Modelos</div>
     <label class="field">Director<select id="role-director"></select></label>
     <label class="field">Obrero<select id="role-worker"></select></label>
@@ -43,11 +52,16 @@
     </section>
 
     <section class="composer">
-      <textarea id="input" rows="2" placeholder="Escribe una tarea o una pregunta…  (Ctrl+Enter envía)"></textarea>
+      <div id="pending" class="pending"></div>
+      <textarea id="input" rows="2"
+        placeholder="Escribe una tarea, pega una imagen (Ctrl+V) o arrastra un fichero…  (Ctrl+Enter envía)"></textarea>
       <div class="composer-right">
+        <button id="attach" class="ghost" title="Adjuntar imagen o documento">+ Adjuntar</button>
         <button id="send" class="primary">Enviar</button>
         <input id="test-command" placeholder="comando de test (opcional)">
       </div>
+      <input id="file" type="file" multiple hidden
+        accept=".png,.jpg,.jpeg,.webp,.gif,.txt,.md,.json,.py,.pdf">
     </section>
   </main>
 
@@ -85,6 +99,22 @@
     </div>
   </aside>
 </div>
+
+<div id="modal" class="modal" hidden>
+  <div class="modal-box">
+    <header>
+      <h2 id="modal-title">Configuración</h2>
+      <button id="modal-close" class="ghost">✕</button>
+    </header>
+    <div id="modal-body" class="modal-body"></div>
+    <footer>
+      <span id="modal-note" class="mono dim"></span>
+      <button id="modal-save" class="primary">Guardar</button>
+    </footer>
+  </div>
+</div>
+
 <script src="app.js"></script>
+<script src="panels.js"></script>
 </body>
 </html>

@@ -124,6 +124,20 @@ class Handler(BaseHTTPRequestHandler):
             return self._json(200, self.cockpit.catalog())
         if path == "/api/relay":
             return self._json(200, self.cockpit.relay_status())
+        if path == "/api/onboarding":
+            return self._json(200, self.cockpit.onboarding_state())
+        if path == "/api/projects":
+            from .onboarding import projects as list_projects
+            workspace = (query.get("workspace") or [None])[0]
+            return self._json(200, {"projects": list_projects(workspace)})
+        if path == "/api/mcp":
+            return self._json(200, self.cockpit.mcp_state())
+        if path == "/api/skills":
+            name = (query.get("name") or [""])[0]
+            payload = self.cockpit.skill_read(name) if name else self.cockpit.skills_list()
+            return self._json(200 if payload.get("ok", True) else 404, payload)
+        if path == "/api/bridge/daemon":
+            return self._json(200, self.cockpit.daemon_state())
         if path == "/api/events":
             since = int((query.get("since") or ["0"])[0] or 0)
             return self._json(200, {"events": self.cockpit.bus.since(since),
@@ -137,11 +151,22 @@ class Handler(BaseHTTPRequestHandler):
         path = urlparse(self.path).path
         body = self._body()
         if path == "/api/chat":
-            ok, payload = self.cockpit.send(body.get("text"))
+            ok, payload = self.cockpit.send(body.get("text"), body.get("attachments") or [])
             if ok:
                 return self._json(202, dict(payload, ok=True))
             busy = "in flight" in str(payload)
             return self._json(409 if busy else 400, {"ok": False, "reason": payload})
+        if path == "/api/onboarding":
+            return self._json(200, self.cockpit.onboarding_apply(body))
+        if path == "/api/mcp":
+            return self._json(200, self.cockpit.mcp_reload())
+        if path == "/api/skills":
+            saved = self.cockpit.skill_save(body.get("name"), body.get("text"))
+            return self._json(200 if saved.get("ok") else 400, saved)
+        if path == "/api/bridge/daemon":
+            if str(body.get("action") or "toggle") == "stop":
+                return self._json(200, self.cockpit.daemon_stop())
+            return self._json(200, self.cockpit.daemon_toggle(body.get("provider") or ""))
         if path == "/api/stop":
             return self._json(200, {"ok": True, "stopped": self.cockpit.stop()})
         if path == "/api/shutdown":

@@ -4,7 +4,7 @@ An autonomous engineering harness in pure Python, where the Nexus Protocol is no
 from outside but the turn loop itself: skills routing runs before every model call, the deterministic
 lint is the gate, and a session that fills its budget hands itself over to a clean one without asking.
 
-**It ships as a desktop app**: `NexusHarness-Setup-0.2.0.exe` installs a native window with the engine
+**It ships as a desktop app**: `NexusHarness-Setup-0.3.0.exe` installs a native window with the engine
 frozen inside (no Python on the target machine). See [docs/DESKTOP.md](docs/DESKTOP.md).
 
 ```
@@ -43,6 +43,25 @@ for all of them -- the 400-line law, a parser (`ast` / `json` / `tomllib` / YAML
   the same stop event as the Detener button.
 - **Read-only tool calls in one turn run together**; edits and shells stay sequential, and every
   child's touched files flow into the same gate before the turn can claim green.
+
+## What 0.3.0 adds (product surface + the four milestones)
+
+- **Onboarding that measures the machine.** The gear button probes LM Studio (`:1234`) and Ollama
+  (`:11434`), lists the models that are *actually downloaded*, and assigns them to Director / Obrero /
+  Juez in one click; cloud keys go into a DPAPI-sealed store that can report which keys exist and
+  never reads a value back; picking a project can synthesise its governance through NexusProtocol's
+  Auto-Spec generator.
+- **Attachments and vision.** Paste (`Ctrl+V`), drag or `+ Adjuntar`: images are sniffed by magic
+  bytes, resized inside 1568 px and re-encoded (Pillow ships inside the engine), documents are
+  extracted (text; PDFs when PyMuPDF is present, refused with a reason when not), and every turn
+  carries chips with a small preview -- never the full base64, never in the transcript.
+- **Native MCP client.** Servers from `~/.nexus/mcp.json` (with the protocol's own
+  `nexus_status` / `nexus_lint` / `nexus_relay` as the default) are spawned hidden, handshaken over
+  JSON-RPC, and their tools appear to the model as `mcp__<server>__<tool>`. The sidebar shows what is
+  connected and how many tools it contributes.
+- **System tray and a clean exit.** The X hides the window into the tray (Abrir / Estado del motor /
+  Salir completamente); leaving asks the engine to exit over `/api/shutdown` and falls back to
+  `taskkill /T /F`, so no orphan keeps the next installer out.
 
 ## The cockpit
 

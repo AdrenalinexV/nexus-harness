@@ -98,3 +98,38 @@ button:disabled{opacity:.45;cursor:not-allowed}
 .activity{max-height:150px;overflow:auto;display:flex;flex-direction:column;gap:2px}
 .activity div{color:var(--dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .activity .k{color:var(--accent2)}
+
+/* ---------- attachments, modal and the new panels ---------- */
+.pending { display: flex; flex-wrap: wrap; gap: 6px; padding: 0 0 6px 0; }
+.pending:empty { display: none; }
+.attach {
+  display: inline-flex; align-items: center; gap: 6px; max-width: 240px;
+  padding: 5px 9px; border-radius: 9px; font-size: 12px;
+  background: var(--card, #14181f); border: 1px solid var(--border, #263041);
+  background-size: 28px 28px; background-position: left center; background-repeat: no-repeat;
+  padding-left: 34px; min-height: 22px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.attach b { cursor: pointer; opacity: .6; font-weight: 600; }
+.attach b:hover { opacity: 1; color: #f87171; }
+.composer.drag { outline: 2px dashed var(--accent, #4f9cf9); outline-offset: -6px; }
+.wide { width: 100%; margin-top: 6px; }
+.ghost.on { color: #34d399; border-color: #34d399; }
+.modal { position: fixed; inset: 0; background: rgba(5, 8, 12, .65); display: flex;
+         align-items: center; justify-content: center; z-index: 40; }
+.modal[hidden] { display: none; }
+.modal-box { width: min(720px, 92vw); max-height: 86vh; display: flex; flex-direction: column;
+             background: #0d1117; border: 1px solid var(--border, #263041); border-radius: 14px;
+             box-shadow: 0 24px 60px rgba(0,0,0,.5); }
+.modal-box header { display: flex; align-items: center; justify-content: space-between;
+                    padding: 14px 18px; border-bottom: 1px solid var(--border, #263041); }
+.modal-box header h2 { font-size: 15px; margin: 0; letter-spacing: .04em; }
+.modal-body { padding: 16px 18px; overflow: auto; display: flex; flex-direction: column; gap: 10px; }
+.modal-body .field { display: flex; flex-direction: column; gap: 4px; font-size: 12px; }
+.modal-body input, .modal-body select, .modal-body textarea.editor {
+  width: 100%; background: #0a0e14; color: inherit; border: 1px solid var(--border, #263041);
+  border-radius: 8px; padding: 8px 10px; font: inherit; }
+.modal-body textarea.editor { min-height: 46vh; font-family: ui-monospace, monospace; font-size: 12px;
+                              line-height: 1.5; resize: vertical; }
+.modal-box footer { display: flex; align-items: center; justify-content: space-between; gap: 10px;
+                    padding: 12px 18px; border-top: 1px solid var(--border, #263041); }
+.modal-box footer span { max-width: 60%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }

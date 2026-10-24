@@ -5,6 +5,8 @@ __pycache__/
 .pytest_cache/
 .nexus/NEXT_SESSION_PROMPT.md
 dist/
+.nexus-serve.log
+.verify-port
 .build/
 apps/desktop/node_modules/
 apps/desktop/src-tauri/target/

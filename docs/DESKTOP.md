@@ -5,13 +5,23 @@ corre el motor de este repositorio, congelado, y el protocolo Nexus vive en él:
 plugin, no depende de tener Python en el equipo destino.
 
 ```
-NexusHarness-Setup-0.2.0.exe          instalador NSIS, por usuario, sin permisos de administrador
+NexusHarness-Setup-0.3.0.exe          instalador NSIS, por usuario, sin permisos de administrador
 └── %LOCALAPPDATA%\Nexus Harness\
     ├── nexus-harness-desktop.exe     ventana nativa (Tauri 2 / WebView2)
     ├── engine\nexus-harness-engine.exe   motor congelado (Python + NexusProtocol dentro)
     ├── uninstall.exe
     └── icons...
 ```
+
+## Bandeja del sistema y cierre limpio (0.3.0)
+
+- La X de la ventana **oculta** la app en la bandeja: el trabajo en curso no se pierde por un clic.
+- Menú de la bandeja: `Abrir Nexus Harness`, `Estado del motor` (trae la ventana al frente) y
+  `Salir completamente`.
+- Salir es ordenado: `POST /api/shutdown` (el motor cierra su socket y llama a `os._exit(0)`, y con él
+  cae el *bootloader* de PyInstaller) y, si no responde, `taskkill /T /F` sobre el árbol.
+  Así no quedan motores huérfanos sosteniendo su propio `.exe`, que era lo que impedía al instalador
+  siguiente reemplazarlo.
 
 ## Cómo arranca
 
@@ -49,14 +59,14 @@ cp dist/nexus-harness-engine.exe apps/desktop/src-tauri/engine/
 cd apps/desktop && npm install && npx tauri icon src-tauri/app-icon.png && npx tauri build
 ```
 
-Salida: `apps/desktop/src-tauri/target/release/bundle/nsis/Nexus Harness_0.2.0_x64-setup.exe`.
+Salida: `apps/desktop/src-tauri/target/release/bundle/nsis/Nexus Harness_0.3.0_x64-setup.exe`.
 
 ## Firma
 
 El instalador sale **sin firmar**: Windows mostrará «editor desconocido» la primera vez (SmartScreen).
 Una firma autofirmada no elimina ese aviso; solo cambia el nombre del editor, y añade un certificado que
 hay que instalar en el equipo para que sea creíble. Si algún día hay un certificado de firma de código
-real, el paso es `signtool sign /fd sha256 /f cert.pfx /p <pass> "Nexus Harness_0.2.0_x64-setup.exe"`
+real, el paso es `signtool sign /fd sha256 /f cert.pfx /p <pass> "Nexus Harness_0.3.0_x64-setup.exe"`
 antes de distribuir; Tauri también acepta `bundle.windows.certificateThumbprint`.
 
 ## Límites conocidos

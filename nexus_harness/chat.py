@@ -16,6 +16,7 @@ cannot interrupt is a harness that owns your afternoon.
 import threading
 from dataclasses import dataclass, field
 
+from . import attachments as attachment_tools
 from .message import Message, as_text
 from .subagents import Delegate
 from .toolbox import process_manager
@@ -50,11 +51,13 @@ class Turn:
     verdict: dict = field(default_factory=dict)
     judgement: dict = field(default_factory=dict)
     stopped: bool = False
+    attachments: list = field(default_factory=list)
 
     def as_dict(self):
         return {"reply": self.reply, "exit": self.exit, "steps": self.steps,
                 "repairs": self.repairs, "touched": self.touched, "skills": self.skills,
-                "verdict": self.verdict, "judgement": self.judgement, "stopped": self.stopped}
+                "verdict": self.verdict, "judgement": self.judgement, "stopped": self.stopped,
+                "attachments": self.attachments}
 
 
 class Chat:
@@ -193,17 +196,22 @@ class Chat:
                    results.get(index) or Observation(ok=False, text="argumentos ilegibles: %s"
                                                      % call.parse_error))
 
-    def send(self, text):
+    def send(self, text, attachments=None):
         """One operator turn. Blocking; the cockpit runs it in a thread and streams events."""
         text = str(text or "").strip()
-        if not text:
+        blocks, rejected = attachment_tools.ingest(self.config.default_root, attachments or [])
+        if rejected:
+            self._emit("attachments.rejected", "; ".join(rejected)[:600], notes=rejected)
+        if not text and not blocks:
             return Turn(reply="", exit=0).as_dict()
         if self.session is None:
-            self.new(text[:60])
+            self.new(text[:60] or (blocks[0].get("name") if blocks else "adjuntos"))
         self._stop.clear()
-        self._emit("chat.user", text[:1500])
-        self.history.append(Message(role="user", content=text))
-        turn = Turn()
+        content = attachment_tools.as_content(blocks, text) if blocks else text
+        self._emit("chat.user", text[:1500] or attachment_tools.summary(blocks),
+                   attachments=attachment_tools.chips(blocks), notes=rejected)
+        self.history.append(Message(role="user", content=content))
+        turn = Turn(attachments=attachment_tools.chips(blocks))
         reply, steps = self._turn(tools=True)
         turn.steps += steps
         if self._stop.is_set():
@@ -249,7 +257,7 @@ class Chat:
         self.session["turns"] = int(self.session.get("turns", 0)) + 1
         self.session["exit"] = turn.exit
         if not self.session.get("title"):
-            self.session["title"] = next((message.content for message in self.history
+            self.session["title"] = next((message.text_content() for message in self.history
                                           if message.role == "user"), "")[:90]
         self.transcripts.save(self.session)
 

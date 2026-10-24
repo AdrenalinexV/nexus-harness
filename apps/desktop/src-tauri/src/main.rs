@@ -1,6 +1,6 @@
-//! The desktop shell: start the engine, wait for it, open a native window on it.
+//! The desktop shell: start the engine, wait for it, open a native window on it, and leave cleanly.
 //!
-//! Three decisions worth naming:
+//! Five decisions worth naming:
 //!
 //! * **The engine is a separate process.** Freezing the harness into the same binary as the window
 //!   would couple UI crashes to runs; as a sidecar, a hung model call is a process you can kill.
@@ -9,14 +9,12 @@
 //!   engine.
 //! * **A token per launch.** The engine refuses `/api/*` without it, so another local process cannot
 //!   drive the harness through the loopback interface.
-//!
-//! Closing the window must actually stop the engine. A PyInstaller one-file build is two processes
-//! (bootloader + engine), so `Child::kill()` alone leaves the engine alive and holding its own exe --
-//! which is what stops the next installer from replacing it. The shell therefore asks the engine to
-//! leave over HTTP (`POST /api/shutdown`) and falls back to a tree kill (`taskkill /T /F`).
-//!
-//! The window loads the engine's own page, which is the same front-end the CLI serves: one UI, not
-//! one per shell.
+//! * **Closing the window hides it in the tray.** Work in progress must survive the reflex of clicking
+//!   the X, and the tray menu is where "stop everything" lives.
+//! * **Leaving is orderly.** `POST /api/shutdown` first (the engine closes its socket and calls
+//!   `os._exit(0)`, taking the PyInstaller bootloader with it), then `taskkill /T /F` as the fallback.
+//!   Killing only the bootloader is what leaves an engine alive holding its own `.exe`, which is what
+//!   silently blocks the next installer.
 
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
@@ -26,6 +24,8 @@ use std::path::PathBuf;
 use std::process::{Child, Command, Stdio};
 use std::sync::Mutex;
 use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
+use tauri::menu::{Menu, MenuItem};
+use tauri::tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent};
 use tauri::{Manager, WebviewUrl, WebviewWindowBuilder};
 
 /// A windowed app must not flash a console per launch. The engine keeps its console subsystem (the
@@ -86,8 +86,7 @@ fn wait_for_engine(port: u16, timeout: Duration) -> bool {
     false
 }
 
-/// Ask the engine to exit on its own: it closes its socket and calls `os._exit(0)`, so the bootloader
-/// parent goes with it.
+/// Ask the engine to exit on its own: it closes its socket and calls `os._exit(0)`.
 fn shutdown_request(port: u16, token: &str) -> bool {
     let Ok(mut stream) = TcpStream::connect(("127.0.0.1", port)) else {
         return false;
@@ -111,6 +110,29 @@ fn tree_kill(pid: u32) {
     #[cfg(windows)]
     command.creation_flags(CREATE_NO_WINDOW);
     let _ = command.status();
+}
+
+fn stop_engine(app: &tauri::AppHandle) {
+    let running = app
+        .try_state::<Engine>()
+        .and_then(|state| state.0.lock().ok().and_then(|mut slot| slot.take()));
+    if let Some(mut running) = running {
+        shutdown_request(running.port, &running.token);
+        std::thread::sleep(Duration::from_millis(400));
+        if running.child.try_wait().ok().flatten().is_none() {
+            tree_kill(running.child.id());
+        }
+        let _ = running.child.kill();
+        let _ = running.child.wait();
+    }
+}
+
+fn show_window(app: &tauri::AppHandle) {
+    if let Some(window) = app.get_webview_window("main") {
+        let _ = window.show();
+        let _ = window.unminimize();
+        let _ = window.set_focus();
+    }
 }
 
 fn main() {
@@ -144,23 +166,48 @@ fn main() {
                 .focused(true)
                 .build()?;
             let _ = window.set_focus();
+
+            let open = MenuItem::with_id(app, "open", "Abrir Nexus Harness", true, None::<&str>)?;
+            let status = MenuItem::with_id(app, "status", "Estado del motor", true, None::<&str>)?;
+            let quit = MenuItem::with_id(app, "quit", "Salir completamente", true, None::<&str>)?;
+            let menu = Menu::with_items(app, &[&open, &status, &quit])?;
+            let mut tray = TrayIconBuilder::with_id("nexus")
+                .menu(&menu)
+                .show_menu_on_left_click(false)
+                .tooltip("Nexus Harness")
+                .on_menu_event(move |app, event| match event.id.as_ref() {
+                    "open" => show_window(app),
+                    "status" => show_window(app),
+                    "quit" => {
+                        stop_engine(app);
+                        app.exit(0);
+                    }
+                    _ => {}
+                })
+                .on_tray_icon_event(|tray, event| {
+                    if let TrayIconEvent::Click {
+                        button: MouseButton::Left,
+                        button_state: MouseButtonState::Up,
+                        ..
+                    } = event
+                    {
+                        show_window(tray.app_handle());
+                    }
+                });
+            if let Some(icon) = app.default_window_icon() {
+                tray = tray.icon(icon.clone());
+            }
+            tray.build(app)?;
             Ok(())
         })
-        .on_window_event(|window, event| {
-            if let tauri::WindowEvent::Destroyed = event {
-                if let Some(state) = window.try_state::<Engine>() {
-                    let running = state.0.lock().ok().and_then(|mut slot| slot.take());
-                    if let Some(mut running) = running {
-                        shutdown_request(running.port, &running.token);
-                        std::thread::sleep(Duration::from_millis(400));
-                        if running.child.try_wait().ok().flatten().is_none() {
-                            tree_kill(running.child.id());
-                        }
-                        let _ = running.child.kill();
-                        let _ = running.child.wait();
-                    }
-                }
+        .on_window_event(|window, event| match event {
+            // The X hides the window: the run keeps going and the tray brings it back.
+            tauri::WindowEvent::CloseRequested { api, .. } => {
+                api.prevent_close();
+                let _ = window.hide();
             }
+            tauri::WindowEvent::Destroyed => stop_engine(window.app_handle()),
+            _ => {}
         })
         .run(tauri::generate_context!())
         .expect("Nexus Harness failed to start");

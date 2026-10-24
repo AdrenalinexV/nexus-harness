@@ -192,6 +192,67 @@ returned 0 and updated `nexus-harness-desktop.exe`, but NSIS cannot overwrite a 
 verification above therefore used `/D=` into a throwaway directory, then removed it. Replacing the
 default installation needs those processes closed first (or a reboot, which reschedules the copy).
 
+## v0.3.0 — the product surface, the four NexusProtocol milestones, and one real turn
+
+Measured on 2026-10-24, in this order. Everything below is an observed exit code or an observed value.
+
+```
+$ python tools/verify.py
+lint      exit 0   files=63 findings=0 max_lines=400
+selftest  exit 0   suites=15 failures=0
+verify: GREEN
+
+$ python -c "...rules_lint.lint_repo('C:/Proyectos/NexusProtocol')"
+PROTOCOL files=215 findings=0
+
+$ python nexus/cli.py doctor            -> exit 0, "everything a self-test can prove is green"
+  (three new checks travel inside it: auto-spec, the SKILL.md editor, the bridge toggle)
+
+$ .build/venv/Scripts/pyinstaller ... nexus-harness-engine.spec
+$ dist/nexus-harness-engine.exe --version   -> nexus-harness 0.3.0
+$ dist/nexus-harness-engine.exe selftest    -> suites=15 failures=0      (frozen, exit 0)
+
+$ "dist/NexusHarness-Setup-0.3.0.exe" /S /D=%LOCALAPPDATA%\NexusHarnessVerify   -> exit 0
+  installed engine --version                 -> nexus-harness 0.3.0
+  installed engine selftest                  -> suites=15 failures=0
+  GET /api/state                             -> version "0.3.0"
+  GET /api/onboarding                        -> lmstudio ready (22 models), ollama ready (24),
+                                                31 projects, keys: ["TYPESAFE_API_KEY"]
+  GET /api/skills                            -> 12 SKILL.md files; ?name=nexus-appsec -> 28 lines
+  GET /api/mcp                               -> nexus ready, 3 tools
+  POST mcp__nexus__nexus_status              -> "governed projects: 31, last verdict: exit 0 ..."
+  GET /api/bridge/daemon                     -> running False, queue 0
+  POST /api/shutdown                         -> 200, the engine exits by itself in ~1 s
+  uninstall.exe /S                           -> exit 0, the directory is removed with nothing locked
+```
+
+The live turn, through a real engine process on `127.0.0.1`, against LM Studio (`kat-coder-35b-a3b`):
+
+```
+POST /api/chat  "Usa la herramienta write_file para crear notas.md en la raiz con una sola linea: hola"
+  exit 0 · steps 2 · touched ["notas.md"]
+  GATE  : exit 0 — lint OK, line_law OK, tests OK        (the protocol's own linter ran)
+  JUEZ  : approve — "El archivo notas.md fue creado ... y pasa todos los gates (lint, line_law)"
+  SKILLS: nexus-verification, nexus-clean-code
+  BUDGET: 5300/60000 tokens (8.8 %) · measured · relevo a 70 %
+  notas.md on disk: "hola"
+```
+
+Two things worth recording because they were *refusals*, not successes:
+
+* The first attempt used an 8B model that answered with the tool call **written as prose**. Nothing was
+  touched, so the turn ended with no gate and no judge — which is exactly what the design says should
+  happen (a turn that changed nothing has nothing to prove).
+* The bridge toggle started the listener, watched it exit, and the log said why:
+  `remote: no telegram token in the vault or the environment`. The panel reported `running: False`
+  instead of claiming ON.
+
+**Still blocked at the time of writing:** the install into the default per-user directory. Two running
+`nexus-harness-engine.exe` (the 0.1.0 build, PIDs 14232 and 38524) hold their own `.exe` open, so NSIS
+reports success and keeps the old binary. Closing those two processes (or rebooting) lets the same
+installer do its job; the isolated `/D=` install above is the proof that the installer itself is sound.
+The shell no longer creates such orphans: it asks `/api/shutdown` first and tree-kills as a fallback.
+
 ## What is **not** verified here
 
 - **Cloud providers** (`openai`, `deepseek`, `openrouter`, `anthropic`): no key for them is in

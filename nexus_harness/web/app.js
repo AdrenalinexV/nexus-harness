@@ -34,11 +34,37 @@ function api(path, options = {}) {
 }
 
 /* ---------- thread ---------- */
+function msgText(content) {
+  if (Array.isArray(content)) {
+    return content.filter((part) => part && part.type === 'text' && !String(part.text || '').startsWith('<document'))
+      .map((part) => part.text || '').join('\n').trim();
+  }
+  return String(content || '');
+}
+
+function msgAttachments(message) {
+  if (!Array.isArray(message.content)) return [];
+  return message.content.filter((part) => part && part.type !== 'text')
+    .map((part) => ({name: 'imagen', kind: 'image', preview: (part.image_url || {}).url || ''}));
+}
+
 function addMessage(role, text, meta) {
   const wrap = document.createElement('div');
   wrap.className = 'msg ' + role;
   wrap.innerHTML = `<div class="who">${role === 'user' ? 'TÚ' : 'NEXUS'}</div>
                     <div class="bubble">${esc(text)}</div>`;
+  if (meta && meta.attachments && meta.attachments.length) {
+    const box = document.createElement('div');
+    box.className = 'tools';
+    for (const item of meta.attachments) {
+      const chip = document.createElement('span');
+      chip.className = 'attach';
+      chip.textContent = `${item.kind === 'image' ? '🖼' : '📄'} ${item.name}`;
+      if (item.preview) chip.style.backgroundImage = `url(${item.preview})`;
+      box.appendChild(chip);
+    }
+    wrap.appendChild(box);
+  }
   if (meta && meta.tools && meta.tools.length) {
     const chips = document.createElement('div');
     chips.className = 'tools';
@@ -67,7 +93,7 @@ function renderThread(messages) {
   const pending = {};
   for (const message of messages) {
     if (message.role === 'user') {
-      addMessage('user', message.content || '');
+      addMessage('user', msgText(message.content) || '·', {attachments: msgAttachments(message)});
     } else if (message.role === 'assistant') {
       const tools = (message.tool_calls || []).map((call) => {
         let args = {};
@@ -94,7 +120,15 @@ function renderThread(messages) {
 function setSkills(names) {
   const list = names || [];
   $('skills-count').textContent = list.length ? String(list.length) : '';
-  $('skills').innerHTML = list.map((name) => `<span>${esc(name)}</span>`).join('');
+  $('skills').textContent = '';
+  for (const name of list) {
+    // DOM nodes, not innerHTML: a skill name is data, and data never becomes markup.
+    const chip = document.createElement('span');
+    chip.textContent = name;
+    chip.title = 'abrir y editar';
+    chip.onclick = () => window.NexusUI && window.NexusUI.skill(name);
+    $('skills').appendChild(chip);
+  }
 }
 
 function fillSelect(el, options, value) {
@@ -211,11 +245,14 @@ async function refreshMemory() {
 
 /* ---------- actions ---------- */
 async function send() {
+  const attachments = (window.NexusUI && window.NexusUI.take()) || [];
   const text = $('input').value.trim();
-  if (!text) return;
+  if (!text && !attachments.length) return;
   $('input').value = '';
-  addMessage('user', text);
-  const {ok, status, data} = await api('/api/chat', {method: 'POST', body: JSON.stringify({text})});
+  addMessage('user', text || '·', {attachments: attachments.map((item) => ({
+    name: item.name, kind: item.kind, preview: item.preview || ''}))});
+  const {ok, status, data} = await api('/api/chat',
+    {method: 'POST', body: JSON.stringify({text, attachments})});
   if (!ok) {
     addMessage('assistant', status === 409 ? 'Ya hay un turno en marcha.' : (data.reason || 'no se pudo enviar'));
     return;

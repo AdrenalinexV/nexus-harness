@@ -57,10 +57,23 @@ class Usage:
 @dataclass
 class Message:
     role: str = "user"
-    content: str = ""
+    # A string, or an OpenAI-style list of parts when the turn carries an image or a document.
+    content: object = ""
     tool_calls: list = field(default_factory=list)
     tool_call_id: str = ""
     name: str = ""
+
+    def text_content(self):
+        """The readable text of this message, whatever shape its content has."""
+        if isinstance(self.content, list):
+            return "\n".join(str(part.get("text") or "") for part in self.content
+                             if isinstance(part, dict) and part.get("type") == "text")
+        return str(self.content or "")
+
+    @property
+    def has_media(self):
+        return isinstance(self.content, list) and any(
+            isinstance(part, dict) and part.get("type") != "text" for part in self.content)
 
     def to_openai(self):
         payload = {"role": self.role, "content": self.content}
@@ -79,8 +92,9 @@ class Message:
     @classmethod
     def from_openai(cls, payload):
         calls = [ToolCall.from_openai(item) for item in payload.get("tool_calls") or []]
-        return cls(role=str(payload.get("role") or "assistant"),
-                   content=str(payload.get("content") or ""),
+        raw = payload.get("content")
+        content = raw if isinstance(raw, list) else str(raw or "")
+        return cls(role=str(payload.get("role") or "assistant"), content=content,
                    tool_calls=calls, tool_call_id=str(payload.get("tool_call_id") or ""),
                    name=str(payload.get("name") or ""))
 
