@@ -16,6 +16,7 @@ exists for, and a lock is cheaper than a scheduler.
 """
 import json
 import threading
+import time
 from dataclasses import replace
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import parse_qs, urlparse
@@ -57,9 +58,24 @@ class Cockpit:
         self._lock = threading.Lock()
         self._running = False
         self.last = None
+        self._catalog = (0.0, None)
 
     def projects(self):
         return _dirs(self.config.workspace)
+
+    def catalog(self):
+        """The model catalogue, cached for 15 s: the page polls, and a probe per poll would hammer two
+        local servers to answer a question whose answer changes when the operator loads a model."""
+        stamp, value = self._catalog
+        if value is not None and time.time() - stamp < 15:
+            return value
+        value = dict(self.router.catalog(), projects=self.projects())
+        self._catalog = (time.time(), value)
+        return value
+
+    def refresh_catalog(self):
+        self._catalog = (0.0, None)
+        return self.catalog()
 
     def _latest(self, kind):
         for event in reversed(self.bus.all()):
@@ -73,36 +89,36 @@ class Cockpit:
         payload = dict(self.last)
         plan = self._latest("director.plan")
         skills = self._latest("skills.injected")
+        budget = self._latest("budget")
         if plan:
             payload["plan"] = plan["detail"]
         if skills:
             payload["skills"] = skills["payload"]
-        payload.setdefault("budget", self._latest("budget")["payload"].get("budget")
-                           if self._latest("budget") else {})
+        payload.setdefault("budget", (budget or {}).get("payload", {}).get("budget", {}))
         return payload
 
     def state(self):
+        pending = self.bridge.pending()
         return {"running": self._running,
                 "config": dict(self.config.public(), root=str(self.config.default_root)),
-                "roles": self.router.describe(), "models": dict(self.router.catalog(),
-                                                                projects=self.projects()),
+                "roles": self.router.describe(), "models": self.catalog(),
                 "run": self.run_payload(), "relay": self._relay_status(),
-                "bridge": {"pending": len(self.bridge.pending()),
-                           "items": self.bridge.pending()},
+                "bridge": {"pending": len(pending), "items": pending},
                 "seq": self.bus.seq, "port": self.config.port}
 
     def _relay_status(self):
         root = self.config.default_root
         prompt = root / ".nexus" / "NEXT_SESSION_PROMPT.md"
-        return {"session": self._latest("session.start")["payload"].get("session")
-                if self._latest("session.start") else None,
-                "sessions": sorted(path.stem for path in
-                                   (root / ".nexus" / "harness" / "sessions").glob("session_*.json"))
-                if (root / ".nexus" / "harness" / "sessions").is_dir() else [],
+        sessions_dir = root / ".nexus" / "harness" / "sessions"
+        started = self._latest("session.start")
+        budget = self._latest("budget")
+        return {"session": (started or {}).get("payload", {}).get("session"),
+                "sessions": sorted(path.stem for path in sessions_dir.glob("session_*.json"))
+                if sessions_dir.is_dir() else [],
                 "handovers": [event["payload"].get("handover") for event in self.bus.all()
                               if event["kind"] == "session.relay"],
                 "prompt_exists": prompt.is_file(),
-                "budget": (self._latest("budget") or {}).get("payload", {}).get("budget", {})}
+                "budget": (budget or {}).get("payload", {}).get("budget", {})}
 
     def swap(self, role, spec):
         if role not in ("director", "worker", "judge"):
@@ -111,10 +127,16 @@ class Cockpit:
             info = self.router.swap(role, spec)
         except Exception as exc:
             return False, str(exc)
+        self.refresh_catalog()
         return True, info.__dict__
 
-    def start(self, goal, project=None):
-        """Start a run in a thread. Refuses while one is in flight, which is the cap."""
+    def start(self, goal, project=None, test_command=None):
+        """Start a run in a thread. Refuses while one is in flight, which is the cap.
+
+        `test_command` is per run because it belongs to the project, not to the harness: the cockpit
+        lets the operator declare it next to the goal, so a project without one is a visible gap
+        (`tests = not configured`) instead of a silent green.
+        """
         goal = str(goal or "").strip()
         if not goal:
             return False, "a goal is required"
@@ -125,14 +147,23 @@ class Cockpit:
         root = self.config.default_root
         if project:
             candidate = self.config.workspace / str(project)
-            if candidate.is_dir():
-                root = candidate
-        thread = threading.Thread(target=self._execute, args=(goal, root), daemon=True)
-        thread.start()
+            if not candidate.is_dir():
+                with self._lock:
+                    self._running = False
+                return False, "project not found under %s: %s" % (self.config.workspace, project)
+            root = candidate
+        thread = threading.Thread(target=self._execute, args=(goal, root, test_command), daemon=True)
+        try:
+            thread.start()
+        except RuntimeError as exc:  # the thread could not start: never leave the cap held
+            with self._lock:
+                self._running = False
+            return False, "could not start the run: %s" % exc
         return True, {"goal": goal, "root": str(root)}
 
-    def _execute(self, goal, root):
-        run_config = replace(self.config, default_root=root)
+    def _execute(self, goal, root, test_command=None):
+        run_config = replace(self.config, default_root=root,
+                             test_command=test_command or self.config.test_command)
         relay = SessionRelay(root, goal=goal, config=run_config, bus=self.bus)
         relay.start()
         triad = Triad(self.router, run_config, registry=default_registry(root, run_config),
@@ -220,7 +251,8 @@ class Handler(BaseHTTPRequestHandler):
         parsed = urlparse(self.path)
         body = self._body()
         if parsed.path == "/api/run":
-            ok, payload = self.cockpit.start(body.get("goal"), body.get("project"))
+            ok, payload = self.cockpit.start(body.get("goal"), body.get("project"),
+                                             body.get("test_command"))
             if ok:
                 return self._json(202, dict(payload, ok=True))
             busy = "in flight" in str(payload)

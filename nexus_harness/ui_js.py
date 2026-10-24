@@ -48,23 +48,27 @@ function paint(stateObj) {
   const run = state.run || {};
   const relay = state.relay || {};
   const budget = (run.budget && run.budget.state) || relay.budget || {};
-  const used = budget.used || 0, limit = budget.limit || 1;
+  const used = budget.used || 0, limit = budget.limit || 0;
   const ratio = budget.ratio == null ? 0 : Math.min(1, budget.ratio);
   $("budget-fill").style.width = (ratio * 100).toFixed(1) + "%";
   $("budget-mark").style.left = ((budget.threshold || 0.7) * 100).toFixed(1) + "%";
-  $("budget-text").textContent = budget.state === "unmeasured" && !used
+  $("budget-text").textContent = !limit
     ? "presupuesto: unmeasured"
     : `presupuesto: ${used}/${limit} tokens (${(ratio * 100).toFixed(0)}%) · relevo a ${((budget.threshold || .7) * 100).toFixed(0)}%`;
-  $("session-id").textContent = relay.session ? relay.session.id : "—";
+  const sid = typeof relay.session === "string" ? relay.session
+              : (relay.session && relay.session.id) || "";
+  $("session-id").textContent = sid || "—";
   $("relay-tag").textContent = relay.prompt_exists ? "prompt listo" : "";
-  $("relay").textContent = relay.session
-    ? `${relay.session.id} · ${(relay.sessions || []).length} vivas · ${(relay.handovers || []).length} relevos`
+  $("relay").textContent = sid
+    ? `${sid} · ${(relay.sessions || []).length} sesiones · ${(relay.handovers || []).length} relevos`
     : "sin sesión activa";
   $("sessions").innerHTML = (relay.sessions || []).map((s) => `<li>${esc(s)}</li>`).join("");
   $("status").textContent = state.running ? "ejecutando" : (run.exit === 0 ? "verde" : run.exit ? "rojo" : "en reposo");
   $("status").className = "pill " + (state.running ? "warn" : run.exit === 0 ? "ok" : run.exit ? "bad" : "info");
   $("run").disabled = !!state.running;
-  $("run-meta").textContent = run.goal ? `exit ${run.exit} · ${run.steps || 0} pasos · ${run.repairs || 0} reparaciones` : "sin ejecución";
+  $("run-meta").textContent = run.goal
+    ? `exit ${run.exit} · ${run.steps || 0} pasos · ${run.repairs || 0} reparaciones · ${(run.root || "").split(/[\\/]/).pop()}`
+    : "sin ejecución";
   if (run.verdict) {
     const checks = (run.verdict.checks || []).map((c) =>
       `<span class="pill ${c.ok ? "ok" : "bad"}">${esc(c.name)}${c.exit == null ? "" : " " + c.exit}</span>`).join(" ");
@@ -137,7 +141,8 @@ async function poll() {
 async function startRun() {
   const goal = $("goal").value.trim();
   if (!goal) { $("goal").focus(); return; }
-  const body = JSON.stringify({goal, project: $("project").value});
+  const body = JSON.stringify({goal, project: $("project").value,
+                               test_command: $("test-command").value.trim()});
   const {ok, data} = await getJSON("/api/run", {method: "POST", headers: {"Content-Type": "application/json"}, body});
   if (!ok) { addRow("worker.error", data.reason || "no se pudo arrancar", {}); return; }
   $("feed").innerHTML = "";

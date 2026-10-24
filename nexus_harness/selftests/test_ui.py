@@ -37,7 +37,7 @@ def _call(base, path, payload=None, timeout=10):
 
 def test_endpoints(failures):
     with TempProject({"calc.py": "def add(a, b):\n    return a + b\n"}) as root:
-        config = HarnessConfig(default_root=root, workspace=root, test_command=TEST_COMMAND,
+        config = HarnessConfig(default_root=root, workspace=root, test_command=None,
                                roles={"director": "fake:d", "worker": "fake:w", "judge": "fake:j"},
                                host="127.0.0.1", port=0, lang="es", secrets={})
         worker = ScriptedProvider([reply("no toco nada, ya suma"), reply("confirmado")])
@@ -64,7 +64,11 @@ def test_endpoints(failures):
             check("no secret leaks into the page state", "TYPESAFE_API_KEY" in body, False, failures)
             status, _body = _call(base, "/api/run", {"goal": ""})
             check("an empty goal is a 400, not a queue", status, 400, failures)
-            status, body = _call(base, "/api/run", {"goal": "deja calc.py sumando"})
+            status, _body = _call(base, "/api/run", {"goal": "x", "project": "no-existe"})
+            check("a project that is not there is refused", status, 400, failures)
+            check("and the lock was released", cockpit._running, False, failures)
+            status, body = _call(base, "/api/run", {"goal": "deja calc.py sumando",
+                                                    "test_command": TEST_COMMAND})
             check("a run is accepted", status, 202, failures)
             deadline = time.time() + 25
             result = None
@@ -78,6 +82,11 @@ def test_endpoints(failures):
             check("the run finished and is published", result is not None, True, failures)
             if result:
                 check("the run is green", result["run"]["exit"], 0, failures)
+                checks = {row["name"]: row for row in result["run"]["verdict"]["checks"]}
+                check("the per-run test command reached the gate",
+                      checks.get("tests", {}).get("ok"), True, failures)
+                check("and it is not the empty 'not configured' pass",
+                      checks.get("tests", {}).get("blocking"), True, failures)
                 check("the plan is in the state", bool(result["run"].get("plan")), True, failures)
                 check("skills were injected", bool(result["run"].get("skills")), True, failures)
             _status, body = _call(base, "/api/events?since=0")

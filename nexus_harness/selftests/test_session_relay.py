@@ -100,6 +100,42 @@ def test_three_phases_cross_a_cut(failures):
         check("the cockpit saw the relay", "session.relay" in [event["kind"] for event in bus.all()],
               True, failures)
         check("and the worker kept working after it", len(worker.calls) >= 3, True, failures)
+        last = relay.store.load(relay.store.ids()[-1]) or {}
+        check("the final session was closed with the run's exit",
+              (last.get("status"), last.get("exit")), ("closed", 0), failures)
+
+
+def test_relay_on_a_tool_call_leaves_no_orphan(failures):
+    """A handover that lands on a reply asking for a tool must not answer that call in the new session.
+
+    An orphan `tool` message with no `tool_calls` in front of it is rejected by every OpenAI-shaped
+    server, so the next session would start with a 400 instead of a prompt.
+    """
+    with TempProject({"calc.py": "def add(a, b):\n    return a + b\n"}) as root:
+        config = HarnessConfig(default_root=root, test_command=TEST_COMMAND, max_steps=3,
+                               max_repairs=1, budget_limit=100, relay_threshold=0.70,
+                               roles={"director": "fake:d", "worker": "fake:w",
+                                      "judge": "fake:j"}, lang="es", temperature=0.0,
+                               secrets={})
+        worker = ScriptedProvider([
+            reply(tools=[("c1", "read_file", {"path": "calc.py"})], prompt=60, completion=20),
+            reply("segunda fase ya en la sesión nueva", prompt=1, completion=0)])
+        judge = ScriptedProvider([reply('{"verdict": "approve", "reason": "verde"}')] * 2)
+        router = FakeRouter(workers=worker, judge=judge)
+        bus = Bus()
+        relay = SessionRelay(root, goal="dos fases", config=config, bus=bus, phases=PHASES[:2])
+        relay.start()
+        triad = Triad(router, config, registry=default_registry(root, config),
+                      gate=Gate(root, config), judge=Judge(router, "es"),
+                      skills=ScriptedSkills(), bus=bus, relay=relay)
+        result = triad.run("dos fases", phases=PHASES[:2])
+        check("the run still closes green", result.ok, True, failures)
+        check("one handover happened", len(relay.handovers), 1, failures)
+        roles = [message["role"] for message in worker.calls[1]["messages"]]
+        check("the new session starts with a system and a user message only", roles,
+              ["system", "user"], failures)
+        check("and the drop is on the record",
+              "worker.relay" in [event["kind"] for event in bus.all()], True, failures)
 
 
 def _closed_phases(root):
@@ -116,4 +152,5 @@ def run():
     test_meter(failures)
     test_store(failures)
     test_three_phases_cross_a_cut(failures)
+    test_relay_on_a_tool_call_leaves_no_orphan(failures)
     return failures

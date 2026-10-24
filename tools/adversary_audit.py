@@ -9,6 +9,7 @@ cannot be reached -- "could not verify" is a result, and a green-looking audit t
 """
 import argparse
 import json
+import re
 import sys
 from pathlib import Path
 
@@ -41,20 +42,36 @@ def audit(router, path, spec_role="worker"):
               "Recuerda: solo defectos reales, en JSON." % (path, source.count("\n") + 1, source))
     reply = router.role(spec_role).chat(
         [Message(role="system", content=SYSTEM), Message(role="user", content=prompt)],
-        temperature=0.1, max_tokens=2000)
+        temperature=0.1, max_tokens=3000)
     return reply.text or reply.reasoning, reply
 
 
+OBJECT = re.compile(r'\{[^{}]*"severity"[^{}]*\}', re.S)
+
+
 def parse(text):
-    """The JSON array inside an answer, or `None` when the model did not keep its side."""
+    """The findings in an answer: the JSON array, or the individual objects when the array is cut.
+
+    A reviewer that gets truncated mid-array still produced findings, and throwing them away because
+    the brackets do not close would report "clean" for an answer that was never read.
+    """
     start, end = text.find("["), text.rfind("]")
-    if start == -1 or end <= start:
-        return None
-    try:
-        data = json.loads(text[start:end + 1])
-    except ValueError:
-        return None
-    return data if isinstance(data, list) else None
+    if start != -1 and end > start:
+        try:
+            data = json.loads(text[start:end + 1])
+        except ValueError:
+            data = None
+        if isinstance(data, list):
+            return data
+    salvaged = []
+    for match in OBJECT.finditer(text):
+        try:
+            row = json.loads(match.group(0))
+        except ValueError:
+            continue
+        if isinstance(row, dict) and row.get("what"):
+            salvaged.append(row)
+    return salvaged or None
 
 
 def main(argv=None):

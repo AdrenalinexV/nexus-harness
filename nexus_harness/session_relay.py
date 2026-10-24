@@ -23,6 +23,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 
 PROTOCOL = "nexus.harness.session/1"
+MAX_PROMPT_CHARS = 12000
 SESSIONS_REL = Path(".nexus") / "harness" / "sessions"
 PROMPT_REL = Path(".nexus") / "NEXT_SESSION_PROMPT.md"
 NEXUS_SOURCE = Path(os.environ.get("NEXUS_PROTOCOL") or r"C:\Proyectos\NexusProtocol")
@@ -130,6 +131,11 @@ class SessionStore:
             return None
         self.archive_dir.mkdir(parents=True, exist_ok=True)
         target = self.archive_dir / source.name
+        if target.exists():
+            # Never overwrite an archived session: an id is unique, and a lost transcript is a lost
+            # relay. A timestamp keeps both instead of choosing.
+            target = self.archive_dir / ("%s.%s.json" % (source.stem,
+                                                         utc_now().replace(":", "")))
         session = self.load(session_id) or {}
         session["status"] = "archived"
         session["closed_at"] = utc_now()
@@ -168,6 +174,7 @@ class SessionRelay:
         self.session = {}
         self.phases = list(phases or [])
         self.handovers = []
+        self.last_warning = ""
 
     def _emit(self, kind, detail="", **payload):
         if self.bus is not None:
@@ -216,17 +223,26 @@ class SessionRelay:
         return result
 
     def _protocol_prompt(self):
+        """The protocol's prompt, or "" when it cannot be had. `last_warning` says which it was."""
         relay = _protocol_relay()
         if relay is None:
+            self.last_warning = "nexus relay not importable"
             return ""
         try:
-            relay.session(str(self.root), used=self.meter.used, limit=self.meter.limit)
+            recorded = relay.session(str(self.root), used=self.meter.used, limit=self.meter.limit)
+            if not recorded.get("ok"):
+                self.last_warning = "relay.session refused: %s" % recorded.get("reason", "?")
+                self._emit("relay.warning", self.last_warning)
+                return ""
             state = relay.load(str(self.root))
             if state is None:
+                self.last_warning = "relay state unreadable after session()"
+                self._emit("relay.warning", self.last_warning)
                 return ""
             return relay.build_prompt(str(self.root), state)
-        except Exception as exc:  # the relay must still hand over when the protocol cannot be read
-            self._emit("relay.warning", "%s: %s" % (type(exc).__name__, exc))
+        except Exception as exc:  # resilience is the point: hand over even when the protocol fails
+            self.last_warning = "%s: %s" % (type(exc).__name__, exc)
+            self._emit("relay.warning", self.last_warning)
             return ""
 
     def _fallback_prompt(self, reason):
@@ -250,6 +266,12 @@ class SessionRelay:
                 prompt += "\n## Trabajo hasta ahora\n%s\n" % str(summary)[:2000]
             if files:
                 prompt += "\n## Ficheros tocados\n%s\n" % ", ".join(sorted(set(files))[:40])
+        if len(prompt) > MAX_PROMPT_CHARS:
+            # A prompt that does not fit the next session's window would start it truncated by the
+            # provider, which is worse than starting it with a declared cut.
+            prompt = (prompt[:MAX_PROMPT_CHARS]
+                      + "\n\n... (prompt recortado en %d caracteres: lee .nexus/RELAY_STATE.json para "
+                        "el plan completo)\n" % (len(prompt) - MAX_PROMPT_CHARS))
         path = self.root / PROMPT_REL
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text(prompt, encoding="utf-8")
@@ -269,9 +291,21 @@ class SessionRelay:
                    handover=handover.as_dict())
         return handover
 
+    def finish(self, exit_code):
+        """Close the active session with the exit the run produced. A session is not "active" forever:
+        a file that still says `active` after the run ended is the harness lying to its own cockpit."""
+        if not self.session:
+            return None
+        self.session["status"] = "closed"
+        self.session["closed_at"] = utc_now()
+        self.session["exit"] = int(exit_code)
+        self.store.save(self.session)
+        self._emit("session.finish", self.session["id"], exit=int(exit_code))
+        return self.session
+
     def status(self):
         return {"session": self.session, "budget": self.meter.state(),
-                "sessions": self.store.ids(),
+                "sessions": self.store.ids(), "warning": self.last_warning,
                 "handovers": [item.as_dict() for item in self.handovers],
                 "prompt": str(self.root / PROMPT_REL),
                 "prompt_exists": (self.root / PROMPT_REL).is_file()}

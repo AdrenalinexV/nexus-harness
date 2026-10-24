@@ -28,7 +28,10 @@ HTML = """<!doctype html>
   <section class="panel">
     <h2>Cabina de trabajo <span class="tag" id="run-meta">sin ejecución</span></h2>
     <div class="goal">
-      <textarea id="goal" placeholder="Objetivo para la tríada: qué debe quedar hecho y cómo se sabrá…"></textarea>
+      <div style="flex:1;display:flex;flex-direction:column;gap:8px">
+        <textarea id="goal" placeholder="Objetivo para la tríada: qué debe quedar hecho y cómo se sabrá…"></textarea>
+        <input id="test-command" placeholder="comando que demuestra el trabajo (opcional; sin él, tests = no configurado)">
+      </div>
       <div style="display:flex;flex-direction:column;gap:8px">
         <button id="run">Ejecutar</button>
         <button id="stop" class="ghost" disabled>En cola…</button>

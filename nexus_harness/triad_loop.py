@@ -50,6 +50,7 @@ Corrige lo que señala y deja el repositorio en verde otra vez."""
 @dataclass
 class RunResult:
     goal: str = ""
+    root: str = ""
     ok: bool = False
     exit: int = 10
     summary: str = ""
@@ -60,14 +61,16 @@ class RunResult:
     phases: list = field(default_factory=list)
     verdict: dict = field(default_factory=dict)
     judgement: dict = field(default_factory=dict)
+    budget: dict = field(default_factory=dict)
     started: str = ""
     finished: str = ""
 
     def as_dict(self):
-        return {"goal": self.goal, "ok": self.ok, "exit": self.exit, "summary": self.summary,
+        return {"goal": self.goal, "root": self.root, "ok": self.ok, "exit": self.exit, "summary": self.summary,
                 "steps": self.steps, "repairs": self.repairs, "touched": self.touched,
                 "sessions": self.sessions, "phases": self.phases, "verdict": self.verdict,
-                "judgement": self.judgement, "started": self.started, "finished": self.finished}
+                "judgement": self.judgement, "budget": self.budget,
+                "started": self.started, "finished": self.finished}
 
 
 def _now():
@@ -135,8 +138,12 @@ class Triad:
                        tool_calls=[call.name for call in reply.tool_calls], step=step)
             messages.append(reply.as_message())
             self._absorb(reply)
-            if self.relay is not None:
-                self._maybe_relay(messages, text)
+            if self.relay is not None and self._maybe_relay(messages, text):
+                # The session changed under this reply. Its tool calls belong to the old transcript and
+                # must not be answered here: a `tool` message with no matching `tool_calls` in front is
+                # rejected by every OpenAI-shaped server. The new session re-plans from its prompt.
+                self._emit("worker.relay", "sesión relevada: las llamadas pendientes se descartan")
+                break
             if not reply.wants_tools:
                 break
             for call in reply.tool_calls:
@@ -156,13 +163,15 @@ class Triad:
             self.relay.observe(reply.usage)
 
     def _maybe_relay(self, messages, text):
+        """Replace the conversation with the next session's prompt. True when it happened."""
         if not self.relay.should_hand_over():
-            return
+            return False
         handover = self.relay.hand_over(reason="budget", summary=text, files=self.touched)
         messages[:] = [Message(role="system", content=self._system(WORKER_PROMPT, self.touched)),
                        Message(role="user", content=handover.prompt)]
         self._emit("session.relay", "%s -> %s" % (handover.from_session, handover.to_session),
                    handover=handover.as_dict())
+        return True
 
     # -- verdicts ---------------------------------------------------------------------------
     def _verify(self):
@@ -189,7 +198,7 @@ class Triad:
         steps_total, repairs = 0, 0
         max_steps = int(max_steps or self.config.max_steps)
         max_repairs = int(max_repairs if max_repairs is not None else self.config.max_repairs)
-        result = RunResult(goal=goal, started=_now())
+        result = RunResult(goal=goal, root=str(self.config.default_root), started=_now())
         self._emit("run.start", goal, root=str(self.config.default_root))
         self._emit("router.ready", self.router.info("worker").model,
                    roles={role: self.router.info(role).__dict__ for role in ("director", "worker", "judge")})
@@ -251,6 +260,8 @@ class Triad:
         result.steps, result.repairs = steps_total, repairs
         result.touched, result.finished = sorted(self.touched), _now()
         if self.relay is not None:
+            self.relay.finish(result.exit)
+            result.budget = self.relay.meter.state()
             result.sessions = self.relay.store.ids()
         self._emit("run.end", "exit %s" % result.exit, ok=result.ok, summary=result.summary[:600])
         return result

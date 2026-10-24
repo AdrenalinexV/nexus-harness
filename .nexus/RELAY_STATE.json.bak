@@ -2,7 +2,7 @@
   "protocol": "nexus.relay/1",
   "goal": "Construir Nexus-Harness: harness autonomo nativo con gobernanza Nexus",
   "created_at": "2026-10-24T17:11:58Z",
-  "updated_at": "2026-10-24T17:20:30Z",
+  "updated_at": "2026-10-24T17:48:11Z",
   "phases": [
     {
       "id": "f1",
@@ -67,10 +67,21 @@
       "id": "f4",
       "title": "Cabina web/desktop + CLI",
       "items": [],
-      "status": "pending",
-      "evidence": [],
-      "note": "",
-      "closed_at": null
+      "status": "done",
+      "evidence": [
+        {
+          "command": "python -m nexus_harness selftest",
+          "exit": 0,
+          "at": "2026-10-24T17:23:06Z"
+        },
+        {
+          "command": "curl /api/health",
+          "exit": 0,
+          "at": "2026-10-24T17:23:06Z"
+        }
+      ],
+      "note": "cabina en 127.0.0.1:8765, 7 suites verdes",
+      "closed_at": "2026-10-24T17:23:06Z"
     },
     {
       "id": "f5",
@@ -82,7 +93,7 @@
       "closed_at": null
     }
   ],
-  "active": "f4",
+  "active": "f5",
   "checkpoints": [
     {
       "phase": "f1",
@@ -98,15 +109,20 @@
       "phase": "f3",
       "at": "2026-10-24T17:20:30Z",
       "evidence": 1
+    },
+    {
+      "phase": "f4",
+      "at": "2026-10-24T17:23:06Z",
+      "evidence": 2
     }
   ],
   "queue": [],
   "session": {
     "unit": "turns",
-    "used": 0,
-    "limit": null,
-    "last_ratio": null,
-    "state": "unmeasured",
+    "used": 44111,
+    "limit": 60000,
+    "last_ratio": 0.735,
+    "state": "ok",
     "last_commit": null
   }
 }

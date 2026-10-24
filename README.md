@@ -43,6 +43,8 @@ never from this repository. The judge is deliberately a different model from the
 
 Design and module map: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 What was learned from Hermes / Aider / OpenCode: [docs/FORENSICS.md](docs/FORENSICS.md).
+What was actually run, with exit codes: [docs/VERIFICATION.md](docs/VERIFICATION.md).
+What the adversarial reviewer found and what was rejected: [docs/AUDIT.md](docs/AUDIT.md).
 
 Requirements: Python 3.11+ and `C:\Proyectos\NexusProtocol` on disk (override with `NEXUS_PROTOCOL`).
 No third-party packages.

@@ -2,7 +2,7 @@
   "protocol": "nexus.relay/1",
   "goal": "Construir Nexus-Harness: harness autonomo nativo con gobernanza Nexus",
   "created_at": "2026-10-24T17:11:58Z",
-  "updated_at": "2026-10-24T17:23:06Z",
+  "updated_at": "2026-10-24T17:49:05Z",
   "phases": [
     {
       "id": "f1",
@@ -119,10 +119,10 @@
   "queue": [],
   "session": {
     "unit": "turns",
-    "used": 0,
-    "limit": null,
-    "last_ratio": null,
-    "state": "unmeasured",
+    "used": 42471,
+    "limit": 60000,
+    "last_ratio": 0.708,
+    "state": "ok",
     "last_commit": null
   }
 }
