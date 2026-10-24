@@ -181,8 +181,9 @@ class Chat:
         if len(ready) > 1:
             self._emit("tool.parallel", "%d llamadas en paralelo" % len(ready),
                        names=[call.name for call, _ in ready])
-            for observation, (_call, index) in zip(parallel_reads(self.registry, ready, self._stop),
-                                                   ready):
+            workers = int(getattr(self.config, "tool_workers", 4) or 4)
+            for observation, (_call, index) in zip(
+                    parallel_reads(self.registry, ready, self._stop, workers), ready):
                 results[index] = observation
         elif ready:
             call, index = ready[0]

@@ -334,5 +334,10 @@ def apply_patch(root, patch_text):
     return result.text, result.as_meta() if result.ok else {"files": []}
 
 
-HANDLERS = {"apply_patch": lambda root, args, config: apply_patch(
-    root, str(args.get("patch", args.get("content", "")) or ""))}
+def _handler(root, args, config):
+    return apply_patch(root, str(args.get("patch", args.get("content", "")) or ""))
+
+
+# `apply_patch` is what the schema advertises; `patch_v4a` is the name the protocol documents, kept as
+# an alias so either spelling works when a model reaches for it directly.
+HANDLERS = {"apply_patch": _handler, "patch_v4a": _handler}
