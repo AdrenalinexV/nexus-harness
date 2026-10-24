@@ -18,10 +18,13 @@ header{display:flex;gap:14px;align-items:center;padding:10px 16px;border-bottom:
   background:linear-gradient(180deg,#101520,#0d1219);position:sticky;top:0;z-index:5;flex-wrap:wrap}
 .brand{font-weight:700;letter-spacing:.3px}
 .brand span{color:var(--accent)}
-.controls{display:flex;gap:10px;align-items:center;margin-left:auto;flex-wrap:wrap}
-label.field{display:flex;flex-direction:column;gap:2px;font-size:11px;color:var(--dim)}
+.controls{display:flex;gap:10px;align-items:flex-end;margin-left:auto;flex-wrap:wrap}
+label.field{display:flex;flex-direction:column;gap:2px;font-size:11px;color:var(--dim);min-width:0}
+label.field select{max-width:250px}
 select,input,textarea{background:var(--panel-2);color:var(--ink);border:1px solid var(--line);
-  border-radius:7px;padding:6px 8px;font:13px var(--mono);outline:none}
+  border-radius:7px;padding:6px 8px;font:13px var(--mono);outline:none;
+  text-overflow:ellipsis;white-space:nowrap}
+label.field select{width:250px}
 select:focus,input:focus,textarea:focus{border-color:var(--accent-2)}
 main{display:grid;grid-template-columns:minmax(0,1.55fr) minmax(320px,1fr);gap:14px;padding:14px 16px 40px}
 @media (max-width:980px){main{grid-template-columns:1fr}}

@@ -109,6 +109,20 @@ def test_unready_role_is_reported(failures):
               "worker.blocked" in [event["kind"] for event in bus.all()], True, failures)
 
 
+def test_closing_summary_when_steps_run_out(failures):
+    """14 steps of tool calls and no sentence leaves the judge nothing to approve: ask for two lines."""
+    with TempProject({"calc.py": "def add(a, b):\n    return a + b\n"}) as root:
+        worker = ScriptedProvider([reply(tools=[("c1", "read_file", {"path": "calc.py"})]),
+                                   reply("Resumen: no hacía falta cambiar nada; lo demuestra el test.")])
+        triad, bus, _skills = build(root, worker, max_steps=1)
+        result = triad.run("verifica que add suma")
+        check("the run still closes green", result.ok, True, failures)
+        check("the summary is not empty", bool(result.summary), True, failures)
+        check("the closing call was offered no tools", worker.calls[1]["tools"], [], failures)
+        check("and it is on the record", "worker.close" in [event["kind"] for event in bus.all()],
+              True, failures)
+
+
 def test_gate_sees_a_same_size_fix(failures):
     """The trap: `a - b` -> `a + b` keeps the size, so stale bytecode passes Python's cache check."""
     import os
@@ -131,6 +145,7 @@ def check(name, got, expected, failures):
 def run():
     failures = []
     for test in (test_repair_then_green, test_stuck_worker_ends_red, test_judge_rejects_once,
-                 test_unready_role_is_reported, test_gate_sees_a_same_size_fix):
+                 test_unready_role_is_reported, test_closing_summary_when_steps_run_out,
+                 test_gate_sees_a_same_size_fix):
         test(failures)
     return failures

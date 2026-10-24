@@ -46,11 +46,12 @@ and **Ejecutar** clicked. The DOM afterwards, read back from the live page:
 
 ```
 status : verde
-meta   : exit 0 · 3 pasos · 0 reparaciones · NexusSandbox
-gate   : exit 0  lint 0  line_law 0  tests 0
-judge  : approve — "El cambio de a - b a a + b en calc.py y el test con exit code 0 demuestran ..."
-skills : nexus-verification, nexus-clean-code, nexus-appsec, nexus-architecture
-rows   : 25 events in the feed
+meta   : exit 0 · 5 pasos · 0 reparaciones · NexusSandbox
+gate   : exit 0  lint OK  line_law OK  tests OK
+judge  : approve
+skills : nexus-verification, nexus-clean-code, nexus-appsec, nexus-architecture (≈699 tokens)
+budget : 11562/60000 tokens (19 %) · relevo a 70 %
+feed   : OBRERO, TOOL, SKILLS, PRESUPUESTO, GATE, JUEZ — 25+ events
 ```
 
 And the project afterwards: `calc.py` contains `return a + b`, `python -c "import calc; assert

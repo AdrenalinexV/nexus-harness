@@ -42,6 +42,9 @@ REPAIR_PROMPT = """El gate ha devuelto ROJO (exit 10). Esto es lo que ha observa
 
 Repara exactamente eso con las herramientas y vuelve a dejarlo. No expliques: actúa."""
 
+CLOSE_PROMPT = """Se acabó el presupuesto de pasos. NO llames herramientas. Responde con DOS frases:
+qué ficheros cambiaste y con qué comando se demuestra que funciona."""
+
 JUDGE_REJECT = """El Juez rechazó el trabajo: %s
 
 Corrige lo que señala y deja el repositorio en verde otra vez."""
@@ -156,7 +159,26 @@ class Triad:
                            result=observation.text[:600])
         else:
             self._emit("worker.limit", "max_steps=%d reached" % max_steps)
+            text = self._closing_summary(messages, text)
         return text, steps
+
+    def _closing_summary(self, messages, fallback):
+        """One last call without tools.
+
+        A run that ends on a tool call leaves the judge an empty summary, and an empty summary is a
+        legitimate rejection: there is nothing to approve. Asking for two sentences costs one cheap
+        call and turns "14 steps and no word" into a verdict someone can read.
+        """
+        try:
+            reply = self._ask("worker", list(messages) + [Message(role="user", content=CLOSE_PROMPT)],
+                              tools=None, max_tokens=400)
+        except Exception as exc:  # the summary is a courtesy; its absence is not a crash
+            self._emit("worker.error", "closing summary failed: %s: %s" % (type(exc).__name__, exc))
+            return fallback
+        self._absorb(reply)
+        if reply.text:
+            self._emit("worker.close", reply.text[:400])
+        return reply.text or fallback
 
     def _absorb(self, reply):
         if self.relay is not None:

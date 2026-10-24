@@ -47,7 +47,7 @@ function paint(stateObj) {
   state = stateObj;
   const run = state.run || {};
   const relay = state.relay || {};
-  const budget = (run.budget && run.budget.state) || relay.budget || {};
+  const budget = (run.budget && run.budget.limit) ? run.budget : (relay.budget || {});
   const used = budget.used || 0, limit = budget.limit || 0;
   const ratio = budget.ratio == null ? 0 : Math.min(1, budget.ratio);
   $("budget-fill").style.width = (ratio * 100).toFixed(1) + "%";
