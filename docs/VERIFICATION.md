@@ -198,8 +198,8 @@ Measured on 2026-10-24, in this order. Everything below is an observed exit code
 
 ```
 $ python tools/verify.py
-lint      exit 0   files=63 findings=0 max_lines=400
-selftest  exit 0   suites=15 failures=0
+lint      exit 0   files=65 findings=0 max_lines=400
+selftest  exit 0   suites=16 failures=0
 verify: GREEN
 
 $ python -c "...rules_lint.lint_repo('C:/Proyectos/NexusProtocol')"
@@ -214,7 +214,7 @@ $ dist/nexus-harness-engine.exe selftest    -> suites=15 failures=0      (frozen
 
 $ "dist/NexusHarness-Setup-0.3.0.exe" /S /D=%LOCALAPPDATA%\NexusHarnessVerify   -> exit 0
   installed engine --version                 -> nexus-harness 0.3.0
-  installed engine selftest                  -> suites=15 failures=0
+  installed engine selftest                  -> suites=16 failures=0
   GET /api/state                             -> version "0.3.0"
   GET /api/onboarding                        -> lmstudio ready (22 models), ollama ready (24),
                                                 31 projects, keys: ["TYPESAFE_API_KEY"]
@@ -226,7 +226,16 @@ $ "dist/NexusHarness-Setup-0.3.0.exe" /S /D=%LOCALAPPDATA%\NexusHarnessVerify   
   uninstall.exe /S                           -> exit 0, the directory is removed with nothing locked
 ```
 
-The live turn, through a real engine process on `127.0.0.1`, against LM Studio (`kat-coder-35b-a3b`):
+The orphan guarantee, measured with the frozen engine (a parent that declares itself, then dies):
+
+```
+parent declares NEXUS_HARNESS_PARENT=<its pid> and spawns the engine
+  engine served while the parent lived      -> True
+  parent killed
+  engine left on its own                    -> True, in ~4.1 s
+```
+
+And the live turn, through a real engine process on `127.0.0.1`, against LM Studio (`kat-coder-35b-a3b`):
 
 ```
 POST /api/chat  "Usa la herramienta write_file para crear notas.md en la raiz con una sola linea: hola"

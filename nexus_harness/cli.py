@@ -71,9 +71,12 @@ def cmd_run(args):
 
 
 def cmd_serve(args):
+    from . import sidecar
     from .cockpit import Cockpit
     from .ui import serve
     config = _config(args)
+    # A shell-launched engine leaves when the shell does; a CLI `serve` (no token) keeps running.
+    sidecar.arm_if_sidecar()
     serve(Cockpit(config), args.host, args.port, os.environ.get("NEXUS_HARNESS_TOKEN"))
     return 0
 

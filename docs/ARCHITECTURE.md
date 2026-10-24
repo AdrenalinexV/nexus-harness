@@ -54,6 +54,7 @@ doing two jobs.
 | `onboarding.py` | What this machine has (servers, models, project) and one screen to accept it. | 240 |
 | `vault.py` | Cloud keys at rest: DPAPI on Windows, 0600 elsewhere, never read back out. | 140 |
 | `mcp_client.py` | MCP over stdio: hidden children, handshake, tools, deadlines, namespaced calls. | 320 |
+| `sidecar.py` | A shell-launched engine leaves when the shell does: no orphan holds its own `.exe`. | 140 |
 | `panels.py` | The four product surfaces as thin, testable seams over those modules. | 160 |
 | `web/panels.js` | Attachments, the onboarding modal, the skills editor and the connectors list. | 290 |
 | `toolbox/web.py` | Fetch a page as text without a browser or an API key. | 130 |

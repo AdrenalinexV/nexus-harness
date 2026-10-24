@@ -7,6 +7,9 @@ __pycache__/
 dist/
 .nexus-serve.log
 .verify-port
+.sidecar-test.log
+.diag.log
+.diag2.log
 .build/
 apps/desktop/node_modules/
 apps/desktop/src-tauri/target/

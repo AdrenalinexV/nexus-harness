@@ -61,7 +61,9 @@ for all of them -- the 400-line law, a parser (`ast` / `json` / `tomllib` / YAML
   connected and how many tools it contributes.
 - **System tray and a clean exit.** The X hides the window into the tray (Abrir / Estado del motor /
   Salir completamente); leaving asks the engine to exit over `/api/shutdown` and falls back to
-  `taskkill /T /F`, so no orphan keeps the next installer out.
+  `taskkill /T /F`. The engine also watches the shell's own PID (`NEXUS_HARNESS_PARENT`), so even a
+  crash or a Task Manager kill cannot leave one behind holding its `.exe` -- which is what silently
+  blocked the next install.
 
 ## The cockpit
 

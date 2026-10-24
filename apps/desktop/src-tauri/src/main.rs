@@ -146,6 +146,8 @@ fn main() {
                 command
                     .args(["serve", "--host", "127.0.0.1", "--port", &port.to_string()])
                     .env("NEXUS_HARNESS_TOKEN", &token)
+                    // The engine watches THIS pid: a one-file build cannot see past its bootloader.
+                    .env("NEXUS_HARNESS_PARENT", std::process::id().to_string())
                     .stdout(Stdio::null())
                     .stderr(Stdio::null());
                 #[cfg(windows)]
