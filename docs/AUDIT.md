@@ -38,6 +38,8 @@ now have a deterministic regression test.
 | "`getattr(config, 'budget_limit')` silently ignores a dict config" | The contract is a `HarnessConfig` (typed, constructed by `config.load`). Accepting a dict silently would be the defect; there is no code path that passes one. |
 | "`next_id` has a race under threads" | The harness is single-writer by design: the cockpit holds one run at a time, the bridge claims one item per tick, and the CLI is one process. A lock would protect against a concurrency model the project does not have. |
 | "`SessionStore.archive` races under threads" | Same reason. The overwrite risk that *was* real (id reuse) is fixed. |
+| "`_last_verdict_text` may raise `AttributeError` on a check without `.name`" | The only `Check` in the codebase is the dataclass in `gate.py`; both fields are required constructor arguments. A defensive `getattr` here would hide the day a different object reaches it, which is the bug worth seeing. |
+| "`next_id` sorts the sessions incorrectly" | It does not sort strings to pick the number: it parses the integer suffix of every live **and** archived id and takes the maximum. The lexical order of `ids()` is only used for display. |
 
 ## What the audit cannot tell you
 
