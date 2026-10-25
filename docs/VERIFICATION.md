@@ -19,17 +19,17 @@ verify: GREEN
 ```
 providers        OK    0.00s
 retry            OK    0.00s
-repair           OK    0.26s
-tools            OK    0.24s
-edit_v4a         OK    0.07s
-shell_session    OK    1.75s
-shell_policy     OK    0.35s
-checkpoint       OK    0.29s
-subagents        OK    0.01s
+repair           OK    0.20s
+tools            OK    0.23s
+edit_v4a         OK    0.04s
+shell_session    OK    1.65s
+shell_policy     OK    0.34s
+checkpoint       OK    0.30s
+subagents        OK    0.02s
 warning: The `fitz` API is deprecated and will be removed in future. Use `import pymupdf` instead.
-attachments      OK    0.24s
-onboarding       OK    0.12s
-mcp_client       OK    0.53s
+attachments      OK    0.16s
+onboarding       OK    0.10s
+mcp_client       OK    0.55s
 sidecar          OK    5.11s
 estado listo: 2 criterios (2 pendientes)
 a -> exit 0 (VERDE)
@@ -37,8 +37,8 @@ findings=0
 b -> exit 10 (ROJO)
 b marcado blocked
 criterio desconocido: zzz
-cerrojo ocupado: el turno de noche ya esta en marcha: pid 30996 desde 2026-10-25T11:57:20+00:00 (suite)
-no se toca nada. Si esa sesion ya no corre, el cerrojo se hereda solo; para forzarlo a mano, borra C:\Users\Vexus\AppData\Local\Temp\nightshift-lctdr2d2\.nexus\harness\nightshift.lock
+cerrojo ocupado: el turno de noche ya esta en marcha: pid 18600 desde 2026-10-25T12:00:49+00:00 (suite)
+no se toca nada. Si esa sesion ya no corre, el cerrojo se hereda solo; para forzarlo a mano, borra C:\Users\Vexus\AppData\Local\Temp\nightshift-g7ynot30\.nexus\harness\nightshift.lock
 TOCA: b — falla
   prueba: python -c "raise SystemExit(10)"
   estado: blocked (intentos 1)
@@ -46,12 +46,12 @@ a -> exit 0 (VERDE)
 findings=0
 nightshift       OK    0.55s
 context_router   OK    0.01s
-triad_loop       OK    2.50s
-session_relay    OK    1.67s
-compaction       OK    0.03s
-chat             OK    0.22s
-memory           OK    0.77s
-ui               OK    0.89s
+triad_loop       OK    2.25s
+session_relay    OK    1.39s
+compaction       OK    0.02s
+chat             OK    0.19s
+memory           OK    0.36s
+ui               OK    0.86s
 bridge           OK    0.06s
 budget           OK    0.03s
 suites=23 failures=0

@@ -23,6 +23,7 @@ import os
 from pathlib import Path
 
 RELATIVE = Path(".nexus") / "harness" / "nightshift.lock"
+ENV_OWNER = "NEXUS_NIGHTSHIFT_LOCK_OWNER"
 TTL_HORAS = 6
 
 
@@ -107,6 +108,25 @@ def _replace(path, note):
     os.replace(str(temporary), str(path))
 
 
+def claim(root, note=""):
+    """Entra en el cerrojo. Devuelve `(ruta, es_mio)`: `es_mio=False` si lo tiene un ASCENDIENTE.
+
+    Por que existe la reentrada, medido: `nightshift check installer` ejecuta la prueba del criterio, y
+    esa prueba es otro `nightshift install --check`. Sin esto, el hijo se negaba a entrar y el criterio
+    dejaba de poder medirse (exit 20, "cerrojo ocupado"). Reentrar es correcto porque el trabajo lo
+    manda el mismo dueno; y **solo suelta el que creo el fichero**, que es lo que impide que un nieto
+    deje la puerta abierta.
+    """
+    path = Path(root) / RELATIVE
+    holder = str(os.environ.get(ENV_OWNER) or "")
+    data = owner(path)
+    if holder and data and str(data.get("pid")) == holder:
+        return path, False
+    path = take(root, note=note)
+    os.environ[ENV_OWNER] = str(os.getpid())
+    return path, True
+
+
 def take(root, note=""):
     """Toma el cerrojo para `root`. Devuelve la ruta, o levanta `LockHeld` nombrando a quien lo tiene.
 
@@ -127,8 +147,10 @@ def take(root, note=""):
         return path
 
 
-def release(path):
-    """Suelta el cerrojo SOLO si es nuestro. El de otro no se toca: podria estar trabajando."""
+def release(path, mine=True):
+    """Suelta el cerrojo SOLO si lo creo este proceso. El de otro no se toca: podria estar trabajando."""
+    if not mine:
+        return False
     data = owner(path)
     if data is None or data.get("pid") != os.getpid():
         return False
@@ -168,8 +190,19 @@ def selftest(root, run_command, check):
     inherited = take(root, note="nueva")
     check("un cerrojo huerfano se hereda", owner(inherited)["pid"], os.getpid())
     check("con el motivo escrito en la nota", "heredado" in owner(inherited)["note"], True)
+    # Reentrada: el hijo del dueno entra y NO suelta. Se midio con `check installer`, cuya prueba
+    # es otro `nightshift install --check`: sin esto, el hijo se negaba y el criterio no se medía.
+    nested_path, mine = claim(root, note="hijo")
+    check("un hijo del dueno reentra sin tomar el fichero", mine, False)
+    check("y el cerrojo sigue siendo del dueno", owner(nested_path)["pid"], os.getpid())
+    check("y el hijo no lo suelta", release(nested_path, mine), False)
+    check("sigue donde estaba", nested_path.is_file(), True)
     held.write_text(dead, encoding="utf-8")
     check("el cerrojo de otro no se suelta", release(held), False)
     check("y sigue donde estaba", held.is_file(), True)
-    release(held)
+    # Y el que lo CREA si lo suelta: se hereda el huerfano (ahora es nuestro) y se suelta.
+    mine_path = take(root, note="nueva sesion")
+    check("el huerfano pasa a ser nuestro", owner(mine_path)["pid"], os.getpid())
+    check("el que lo creo si lo suelta", release(mine_path), True)
+    check("y entonces desaparece", mine_path.is_file(), False)
     return problems

@@ -31,8 +31,8 @@ TOOLS_DIR = Path(__file__).resolve().parent
 if str(TOOLS_DIR) not in sys.path:
     sys.path.insert(0, str(TOOLS_DIR))
 
-from nightshift_lock import (LockHeld, RELATIVE as LOCK_RELATIVE,  # noqa: E402
-                             release as release_lock, take as take_lock)
+from nightshift_lock import (claim, LockHeld, RELATIVE as LOCK_RELATIVE,  # noqa: E402
+                             release as release_lock)
 
 ROOT = Path(__file__).resolve().parents[1]
 RUBRIC = ROOT / ".ai" / "HARNESS_RUBRIC.json"
@@ -363,9 +363,10 @@ def main(argv=None):
         return args.func(args)
     # Solo los comandos que ESCRIBEN toman el cerrojo, y se suelta pase lo que pase: un candado que
     # sobrevive a su proceso lo hereda la sesion siguiente (con aviso), pero no se deja puesto por un
-    # `return` temprano.
+    # `return` temprano. `claim` devuelve `mine=False` cuando el cerrojo lo tiene un ASCENDIENTE: esa es
+    # la prueba de un criterio que llama a otro `nightshift` (medido con `check installer`).
     try:
-        path = take_lock(LOCK_ROOT, note="%s %s" % (args.command, getattr(args, "id", "") or ""))
+        path, mine = claim(LOCK_ROOT, note="%s %s" % (args.command, getattr(args, "id", "") or ""))
     except LockHeld as exc:
         print("cerrojo ocupado: %s" % exc)
         print("no se toca nada. Si esa sesion ya no corre, el cerrojo se hereda solo; para forzarlo a "
@@ -374,7 +375,7 @@ def main(argv=None):
     try:
         return args.func(args)
     finally:
-        release_lock(path)
+        release_lock(path, mine)
 
 
 if __name__ == "__main__":
