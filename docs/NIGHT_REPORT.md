@@ -2,9 +2,9 @@
 
 Generado por `tools/nightshift.py report` (no se escribe a mano).
 
-- fecha: 2026-10-25T12:10:28Z
-- HEAD: `683ae52`
-- iteracion: 95
+- fecha: 2026-10-25T13:37:34Z
+- HEAD: `e5e8764`
+- iteracion: 98
 - criterios: **17/17**
 
 ## Rubrica
@@ -193,15 +193,15 @@ repair           OK    0.15s
 suites=1 failures=0
 ```
 
-### installer (exit 0, 2026-10-25T12:09:51Z)
+### installer (exit 0, 2026-10-25T13:36:52Z)
 
 ```
 $ python tools/nightshift.py install --check
 sala       : C:\Users\Vexus\AppData\Local\NexusHarnessVerify (no existia)
 instalador : NexusHarness-Setup-0.3.0.exe -> exit 0
 ventana    : nexus-harness-desktop.exe subsystem=2 (2 = interfaz)
-motor      : repo     sha256=cad2d15da4da
-           : instalado sha256=cad2d15da4da
+motor      : repo     sha256=df2bfd40c1bf
+           : instalado sha256=df2bfd40c1bf
 desinstalar: exit 0
 sala       : eliminada, sin fichero bloqueado
 registro   : devuelto como estaba

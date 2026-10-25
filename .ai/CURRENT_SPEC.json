@@ -1,0 +1,32 @@
+{
+  "entry_points": [],
+  "generated_by": "nexus.gates.auto_spec",
+  "language": {
+    "counts": {
+      "javascript": 3,
+      "python": 86,
+      "rust": 2
+    },
+    "files": 86,
+    "name": "python"
+  },
+  "law": {
+    "max_lines": 400,
+    "style": "small files, deep modules"
+  },
+  "root_name": "Nexus-Harness",
+  "schema": "nexus.current_spec/1",
+  "sha256": "2c0d7fe04b83e70fd91dead44d83db46ee77a9776c8bf4c2f0530a4e8c70a3b4",
+  "tests": {
+    "command": "python -m pytest -q",
+    "configured": true,
+    "source": "pyproject.toml"
+  },
+  "top_level": [
+    "apps",
+    "docs",
+    "nexus",
+    "nexus_harness",
+    "tools"
+  ]
+}
