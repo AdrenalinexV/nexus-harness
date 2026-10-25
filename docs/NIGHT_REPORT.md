@@ -2,10 +2,10 @@
 
 Generado por `tools/nightshift.py report` (no se escribe a mano).
 
-- fecha: 2026-10-25T01:12:46Z
-- HEAD: `6412d2c`
-- iteracion: 15
-- criterios: **12/14**
+- fecha: 2026-10-25T02:11:24Z
+- HEAD: `069c4e7`
+- iteracion: 16
+- criterios: **13/14**
 
 ## Rubrica
 
@@ -23,7 +23,7 @@ Generado por `tools/nightshift.py report` (no se escribe a mano).
 | `adapter-claude` | multi-harness | Adaptador Claude Code: hook Stop que no deja cerrar sin evidencia | OK | 0 |
 | `context-compaction` | contexto | Compactacion determinista al acercarse al presupuesto, con test | OK | 0 |
 | `protocol-doctor` | gobernanza | El doctor del protocolo esta verde | OK | 0 |
-| `tool-arg-repair` | motor | Reparacion de argumentos de tool malformados antes de rendirse | unmet | — |
+| `tool-arg-repair` | motor | Reparacion de argumentos de tool malformados antes de rendirse | OK | 0 |
 | `installer` | empaquetado | Instalador silencioso que deja motor y ventana verificables | unmet | — |
 
 ## Evidencia cruda
@@ -154,5 +154,13 @@ the judge's two routes: three measured endpoints, and two refusals with no panel
   ok   the audit log travels as OTLP spans: every row from a real line, and the ones it cannot read are counted instead of invented 
 
   everything a self-test can prove is green
+```
+
+### tool-arg-repair (exit 0, 2026-10-25T02:10:49Z)
+
+```
+$ python -m nexus_harness selftest repair
+repair           OK    0.14s
+suites=1 failures=0
 ```
 

@@ -163,10 +163,17 @@
       "status": "met"
     },
     "tool-arg-repair": {
-      "attempts": 0,
-      "last": {},
+      "attempts": 1,
+      "last": {
+        "at": "2026-10-25T02:10:49Z",
+        "command": "python -m nexus_harness selftest repair",
+        "exit": 0,
+        "head": "069c4e7",
+        "ok": true,
+        "tail": "repair           OK    0.14s\nsuites=1 failures=0"
+      },
       "note": "",
-      "status": "unmet"
+      "status": "met"
     }
   },
   "history": [
@@ -274,9 +281,16 @@
       "head": "6412d2c",
       "id": "protocol-doctor",
       "ok": true
+    },
+    {
+      "at": "2026-10-25T02:10:49Z",
+      "exit": 0,
+      "head": "069c4e7",
+      "id": "tool-arg-repair",
+      "ok": true
     }
   ],
-  "iteration": 15,
+  "iteration": 16,
   "rubric_version": 1,
   "started": "2026-10-25T00:00:50Z",
   "version": 1
