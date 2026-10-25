@@ -2,8 +2,8 @@
 
 Generado por `tools/nightshift.py report` (no se escribe a mano).
 
-- fecha: 2026-10-25T09:01:07Z
-- HEAD: `b40a3cc`
+- fecha: 2026-10-25T11:58:00Z
+- HEAD: `0cf7afd`
 - iteracion: 88
 - criterios: **17/17**
 
