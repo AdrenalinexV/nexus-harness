@@ -27,12 +27,12 @@
       "status": "met"
     },
     "context-compaction": {
-      "attempts": 2,
+      "attempts": 1,
       "last": {
-        "at": "2026-10-25T01:07:17Z",
+        "at": "2026-10-25T01:04:31Z",
         "command": "python -m nexus_harness selftest compaction",
         "exit": 0,
-        "head": "95bdc25",
+        "head": "146071d",
         "ok": true,
         "tail": "compaction       OK    0.01s\nsuites=1 failures=0"
       },
@@ -40,40 +40,40 @@
       "status": "met"
     },
     "evidence-export": {
-      "attempts": 2,
+      "attempts": 1,
       "last": {
-        "at": "2026-10-25T01:07:54Z",
+        "at": "2026-10-25T00:01:09Z",
         "command": "python tools/nightshift.py report --check",
         "exit": 0,
-        "head": "95bdc25",
+        "head": "8dd4ff4",
         "ok": true,
-        "tail": "escrito docs\\NIGHT_REPORT.md (11/14 en verde)\nok: el informe cubre los 14 criterios"
+        "tail": "escrito docs\\NIGHT_REPORT.md (4/14 en verde)\nok: el informe cubre los 14 criterios"
       },
       "note": "",
       "status": "met"
     },
     "frozen-engine": {
-      "attempts": 4,
+      "attempts": 3,
       "last": {
-        "at": "2026-10-25T01:07:52Z",
+        "at": "2026-10-25T00:59:33Z",
         "command": "python tools/verify.py --frozen",
         "exit": 0,
-        "head": "95bdc25",
+        "head": "a582099",
         "ok": true,
-        "tail": "lint      exit 0   files=71 findings=0 max_lines=400\nselftest  exit 0   suites=19 failures=0\nfrozen    exit 0   suites=19 failures=0 (same as the source)\nverify: GREEN"
+        "tail": "lint      exit 0   files=69 findings=0 max_lines=400\nselftest  exit 0   suites=18 failures=0\nfrozen    exit 0   suites=18 failures=0 (same as the source)\nverify: GREEN"
       },
       "note": "",
       "status": "met"
     },
     "gate-lint": {
-      "attempts": 2,
+      "attempts": 1,
       "last": {
-        "at": "2026-10-25T01:07:29Z",
+        "at": "2026-10-25T00:00:51Z",
         "command": "python tools/lint_harness.py",
         "exit": 0,
-        "head": "95bdc25",
+        "head": "8dd4ff4",
         "ok": true,
-        "tail": "files=71 findings=0 max_lines=400"
+        "tail": "files=67 findings=0 max_lines=400"
       },
       "note": "",
       "status": "met"
@@ -111,10 +111,17 @@
       "status": "met"
     },
     "protocol-doctor": {
-      "attempts": 0,
-      "last": {},
+      "attempts": 1,
+      "last": {
+        "at": "2026-10-25T01:08:20Z",
+        "command": "python C:/Proyectos/NexusProtocol/nexus/cli.py doctor",
+        "exit": 0,
+        "head": "a33c1ab",
+        "ok": true,
+        "tail": "t read the same number, and a smaller file on disk cannot move it \n  ok   the desktop launcher: console-less target, a dry run that writes nothing, and an instance file that is reused instead of a second server \n  ok   applying init in batch, and the baseline only the installer can testify about \n  ok   the judge chain: a local SystemOne judge, a declared order, and no silent substitution \n  ok   the judge's two routes: three measured endpoints, and two refusals with no panel behind them \n  ok   the skills already on this disk: marked by origin, folded, and never offered a mode \n  ok   the local judge's models: a catalogue, a measured recommendation, a download that does not block \n  ok   the judge calibration: the metrics that compare backends, on arithmetic that cannot drift \n  ok   the MCP surface: three read-only tools, no verb to close a turn, and a stream that survives a rotten line \n  ok   the judge declares itself only when the machine can prove one, once, and never over the operator's own decision \n  ok   the audit log travels as OTLP spans: every row from a real line, and the ones it cannot read are counted instead of invented \n\n  everything a self-test can prove is green"
+      },
       "note": "",
-      "status": "unmet"
+      "status": "met"
     },
     "protocol-lint": {
       "attempts": 1,
@@ -143,14 +150,14 @@
       "status": "met"
     },
     "suites-source": {
-      "attempts": 2,
+      "attempts": 1,
       "last": {
-        "at": "2026-10-25T01:07:28Z",
+        "at": "2026-10-25T00:01:03Z",
         "command": "python -m nexus_harness selftest",
         "exit": 0,
-        "head": "95bdc25",
+        "head": "8dd4ff4",
         "ok": true,
-        "tail": "providers        OK    0.00s\nretry            OK    0.00s\ntools            OK    0.12s\nedit_v4a         OK    0.03s\nshell_session    OK    1.34s\nsubagents        OK    0.01s\nwarning: The `fitz` API is deprecated and will be removed in future. Use `import pymupdf` instead.\nattachments      OK    0.13s\nonboarding       OK    0.11s\nmcp_client       OK    0.31s\nsidecar          OK    5.12s\nestado listo: 2 criterios (2 pendientes)\na -> exit 0 (VERDE)\nfindings=0\nb -> exit 10 (ROJO)\n\nb marcado blocked\ncriterio desconocido: zzz\nnightshift       OK    0.18s\ncontext_router   OK    0.00s\ntriad_loop       OK    1.60s\nsession_relay    OK    0.87s\ncompaction       OK    0.01s\nchat             OK    0.09s\nmemory           OK    0.30s\nui               OK    0.86s\nbridge           OK    0.06s\nsuites=19 failures=0"
+        "tail": "providers        OK    0.00s\ntools            OK    0.16s\nedit_v4a         OK    0.03s\nshell_session    OK    1.36s\nsubagents        OK    0.01s\nwarning: The `fitz` API is deprecated and will be removed in future. Use `import pymupdf` instead.\nattachments      OK    0.22s\nonboarding       OK    0.13s\nmcp_client       OK    0.32s\nsidecar          OK    5.11s\nestado listo: 2 criterios (2 pendientes)\na -> exit 0 (VERDE)\nfindings=0\nb -> exit 10 (ROJO)\n\nb marcado blocked\ncriterio desconocido: zzz\nnightshift       OK    0.19s\ncontext_router   OK    0.01s\ntriad_loop       OK    1.65s\nsession_relay    OK    0.92s\nchat             OK    0.10s\nmemory           OK    0.49s\nui               OK    0.89s\nbridge           OK    0.06s\nsuites=17 failures=0"
       },
       "note": "",
       "status": "met"
@@ -255,42 +262,14 @@
       "ok": true
     },
     {
-      "at": "2026-10-25T01:07:17Z",
+      "at": "2026-10-25T01:08:20Z",
       "exit": 0,
-      "head": "95bdc25",
-      "id": "context-compaction",
-      "ok": true
-    },
-    {
-      "at": "2026-10-25T01:07:28Z",
-      "exit": 0,
-      "head": "95bdc25",
-      "id": "suites-source",
-      "ok": true
-    },
-    {
-      "at": "2026-10-25T01:07:29Z",
-      "exit": 0,
-      "head": "95bdc25",
-      "id": "gate-lint",
-      "ok": true
-    },
-    {
-      "at": "2026-10-25T01:07:52Z",
-      "exit": 0,
-      "head": "95bdc25",
-      "id": "frozen-engine",
-      "ok": true
-    },
-    {
-      "at": "2026-10-25T01:07:54Z",
-      "exit": 0,
-      "head": "95bdc25",
-      "id": "evidence-export",
+      "head": "a33c1ab",
+      "id": "protocol-doctor",
       "ok": true
     }
   ],
-  "iteration": 18,
+  "iteration": 14,
   "rubric_version": 1,
   "started": "2026-10-25T00:00:50Z",
   "version": 1
