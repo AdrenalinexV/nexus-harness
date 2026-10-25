@@ -26,8 +26,8 @@
       "area": "empaquetado",
       "title": "El motor congelado pasa la misma suite",
       "why": "Lo que se entrega no es el repo, es el .exe.",
-      "proof": "dist\\nexus-harness-engine.exe selftest",
-      "contains": "suites=17 failures=0",
+      "proof": "python tools/verify.py --frozen",
+      "contains": "(same as the source)",
       "priority": 2
     },
     {

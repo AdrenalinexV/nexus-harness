@@ -104,19 +104,18 @@ codes) y operación (cero huérfanos). 14 criterios, 14 comandos, 0 adjetivos.
 
 ## Correcciones a la rubrica (para revisar al dia siguiente)
 
-Cambiar un umbral exige escribir por que. Estas dos no bajan ningun umbral: arreglan una prueba que no
-podia correr y suben la exigencia de otra. Se anotan aqui con la evidencia observada.
+Cambiar un umbral exige escribir por que. Esta no baja ningun umbral: arregla una prueba que no podia
+correr y sube la exigencia de la misma. Se anota aqui con la evidencia observada.
 
-1. **`frozen-engine`: `dist/nexus-harness-engine.exe` -> `dist\nexus-harness-engine.exe`.** La prueba
-   tal como estaba **no corria**: `nightshift check` la lanza con `shell=True`, o sea `cmd /c`, y cmd
-   parte el primer token por la barra -- `"dist" no se reconoce como un comando interno o externo`,
-   exit 1, sin haber ejecutado el motor. La barra invertida es la misma orden, ahora ejecutable.
-2. **`frozen-engine`: `contains` pasa de `failures=0` a `suites=17 failures=0`.** Sube la exigencia,
-   que es lo contrario de ablandarla: el binario de `dist/` corria 16 suites y el fuente 17 (el motor
-   congelado no llevaba `tools/nightshift.py`, que es lo que mide la suite `nightshift`), asi que
-   "pasa la misma suite" era FALSO mientras el `failures=0` salia verde. Con el numero clavado, un
-   motor viejo vuelve a ponerse rojo por si solo. Arreglado el empaquetado (`tools/engine.spec`,
-   ahora versionado), el binario reporta `suites=17 failures=0` igual que el fuente.
+1. **`frozen-engine`: la prueba pasa de `dist/nexus-harness-engine.exe selftest` a
+   `python tools/verify.py --frozen`.** Dos motivos, los dos medidos: (a) el comando original **no
+   corria** -- `nightshift check` lo lanza con `shell=True`, o sea `cmd /c`, y cmd parte el primer
+   token por la barra (`"dist" no se reconoce como un comando interno o externo`, exit 1, sin haber
+   ejecutado el motor); (b) `contains: failures=0` daba VERDE con un binario viejo que corria 16
+   suites de 17: el motor de `dist/` no llevaba `tools/nightshift.py`, asi que "pasa la misma suite"
+   era falso sin que fallara nada. La prueba nueva compara el resumen del binario con el del fuente:
+   no queda ningun numero que mantener a mano en la rubrica, y un motor viejo se pone rojo solo
+   (visto: `source='suites=18 failures=0' frozen='suites=17 failures=0'` -> exit 10).
 
 ## Por qué esto prueba el protocolo Nexus
 

@@ -39,14 +39,14 @@
       "status": "met"
     },
     "frozen-engine": {
-      "attempts": 2,
+      "attempts": 3,
       "last": {
-        "at": "2026-10-25T00:56:42Z",
-        "command": "dist\\nexus-harness-engine.exe selftest",
+        "at": "2026-10-25T00:59:33Z",
+        "command": "python tools/verify.py --frozen",
         "exit": 0,
-        "head": "f2756b9",
+        "head": "a582099",
         "ok": true,
-        "tail": "providers        OK    0.00s\ntools            OK    0.13s\nedit_v4a         OK    0.03s\nshell_session    OK    1.31s\nsubagents        OK    0.01s\nattachments      OK    0.09s\nonboarding       OK    0.11s\nmcp_client       OK    0.33s\nsidecar          OK    5.12s\nestado listo: 2 criterios (2 pendientes)\na -> exit 0 (VERDE)\nfindings=0\nb -> exit 10 (ROJO)\n\nb marcado blocked\ncriterio desconocido: zzz\nnightshift       OK    0.18s\ncontext_router   OK    0.00s\ntriad_loop       OK    1.58s\nsession_relay    OK    0.81s\nchat             OK    0.11s\nmemory           OK    0.27s\nui               OK    0.86s\nbridge           OK    0.07s\nsuites=17 failures=0"
+        "tail": "lint      exit 0   files=69 findings=0 max_lines=400\nselftest  exit 0   suites=18 failures=0\nfrozen    exit 0   suites=18 failures=0 (same as the source)\nverify: GREEN"
       },
       "note": "",
       "status": "met"
@@ -116,10 +116,17 @@
       "status": "met"
     },
     "providers-retry": {
-      "attempts": 0,
-      "last": {},
+      "attempts": 1,
+      "last": {
+        "at": "2026-10-25T00:59:10Z",
+        "command": "python -m nexus_harness selftest retry",
+        "exit": 0,
+        "head": "a582099",
+        "ok": true,
+        "tail": "retry            OK    0.00s\nsuites=1 failures=0"
+      },
       "note": "",
-      "status": "unmet"
+      "status": "met"
     },
     "suites-source": {
       "attempts": 1,
@@ -204,9 +211,23 @@
       "head": "f2756b9",
       "id": "frozen-engine",
       "ok": true
+    },
+    {
+      "at": "2026-10-25T00:59:10Z",
+      "exit": 0,
+      "head": "a582099",
+      "id": "providers-retry",
+      "ok": true
+    },
+    {
+      "at": "2026-10-25T00:59:33Z",
+      "exit": 0,
+      "head": "a582099",
+      "id": "frozen-engine",
+      "ok": true
     }
   ],
-  "iteration": 9,
+  "iteration": 11,
   "rubric_version": 1,
   "started": "2026-10-25T00:00:50Z",
   "version": 1
