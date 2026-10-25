@@ -14,16 +14,30 @@
       "status": "met"
     },
     "adapter-claude": {
-      "attempts": 0,
-      "last": {},
+      "attempts": 1,
+      "last": {
+        "at": "2026-10-25T01:01:52Z",
+        "command": "python -m nexus.harness.adapters --check claude --root .",
+        "exit": 0,
+        "head": "146071d",
+        "ok": true,
+        "tail": "ok: claude -- .claude/settings.json carries a Stop handler that ran twice: it lets an inert turn close and it blocks a frozen one with the gate's own message"
+      },
       "note": "",
-      "status": "unmet"
+      "status": "met"
     },
     "context-compaction": {
-      "attempts": 0,
-      "last": {},
+      "attempts": 1,
+      "last": {
+        "at": "2026-10-25T01:04:31Z",
+        "command": "python -m nexus_harness selftest compaction",
+        "exit": 0,
+        "head": "146071d",
+        "ok": true,
+        "tail": "compaction       OK    0.01s\nsuites=1 failures=0"
+      },
       "note": "",
-      "status": "unmet"
+      "status": "met"
     },
     "evidence-export": {
       "attempts": 1,
@@ -225,9 +239,23 @@
       "head": "a582099",
       "id": "frozen-engine",
       "ok": true
+    },
+    {
+      "at": "2026-10-25T01:01:52Z",
+      "exit": 0,
+      "head": "146071d",
+      "id": "adapter-claude",
+      "ok": true
+    },
+    {
+      "at": "2026-10-25T01:04:31Z",
+      "exit": 0,
+      "head": "146071d",
+      "id": "context-compaction",
+      "ok": true
     }
   ],
-  "iteration": 11,
+  "iteration": 13,
   "rubric_version": 1,
   "started": "2026-10-25T00:00:50Z",
   "version": 1

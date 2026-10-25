@@ -2,10 +2,10 @@
 
 Generado por `tools/nightshift.py report` (no se escribe a mano).
 
-- fecha: 2026-10-25T00:59:33Z
-- HEAD: `a582099`
-- iteracion: 11
-- criterios: **9/14**
+- fecha: 2026-10-25T01:04:07Z
+- HEAD: `146071d`
+- iteracion: 12
+- criterios: **10/14**
 
 ## Rubrica
 
@@ -20,7 +20,7 @@ Generado por `tools/nightshift.py report` (no se escribe a mano).
 | `no-orphans` | operacion | El motor no sobrevive a su shell (vigilante) y esta probado | OK | 0 |
 | `protocol-lint` | gobernanza | NexusProtocol sigue en 0 hallazgos | OK | 0 |
 | `providers-retry` | motor | Reintento acotado con backoff en 429/5xx, medido | OK | 0 |
-| `adapter-claude` | multi-harness | Adaptador Claude Code: hook Stop que no deja cerrar sin evidencia | unmet | — |
+| `adapter-claude` | multi-harness | Adaptador Claude Code: hook Stop que no deja cerrar sin evidencia | OK | 0 |
 | `context-compaction` | contexto | Compactacion determinista al acercarse al presupuesto, con test | unmet | — |
 | `protocol-doctor` | gobernanza | El doctor del protocolo esta verde | unmet | — |
 | `tool-arg-repair` | motor | Reparacion de argumentos de tool malformados antes de rendirse | unmet | — |
@@ -124,5 +124,12 @@ findings=0
 $ python -m nexus_harness selftest retry
 retry            OK    0.00s
 suites=1 failures=0
+```
+
+### adapter-claude (exit 0, 2026-10-25T01:01:52Z)
+
+```
+$ python -m nexus.harness.adapters --check claude --root .
+ok: claude -- .claude/settings.json carries a Stop handler that ran twice: it lets an inert turn close and it blocks a frozen one with the gate's own message
 ```
 
