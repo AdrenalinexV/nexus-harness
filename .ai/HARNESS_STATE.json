@@ -51,10 +51,17 @@
       "status": "met"
     },
     "hook-contract": {
-      "attempts": 0,
-      "last": {},
+      "attempts": 1,
+      "last": {
+        "at": "2026-10-25T00:44:36Z",
+        "command": "python C:/Proyectos/NexusProtocol/nexus/cli.py gate --hook --selftest --json",
+        "exit": 0,
+        "head": "2d22433",
+        "ok": true,
+        "tail": "{\n  \"action\": \"selftest\",\n  \"failures\": [],\n  \"ok\": true\n}"
+      },
       "note": "",
-      "status": "unmet"
+      "status": "met"
     },
     "installer": {
       "attempts": 0,
@@ -155,9 +162,16 @@
       "head": "8dd4ff4",
       "id": "evidence-export",
       "ok": true
+    },
+    {
+      "at": "2026-10-25T00:44:36Z",
+      "exit": 0,
+      "head": "2d22433",
+      "id": "hook-contract",
+      "ok": true
     }
   ],
-  "iteration": 5,
+  "iteration": 6,
   "rubric_version": 1,
   "started": "2026-10-25T00:00:50Z",
   "version": 1

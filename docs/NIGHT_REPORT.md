@@ -2,20 +2,20 @@
 
 Generado por `tools/nightshift.py report` (no se escribe a mano).
 
-- fecha: 2026-10-25T00:01:09Z
-- HEAD: `8dd4ff4`
-- iteracion: 4
-- criterios: **4/14**
+- fecha: 2026-10-25T00:44:54Z
+- HEAD: `2d22433`
+- iteracion: 6
+- criterios: **6/14**
 
 ## Rubrica
 
 | criterio | area | que se exige | estado | exit |
 |---|---|---|---|---|
 | `gate-lint` | gobernanza | La ley de 400 lineas pasa en el propio repositorio | OK | 0 |
-| `hook-contract` | multi-harness | Contrato generico `nexus gate --hook` (JSON por stdin, exit 0/10/20/30) | unmet | — |
+| `hook-contract` | multi-harness | Contrato generico `nexus gate --hook` (JSON por stdin, exit 0/10/20/30) | OK | 0 |
 | `suites-source` | gobernanza | Toda la suite determinista pasa desde el codigo fuente | OK | 0 |
 | `adapter-aider` | multi-harness | Adaptador Aider: lint/test del gate escritos en su config, verificable | unmet | — |
-| `evidence-export` | evidencia | El informe de evidencia se genera desde el estado y cubre los 14 criterios | unmet | — |
+| `evidence-export` | evidencia | El informe de evidencia se genera desde el estado y cubre los 14 criterios | OK | 0 |
 | `frozen-engine` | empaquetado | El motor congelado pasa la misma suite | unmet | — |
 | `no-orphans` | operacion | El motor no sobrevive a su shell (vigilante) y esta probado | OK | 0 |
 | `protocol-lint` | gobernanza | NexusProtocol sigue en 0 hallazgos | OK | 0 |
@@ -33,6 +33,17 @@ Generado por `tools/nightshift.py report` (no se escribe a mano).
 ```
 $ python tools/lint_harness.py
 files=67 findings=0 max_lines=400
+```
+
+### hook-contract (exit 0, 2026-10-25T00:44:36Z)
+
+```
+$ python C:/Proyectos/NexusProtocol/nexus/cli.py gate --hook --selftest --json
+{
+  "action": "selftest",
+  "failures": [],
+  "ok": true
+}
 ```
 
 ### suites-source (exit 0, 2026-10-25T00:01:03Z)
@@ -65,6 +76,14 @@ memory           OK    0.49s
 ui               OK    0.89s
 bridge           OK    0.06s
 suites=17 failures=0
+```
+
+### evidence-export (exit 0, 2026-10-25T00:01:09Z)
+
+```
+$ python tools/nightshift.py report --check
+escrito docs\NIGHT_REPORT.md (4/14 en verde)
+ok: el informe cubre los 14 criterios
 ```
 
 ### no-orphans (exit 0, 2026-10-25T00:01:09Z)
