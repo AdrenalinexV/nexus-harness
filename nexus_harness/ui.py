@@ -142,6 +142,11 @@ class Handler(BaseHTTPRequestHandler):
         if path == "/settings":
             from . import settings
             return self._page(settings.screen(self.cockpit, query))
+        if path.startswith("/api/settings/"):
+            from . import settings_api
+            answer = settings_api.handle(self.cockpit, "GET", path, query, {})
+            if answer is not None:
+                return self._json(*answer)
         if path.startswith("/gov/api/"):
             return self._forward(path, query, {})
         # Los estaticos se sirven por extension, no por lista blanca: una lista se olvida en cuanto se
@@ -220,6 +225,11 @@ class Handler(BaseHTTPRequestHandler):
         # que de verdad sabe leerlo.
         if path in ("/api/settings", "/api/settings/do"):
             return self._settings_action(path)
+        if path.startswith("/api/settings/"):
+            from . import settings_api
+            answer = settings_api.handle(self.cockpit, "POST", path, {}, self._form())
+            if answer is not None:
+                return self._json(*answer)
         body = self._body()
         if path.startswith("/gov/api/"):
             return self._forward(path, query, body)

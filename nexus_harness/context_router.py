@@ -72,6 +72,26 @@ class ContextRouter:
         self._load()
         return not self._error
 
+    def _modes(self):
+        """Las dos listas que declara el OPERADOR: `always` viaja sin match, `off` no viaja nunca.
+
+        Las escribe y las guarda el gobernador (su `settings.skills`), y el arnes solo las obedece: un
+        boton `Dormir` que no cambia lo que viaja es un boton que miente. Se leen una vez por instancia
+        y se pueden refrescar con `refresh_modes()`.
+        """
+        try:
+            if str(NEXUS_SOURCE) not in sys.path:
+                sys.path.insert(0, str(NEXUS_SOURCE))
+            from nexus import fleet
+            settings = fleet.settings() or {}
+            skills = settings.get("skills") or {}
+            names = {str(entry.get("name")) for entry in self._pack or [] if entry.get("name")}
+            always = {str(name) for name in (skills.get("always") or [])} & names
+            off = {str(name) for name in (skills.get("off") or [])}
+            return always, off
+        except Exception:  # sin gobernador no hay declaracion que obedecer: modo automatico
+            return set(), set()
+
     def select(self, files):
         """The injection for these files. Calling it twice with the same list gives the same answer."""
         if not self.enabled:
@@ -86,7 +106,12 @@ class ContextRouter:
         except Exception as exc:
             return Injection(available=False, note="routing failed -- %s: %s"
                              % (type(exc).__name__, exc))
-        entries = list(self._always) + picked
+        always, off = self._modes()
+        entries = [entry for entry in list(self._always) + picked if entry.get("name") not in off]
+        present = {entry.get("name") for entry in entries}
+        for entry in self._pack or []:
+            if entry.get("name") in always and entry.get("name") not in present:
+                entries.append(entry)
         brief = routing.brief(entries, self.lang)
         self.last = Injection(names=[entry["name"] for entry in entries], entries=entries,
                               brief=brief, tokens=len(brief) // CHARS_PER_TOKEN, available=True)

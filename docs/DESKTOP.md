@@ -25,15 +25,27 @@ NexusHarness-Setup-0.3.0.exe          instalador NSIS, por usuario, sin permisos
 
 ## Cómo arranca
 
-1. La ventana elige un **puerto libre** (no pelea por el 8765 con otra copia ni con el CLI).
-2. Genera un **token de lanzamiento** y arranca el motor como proceso hijo con
-   `NEXUS_HARNESS_TOKEN` y `CREATE_NO_WINDOW` (sin consola negra).
-3. Espera a que el puerto acepte conexiones (30 s como máximo) y solo entonces abre la vista sobre
+`Nexus-Harness.bat` (doble clic) abre la **app nativa**:
+
+1. Cierra cualquier motor huérfano que esté escuchando en el 8765 (`netstat` + `taskkill /T /F`): un
+   motor que sobrevivió a su ventana deja el puerto cogido y el `.exe` bloqueado.
+2. Lanza `nexus-harness-desktop.exe` — la ventana Tauri, con su icono — y **nunca** el navegador.
+3. La ventana elige un **puerto libre** (no pelea por el 8765 con otra copia ni con el CLI), genera un
+   **token de lanzamiento** y arranca el motor como proceso hijo con `NEXUS_HARNESS_TOKEN` y
+   `CREATE_NO_WINDOW` (sin consola negra).
+4. Espera a que el puerto acepte conexiones (30 s como máximo) y solo entonces abre la vista sobre
    `http://127.0.0.1:<puerto>/?token=…`.
-4. Al cerrar la ventana, mata el motor: no quedan procesos huérfanos.
+5. Al cerrar la ventana, mata el motor: no quedan procesos huérfanos.
+
+El navegador es una decisión explícita, no el camino por defecto: `Nexus-Harness.bat --web` arranca el
+motor en `127.0.0.1:8765` y abre ahí la interfaz. Cualquier otro argumento se pasa al CLI (`run`,
+`gate`, `selftest`, `lint`, `models`, `bridge`).
 
 El motor sirve la **misma** interfaz que el CLI (`nexus_harness/web`), así que una corrección en la UI
 aparece en la ventana y en el navegador a la vez. Hay un front-end, no uno por cáscara.
+
+Si la ventana no aparece, el `.bat` dice qué falta (la app no está instalada y cómo instalarla) en vez
+de abrir el navegador por su cuenta.
 
 ## Qué se puede hacer desde la ventana
 

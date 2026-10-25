@@ -115,6 +115,23 @@ def installer_state():
         return {}, "%s: %s" % (type(exc).__name__, exc)
 
 
+def save_skill_modes(always, off):
+    """Guarda las dos listas del operador sobre skills, con el escritor del gobernador.
+
+    El protocolo ya tiene el escritor con validacion (`Installer.save_settings`) y su propia GUI usa
+    ese camino: escribir `~/.nexus/...` a mano desde aqui seria un segundo formato que se desvia.
+    """
+    base, reason = up()
+    if not base or _boot["installer"] is None:
+        return False, reason or "la gobernanza no esta arrancada"
+    try:
+        _boot["installer"].save_settings({"skills": {"always": sorted(set(always or [])),
+                                                     "off": sorted(set(off or []))}})
+    except Exception as exc:  # noqa: BLE001 -- se devuelve el motivo, no se adivina
+        return False, "%s: %s" % (type(exc).__name__, exc)
+    return True, ""
+
+
 def down():
     """Para el servidor de gobernanza. Se llama al cerrar: un puerto suelto y un hilo vivo no dejan
     salir al proceso, y el motor congelado es justo el que mas lo nota."""

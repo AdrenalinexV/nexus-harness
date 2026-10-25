@@ -207,3 +207,91 @@ button.wide { width: 100%; }
 .stable th { color: var(--muted); font-weight: 500; }
 .scheck { display: flex; align-items: center; gap: .35rem; font-size: var(--fs-sm); color: var(--muted); }
 .settings-panel textarea { min-height: 320px; width: 100%; font-size: var(--fs-sm); }
+
+/* ---------- pie del árbol: qué motor estoy mirando ---------- */
+.tree-foot { line-height: 1.6; }
+.dot { display: inline-block; width: 7px; height: 7px; border-radius: 50%; margin-right: .35rem;
+  background: var(--idle); vertical-align: middle; }
+.dot.ok { background: var(--ok); box-shadow: 0 0 0 3px color-mix(in srgb, var(--ok) 22%, transparent); }
+
+/* ---------- KPI: una rejilla 3x3, no nueve filas de ancho completo ---------- */
+.kpigrid { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: .7rem; }
+.kpi { display: flex; flex-direction: column; gap: .15rem; padding: .8rem .9rem;
+  background: var(--card2); border: 1px solid var(--line); border-radius: var(--radius);
+  border-left: 3px solid var(--line2); }
+.kpi.ok { border-left-color: var(--ok); }
+.kpi.warn { border-left-color: var(--warn); }
+.kpi.bad { border-left-color: var(--bad); }
+.kpi.off { border-left-color: var(--idle); }
+.kpi-label { font-size: 11.5px; text-transform: uppercase; letter-spacing: .07em; color: var(--muted); }
+.kpi-value { font-size: 21px; line-height: 1.25; }
+.kpi-hint { font-size: 11.5px; color: var(--muted); font-style: normal; }
+
+/* ---------- modelos: cuatro papeles a la vista ---------- */
+.rolegrid2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(330px, 1fr)); gap: .8rem;
+  margin-top: .6rem; }
+.rolecard { display: flex; flex-direction: column; gap: .35rem; padding: .9rem 1rem;
+  background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); }
+.rolecard.focus { border-color: var(--accent); box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 14%, transparent); }
+.rolehead { display: flex; align-items: center; justify-content: space-between; gap: .5rem; }
+.rolecard .rolegrid { grid-template-columns: 1fr; }
+.wide { width: 100%; }
+
+/* ---------- bóveda: una tarjeta por clave ---------- */
+.keygrid { display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: .7rem; }
+.keycard { display: flex; flex-direction: column; gap: .45rem; padding: .7rem .8rem;
+  background: var(--card2); border: 1px solid var(--line); border-radius: var(--radius-sm); }
+.keycard .sform { margin-top: 0; }
+button.danger { color: var(--bad); border-color: color-mix(in srgb, var(--bad) 45%, var(--line2)); }
+.modes { display: flex; flex-wrap: wrap; gap: .5rem; }
+.modeopt { display: flex; align-items: center; gap: .5rem; padding: .5rem .7rem; cursor: pointer;
+  background: var(--card2); border: 1px solid var(--line); border-radius: var(--radius-sm); }
+.modeopt.on { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 12%, var(--card2)); }
+.modeopt em { display: block; font-style: normal; font-size: 11.5px; color: var(--muted); }
+
+/* ---------- skills: filtros, rejilla de tarjetas y arquitecto ---------- */
+.filters { display: flex; flex-direction: column; gap: .5rem; margin-bottom: .6rem; }
+.filters form { display: flex; gap: .4rem; }
+.fpill { text-decoration: none; font-size: var(--fs-sm); padding: .25rem .6rem; border-radius: 999px;
+  background: var(--card2); border: 1px solid var(--line2); color: var(--muted); margin-right: .3rem; }
+.fpill:hover { color: var(--fg); border-color: var(--accent); }
+.fpill.on { background: var(--accent); border-color: var(--accent); color: var(--accent-fg); font-weight: 600; }
+.skillgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: .7rem; }
+.skcard { display: flex; flex-direction: column; gap: .4rem; padding: .75rem .85rem;
+  background: var(--card2); border: 1px solid var(--line); border-radius: var(--radius); }
+.skhead { display: flex; align-items: center; gap: .35rem; flex-wrap: wrap; }
+.skhead strong { font-size: .95rem; }
+.skdesc { margin: 0; font-size: var(--fs-sm); color: var(--muted); min-height: 2.6em; }
+.skfoot { display: flex; align-items: center; gap: .4rem; flex-wrap: wrap; }
+.skfoot .sform { margin: 0; }
+.modebtn { font-size: 11.5px; padding: .22rem .5rem; border-radius: 999px; background: var(--card);
+  border: 1px solid var(--line2); color: var(--muted); }
+.modebtn.on { color: var(--accent-fg); background: var(--accent); border-color: var(--accent); }
+.arch { padding: .8rem .9rem; background: var(--card); border: 1px solid var(--line);
+  border-radius: var(--radius); display: flex; flex-direction: column; gap: .5rem; }
+.check { display: flex; align-items: center; gap: .4rem; font-size: var(--fs-sm); color: var(--muted); }
+.specview { margin: .3rem 0; }
+.specview summary { cursor: pointer; color: var(--accent); font-size: var(--fs-sm); }
+
+/* ---------- MCP y proyectos: tarjetas ---------- */
+.mcpgrid { display: grid; grid-template-columns: repeat(auto-fit, minmax(330px, 1fr)); gap: .7rem; }
+.mcpserver { display: flex; flex-direction: column; gap: .35rem; padding: .75rem .85rem;
+  background: var(--card2); border: 1px solid var(--line); border-radius: var(--radius); }
+.projcard { display: flex; flex-direction: column; gap: .45rem; padding: .85rem .95rem;
+  background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); }
+.projcard.plain { background: var(--card2); }
+.projcard .sform { margin: 0; }
+.projcard .sout { max-height: 14rem; }
+
+/* ---------- la ventana del editor de SKILL.md ---------- */
+.skilldlg { width: min(920px, 92vw); max-height: 86vh; padding: 0; border: 1px solid var(--line2);
+  border-radius: var(--radius); background: var(--card); color: var(--fg); }
+.skilldlg::backdrop { background: rgba(0, 0, 0, .55); }
+.skilldlg header, .skilldlg footer { display: flex; align-items: center; justify-content: space-between;
+  gap: .6rem; padding: .7rem .9rem; border-bottom: 1px solid var(--line); }
+.skilldlg footer { border-bottom: 0; border-top: 1px solid var(--line); }
+.skilldlg textarea { display: block; width: calc(100% - 1.8rem); min-height: 46vh; margin: .9rem;
+  font-family: ui-monospace, Consolas, monospace; font-size: var(--fs-sm); }
+.skilldlg .note { color: var(--muted); }
+.skilldlg .note.bad { color: var(--bad); }
+#skdlg-note.bad { color: var(--bad); }

@@ -47,6 +47,60 @@ def onboarding_apply(cockpit, payload):
 
 
 # -- MCP -------------------------------------------------------------------------------------
+def mcp_write(cockpit, action, payload):
+    """Alta, edicion, borrado y encendido de conectores. Devuelve `(ok, nota)`.
+
+    El fichero (`~/.nexus/mcp.json`) es la fuente de verdad del operador y lo escribe `mcp_client`;
+    aqui solo se decide QUE cambia. Despues se recarga en caliente para que el cambio se note sin
+    reiniciar el motor: un `Guardar` que exige reiniciar no es un producto, es una tarea pendiente.
+    """
+    from . import mcp_client
+    action = str(action or "")
+    payload = payload or {}
+    config = mcp_client.load_config()
+    servers = dict(config.get("servers") or {})
+    name = str(payload.get("name") or "").strip()
+    if action in ("add", "save"):
+        if not name:
+            return False, "el conector necesita un nombre"
+        command = str(payload.get("command") or "").strip()
+        if not command:
+            return False, "el conector necesita un comando ejecutable"
+        args = [part for part in str(payload.get("args") or "").split() if part]
+        env = {}
+        for line in str(payload.get("env") or "").splitlines():
+            key, _, value = line.partition("=")
+            if key.strip() and value.strip():
+                env[key.strip()] = value.strip()
+        spec = {"command": command, "args": args, "enabled": True}
+        if payload.get("cwd"):
+            spec["cwd"] = str(payload["cwd"]).strip()
+        if env:
+            spec["env"] = env
+        if payload.get("description"):
+            spec["description"] = str(payload["description"]).strip()[:120]
+        servers[name] = spec
+    elif action == "delete":
+        if name not in servers:
+            return False, "ese conector no existe"
+        servers.pop(name, None)
+    elif action == "toggle":
+        if name not in servers:
+            return False, "ese conector no existe"
+        want = payload.get("enabled")
+        current = servers[name].get("enabled") is not False
+        servers[name]["enabled"] = (not current) if want is None else bool(want)
+    else:
+        return False, "acción desconocida: %r" % action
+    location = mcp_client.save_config({"servers": servers})
+    reloaded = mcp_reload(cockpit)
+    note = "%s: %s · %d conectores en %s" % (action, name or "-", len(servers),
+                                             location.name)
+    if not reloaded.get("ok"):
+        note += " (recarga: %s)" % reloaded.get("reason")
+    return True, note
+
+
 def mcp_status(cockpit):
     """The panel asks for connectors, so the connectors are what it gets: start them if nobody has.
 

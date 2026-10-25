@@ -27,7 +27,7 @@ from pathlib import Path
 
 CONFIG = Path(os.environ.get("NEXUS_HOME") or (Path.home() / ".nexus")) / "mcp.json"
 PROTOCOL_VERSION = "2025-06-18"
-CLIENT_INFO = {"name": "nexus-harness", "version": "0.3.0"}
+CLIENT_INFO = {"name": "nexus-harness", "version": "0.4.0"}
 DEFAULT_TIMEOUT = 25
 WINDOWS_FLAGS = 0x08000000 if os.name == "nt" else 0
 LOG_DIR = Path(".nexus") / "harness" / "logs"
@@ -54,6 +54,30 @@ def load_config(path=None):
         return {"servers": default_servers()}
     return {"servers": {str(name): dict(spec) for name, spec in servers.items()
                         if isinstance(spec, dict)}}
+
+
+def save_config(config, path=None):
+    """Escribe `~/.nexus/mcp.json` con el formato que lee `load_config`. Devuelve la ruta.
+
+    Escritura atomica (temporal + `os.replace`) y solo el bloque `servers`: el fichero es del operador
+    y otras claves que pueda tener no se tocan ni se reescriben desde aqui.
+    """
+    location = Path(path) if path else CONFIG
+    location.parent.mkdir(parents=True, exist_ok=True)
+    existing = {}
+    if location.is_file():
+        try:
+            loaded = json.loads(location.read_text(encoding="utf-8"))
+            existing = loaded if isinstance(loaded, dict) else {}
+        except (OSError, ValueError):
+            existing = {}
+    existing["servers"] = {str(name): dict(spec)
+                           for name, spec in (config.get("servers") or {}).items()
+                           if isinstance(spec, dict)}
+    temporary = location.with_name(".%s.tmp" % location.name)
+    temporary.write_text(json.dumps(existing, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+    os.replace(temporary, location)
+    return location
 
 
 class McpError(RuntimeError):

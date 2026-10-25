@@ -13,9 +13,9 @@ import subprocess
 import sys
 from html import escape
 
-from . import gov, onboarding, panels
+from . import gov, onboarding, panels, vault
 from . import settings_kit as kit
-from . import settings_models, settings_tools, settings_work
+from . import settings_models, settings_skills, settings_tools, settings_work
 
 TITLE = "Configuración"
 SECTIONS = (
@@ -42,7 +42,7 @@ def resolve(section, sub):
     return name, (chosen if chosen in subs else (subs[0] if subs else ""))
 
 
-def _render(name, cockpit, sub, item):
+def _render(name, cockpit, sub, item, query):
     if name == "modelos":
         return settings_models.panel(cockpit, sub)
     if name == "espacio":
@@ -52,7 +52,7 @@ def _render(name, cockpit, sub, item):
     if name == "memoria":
         return settings_work.memoria(cockpit)
     if name == "skills":
-        return settings_tools.skills(cockpit, item)
+        return settings_skills.skills(cockpit, query or {})
     if name == "mcp":
         return settings_tools.mcp(cockpit)
     if name == "puente":
@@ -60,8 +60,14 @@ def _render(name, cockpit, sub, item):
     return settings_tools.stats(cockpit)
 
 
-def _tree(active, sub, needle, current):
-    """El árbol de categorías. `needle` filtra por título: es el buscador de arriba, sin script."""
+def _tree(active, sub, needle, state):
+    """El árbol de categorías. `needle` filtra por título: es el buscador de arriba, sin script.
+
+    El pie lleva lo que el operador necesita para saber QUE motor esta mirando: su version, que
+    responde, y de que fichero de configuracion salieron los ajustes. Antes leia `version` del bloque
+    `config`, donde no vive, y el pie decia literalmente `Motor ? · config ?` -- un marcador de
+    plantilla sin sustituir es peor que no poner nada.
+    """
     out = []
     for name, label, subs in SECTIONS:
         hit = (not needle or needle in label.lower()
@@ -84,8 +90,12 @@ def _tree(active, sub, needle, current):
                       "on" if name == active else "", head, items))
     if not out:
         out.append('<p class="dim">Nada coincide con «%s».</p>' % escape(needle))
-    return ('<nav class="settings-tree">%s<p class="dim tree-foot">Motor %s · config %s</p></nav>'
-            % ("".join(out), escape(current.get("version", "?")), escape(current.get("config_file", "?"))))
+    config = state.get("config") or {}
+    version = state.get("version") or "?"
+    source = config.get("source") or "defaults"
+    return ('<nav class="settings-tree">%s<p class="tree-foot">'
+            '<span class="dot ok"></span>Motor v%s · Conectado<br><code>%s</code></p></nav>'
+            % ("".join(out), escape(version), escape(source)))
 
 
 def screen(cockpit, query):
@@ -93,12 +103,12 @@ def screen(cockpit, query):
     section, sub = resolve((query.get("section") or [""])[0], (query.get("sub") or [""])[0])
     item = str((query.get("item") or [""])[0])
     needle = str((query.get("q") or [""])[0]).strip().lower()
-    title, subtitle, body = _render(section, cockpit, sub, item)
+    title, subtitle, body = _render(section, cockpit, sub, item, query)
     note = kit.note_from(query)
     state = cockpit.state()
     return LAYOUT % {
         "note": note,
-        "tree": _tree(section, sub, needle, state.get("config") or {}),
+        "tree": _tree(section, sub, needle, state),
         "title": escape(title),
         "subtitle": escape(subtitle),
         "body": body,
@@ -169,7 +179,15 @@ def save(cockpit, body):
             notes += result.get("notes") or []
             if result.get("saved", {}).get("roles"):
                 notes.append("%s → %s:%s" % (role, vendor, model))
-            cockpit.reload_config()
+        # Los numeros del turno viajan en el MISMO panel (son parte de la triada: con que presupuesto
+        # y con cuanta temperatura). Se guardaban en la vista de memoria y aqui se perdian en silencio.
+        numbers = _numbers(body)
+        if numbers:
+            saved, problems = onboarding.save_settings(numbers)
+            notes += problems
+            if saved:
+                notes.append("números del turno guardados")
+        cockpit.reload_config()
     elif section == "espacio":
         tests = {str(key)[5:]: str(value).strip() for key, value in body.items()
                  if str(key).startswith("test:")}
@@ -246,6 +264,42 @@ def action(cockpit, body):
                   else panels.daemon_stop(cockpit))
         return ("puente: %s" % ("ON" if answer.get("running") else "OFF"),
                 bool(answer.get("ok", True)), "puente")
+    if what == "detect_models":
+        found = onboarding.probe_local()
+        live = {vendor: len(row.get("models") or [])
+                for vendor, row in found.items() if row.get("ready")}
+        detail = ", ".join("%s: %d" % (name, count) for name, count in sorted(live.items()))
+        return ("detectados %d modelos (%s)" % (sum(live.values()), detail or "ningún servidor respondió"),
+                bool(live), "modelos")
+    if what == "skill_mode":
+        name = str(body.get("name") or "").strip()
+        mode = str(body.get("mode") or "").strip()
+        if not name or mode not in ("always", "auto", "off"):
+            return ("modo inválido para %r" % name, False, "skills")
+        if name not in settings_skills._routable_names():
+            return ("%s no está en el paquete de routing: no viaja con los turnos" % name,
+                    False, "skills")
+        always, off = settings_skills._modes()
+        always.discard(name)
+        off.discard(name)
+        if mode == "always":
+            always.add(name)
+        elif mode == "off":
+            off.add(name)
+        saved, reason = gov.save_skill_modes(always, off)
+        return ("%s → %s%s" % (name, mode, "" if saved else " (no se pudo: %s)" % reason),
+                saved, "skills")
+    if what in ("mcp_add", "mcp_delete", "mcp_toggle"):
+        ok, note = panels.mcp_write(cockpit, what[4:], body)
+        return (note, ok, "mcp")
+    if what == "key_delete":
+        name = str(body.get("key_name") or "").strip()
+        if not vault.looks_like_key(name):
+            return ("%r no es una clave de la bóveda" % name, False, "seguridad")
+        answer = vault.save({name: ""})
+        left = answer.get("names") or []
+        return ("bóveda: %s borrada (%d claves quedan)" % (name, len(left)),
+                name not in left, "seguridad")
     if what == "save_skill":
         answer = panels.skills_save(cockpit, body.get("name"), body.get("text"))
         return ("SKILL.md de %s: %s" % (body.get("name"),

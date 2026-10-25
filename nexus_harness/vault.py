@@ -128,3 +128,20 @@ def names(path=None):
 
 def looks_like_key(name):
     return any(str(name).upper().endswith(hint) for hint in KEY_HINTS)
+
+
+def sealed(path=None):
+    """`True` cuando el cofre esta realmente cifrado con DPAPI, no solo escrito con permisos.
+
+    La diferencia importa y no se adivina: un `secrets.json` en claro es un downgrade honesto que el
+    modulo declara, y la interfaz tiene que poder decirlo con la misma honestidad en vez de pintar un
+    candado verde sobre un fichero legible.
+    """
+    location = Path(path) if path else SECRETS
+    if not location.is_file():
+        return False
+    try:
+        payload = json.loads(location.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return False
+    return isinstance(payload, dict) and isinstance(payload.get("dpapi"), str)

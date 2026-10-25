@@ -1,4 +1,4 @@
-"""Paneles 05 a 08: skills, conectores MCP, puente movil y estadisticas.
+"""Paneles 06 a 08: conectores MCP, puente movil y estadisticas.
 
 Dos decisiones que se repiten aqui:
 - Lo que se ENSEÑA es lo que el motor puede leer AHORA (el catalogo del protocolo, los servidores que
@@ -9,7 +9,7 @@ Dos decisiones que se repiten aqui:
 """
 from pathlib import Path
 
-from . import gov, onboarding, panels
+from . import gov, panels
 from . import settings_kit as kit
 
 # La ultima respuesta de una accion (el arquitecto, el doctor). Vive en memoria del motor a proposito:
@@ -18,106 +18,67 @@ LAST = {}
 MAX_ROWS = 40
 
 
-def _catalog(cockpit):
-    """El catalogo de skills del protocolo, medido por su propio escaneo.
-
-    Se le pasa el home de Hermes (su resolvedor, `skills.targets.hermes_home`, no una copia de la
-    regla) y los proyectos del workspace: sin esos dos datos el escaneo no encuentra raices y el panel
-    diria "0 skills" con toda la razon -- medido, con ellos encuentra 144.
-    """
-    module = panels._protocol("nexus.skills.user_catalog")
-    if module is None:
-        return {}
-    targets = panels._protocol("nexus.skills.targets")
-    workspace = Path(str(cockpit.config.workspace))
-    projects = [workspace / name for name in onboarding.projects(workspace)]
-    try:
-        return module.scan(hermes_home=targets.hermes_home() if targets else None, projects=projects)
-    except Exception as exc:  # noqa: BLE001 -- un catalogo que falla no puede tumbar el panel
-        return {"error": "%s: %s" % (type(exc).__name__, exc)}
-
-
-def _skill_rows(scan):
-    rows = (scan.get("rows") or [])[:MAX_ROWS]
-    body = "".join('<div class="srow"><span>%s</span><span class="chip %s">%s</span>'
-                   '<span class="dim">%s</span></div>'
-                   % (kit.esc(row.get("name") or row.get("label") or "?"),
-                      "ok" if row.get("origin") == "own" else "off",
-                      kit.esc(row.get("origin") or "?"),
-                      kit.esc(row.get("description") or "")) for row in rows)
-    more = ""
-    if (scan.get("rows") or [])[MAX_ROWS:]:
-        more = '<p class="dim">… y %d más</p>' % len(scan["rows"][MAX_ROWS:])
-    return body + more
-
-
-def skills(cockpit, item=""):
-    scan = _catalog(cockpit)
-    head = ('<p class="dim">%s skills en %s · %s propias del operador · %s del protocolo</p>'
-            % (kit.esc(len(scan.get("rows") or [])), kit.esc(", ".join(scan.get("roots") or []) or "?"),
-               kit.esc(scan.get("own", 0)), kit.esc(scan.get("nexus", 0))))
-    catalog = _skill_rows(scan) if scan.get("rows") else (
-        '<p class="snote bad">%s</p>' % kit.esc(scan["error"]) if scan.get("error") else
-        '<p class="dim">El escaneo del protocolo no encontró skills en %s.</p>'
-        % kit.esc(", ".join(scan.get("roots") or []) or "(ninguna raíz)"))
-    body = [head, '<div class="sstack">%s</div>' % catalog]
-    editable = panels.skills_list(cockpit)
-    links = "".join('<a class="srow-link" href="/settings?section=skills&item=%s">%s'
-                    '<span class="dim">%s líneas</span></a>'
-                    % (kit.esc(row["name"]), kit.esc(row["name"]), kit.esc(row.get("lines", "?")))
-                    for row in (editable.get("skills") or []))
-    body.append('<h3 class="ssub">Editable ahora <span class="tag">%s</span></h3>'
-                '<p class="dim">Se edita lo que vive en %s.</p><div class="slist">%s</div>'
-                % (kit.esc(len(editable.get("skills") or [])), kit.esc(editable.get("root") or "?"),
-                   links or '<p class="dim">nada.</p>'))
-    if item:
-        read = panels.skills_read(cockpit, item)
-        if read.get("ok"):
-            body.append('<h3 class="ssub">%s</h3>' % kit.esc(item))
-            body.append('<form class="sform" method="post" action="/api/settings/do">'
-                        '<input type="hidden" name="section" value="skills">'
-                        '<input type="hidden" name="name" value="%s">'
-                        '<textarea name="text" spellcheck="false">%s</textarea>'
-                        '<div class="sactions"><button class="primary" name="what" value="save_skill">'
-                        'Guardar SKILL.md</button>'
-                        '<span class="dim">%s líneas · sha %s</span></div></form>'
-                        % (kit.esc(item), kit.esc(read.get("body") or ""),
-                           kit.esc(read.get("lines", "?")), kit.esc(str(read.get("sha256") or "")[:12])))
-        else:
-            body.append('<p class="snote bad">%s</p>' % kit.esc(read.get("reason") or "no se pudo leer"))
-    answer = LAST.get("architect")
-    body.append('<h3 class="ssub">Skill Architect <span class="tag">GitHub Scout</span></h3>')
-    if answer:
-        body.append('<pre class="sout">%s</pre>' % kit.esc(answer))
-    body.append('<form class="sform" method="post" action="/api/settings/do">'
-                '<input type="hidden" name="section" value="skills">'
-                '<div class="sgrow"><input name="message" placeholder="qué skill falta, o qué mejorar">'
-                '<label class="scheck"><input type="checkbox" name="github" value="1"> mirar GitHub</label>'
-                '<button class="primary" name="what" value="architect">Preguntar</button></div></form>')
-    return ("Skills & Skill Architect",
-            "El catálogo real, el editor de SKILL.md y el arquitecto conversacional.",
-            "".join(body))
-
-
 def mcp(cockpit):
+    """Lista de conectores CONFIGURADOS, no solo los que ya arrancaron, con su estado en vivo.
+
+    `describe()` del cliente solo habla de los servidores que corren o fallaron; un conector apagado
+    no aparecia en ningun sitio, asi que no se podia encender desde la interfaz. La lista sale del
+    fichero del operador y el estado en vivo se cruza por nombre.
+    """
+    from . import mcp_client
+    config = mcp_client.load_config()
     state = panels.mcp_status(cockpit)
-    rows = []
-    for server in state.get("servers") or []:
-        tools = ", ".join(server.get("tools") or []) or "sin tools"
-        rows.append('<div class="srow"><span>%s</span>'
-                    '<span class="chip %s">%s</span><span class="dim">pid %s · %s</span></div>'
-                    % (kit.esc(server.get("name")), "ok" if server.get("ready") else "bad",
-                       "conectado" if server.get("ready") else kit.esc(server.get("error") or "caído"),
-                       kit.esc(server.get("pid") or "-"), kit.esc(tools)))
-    body = ('<p class="dim">%s conectores · %s tools · config: <code>%s</code></p>%s'
-            % (kit.esc(len(state.get("servers") or [])), kit.esc(state.get("tools") or 0),
-               kit.esc(state.get("config") or "-"), "".join(rows) or '<p class="dim">ninguno.</p>'))
-    body += ('<form class="sform" method="post" action="/api/settings/do">'
-             '<input type="hidden" name="section" value="mcp">'
-             '<div class="sactions"><button class="primary" name="what" value="mcp_reload">'
-             'Recargar conectores</button></div></form>')
-    return ("Conectores MCP", "Los servidores MCP que este motor puede llamar, y su estado.",
-            body)
+    live = {str(row.get("name")): row for row in state.get("servers") or []}
+    cards = []
+    for name, spec in sorted((config.get("servers") or {}).items()):
+        row = live.get(name) or {}
+        enabled = spec.get("enabled") is not False
+        if not enabled:
+            badge = '<span class="chip off">desactivado</span>'
+        elif row.get("ready"):
+            badge = '<span class="chip ok">conectado · %d tools</span>' % len(row.get("tools") or [])
+        else:
+            badge = '<span class="chip bad">%s</span>' % kit.esc(row.get("error") or "no arrancó")
+        command = " ".join([str(spec.get("command") or "?"), *[str(a) for a in spec.get("args") or []]])
+        detail = [command]
+        if spec.get("cwd"):
+            detail.append("cwd: %s" % spec["cwd"])
+        if spec.get("env"):
+            detail.append("env: %s" % ", ".join(sorted(spec["env"])))
+        if row.get("tools"):
+            detail.append("tools: %s" % ", ".join(row["tools"]))
+        cards.append(
+            '<div class="mcpserver"><header class="skhead"><strong>%s</strong>%s</header>'
+            '<p class="dim mono">%s</p><footer class="skfoot">'
+            '<form class="sform" method="post" action="/api/settings/do">%s%s%s'
+            '<button class="ghost">%s</button></form>'
+            '<form class="sform" method="post" action="/api/settings/do">%s%s'
+            '<button class="ghost danger" onclick="return confirm(\'¿Eliminar %s?\')">Eliminar</button>'
+            '</form></footer></div>'
+            % (kit.esc(name), badge, kit.esc(" · ".join(detail)),
+               kit.hidden("section", "mcp"), kit.hidden("what", "mcp_toggle"), kit.hidden("name", name),
+               "Desactivar" if enabled else "Activar",
+               kit.hidden("section", "mcp"), kit.hidden("what", "mcp_delete") + kit.hidden("name", name),
+               kit.esc(name)))
+    body = ('<h3 class="ssub">Conectores <span class="tag">%d</span></h3>'
+            '<p class="dim">%s tools en total · fichero: <code>%s</code></p>'
+            '<div class="mcpgrid">%s</div>'
+            '<h3 class="ssub">Añadir o editar un servidor MCP</h3>'
+            '<form class="sform" method="post" action="/api/settings/do">'
+            % (len(config.get("servers") or {}), kit.esc(state.get("tools") or 0),
+               kit.esc(str(mcp_client.CONFIG)), "".join(cards) or '<p class="dim">ninguno.</p>'))
+    body += (kit.hidden("section", "mcp") + kit.hidden("what", "mcp_add")
+             + '<div class="sgrid">'
+             + kit.field("Nombre", '<input name="name" placeholder="p. ej. filesystem">')
+             + kit.field("Comando", '<input name="command" placeholder="npx / python / node">')
+             + kit.field("Argumentos", '<input name="args" placeholder="-y @modelcontextprotocol/server-filesystem C:\\ruta">')
+             + kit.field("Directorio de trabajo (opcional)", '<input name="cwd" placeholder="c:\\ruta\\del\\servidor">')
+             + "</div>"
+             + kit.field("Variables de entorno (una por línea, CLAVE=valor)",
+                         '<textarea name="env" rows="3" placeholder="API_KEY=…"></textarea>')
+             + '<div class="sactions"><button class="primary">Guardar conector y recargar</button></div>'
+               '</form>')
+    return ("Conectores MCP", "Los servidores MCP configurados, su estado en vivo y sus tools.", body)
 
 
 def puente(cockpit):
@@ -151,38 +112,63 @@ def _shorter(value, digits):
         return value
 
 
+def _kpi(label, value, tone="", hint=""):
+    """Una tarjeta KPI: el numero grande, la etiqueta, y de donde sale. Nada mas."""
+    return ('<div class="kpi %s"><span class="kpi-label">%s</span>'
+            '<strong class="kpi-value">%s</strong>%s</div>'
+            % (kit.esc(tone), kit.esc(label), kit.esc(value),
+               '<em class="kpi-hint">%s</em>' % kit.esc(hint) if hint else ""))
+
+
+def _doctor_kpi():
+    """El doctor no deja estado en disco: o lo has pasado en esta sesion, o no esta medido."""
+    tail = LAST.get("doctor")
+    if not tail:
+        return _kpi("Estado del Doctor", "no medido", "off", "pásalo abajo (~1 min)")
+    verdict = "verde" if "green" in tail.lower() else "revisar"
+    return _kpi("Estado del Doctor", verdict, "ok" if verdict == "verde" else "warn",
+                "última pasada de esta sesión")
+
+
 def stats(cockpit):
     state, reason = gov.installer_state()
     money = state.get("money") if isinstance(state.get("money"), dict) else {}
-    totals = ((state.get("impact") or {}).get("totals")) or {}
     counts = state.get("fleet_counts") or {}
     lint = panels._protocol("nexus.checks.rules_lint")
     findings = len(lint.lint_repo(str(gov.PROTOCOL))["findings"]) if lint is not None else "?"
     last = (cockpit.state().get("chat") or {}).get("last") or {}
     verdict = last.get("verdict") or {}
+    judgement = (last.get("judgement") or {}).get("verdict") or "—"
     active = (money.get("active") or {}).get("label") or "sin tarifa declarada"
     currency = money.get("currency") or "USD"
-    rows = [("Proyectos", "%s gobernados de %s" % (counts.get("governed", "?"), counts.get("workspace", "?"))),
-            ("Con medición", "%s de %s proyectos tienen historial" % (
-                totals.get("projects", "?"), counts.get("indexed", "?"))),
-            ("Ahorro neto", "%s %s" % (_shorter(money.get("net"), 2), currency)
-             if money.get("net") is not None else "sin medir"),
-            ("Tokens evitados", money.get("avoided_tokens", "—")),
-            ("Horas ahorradas", _shorter(money.get("hours"), 1)),
-            ("Tarifa activa", active),
-            ("Último gate del chat", "exit %s" % verdict.get("exit") if verdict else "sin turno todavía"),
-            ("Juez del último turno", ((last.get("judgement") or {}).get("verdict") or "—")),
-            ("Lint del protocolo", "%s hallazgos" % findings)]
+    net = money.get("net")
+    cards = [
+        _kpi("Proyectos Gobernados", "%s / %s" % (counts.get("governed", "?"),
+                                                  counts.get("workspace", "?")),
+             "ok" if counts.get("governed") else "off", "con .ai/CURRENT_SPEC.json"),
+        _kpi("Tokens Evitados", money.get("avoided_tokens", "—"), "ok", "podados por el motor durmiente"),
+        _kpi("Ahorro", ("%s %s" % (_shorter(net, 2), currency)) if net is not None else "sin medir",
+             "ok" if net else "off", "neto, con la tarifa activa"),
+        _kpi("Horas Ahorradas", _shorter(money.get("hours"), 1), "ok", "estimadas del ledger"),
+        _kpi("Lint del Protocolo", "%s hallazgos" % findings, "ok" if findings == 0 else "bad",
+             "el gobernador, medido ahora"),
+        _doctor_kpi(),
+        _kpi("Último Gate", ("exit %s" % verdict.get("exit")) if verdict else "sin turno",
+             "ok" if verdict.get("ok") else ("bad" if verdict else "off"), "del último turno del chat"),
+        _kpi("Último Juez", judgement,
+             "ok" if judgement == "approve" else ("warn" if judgement == "—" else "bad"),
+             "veredicto del modelo juez"),
+        _kpi("Tarifa Activa", active, "ok", "precio por turno declarado"),
+    ]
     if reason:
-        rows.append(("Gobernanza", reason))
-    table = "".join('<div class="srow"><span>%s</span><span class="mono">%s</span></div>'
-                    % (kit.esc(name), kit.esc(value)) for name, value in rows)
-    body = ['<div class="sstack">%s</div>' % table]
+        cards.append(_kpi("Gobernanza", "no disponible", "warn", reason))
+    body = ['<div class="kpigrid">%s</div>' % "".join(cards)]
     if LAST.get("doctor"):
+        body.append('<h3 class="ssub">Última pasada del doctor</h3>')
         body.append('<pre class="sout">%s</pre>' % kit.esc(LAST["doctor"]))
     body.append('<form class="sform" method="post" action="/api/settings/do">'
-                '<input type="hidden" name="section" value="stats">'
-                '<div class="sactions"><button class="primary" name="what" value="doctor">'
+                + kit.hidden("section", "stats")
+                + '<div class="sactions"><button class="primary" name="what" value="doctor">'
                 'Pasar el doctor del protocolo</button>'
                 '<span class="dim">tarda ~1 minuto: recorre todos los self-tests del gobernador</span>'
                 '</div></form>')

@@ -11,6 +11,7 @@
 
 const $ = (id) => document.getElementById(id);
 const TOKEN = new URLSearchParams(location.search).get('token') || '';
+const WANTED = new URLSearchParams(location.search).get('project') || '';
 const API_VERSION = 2;
 let since = 0, currentSession = null, polling = false, allSessions = [], feed = [];
 
@@ -362,11 +363,19 @@ $('input').addEventListener('keydown', (event) => {
 });
 $('project').addEventListener('change', newChat);
 
+async function openProject(name) {
+  const option = Array.from($('project').options).find((item) => item.value === name);
+  if (!option) return;
+  $('project').value = name;
+  if (!currentSession) await newChat();
+}
+
 (async function boot() {
   await checkEngine();
   await refreshState();
   await refreshChat();
   await refreshSessions();
+  if (WANTED) await openProject(WANTED);
   setInterval(pollEvents, 800);
   setInterval(refreshState, 2500);
   setInterval(refreshChat, 2500);
