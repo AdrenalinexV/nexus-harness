@@ -105,14 +105,14 @@
       "status": "met"
     },
     "installer": {
-      "attempts": 11,
+      "attempts": 12,
       "last": {
-        "at": "2026-10-25T12:00:26Z",
+        "at": "2026-10-25T12:01:50Z",
         "command": "python tools/nightshift.py install --check",
         "exit": 0,
-        "head": "ebcc9f7",
+        "head": "f8b877f",
         "ok": true,
-        "tail": "sala       : C:\\Users\\Vexus\\AppData\\Local\\NexusHarnessVerify (no existia)\ninstalador : NexusHarness-Setup-0.3.0.exe -> exit 0\nventana    : nexus-harness-desktop.exe subsystem=2 (2 = interfaz)\nmotor      : repo     sha256=9ae6298dd841\n           : instalado sha256=9ae6298dd841\ndesinstalar: exit 0\nsala       : eliminada, sin fichero bloqueado\nregistro   : devuelto como estaba\nok: el instalador deja el motor del repositorio y una ventana de interfaz, y se desinstala limpio"
+        "tail": "sala       : C:\\Users\\Vexus\\AppData\\Local\\NexusHarnessVerify (no existia)\ninstalador : NexusHarness-Setup-0.3.0.exe -> exit 0\nventana    : nexus-harness-desktop.exe subsystem=2 (2 = interfaz)\nmotor      : repo     sha256=cad2d15da4da\n           : instalado sha256=cad2d15da4da\ndesinstalar: exit 0\nsala       : eliminada, sin fichero bloqueado\nregistro   : devuelto como estaba\nok: el instalador deja el motor del repositorio y una ventana de interfaz, y se desinstala limpio"
       },
       "note": "",
       "status": "met"
@@ -859,9 +859,16 @@
       "head": "ebcc9f7",
       "id": "evidence-export",
       "ok": true
+    },
+    {
+      "at": "2026-10-25T12:01:50Z",
+      "exit": 0,
+      "head": "f8b877f",
+      "id": "installer",
+      "ok": true
     }
   ],
-  "iteration": 91,
+  "iteration": 92,
   "rubric_version": 1,
   "started": "2026-10-25T00:00:50Z",
   "version": 1
