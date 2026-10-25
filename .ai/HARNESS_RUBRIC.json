@@ -1,0 +1,133 @@
+{
+  "version": 1,
+  "max_minutes_per_iteration": 55,
+  "note": "La rubrica es la fuente de verdad del turno de noche. Cambiar un umbral exige escribir en docs/NIGHT_SHIFT.md por que, con evidencia. Un criterio no se 'ablanda' para quedar verde.",
+  "criteria": [
+    {
+      "id": "gate-lint",
+      "area": "gobernanza",
+      "title": "La ley de 400 lineas pasa en el propio repositorio",
+      "why": "Si el arnes no cumple su ley, no puede imponerla.",
+      "proof": "python tools/lint_harness.py",
+      "contains": "findings=0",
+      "priority": 1
+    },
+    {
+      "id": "suites-source",
+      "area": "gobernanza",
+      "title": "Toda la suite determinista pasa desde el codigo fuente",
+      "why": "Un harness que solo pasa con mocks no sirve en produccion.",
+      "proof": "python -m nexus_harness selftest",
+      "contains": "failures=0",
+      "priority": 1
+    },
+    {
+      "id": "frozen-engine",
+      "area": "empaquetado",
+      "title": "El motor congelado pasa la misma suite",
+      "why": "Lo que se entrega no es el repo, es el .exe.",
+      "proof": "dist/nexus-harness-engine.exe selftest",
+      "contains": "failures=0",
+      "priority": 2
+    },
+    {
+      "id": "protocol-lint",
+      "area": "gobernanza",
+      "title": "NexusProtocol sigue en 0 hallazgos",
+      "why": "La gobernanza no puede romper al gobernador.",
+      "proof": "python -c \"import sys; sys.path.insert(0, r'C:/Proyectos/NexusProtocol'); from nexus.checks import rules_lint; r=rules_lint.lint_repo(r'C:/Proyectos/NexusProtocol'); print('findings=%d' % len(r['findings'])); raise SystemExit(0 if not r['findings'] else 1)\"",
+      "contains": "findings=0",
+      "priority": 2
+    },
+    {
+      "id": "protocol-doctor",
+      "area": "gobernanza",
+      "title": "El doctor del protocolo esta verde",
+      "why": "Es la unica prueba agregada de que Nexus sigue siendo Nexus.",
+      "proof": "python C:/Proyectos/NexusProtocol/nexus/cli.py doctor",
+      "contains": "green",
+      "priority": 3
+    },
+    {
+      "id": "hook-contract",
+      "area": "multi-harness",
+      "title": "Contrato generico `nexus gate --hook` (JSON por stdin, exit 0/10/20/30)",
+      "why": "Es la pieza que permite gobernar Aider, Claude Code, Codex u OpenCode sin forkear nada.",
+      "proof": "python C:/Proyectos/NexusProtocol/nexus/cli.py gate --hook --selftest --json",
+      "contains": "\"ok\": true",
+      "priority": 1
+    },
+    {
+      "id": "adapter-aider",
+      "area": "multi-harness",
+      "title": "Adaptador Aider: lint/test del gate escritos en su config, verificable",
+      "why": "Coste casi cero y cubre el segmento de edicion CLI maduro.",
+      "proof": "python -m nexus.harness.adapters --check aider --root .",
+      "contains": "ok",
+      "priority": 2
+    },
+    {
+      "id": "adapter-claude",
+      "area": "multi-harness",
+      "title": "Adaptador Claude Code: hook Stop que no deja cerrar sin evidencia",
+      "why": "Es el harness con mas uso real y su hook esta documentado.",
+      "proof": "python -m nexus.harness.adapters --check claude --root .",
+      "contains": "ok",
+      "priority": 3
+    },
+    {
+      "id": "providers-retry",
+      "area": "motor",
+      "title": "Reintento acotado con backoff en 429/5xx, medido",
+      "why": "Sin esto, un rate limit del proveedor mata el turno y el operador lo ve como 'el harness no vale'.",
+      "proof": "python -m nexus_harness selftest retry",
+      "contains": "failures=0",
+      "priority": 2
+    },
+    {
+      "id": "tool-arg-repair",
+      "area": "motor",
+      "title": "Reparacion de argumentos de tool malformados antes de rendirse",
+      "why": "Es la diferencia entre un turno perdido y un turno que se corrige solo.",
+      "proof": "python -m nexus_harness selftest repair",
+      "contains": "failures=0",
+      "priority": 3
+    },
+    {
+      "id": "context-compaction",
+      "area": "contexto",
+      "title": "Compactacion determinista al acercarse al presupuesto, con test",
+      "why": "El relevo de sesion ya existe; falta no llegar jadeando.",
+      "proof": "python -m nexus_harness selftest compaction",
+      "contains": "failures=0",
+      "priority": 3
+    },
+    {
+      "id": "evidence-export",
+      "area": "evidencia",
+      "title": "El informe de evidencia se genera desde el estado y cubre los 14 criterios",
+      "why": "Sin evidencia exportada, 'funciona' es una opinion.",
+      "proof": "python tools/nightshift.py report --check",
+      "contains": "ok",
+      "priority": 2
+    },
+    {
+      "id": "no-orphans",
+      "area": "operacion",
+      "title": "El motor no sobrevive a su shell (vigilante) y esta probado",
+      "why": "Un huerfano bloquea la siguiente instalacion; ya nos paso dos veces.",
+      "proof": "python -m nexus_harness selftest sidecar",
+      "contains": "failures=0",
+      "priority": 2
+    },
+    {
+      "id": "installer",
+      "area": "empaquetado",
+      "title": "Instalador silencioso que deja motor y ventana verificables",
+      "why": "Es el artefacto que el usuario final toca.",
+      "proof": "python tools/nightshift.py install --check",
+      "contains": "ok",
+      "priority": 4
+    }
+  ]
+}

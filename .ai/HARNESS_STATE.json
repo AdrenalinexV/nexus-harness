@@ -1,0 +1,164 @@
+{
+  "criteria": {
+    "adapter-aider": {
+      "attempts": 0,
+      "last": {},
+      "note": "",
+      "status": "unmet"
+    },
+    "adapter-claude": {
+      "attempts": 0,
+      "last": {},
+      "note": "",
+      "status": "unmet"
+    },
+    "context-compaction": {
+      "attempts": 0,
+      "last": {},
+      "note": "",
+      "status": "unmet"
+    },
+    "evidence-export": {
+      "attempts": 1,
+      "last": {
+        "at": "2026-10-25T00:01:09Z",
+        "command": "python tools/nightshift.py report --check",
+        "exit": 0,
+        "head": "8dd4ff4",
+        "ok": true,
+        "tail": "escrito docs\\NIGHT_REPORT.md (4/14 en verde)\nok: el informe cubre los 14 criterios"
+      },
+      "note": "",
+      "status": "met"
+    },
+    "frozen-engine": {
+      "attempts": 0,
+      "last": {},
+      "note": "",
+      "status": "unmet"
+    },
+    "gate-lint": {
+      "attempts": 1,
+      "last": {
+        "at": "2026-10-25T00:00:51Z",
+        "command": "python tools/lint_harness.py",
+        "exit": 0,
+        "head": "8dd4ff4",
+        "ok": true,
+        "tail": "files=67 findings=0 max_lines=400"
+      },
+      "note": "",
+      "status": "met"
+    },
+    "hook-contract": {
+      "attempts": 0,
+      "last": {},
+      "note": "",
+      "status": "unmet"
+    },
+    "installer": {
+      "attempts": 0,
+      "last": {},
+      "note": "",
+      "status": "unmet"
+    },
+    "no-orphans": {
+      "attempts": 1,
+      "last": {
+        "at": "2026-10-25T00:01:09Z",
+        "command": "python -m nexus_harness selftest sidecar",
+        "exit": 0,
+        "head": "8dd4ff4",
+        "ok": true,
+        "tail": "sidecar          OK    5.11s\nsuites=1 failures=0"
+      },
+      "note": "",
+      "status": "met"
+    },
+    "protocol-doctor": {
+      "attempts": 0,
+      "last": {},
+      "note": "",
+      "status": "unmet"
+    },
+    "protocol-lint": {
+      "attempts": 1,
+      "last": {
+        "at": "2026-10-25T00:01:04Z",
+        "command": "python -c \"import sys; sys.path.insert(0, r'C:/Proyectos/NexusProtocol'); from nexus.checks import rules_lint; r=rules_lint.lint_repo(r'C:/Proyectos/NexusProtocol'); print('findings=%d' % len(r['findings'])); raise SystemExit(0 if not r['findings'] else 1)\"",
+        "exit": 0,
+        "head": "8dd4ff4",
+        "ok": true,
+        "tail": "findings=0"
+      },
+      "note": "",
+      "status": "met"
+    },
+    "providers-retry": {
+      "attempts": 0,
+      "last": {},
+      "note": "",
+      "status": "unmet"
+    },
+    "suites-source": {
+      "attempts": 1,
+      "last": {
+        "at": "2026-10-25T00:01:03Z",
+        "command": "python -m nexus_harness selftest",
+        "exit": 0,
+        "head": "8dd4ff4",
+        "ok": true,
+        "tail": "providers        OK    0.00s\ntools            OK    0.16s\nedit_v4a         OK    0.03s\nshell_session    OK    1.36s\nsubagents        OK    0.01s\nwarning: The `fitz` API is deprecated and will be removed in future. Use `import pymupdf` instead.\nattachments      OK    0.22s\nonboarding       OK    0.13s\nmcp_client       OK    0.32s\nsidecar          OK    5.11s\nestado listo: 2 criterios (2 pendientes)\na -> exit 0 (VERDE)\nfindings=0\nb -> exit 10 (ROJO)\n\nb marcado blocked\ncriterio desconocido: zzz\nnightshift       OK    0.19s\ncontext_router   OK    0.01s\ntriad_loop       OK    1.65s\nsession_relay    OK    0.92s\nchat             OK    0.10s\nmemory           OK    0.49s\nui               OK    0.89s\nbridge           OK    0.06s\nsuites=17 failures=0"
+      },
+      "note": "",
+      "status": "met"
+    },
+    "tool-arg-repair": {
+      "attempts": 0,
+      "last": {},
+      "note": "",
+      "status": "unmet"
+    }
+  },
+  "history": [
+    {
+      "at": "2026-10-25T00:00:51Z",
+      "exit": 0,
+      "head": "8dd4ff4",
+      "id": "gate-lint",
+      "ok": true
+    },
+    {
+      "at": "2026-10-25T00:01:03Z",
+      "exit": 0,
+      "head": "8dd4ff4",
+      "id": "suites-source",
+      "ok": true
+    },
+    {
+      "at": "2026-10-25T00:01:04Z",
+      "exit": 0,
+      "head": "8dd4ff4",
+      "id": "protocol-lint",
+      "ok": true
+    },
+    {
+      "at": "2026-10-25T00:01:09Z",
+      "exit": 0,
+      "head": "8dd4ff4",
+      "id": "no-orphans",
+      "ok": true
+    },
+    {
+      "at": "2026-10-25T00:01:09Z",
+      "exit": 0,
+      "head": "8dd4ff4",
+      "id": "evidence-export",
+      "ok": true
+    }
+  ],
+  "iteration": 5,
+  "rubric_version": 1,
+  "started": "2026-10-25T00:00:50Z",
+  "version": 1
+}

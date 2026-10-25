@@ -7,7 +7,7 @@ import importlib
 import time
 
 SUITES = ("providers", "tools", "edit_v4a", "shell_session", "subagents", "attachments",
-          "onboarding", "mcp_client", "sidecar", "context_router", "triad_loop", "session_relay", "chat",
+          "onboarding", "mcp_client", "sidecar", "nightshift", "context_router", "triad_loop", "session_relay", "chat",
           "memory", "ui", "bridge")
 
 
