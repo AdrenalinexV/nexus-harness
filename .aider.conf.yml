@@ -1,0 +1,5 @@
+# written by nexus: python -m nexus.harness.adapters --check aider --root .
+lint-cmd: python -m nexus.checks.rules_lint --root .
+test-cmd: python -m nexus_harness selftest
+auto-lint: true
+auto-test: true

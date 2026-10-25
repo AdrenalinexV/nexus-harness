@@ -26,6 +26,10 @@ reviewer checks.
 - `nexus_harness/selftests/` — deterministic tests. No network, no key, no clock: a fake transport
   stands in for the model, so a green run means the logic is right, not that the network was up.
 - `tools/` — repository tooling (lint wrapper, verification script).
+- `nexus/` — one file, and it is a pointer, not code: it extends the package path to NexusProtocol so
+  `python -m nexus.harness.adapters` resolves from this root. `nexus/harness/` holds the translators
+  that put the gate inside other harnesses (Aider first), and vendoring them here would leave two
+  definitions of every rule on this machine.
 
 ## Verification
 

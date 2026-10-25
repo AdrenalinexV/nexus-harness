@@ -1,10 +1,17 @@
 {
   "criteria": {
     "adapter-aider": {
-      "attempts": 0,
-      "last": {},
+      "attempts": 1,
+      "last": {
+        "at": "2026-10-25T00:51:19Z",
+        "command": "python -m nexus.harness.adapters --check aider --root .",
+        "exit": 0,
+        "head": "1455d87",
+        "ok": true,
+        "tail": "ok: aider -- lint-cmd and test-cmd written to .aider.conf.yml, and the lint entry point answered: files=68 findings=0"
+      },
       "note": "",
-      "status": "unmet"
+      "status": "met"
     },
     "adapter-claude": {
       "attempts": 0,
@@ -169,9 +176,16 @@
       "head": "2d22433",
       "id": "hook-contract",
       "ok": true
+    },
+    {
+      "at": "2026-10-25T00:51:19Z",
+      "exit": 0,
+      "head": "1455d87",
+      "id": "adapter-aider",
+      "ok": true
     }
   ],
-  "iteration": 6,
+  "iteration": 7,
   "rubric_version": 1,
   "started": "2026-10-25T00:00:50Z",
   "version": 1

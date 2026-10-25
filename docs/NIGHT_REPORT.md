@@ -2,10 +2,10 @@
 
 Generado por `tools/nightshift.py report` (no se escribe a mano).
 
-- fecha: 2026-10-25T00:44:54Z
-- HEAD: `2d22433`
-- iteracion: 6
-- criterios: **6/14**
+- fecha: 2026-10-25T00:51:20Z
+- HEAD: `1455d87`
+- iteracion: 7
+- criterios: **7/14**
 
 ## Rubrica
 
@@ -14,7 +14,7 @@ Generado por `tools/nightshift.py report` (no se escribe a mano).
 | `gate-lint` | gobernanza | La ley de 400 lineas pasa en el propio repositorio | OK | 0 |
 | `hook-contract` | multi-harness | Contrato generico `nexus gate --hook` (JSON por stdin, exit 0/10/20/30) | OK | 0 |
 | `suites-source` | gobernanza | Toda la suite determinista pasa desde el codigo fuente | OK | 0 |
-| `adapter-aider` | multi-harness | Adaptador Aider: lint/test del gate escritos en su config, verificable | unmet | — |
+| `adapter-aider` | multi-harness | Adaptador Aider: lint/test del gate escritos en su config, verificable | OK | 0 |
 | `evidence-export` | evidencia | El informe de evidencia se genera desde el estado y cubre los 14 criterios | OK | 0 |
 | `frozen-engine` | empaquetado | El motor congelado pasa la misma suite | unmet | — |
 | `no-orphans` | operacion | El motor no sobrevive a su shell (vigilante) y esta probado | OK | 0 |
@@ -76,6 +76,13 @@ memory           OK    0.49s
 ui               OK    0.89s
 bridge           OK    0.06s
 suites=17 failures=0
+```
+
+### adapter-aider (exit 0, 2026-10-25T00:51:19Z)
+
+```
+$ python -m nexus.harness.adapters --check aider --root .
+ok: aider -- lint-cmd and test-cmd written to .aider.conf.yml, and the lint entry point answered: files=68 findings=0
 ```
 
 ### evidence-export (exit 0, 2026-10-25T00:01:09Z)

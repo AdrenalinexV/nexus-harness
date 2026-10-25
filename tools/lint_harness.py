@@ -19,9 +19,9 @@ if str(NEXUS_SOURCE) not in sys.path:
 
 from nexus.checks import rules_lint  # noqa: E402  (path is prepared above, by design)
 
-# Build output is not source. PyInstaller's work dir and Cargo's `target` hold thousands of generated
-# files; grading them would drown the law in findings that say nothing about this repository.
-rules_lint.SKIP_DIRS |= {".build", "dist", "target", "build", "engine"}
+# No skip list here: build output (`dist/`, `.build/`, `target/`) is the governor's business now, so
+# this wrapper cannot drift from the rules it is applying. Measured before the move: `.build/venv`
+# alone made this repository look like 1737 files with 1949 findings.
 
 
 def main(argv=None):
