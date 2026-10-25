@@ -16,6 +16,7 @@ import threading
 import time
 from dataclasses import dataclass, field
 
+from .budget import CostBudget
 from .compaction import Compactor
 from .gate import EXIT_GREEN, EXIT_UNAVAILABLE, Gate
 from .judge import Judge
@@ -69,6 +70,7 @@ class RunResult:
     verdict: dict = field(default_factory=dict)
     judgement: dict = field(default_factory=dict)
     budget: dict = field(default_factory=dict)
+    cost: dict = field(default_factory=dict)
     started: str = ""
     finished: str = ""
 
@@ -76,7 +78,7 @@ class RunResult:
         return {"goal": self.goal, "root": self.root, "ok": self.ok, "exit": self.exit, "summary": self.summary,
                 "steps": self.steps, "repairs": self.repairs, "touched": self.touched,
                 "sessions": self.sessions, "phases": self.phases, "verdict": self.verdict,
-                "judgement": self.judgement, "budget": self.budget,
+                "judgement": self.judgement, "budget": self.budget, "cost": self.cost,
                 "started": self.started, "finished": self.finished}
 
 
@@ -95,6 +97,7 @@ class Triad:
         self.skills = skills
         self.bus = bus
         self.relay = relay
+        self.cost = CostBudget(limit_usd=float(getattr(config, "cost_limit", 0.0) or 0.0))
         self.compactor = compactor if compactor is not None else Compactor(
             limit=getattr(config, "budget_limit", 60000),
             threshold=getattr(config, "compact_threshold", 0.55))
@@ -157,6 +160,10 @@ class Triad:
             if self._stop.is_set():
                 self._emit("worker.stopped", "interrupción pedida en el paso %d" % step)
                 break
+            if self.cost.stop("worker"):
+                # Parada dura: ni una llamada mas, y tampoco el resumen de cierre (que costaria otra).
+                self._emit("budget.stop", self.cost.reason, budget=self.cost.state())
+                break
             messages[0] = Message(role="system", content=self._system(WORKER_PROMPT, self.touched))
             self._maybe_compact(messages)
             try:
@@ -214,6 +221,7 @@ class Triad:
         return reply.text or fallback
 
     def _absorb(self, reply):
+        self.cost.observe(reply.usage, reply.model)
         if self.relay is not None:
             self.relay.observe(reply.usage)
 
@@ -313,6 +321,7 @@ class Triad:
         elif result.exit not in (10, EXIT_UNAVAILABLE):
             result.exit = 10
         result.steps, result.repairs = steps_total, repairs
+        result.cost = self.cost.state()
         result.touched, result.finished = sorted(self.touched), _now()
         if self.relay is not None:
             self.relay.finish(result.exit)

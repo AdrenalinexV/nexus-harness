@@ -79,3 +79,17 @@ La instantanea se toma **antes** del `os.replace`, porque una copia tomada despu
 deshacer nada; y el diario escribe su propio manifiesto con `atomic_write_bytes` -- el suelo que **no**
 consulta el diario -- para que anotar un turno no se anote a si mismo.
 
+
+## El turno tiene un techo en dolares (criterio `cost-budget`)
+
+| Fuente | Qué dice | Qué hacemos |
+|---|---|---|
+| [Claude Code — Manage costs](https://code.claude.com/docs/en/costs) | `--max-budget-usd` es un **tope duro**: "when the cumulative cost of API calls reaches this amount, Claude Code stops making additional calls". El coste se calcula localmente desde los tokens a precio de lista, salvo que un `modelPricing` gestionado pise las tarifas; la cifra es una **estimacion**, no la factura. Avisa de que el calculo es aproximado. | Se adopta el tope duro en USD y la comprobacion **antes** de cada llamada: cruzar el techo no pide una llamada mas. Se adopta tambien el aviso de estimacion: la cifra es para decidir, no para cuadrar la factura. Se descarta el `modelPricing` gestionado por MDM: este arnes lee su tabla de `harness.json`. |
+| [Aider — FAQ y metadata de modelos](https://aider.chat/docs/faq.html) | Aider no cobra; cobra el modelo. Si un modelo no trae `input_cost_per_token` en su metadata, Aider **no imprime `$0.00`: no imprime linea de coste**, porque no sabe. | Se adopta el mismo rigor: un modelo sin precio conocido **no cuesta cero**; la llamada se cuenta como `unpriced` y se declara. Un motor local (`lmstudio:`, `ollama:`) si cuesta 0, pero como precio **declarado**, que no es lo mismo que no saberlo. |
+
+**Decisión de diseño**: el presupuesto de tokens que ya existia (`compaction`, `session_relay`) es
+higiene de contexto, no dinero: `max_steps` limita el **numero** de llamadas, no su **precio**, y una
+entrada de 100k tokens no cuesta lo mismo que una salida de 100k. Por eso el techo es en USD, separa
+entrada de salida y vive en `nexus_harness/budget.py`, con la parada en el mismo punto que el medidor
+de tokens: el bucle. La suite mide la parada **comparando** el mismo guion con techo y sin techo (1
+llamada contra 2), que es la unica forma de probar que la parada es lo que corta y no el azar.

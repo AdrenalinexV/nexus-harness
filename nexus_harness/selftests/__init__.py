@@ -8,7 +8,7 @@ import time
 
 SUITES = ("providers", "retry", "repair", "tools", "edit_v4a", "shell_session", "shell_policy", "checkpoint", "subagents", "attachments",
           "onboarding", "mcp_client", "sidecar", "nightshift", "context_router", "triad_loop", "session_relay", "compaction", "chat",
-          "memory", "ui", "bridge")
+          "memory", "ui", "bridge", "budget")
 
 
 def run(names=None, stream=None):

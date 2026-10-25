@@ -100,7 +100,7 @@ la que empezó a las 23:00.
 Gobernanza (lint propio, suites, protocolo, política zero-trust de comandos), empaquetado (motor
 congelado, instalador verificable), multi-harness (contrato `--hook` + adaptadores Aider/Claude), motor
 (reintentos con backoff, reparación de argumentos de tool), contexto (compactación determinista),
-evidencia (informe con exit codes) y operación (cero huérfanos). 15 criterios, 15 comandos, 0 adjetivos.
+evidencia (informe con exit codes) y operación (cero huérfanos). 17 criterios, 17 comandos, 0 adjetivos.
 
 ## Correcciones a la rubrica (para revisar al dia siguiente)
 
@@ -216,6 +216,38 @@ Limite escrito, no escondido: el diario guarda bytes **antes** de la escritura, 
 un comando de shell escriba por su cuenta (`echo x > f`, `git checkout`) -- eso sigue siendo del gate y
 del operador. Y `undo` es de un turno, no de una sesion: no hay `redo`, y deshacer dos veces es un
 no-op declarado, no un salto al turno anterior.
+
+## Subida del liston: el turno tiene un techo en dolares (criterio 17)
+
+Igual que los dos anteriores, esto **anade** un criterio y no toca ningun umbral de los 16 que ya estaban.
+
+Que habia: el presupuesto medido eran **tokens** (`compaction.py` contra la ventana, `session_relay.py`
+contra el umbral del relevo). Eso es higiene de contexto, no dinero: `max_steps` limita el *numero* de
+llamadas al modelo y no su *precio*, y una entrada de 100k tokens no cuesta lo mismo que una salida de
+100k. Un turno autonomo con un modelo de nube podia gastar sin que nada lo parase. Medido: no existia
+`budget.py` ni ninguna referencia a coste en USD en el paquete.
+
+Que exige ahora `cost-budget`: `python -m nexus_harness selftest budget` con `failures=0`. El techo vive
+en `nexus_harness/budget.py` (tabla de precios por 1M tokens, separada en entrada y salida), se configura
+por `cost_limit` en `~/.nexus/harness.json` y la comprobacion vive en el bucle (`Chat` y `Triad`), **antes**
+de cada llamada al modelo.
+
+Evidencia de esta sesion:
+
+1. `nightshift check cost-budget` -> exit **0** (VERDE), `suites=1 failures=0`.
+2. **Falsificacion medida**: con `CostBudget.stop` sustituido en memoria por un `False` fijo, la suite pasa
+   de `sano failures=0` a `roto failures=8`, primer fallo `y ahora si para: False, esperaba True`, y el
+   que mide el dinero real `el turno hace UNA sola llamada al modelo: 2, esperaba 1`. La prueba muerde.
+3. La propia suite lleva su comparacion: el mismo guion con techo hace 1 llamada y sin techo hace 2. Si la
+   parada fuese un aviso, los dos numeros serian iguales.
+4. `lint_harness` -> exit **0**, `files=79 findings=0 max_lines=400`; `selftest` -> exit **0**,
+   `suites=23 failures=0`.
+
+Limite escrito, no escondido: la tabla de precios es una **foto** que envejece y el coste es una
+estimacion local a precio de lista (la misma postura que Claude Code documenta para `--max-budget-usd`);
+un modelo sin precio conocido **no se cuenta como gratis**, se cuenta como `unpriced`, asi que un techo
+apoyado en modelos sin precio no protege de nada y la suite lo dice en voz alta. Y el techo se mide por
+llamada al modelo, no por lo que un comando de shell pueda gastar por su cuenta.
 
 ## Por qué esto prueba el protocolo Nexus
 

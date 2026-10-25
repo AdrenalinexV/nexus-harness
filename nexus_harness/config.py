@@ -35,6 +35,9 @@ DEFAULTS = {
     # The ramp before the relay's cliff: the transcript is compacted in place once it passes this
     # share of the budget, so a long turn keeps its footing instead of arriving jadeando at 70 %.
     "compact_threshold": 0.55,
+    # Techo de coste en USD para el run. 0.0 = sin tope declarado (no un tope de cero): un turno
+    # autonomo con un modelo de nube gasta dinero, y esto es lo unico que lo corta.
+    "cost_limit": 0.0,
     "max_steps": 14,
     "max_repairs": 3,
     "max_children": 3,
@@ -96,6 +99,7 @@ class HarnessConfig:
     budget_limit: int = 60000
     relay_threshold: float = 0.70
     compact_threshold: float = 0.55
+    cost_limit: float = 0.0
     max_steps: int = 14
     max_repairs: int = 3
     max_children: int = 3
@@ -161,7 +165,7 @@ class HarnessConfig:
         return {"roles": dict(self.roles), "workspace": str(self.workspace),
                 "port": self.port, "host": self.host, "budget_limit": self.budget_limit,
                 "relay_threshold": self.relay_threshold, "compact_threshold": self.compact_threshold,
-                "max_steps": self.max_steps,
+                "cost_limit": self.cost_limit, "max_steps": self.max_steps,
                 "max_repairs": self.max_repairs, "test_command": self.test_command,
                 "max_children": self.max_children, "subagent_steps": self.subagent_steps,
                 "tool_workers": self.tool_workers, "shell_policy": self.shell_policy,

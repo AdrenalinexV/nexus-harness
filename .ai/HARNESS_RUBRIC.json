@@ -112,18 +112,27 @@
       "priority": 3
     },
     {
-     "id": "turn-checkpoint",
-     "area": "gobernanza",
-     "title": "El turno se deshace: cada escritura deja su instantanea y undo deja el arbol byte a byte",
-     "why": "Un agente que no puede volver atras convierte un turno malo en un repositorio roto.",
-     "proof": "python -m nexus_harness selftest checkpoint",
-     "contains": "failures=0",
-     "priority": 2
+      "id": "turn-checkpoint",
+      "area": "gobernanza",
+      "title": "El turno se deshace: cada escritura deja su instantanea y undo deja el arbol byte a byte",
+      "why": "Un agente que no puede volver atras convierte un turno malo en un repositorio roto.",
+      "proof": "python -m nexus_harness selftest checkpoint",
+      "contains": "failures=0",
+      "priority": 2
     },
     {
-     "id": "evidence-export",
+      "id": "cost-budget",
+      "area": "operacion",
+      "title": "Presupuesto de coste en USD con parada dura antes de cada llamada",
+      "why": "Un turno autonomo con un modelo de nube gasta dinero real; max_steps limita llamadas, no su precio. Un control que no puede ponerse rojo no es un control.",
+      "proof": "python -m nexus_harness selftest budget",
+      "contains": "failures=0",
+      "priority": 2
+    },
+    {
+      "id": "evidence-export",
       "area": "evidencia",
-      "title": "El informe de evidencia se genera desde el estado y cubre los 16 criterios",
+      "title": "El informe de evidencia se genera desde el estado y cubre los 17 criterios",
       "why": "Sin evidencia exportada, 'funciona' es una opinion.",
       "proof": "python tools/nightshift.py report --check",
       "contains": "ok",

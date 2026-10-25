@@ -18,6 +18,7 @@ from dataclasses import dataclass, field
 
 from . import attachments as attachment_tools
 from . import checkpoint
+from .budget import CostBudget
 from .compaction import Compactor
 from .message import Message, as_text
 from .subagents import Delegate
@@ -55,12 +56,13 @@ class Turn:
     stopped: bool = False
     attachments: list = field(default_factory=list)
     checkpoint: str = ""
+    budget: dict = field(default_factory=dict)
 
     def as_dict(self):
         return {"reply": self.reply, "exit": self.exit, "steps": self.steps,
                 "repairs": self.repairs, "touched": self.touched, "skills": self.skills,
                 "verdict": self.verdict, "judgement": self.judgement, "stopped": self.stopped,
-                "attachments": self.attachments, "checkpoint": self.checkpoint}
+                "attachments": self.attachments, "checkpoint": self.checkpoint, "budget": self.budget}
 
 
 class Chat:
@@ -85,6 +87,7 @@ class Chat:
         self.last_turn = Turn()
         self.checkpoint = None
         self.used = 0
+        self.cost = CostBudget(limit_usd=float(getattr(config, "cost_limit", 0.0) or 0.0))
         self.compactor = Compactor(limit=int(getattr(config, "budget_limit", 60000) or 0),
                                    threshold=float(getattr(config, "compact_threshold", 0.55) or 0.0))
         self.children = []
@@ -165,6 +168,10 @@ class Chat:
         for step in range(int(max_steps or self.config.max_steps)):
             if self._stop.is_set():
                 return text, steps
+            if self.cost.stop("chat"):
+                # La parada dura va ANTES de la llamada: cruzar el techo no pide una llamada mas.
+                self._emit("budget.stop", self.cost.reason, budget=self.cost.state())
+                break
             messages = [Message(role="system", content=self._system(self.touched))] + self.history
             if self._maybe_compact(messages):
                 # The system message was just rebuilt; the compacted remainder is the new history.
@@ -174,6 +181,7 @@ class Chat:
                 temperature=self.config.temperature, max_tokens=self.config.max_tokens)
             steps += 1
             self.used += int(getattr(reply.usage, "total", 0) or 0)
+            self.cost.observe(reply.usage, reply.model)
             if reply.reasoning:
                 self._emit("worker.reasoning", reply.reasoning[:1000], model=reply.model)
             self.history.append(reply.as_message())
@@ -263,6 +271,7 @@ class Chat:
             self._emit("judge.verdict", judgement.verdict, judgement=judgement.as_dict())
             turn.judgement = judgement.as_dict()
         turn.reply, turn.touched = reply, sorted(self.touched)
+        turn.budget = self.cost.state()
         injection = getattr(self.skills, "last", None)
         turn.skills = list(getattr(injection, "names", []) or [])
         self.last_turn = turn
@@ -290,7 +299,8 @@ class Chat:
         limit = int(getattr(self.config, "budget_limit", 0) or 0)
         state = "unmeasured" if not limit else "measured"
         return {"used": self.used, "limit": limit, "ratio": (self.used / limit) if limit else None,
-                "state": state, "threshold": getattr(self.config, "relay_threshold", 0.7)}
+                "state": state, "threshold": getattr(self.config, "relay_threshold", 0.7),
+                "cost": self.cost.state()}
 
     def state(self):
         return {"session": self.session, "budget": self.budget(),

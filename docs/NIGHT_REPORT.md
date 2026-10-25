@@ -2,10 +2,10 @@
 
 Generado por `tools/nightshift.py report` (no se escribe a mano).
 
-- fecha: 2026-10-25T07:50:52Z
-- HEAD: `98ddcc6`
-- iteracion: 70
-- criterios: **16/16**
+- fecha: 2026-10-25T09:01:07Z
+- HEAD: `b40a3cc`
+- iteracion: 88
+- criterios: **17/17**
 
 ## Rubrica
 
@@ -15,7 +15,8 @@ Generado por `tools/nightshift.py report` (no se escribe a mano).
 | `hook-contract` | multi-harness | Contrato generico `nexus gate --hook` (JSON por stdin, exit 0/10/20/30) | OK | 0 |
 | `suites-source` | gobernanza | Toda la suite determinista pasa desde el codigo fuente | OK | 0 |
 | `adapter-aider` | multi-harness | Adaptador Aider: lint/test del gate escritos en su config, verificable | OK | 0 |
-| `evidence-export` | evidencia | El informe de evidencia se genera desde el estado y cubre los 16 criterios | OK | 0 |
+| `cost-budget` | operacion | Presupuesto de coste en USD con parada dura antes de cada llamada | OK | 0 |
+| `evidence-export` | evidencia | El informe de evidencia se genera desde el estado y cubre los 17 criterios | OK | 0 |
 | `frozen-engine` | empaquetado | El motor congelado pasa la misma suite | OK | 0 |
 | `no-orphans` | operacion | El motor no sobrevive a su shell (vigilante) y esta probado | OK | 0 |
 | `protocol-lint` | gobernanza | NexusProtocol sigue en 0 hallazgos | OK | 0 |
@@ -30,14 +31,14 @@ Generado por `tools/nightshift.py report` (no se escribe a mano).
 
 ## Evidencia cruda
 
-### gate-lint (exit 0, 2026-10-25T07:47:54Z)
+### gate-lint (exit 0, 2026-10-25T08:58:06Z)
 
 ```
 $ python tools/lint_harness.py
-files=77 findings=0 max_lines=400
+files=79 findings=0 max_lines=400
 ```
 
-### hook-contract (exit 0, 2026-10-25T07:50:41Z)
+### hook-contract (exit 0, 2026-10-25T09:00:54Z)
 
 ```
 $ python C:/Proyectos/NexusProtocol/nexus/cli.py gate --hook --selftest --json
@@ -48,21 +49,20 @@ $ python C:/Proyectos/NexusProtocol/nexus/cli.py gate --hook --selftest --json
 }
 ```
 
-### suites-source (exit 0, 2026-10-25T07:48:06Z)
+### suites-source (exit 0, 2026-10-25T08:58:18Z)
 
 ```
 $ python -m nexus_harness selftest
-          OK    0.11s
-edit_v4a         OK    0.04s
-shell_session    OK    1.33s
-shell_policy     OK    0.13s
+a         OK    0.04s
+shell_session    OK    1.32s
+shell_policy     OK    0.12s
 checkpoint       OK    0.22s
 subagents        OK    0.01s
 warning: The `fitz` API is deprecated and will be removed in future. Use `import pymupdf` instead.
 attachments      OK    0.13s
-onboarding       OK    0.10s
-mcp_client       OK    0.29s
-sidecar          OK    5.13s
+onboarding       OK    0.11s
+mcp_client       OK    0.30s
+sidecar          OK    5.09s
 estado listo: 2 criterios (2 pendientes)
 a -> exit 0 (VERDE)
 findings=0
@@ -70,59 +70,68 @@ b -> exit 10 (ROJO)
 
 b marcado blocked
 criterio desconocido: zzz
-nightshift       OK    0.18s
-context_router   OK    0.00s
-triad_loop       OK    1.59s
-session_relay    OK    0.86s
+nightshift       OK    0.19s
+context_router   OK    0.01s
+triad_loop       OK    1.54s
+session_relay    OK    0.88s
 compaction       OK    0.01s
-chat             OK    0.14s
+chat             OK    0.13s
 memory           OK    0.29s
-ui               OK    0.85s
+ui               OK    0.86s
 bridge           OK    0.05s
-suites=22 failures=0
+budget           OK    0.02s
+suites=23 failures=0
 ```
 
-### adapter-aider (exit 0, 2026-10-25T07:50:42Z)
+### adapter-aider (exit 0, 2026-10-25T09:00:54Z)
 
 ```
 $ python -m nexus.harness.adapters --check aider --root .
-ok: aider -- lint-cmd and test-cmd written to .aider.conf.yml, and the lint entry point answered: files=77 findings=0
+ok: aider -- lint-cmd and test-cmd written to .aider.conf.yml, and the lint entry point answered: files=79 findings=0
 ```
 
-### evidence-export (exit 0, 2026-10-25T07:50:44Z)
+### cost-budget (exit 0, 2026-10-25T09:00:57Z)
 
 ```
-$ python tools/nightshift.py report --check
-escrito docs\NIGHT_REPORT.md (16/16 en verde)
-ok: el informe cubre los 16 criterios
-```
-
-### frozen-engine (exit 0, 2026-10-25T07:48:30Z)
-
-```
-$ python tools/verify.py --frozen
-lint      exit 0   files=77 findings=0 max_lines=400
-selftest  exit 0   suites=22 failures=0
-frozen    exit 0   suites=22 failures=0 (same as the source)
-verify: GREEN
-```
-
-### no-orphans (exit 0, 2026-10-25T07:50:49Z)
-
-```
-$ python -m nexus_harness selftest sidecar
-sidecar          OK    5.15s
+$ python -m nexus_harness selftest budget
+budget           OK    0.03s
 suites=1 failures=0
 ```
 
-### protocol-lint (exit 0, 2026-10-25T07:48:30Z)
+### evidence-export (exit 0, 2026-10-25T09:00:57Z)
+
+```
+$ python tools/nightshift.py report --check
+escrito docs\NIGHT_REPORT.md (17/17 en verde)
+ok: el informe cubre los 17 criterios
+```
+
+### frozen-engine (exit 0, 2026-10-25T08:58:42Z)
+
+```
+$ python tools/verify.py --frozen
+lint      exit 0   files=79 findings=0 max_lines=400
+selftest  exit 0   suites=23 failures=0
+frozen    exit 0   suites=23 failures=0 (same as the source)
+verify: GREEN
+```
+
+### no-orphans (exit 0, 2026-10-25T09:01:03Z)
+
+```
+$ python -m nexus_harness selftest sidecar
+sidecar          OK    5.13s
+suites=1 failures=0
+```
+
+### protocol-lint (exit 0, 2026-10-25T08:58:43Z)
 
 ```
 $ python -c "import sys; sys.path.insert(0, r'C:/Proyectos/NexusProtocol'); from nexus.checks import rules_lint; r=rules_lint.lint_repo(r'C:/Proyectos/NexusProtocol'); print('findings=%d' % len(r['findings'])); raise SystemExit(0 if not r['findings'] else 1)"
 findings=0
 ```
 
-### providers-retry (exit 0, 2026-10-25T07:50:42Z)
+### providers-retry (exit 0, 2026-10-25T09:00:55Z)
 
 ```
 $ python -m nexus_harness selftest retry
@@ -130,7 +139,7 @@ retry            OK    0.00s
 suites=1 failures=0
 ```
 
-### shell-policy (exit 0, 2026-10-25T07:50:43Z)
+### shell-policy (exit 0, 2026-10-25T09:00:56Z)
 
 ```
 $ python -m nexus_harness selftest shell_policy
@@ -138,22 +147,22 @@ shell_policy     OK    0.15s
 suites=1 failures=0
 ```
 
-### turn-checkpoint (exit 0, 2026-10-25T07:50:44Z)
+### turn-checkpoint (exit 0, 2026-10-25T09:00:57Z)
 
 ```
 $ python -m nexus_harness selftest checkpoint
-checkpoint       OK    0.23s
+checkpoint       OK    0.24s
 suites=1 failures=0
 ```
 
-### adapter-claude (exit 0, 2026-10-25T07:50:42Z)
+### adapter-claude (exit 0, 2026-10-25T09:00:55Z)
 
 ```
 $ python -m nexus.harness.adapters --check claude --root .
 ok: claude -- .claude/settings.json carries a Stop handler that ran twice: it lets an inert turn close and it blocks a frozen one with the gate's own message
 ```
 
-### context-compaction (exit 0, 2026-10-25T07:50:43Z)
+### context-compaction (exit 0, 2026-10-25T09:00:56Z)
 
 ```
 $ python -m nexus_harness selftest compaction
@@ -161,7 +170,7 @@ compaction       OK    0.02s
 suites=1 failures=0
 ```
 
-### protocol-doctor (exit 0, 2026-10-25T07:50:41Z)
+### protocol-doctor (exit 0, 2026-10-25T09:00:53Z)
 
 ```
 $ python C:/Proyectos/NexusProtocol/nexus/cli.py doctor
@@ -176,7 +185,7 @@ the judge's two routes: three measured endpoints, and two refusals with no panel
   everything a self-test can prove is green
 ```
 
-### tool-arg-repair (exit 0, 2026-10-25T07:50:43Z)
+### tool-arg-repair (exit 0, 2026-10-25T09:00:55Z)
 
 ```
 $ python -m nexus_harness selftest repair
@@ -184,15 +193,15 @@ repair           OK    0.15s
 suites=1 failures=0
 ```
 
-### installer (exit 0, 2026-10-25T07:50:52Z)
+### installer (exit 0, 2026-10-25T09:01:05Z)
 
 ```
 $ python tools/nightshift.py install --check
 sala       : C:\Users\Vexus\AppData\Local\NexusHarnessVerify (no existia)
 instalador : NexusHarness-Setup-0.3.0.exe -> exit 0
 ventana    : nexus-harness-desktop.exe subsystem=2 (2 = interfaz)
-motor      : repo     sha256=c2878532b23b
-           : instalado sha256=c2878532b23b
+motor      : repo     sha256=1c1414647362
+           : instalado sha256=1c1414647362
 desinstalar: exit 0
 sala       : eliminada, sin fichero bloqueado
 registro   : devuelto como estaba
