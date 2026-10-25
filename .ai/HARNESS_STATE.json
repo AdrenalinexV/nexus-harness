@@ -131,12 +131,12 @@
       "status": "met"
     },
     "protocol-doctor": {
-      "attempts": 6,
+      "attempts": 7,
       "last": {
-        "at": "2026-10-25T09:00:53Z",
+        "at": "2026-10-25T12:09:11Z",
         "command": "python C:/Proyectos/NexusProtocol/nexus/cli.py doctor",
         "exit": 0,
-        "head": "b40a3cc",
+        "head": "b45d8ce",
         "ok": true,
         "tail": "t read the same number, and a smaller file on disk cannot move it \n  ok   the desktop launcher: console-less target, a dry run that writes nothing, and an instance file that is reused instead of a second server \n  ok   applying init in batch, and the baseline only the installer can testify about \n  ok   the judge chain: a local SystemOne judge, a declared order, and no silent substitution \n  ok   the judge's two routes: three measured endpoints, and two refusals with no panel behind them \n  ok   the skills already on this disk: marked by origin, folded, and never offered a mode \n  ok   the local judge's models: a catalogue, a measured recommendation, a download that does not block \n  ok   the judge calibration: the metrics that compare backends, on arithmetic that cannot drift \n  ok   the MCP surface: three read-only tools, no verb to close a turn, and a stream that survives a rotten line \n  ok   the judge declares itself only when the machine can prove one, once, and never over the operator's own decision \n  ok   the audit log travels as OTLP spans: every row from a real line, and the ones it cannot read are counted instead of invented \n\n  everything a self-test can prove is green"
       },
@@ -144,12 +144,12 @@
       "status": "met"
     },
     "protocol-lint": {
-      "attempts": 5,
+      "attempts": 6,
       "last": {
-        "at": "2026-10-25T08:58:43Z",
+        "at": "2026-10-25T12:06:10Z",
         "command": "python -c \"import sys; sys.path.insert(0, r'C:/Proyectos/NexusProtocol'); from nexus.checks import rules_lint; r=rules_lint.lint_repo(r'C:/Proyectos/NexusProtocol'); print('findings=%d' % len(r['findings'])); raise SystemExit(0 if not r['findings'] else 1)\"",
         "exit": 0,
-        "head": "b40a3cc",
+        "head": "b45d8ce",
         "ok": true,
         "tail": "findings=0"
       },
@@ -866,9 +866,23 @@
       "head": "f8b877f",
       "id": "installer",
       "ok": true
+    },
+    {
+      "at": "2026-10-25T12:06:10Z",
+      "exit": 0,
+      "head": "b45d8ce",
+      "id": "protocol-lint",
+      "ok": true
+    },
+    {
+      "at": "2026-10-25T12:09:11Z",
+      "exit": 0,
+      "head": "b45d8ce",
+      "id": "protocol-doctor",
+      "ok": true
     }
   ],
-  "iteration": 92,
+  "iteration": 94,
   "rubric_version": 1,
   "started": "2026-10-25T00:00:50Z",
   "version": 1
