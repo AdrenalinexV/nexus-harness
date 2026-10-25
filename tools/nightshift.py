@@ -38,7 +38,7 @@ ROOT = Path(__file__).resolve().parents[1]
 RUBRIC = ROOT / ".ai" / "HARNESS_RUBRIC.json"
 STATE = ROOT / ".ai" / "HARNESS_STATE.json"
 REPORT = ROOT / "docs" / "NIGHT_REPORT.md"
-INSTALLER = ROOT / "dist" / "NexusHarness-Setup-0.4.0.exe"
+INSTALLER = ROOT / "dist" / "NexusHarness-Setup-0.5.0.exe"
 PROOF_TIMEOUT = 900
 WINDOWS_FLAGS = 0x08000000 if os.name == "nt" else 0  # CREATE_NO_WINDOW
 STATUSES = ("unmet", "met", "blocked")

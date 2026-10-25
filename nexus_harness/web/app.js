@@ -12,7 +12,8 @@
 const $ = (id) => document.getElementById(id);
 const TOKEN = new URLSearchParams(location.search).get('token') || '';
 const WANTED = new URLSearchParams(location.search).get('project') || '';
-const API_VERSION = 2;
+// Contrato con el motor (`api.API_VERSION`). 3 = barra en vivo, cola de proyectos y bucle autonomo.
+const API_VERSION = 3;
 let since = 0, currentSession = null, polling = false, allSessions = [], feed = [];
 
 const LABEL = {
@@ -174,9 +175,8 @@ function fillSelect(el, options, value) {
 function paintState(s) {
   const run = s.run || {};
   const last = (s.chat && s.chat.last) || {};
-  const green = Boolean(last.verdict && last.verdict.ok && (last.verdict.checks || []).length);
-  $('status').textContent = s.running ? 'trabajando' : green ? 'verde' : last.exit ? 'rojo' : 'en reposo';
-  $('status').className = 'pill ' + (s.running ? 'warn' : green ? 'ok' : last.exit ? 'bad' : 'info');
+  // La pildora de la esquina NO se pinta aqui: la lleva `activity.js` desde `/api/activity`, que sabe
+  // la fase viva y el progreso. Este `state()` solo manda lo que es de esta pantalla.
   $('stop').disabled = !s.running;
   $('stop').style.display = s.running ? '' : 'none';
   const chosen = $('project').value && $('project').value !== '— elige un proyecto —';

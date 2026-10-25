@@ -1,7 +1,7 @@
 {
   "name": "nexus-harness-desktop",
   "private": true,
-  "version": "0.4.0",
+  "version": "0.5.0",
   "description": "Nexus Harness desktop shell: a native window over the Nexus-Harness engine",
   "scripts": {
     "dev": "tauri dev",

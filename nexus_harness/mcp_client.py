@@ -27,7 +27,7 @@ from pathlib import Path
 
 CONFIG = Path(os.environ.get("NEXUS_HOME") or (Path.home() / ".nexus")) / "mcp.json"
 PROTOCOL_VERSION = "2025-06-18"
-CLIENT_INFO = {"name": "nexus-harness", "version": "0.4.0"}
+CLIENT_INFO = {"name": "nexus-harness", "version": "0.5.0"}
 DEFAULT_TIMEOUT = 25
 WINDOWS_FLAGS = 0x08000000 if os.name == "nt" else 0
 LOG_DIR = Path(".nexus") / "harness" / "logs"

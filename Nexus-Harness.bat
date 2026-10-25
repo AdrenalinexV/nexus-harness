@@ -1,6 +1,6 @@
 @echo off
 rem ===========================================================================================
-rem  Nexus-Harness v0.4.0 — lanzador.
+rem  Nexus-Harness v0.5.0 — lanzador.
 rem
 rem  Sin argumentos: abre la APP NATIVA de escritorio (ventana Tauri con su icono). Nunca el
 rem  navegador: eso es una decision del operador, no del lanzador.
@@ -41,7 +41,7 @@ if not exist "%DESKTOP%" set "DESKTOP=%~dp0apps\desktop\src-tauri\target\release
 if not exist "%DESKTOP%" (
   echo.
   echo No encuentro la app de escritorio. Se instala con el instalador del producto:
-  echo     dist\NexusHarness-Setup-0.4.0.exe
+  echo     dist\NexusHarness-Setup-0.5.0.exe
   echo o se construye desde el codigo:
   echo     cd apps\desktop ^&^& npm run build
   echo.

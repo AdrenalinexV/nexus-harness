@@ -5,7 +5,7 @@ corre el motor de este repositorio, congelado, y el protocolo Nexus vive en él:
 plugin, no depende de tener Python en el equipo destino.
 
 ```
-NexusHarness-Setup-0.3.0.exe          instalador NSIS, por usuario, sin permisos de administrador
+NexusHarness-Setup-0.5.0.exe          instalador NSIS, por usuario, sin permisos de administrador
 └── %LOCALAPPDATA%\Nexus Harness\
     ├── nexus-harness-desktop.exe     ventana nativa (Tauri 2 / WebView2)
     ├── engine\nexus-harness-engine.exe   motor congelado (Python + NexusProtocol dentro)
@@ -95,6 +95,37 @@ Cómo está montado, y por qué así:
   `/api/health` y, si el proceso en marcha es anterior, lo dice en una banda con la instrucción de
   reiniciar. Sin eso, actualizar el código deja botones que no responden y ninguna pista.
 
+## 0.5.0: barra en vivo, cola de proyectos y bucle autónomo
+
+Cinco correcciones de producto, cada una con su prueba determinista (`selftests/test_ux.py` las mide
+por HTTP y sobre el HTML servido, no sobre la intención):
+
+1. **La esquina del chat ya no dice «en reposo».** Es una píldora viva (`activity.js` →
+   `/api/activity`) que enseña la fase en curso con la herramienta (`🔧 Obrero: patch · a.py`), el gate
+   (`⚖️ Gate: 3/3 checks en verde`), el juez, el backup del bucle o el commit. Al terminar un turno
+   enseña el resultado medido (`✅ Gate OK · Juez VERDE · Contexto 18%`) y al pulsarla se abre el
+   detalle: ficheros tocados, gate con sus checks, tokens y el control del Autopilot. Sondeo
+   adaptativo: 400 ms mientras hay trabajo, 1,6 s cuando no pasa nada.
+2. **Proyectos: cola de prioridad arrastrable.** Las tarjetas gobernadas se arrastran (HTML5 nativo,
+   sin librería) y el orden se guarda en `~/.nexus/harness.json` (`project_order`); también hay flechas
+   ▲▼ para quien prefiere el teclado. `+ Crear Nuevo Proyecto` pide nombre y objetivo, crea la carpeta,
+   hace `git init` con primer commit, escribe `.ai/PROJECT_RULES.md`, genera el Auto-Spec y la mete al
+   final de la cola. Las 28 carpetas sueltas viven en una tabla plegada con buscador.
+3. **Skills:** el `Skill Architect + GitHub Scout` sube al principio; los cinco filtros pasan a una
+   fila horizontal junto al buscador; la rejilla es `repeat(auto-fill, minmax(280px, 1fr))` (4 columnas
+   a partir de 1600 px) y hay paginación de 24 tarjetas.
+4. **Estadísticas:** KPIs en 4 columnas y **tres gráficos SVG nativos** (sin CDN, sin JavaScript):
+   columnas de tokens consumidos vs evitados por proyecto, anillo de eficacia de la tríada y tres barras
+   de salud por proyecto (criterios de spec, runs verdes, horas ahorradas). Cada gráfico declara su
+   fuente, y lo que no está medido se dice con palabras en el mismo hueco.
+5. **Bucle autónomo iterativo (`autonomy.py`).** Por proyecto o desde el chat: **backup → planifica →
+   ejecuta la tríada → gate → commit limpio → progreso**, y al siguiente hito; si el gate queda rojo
+   tras las reparaciones del Obrero, ese proyecto para y la cola pasa al #2. Sin snapshot no se edita:
+   `git stash create` + tag cuando hay repositorio, zip en `.nexus/backups/` cuando no.
+
+El motor sube su contrato a **`api: 3`**: una página nueva contra un motor viejo lo dice en una banda
+en vez de dejar botones muertos.
+
 ## Construirlo desde el código
 
 ```
@@ -105,7 +136,7 @@ cp dist/nexus-harness-engine.exe apps/desktop/src-tauri/engine/
 cd apps/desktop && npm install && npx tauri icon src-tauri/app-icon.png && npx tauri build
 ```
 
-Salida: `apps/desktop/src-tauri/target/release/bundle/nsis/Nexus Harness_0.3.0_x64-setup.exe`.
+Salida: `apps/desktop/src-tauri/target/release/bundle/nsis/Nexus Harness_0.5.0_x64-setup.exe`.
 
 ## Verificarlo sin tocar tu instalación
 
@@ -116,7 +147,7 @@ una sala de usar y tirar, compara bytes y la desinstala:
 ```
 $ python tools/nightshift.py install --check
 sala       : C:\Users\<usuario>\AppData\Local\NexusHarnessVerify (no existia)
-instalador : NexusHarness-Setup-0.3.0.exe -> exit 0
+instalador : NexusHarness-Setup-0.5.0.exe -> exit 0
 ventana    : nexus-harness-desktop.exe subsystem=2 (2 = interfaz)
 motor      : repo     sha256=82589bc520e8
            : instalado sha256=82589bc520e8
@@ -138,7 +169,7 @@ cambia nada a quien tenga la app instalada. El código de esta prueba vive en `t
 El instalador sale **sin firmar**: Windows mostrará «editor desconocido» la primera vez (SmartScreen).
 Una firma autofirmada no elimina ese aviso; solo cambia el nombre del editor, y añade un certificado que
 hay que instalar en el equipo para que sea creíble. Si algún día hay un certificado de firma de código
-real, el paso es `signtool sign /fd sha256 /f cert.pfx /p <pass> "Nexus Harness_0.3.0_x64-setup.exe"`
+real, el paso es `signtool sign /fd sha256 /f cert.pfx /p <pass> "Nexus Harness_0.5.0_x64-setup.exe"`
 antes de distribuir; Tauri también acepta `bundle.windows.certificateThumbprint`.
 
 ## Límites conocidos

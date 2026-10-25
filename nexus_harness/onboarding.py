@@ -128,6 +128,11 @@ def _govern(root):
             "test_command": result.get("test_command"), "language": result.get("language")}
 
 
+def governance(root):
+    """El Auto-Spec de un proyecto, por su nombre publico: `_govern` sigue siendo el que lo hace."""
+    return _govern(root)
+
+
 def save_settings(changes):
     """Guarda ajustes del arnes en `~/.nexus/harness.json`. Devuelve `(guardado, notas)`.
 
@@ -160,6 +165,12 @@ def save_settings(changes):
             out[name] = saved[name] = clean
         elif name == "test_command":
             out[name] = saved[name] = str(value or "").strip()
+        elif name == "project_order":
+            if not isinstance(value, (list, tuple)):
+                notes.append("project_order: se esperaba una lista de nombres")
+                continue
+            clean_names = [str(item).strip() for item in value if str(item or "").strip()]
+            out[name] = saved[name] = clean_names
         elif name in typed:
             try:
                 out[name] = saved[name] = typed[name](str(value).strip())

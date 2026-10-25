@@ -15,6 +15,9 @@ from . import onboarding, panels
 from . import settings_kit as kit
 
 CATALOG_MAX = 400
+# 24 tarjetas por pagina: con 188 skills, una rejilla completa es un scroll de tres metros y el
+# arquitecto (que es lo que se viene a usar) queda a dos pantallas de distancia.
+PAGE = 24
 ORIGIN_LABEL = {"shipped": "protocol", "prefixed": "protocol", "own": "operator"}
 
 
@@ -179,10 +182,13 @@ def _card(row, active, always, off, routable):
                _mode_buttons(name, always, off, routable), kit.esc(name), kit.esc(str(row.get("root") or ""))))
 
 
-def _pills(counts, chosen):
+def _pills(counts, chosen, needle=""):
+    """Las cinco pastillas, en UNA fila. El buscador viaja en cada enlace para no perderlo al filtrar."""
+    tail = ("&q=" + kit.esc(needle)) if needle else ""
+
     def pill(value, label):
-        return ('<a class="fpill%s" href="/settings?section=skills&f=%s">%s</a>'
-                % (" on" if chosen == value else "", value, kit.esc(label)))
+        return ('<a class="fpill%s" href="/settings?section=skills&f=%s%s">%s</a>'
+                % (" on" if chosen == value else "", value, tail, kit.esc(label)))
     return "".join([
         pill("all", "Todas (%d)" % counts["all"]),
         pill("ram", "Activas en Proyecto (%d)" % counts["ram"]),
@@ -190,6 +196,20 @@ def _pills(counts, chosen):
         pill("laws", "Leyes Globales (%d)" % counts["laws"]),
         pill("own", "Propias del Operador (%d)" % counts["own"]),
     ])
+
+
+def _pager(page, pages, chosen, needle):
+    """Paginacion de verdad: 24 tarjetas por pagina, no un corte mudo a las 120."""
+    if pages <= 1:
+        return ""
+
+    def link(target, label, cls=""):
+        return ('<a class="fpill%s" href="/settings?section=skills&f=%s%s&p=%d">%s</a>'
+                % (cls, chosen, ("&q=" + kit.esc(needle)) if needle else "", target, kit.esc(label)))
+    parts = [link(page - 1, "← Anterior") if page > 1 else ""]
+    parts.append('<span class="dim">página %d de %d</span>' % (page, pages))
+    parts.append(link(page + 1, "Siguiente →") if page < pages else "")
+    return '<div class="pager">%s</div>' % "".join(parts)
 
 
 def _architect():
@@ -217,11 +237,15 @@ def _preview():
 
 
 def skills(cockpit, query):
-    """La pantalla entera de skills: filtros, grid de tarjetas y arquitecto."""
+    """La pantalla entera de skills: arquitecto ARRIBA, filtros en una fila, rejilla legible."""
     needle = str((query.get("q") or [""])[0]).strip().lower()
     chosen = str((query.get("f") or ["all"])[0]).strip().lower()
     if chosen not in ("all", "ram", "dormant", "laws", "own"):
         chosen = "all"
+    try:
+        page = max(1, int(str((query.get("p") or ["1"])[0] or 1)))
+    except ValueError:
+        page = 1
     rows = catalog(cockpit)
     active = _active(cockpit)
     always, off = _modes()
@@ -234,29 +258,32 @@ def skills(cockpit, query):
                                str(row.get("name") or "")))
     counts = _counts(rows, active, always, off)
     shown = _filter(rows, chosen, needle, active)
+    pages = max(1, -(-len(shown) // PAGE))
+    page = min(page, pages)
+    window = shown[(page - 1) * PAGE: page * PAGE]
     cards = "".join(_card(row, active, always, off, str(row.get("name")) in routable)
-                    for row in shown[:120])
+                    for row in window)
     # Sin paquete de routing no hay botones de modo, y eso se dice: un boton ausente sin explicacion
     # se lee como una funcionalidad que falta, no como un motor al que le falta el gobernador.
     pack_note = ("" if routable else
                  '<p class="snote bad">No se pudo leer el paquete de routing del protocolo: los modos '
                  '(siempre / auto / dormir) no se pueden cambiar ahora mismo.</p>')
-    more = ""
-    if len(shown) > 120:
-        more = '<p class="dim">… y %d más: afina el filtro o busca por nombre.</p>' % (len(shown) - 120)
+    # El buscador se arma aparte: mezclar `+` con `%` en la misma expresion hace que el `%` se aplique
+    # solo al ultimo literal (lo que paso aqui una vez, y se vio en la pantalla, no en un test).
+    search = ('<form method="get" action="/settings">' + kit.hidden("section", "skills")
+              + kit.hidden("f", chosen)
+              + '<input class="search" name="q" type="search" value="%s" '
+                'placeholder="Buscar por nombre o descripción…">'
+                '<button class="ghost">Buscar</button></form>' % kit.esc(needle))
     body = ('<div class="sstack">'
-            '<div class="filters"><form method="get" action="/settings">'
-            + kit.hidden("section", "skills") + kit.hidden("f", chosen)
-            + '<input class="search" name="q" type="search" value="%s" '
-              'placeholder="Buscar por nombre o descripción…">'
-              '<button class="ghost">Buscar</button></form>%s</div>'
+            '<section class="archtop">%s%s</section>'
+            '<div class="filters">%s<div class="fpills">%s</div></div>'
             '<p class="dim">%d skills en %d raíces · %d en el paquete de routing · %d declaradas '
-            'siempre · %d apagadas</p>'
-            '<div class="skillgrid">%s</div>%s'
-            '%s%s'
-            '</div>'
-            % (kit.esc(needle), _pills(counts, chosen), counts["all"], len(roots(cockpit)),
-               len(routable), counts["always"], counts["off"], pack_note + cards, more,
-               _architect(), _preview()))
+            'siempre · %d apagadas · mostrando %d–%d</p>'
+            '<div class="skillgrid">%s</div>%s%s</div>'
+            % (_architect(), _preview(), search, _pills(counts, chosen, needle),
+               counts["all"], len(roots(cockpit)), len(routable), counts["always"], counts["off"],
+               (page - 1) * PAGE + 1 if window else 0, (page - 1) * PAGE + len(window),
+               cards, _pager(page, pages, chosen, needle), pack_note))
     return ("Skills & Skill Architect",
             "El catálogo medido, con su modo real, y el arquitecto que forja las que faltan.", body)

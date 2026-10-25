@@ -75,6 +75,27 @@ doing two jobs.
 | `web/` | The single front-end (index, css, js) served by the engine and loaded by the desktop shell. | — |
 | `apps/desktop/` | Tauri 2 shell: free port, launch token, sidecar engine, NSIS installer. | — |
 
+## What 0.5.0 adds, and who owns it
+
+The cockpit grew three things that did not exist as modules before: a live status line, a priority
+queue of governed projects, and a loop that keeps working on the #1 project until it is finished. Each
+one answers a question and owns its state:
+
+| Module | Question it answers | State it owns |
+|---|---|---|
+| `api.py` | What does `/api/*` answer? (the transport stayed in `ui.py`) | none: a pure `(status, payload)` per route |
+| `activity.py` | What is the engine doing *right now*, and how did the last turn end? | none: it is a pure function over the bus and the last turn |
+| `projects.py` | Which projects are governed, in what order, and what is frozen in each? | `project_order` in `~/.nexus/harness.json`, `.nexus/harness/autonomy.json` per project |
+| `autonomy.py` | Snapshot, plan, run the triad, commit, advance — until done, red, or out of iterations | the loop's state, in memory, published through the bus |
+| `backup.py` | How do I guarantee a way back before a loop edits anything? | `git stash create` + tag, or a zip in `.nexus/backups/` |
+| `ledger.py` | What did each turn actually cost and prove? | `.nexus/harness/ledger.jsonl`, one line per turn, append-only |
+| `charts.py` | How do I draw three charts with no library and no network? | none: SVG strings, pure functions |
+| `runner.py` | Who builds a triad run, so three callers behave the same? | none |
+
+The order inside an autonomy cycle is the safety property, not a detail: **backup → plan → run → gate
+→ commit → progress**. If the snapshot cannot be taken, nothing is edited. If the gate is red after the
+worker's repairs, that project stops and the queue moves on. Progress is written only after `exit 0`.
+
 ## The four contracts
 
 ### 1. Provider (`providers.py`)

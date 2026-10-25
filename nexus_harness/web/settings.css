@@ -1,0 +1,114 @@
+/* Las piezas que solo existen en la pantalla de configuracion: la cola de proyectos, las carpetas
+ * sueltas, la rejilla de skills y los graficos.
+ *
+ * Vive aparte de `app.css` por dos razones: la ley de 400 lineas (el chat y sus estados ya ocupan su
+ * sitio) y porque estas reglas nunca viajan al chat, asi que cargarlas alli seria peso muerto.
+ *
+ * Tres decisiones de lectura, que son las que se pidieron:
+ * - Las pastillas de filtro van en UNA fila (`flex-wrap`), no como barras apiladas de ancho completo.
+ * - La rejilla de skills es de tarjetas anchas (`minmax(280px, 1fr)`): 3 o 4 por fila, legibles.
+ * - Los KPI son 4 columnas, no una tira de nueve cajas del mismo tamano que el titulo.
+ */
+
+/* ---------- la cola de proyectos ---------- */
+.boardhead { display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem;
+  flex-wrap: wrap; padding: .9rem 1rem; background: var(--card); border: 1px solid var(--line);
+  border-radius: var(--radius); }
+.boardhead p { margin: .35rem 0 0; max-width: 62ch; }
+.newproj > summary { cursor: pointer; }
+.primary-sum { display: inline-block; padding: .5rem .9rem; border-radius: var(--radius-sm);
+  background: var(--accent); border: 1px solid var(--accent); color: var(--accent-fg);
+  font-weight: 600; list-style: none; }
+.primary-sum::-webkit-details-marker { display: none; }
+.newproj[open] .primary-sum { margin-bottom: .4rem; }
+
+.queue { list-style: none; margin: .4rem 0 0; padding: 0; display: flex; flex-direction: column;
+  gap: .5rem; font-size: var(--fs); }
+.qcard { display: grid; grid-template-columns: 3rem minmax(0, 1fr) auto; gap: .7rem; align-items: start;
+  padding: .7rem .8rem; background: var(--card); border: 1px solid var(--line);
+  border-left: 3px solid var(--line2); border-radius: var(--radius); cursor: grab; }
+.qcard:hover { border-color: var(--line2); }
+.qcard:first-child { border-left-color: var(--accent); }
+.qcard.dragging { opacity: .45; border-style: dashed; }
+.qpos { display: flex; flex-direction: column; align-items: center; gap: .1rem; font-weight: 700;
+  font-size: 1rem; color: var(--accent); text-align: center; padding-top: .1rem; }
+.qgrip { font-style: normal; color: var(--muted); font-size: 13px; cursor: grab; line-height: 1; }
+.qnum { font-size: 1rem; }
+.qcard .qtest { display: flex; flex-direction: row; gap: .35rem; margin: .35rem 0 0; }
+.qcard .qtest input { flex: 1 1 16rem; padding: .3rem .45rem; font-size: 12.5px; }
+.qcard .qtest button { padding: .25rem .55rem; font-size: 11.5px; }
+.qtitle { display: flex; align-items: center; gap: .5rem; flex-wrap: wrap; }
+.qgoal { margin: .2rem 0 .35rem; font-size: var(--fs-sm); color: var(--muted); }
+.qacts { display: flex; align-items: center; gap: .3rem; flex-wrap: wrap; justify-content: flex-end; }
+.qmove, .qauto { display: flex; align-items: center; gap: .25rem; margin: 0; }
+.qmove button, .qauto button { padding: .25rem .5rem; font-size: 11.5px; }
+.qauto input { width: 4.2rem; padding: .25rem .35rem; font-size: 12px; }
+.qcard .specview { grid-column: 2 / -1; }
+.qcard .sout { max-height: 12rem; }
+
+/* ---------- carpetas sin gobernanza: tabla plegada, no 28 tarjetas ---------- */
+.plainbox { margin-top: .4rem; padding: .6rem .8rem; background: var(--card2);
+  border: 1px solid var(--line); border-radius: var(--radius); }
+.plainbox > summary { cursor: pointer; color: var(--accent); font-size: var(--fs-sm); }
+.plainsearch { margin: .5rem 0 .2rem; max-width: 26rem; }
+.plainlist code { font-size: var(--fs-sm); }
+.plainlist td { vertical-align: middle; }
+.sform.inline { display: inline-flex; margin: 0; }
+.sform.inline button { padding: .2rem .55rem; font-size: 11.5px; }
+
+/* ---------- filtros de skills: una fila ---------- */
+/* `flex-direction: row` NO es redundante: `app.css` los puso en columna (barras apiladas de ancho
+   completo, que es justo lo que se quiso quitar) y una regla posterior que no lo diga hereda la
+   columna. Medido en el navegador: sin esta linea, las pastillas seguian apiladas. */
+.filters { display: flex; flex-direction: row; align-items: center; gap: .6rem; flex-wrap: wrap; }
+/* `flex: 0 1 22rem` y NO `1 1`: con `flex-grow`, el buscador se comia la fila entera y empujaba las
+   pastillas a la linea de abajo (medido en el navegador: mismo alto, dos filas). Sin crecer, el
+   buscador se queda a su ancho y las cinco pastillas viven a su derecha, que es lo que se pidio. */
+.filters form { display: flex; gap: .4rem; flex: 0 1 22rem; min-width: 12rem; }
+.filters input.search { flex: 1 1 auto; }
+.fpills { display: flex; align-items: center; gap: .3rem; flex-wrap: wrap; }
+/* Pastillas compactas: con el tamano de texto del chat, cinco etiquetas no cabian junto al buscador
+   hasta 1600 px. A 11.5 px caben desde 1280 y siguen siendo pulsables. */
+.fpill { margin: 0; white-space: nowrap; font-size: 11.5px; padding: .2rem .5rem; }
+.pager { display: flex; align-items: center; gap: .5rem; margin-top: .8rem; flex-wrap: wrap; }
+.archtop { padding: .8rem .9rem; background: var(--card); border: 1px solid var(--accent);
+  border-radius: var(--radius); }
+.archtop .arch { border: 0; padding: 0; background: transparent; }
+
+/* ---------- rejilla de skills legible ---------- */
+/* minmax(280px, 1fr) es la regla; en una pantalla de 1920 el `auto-fill` daba CINCO columnas de 293
+   px, que es volver al muro por otro camino. A partir de 1600 se fija en cuatro: tarjetas anchas y
+   el mismo numero en cualquier monitor grande. */
+.skillgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: .7rem; }
+@media (min-width: 1600px) {
+  .skillgrid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+}
+
+/* ---------- KPI: cuatro columnas ---------- */
+.kpigrid.four { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+@media (max-width: 1180px) { .kpigrid.four { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+@media (max-width: 900px) { .kpigrid.four { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 640px) { .kpigrid.four { grid-template-columns: 1fr; } }
+
+/* ---------- graficos ---------- */
+.chartcard { padding: .8rem .9rem; background: var(--card); border: 1px solid var(--line);
+  border-radius: var(--radius); margin-bottom: .8rem; }
+.chartcard h4 { margin: 0 0 .4rem; font-size: .85rem; text-transform: uppercase;
+  letter-spacing: .06em; color: var(--muted); }
+.chartgrid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: .8rem; }
+.chartrow { display: flex; gap: 1rem; align-items: center; flex-wrap: wrap; }
+.chartside { flex: 1 1 240px; display: flex; flex-direction: column; gap: .4rem; }
+/* Un SVG con `width: 100%` escala tambien en alto: el anillo (viewBox cuadrado) se ponia a 1480 px de
+   alto en un panel de 1920, y eso no es un grafico, es un muro. Cada tipo de grafico tiene su tope. */
+.vchart { display: block; width: 100%; height: auto; max-width: 100%; }
+.chartcard > .vchart { max-width: 980px; }
+.chartrow > .vchart { width: 240px; max-width: 240px; flex: 0 0 auto; }
+.chartgrid .vchart { max-width: 100%; }
+.vlegends { display: flex; gap: .8rem; flex-wrap: wrap; margin: .3rem 0; font-size: var(--fs-sm);
+  color: var(--muted); }
+.vlegend { display: inline-flex; align-items: center; gap: .35rem; }
+.vlegend i { width: .65rem; height: .65rem; border-radius: 3px; display: inline-block; }
+.vlegend b { color: var(--fg); font-weight: 600; }
+.sources { margin-top: .9rem; font-size: var(--fs-sm); }
+.sources summary { cursor: pointer; color: var(--accent); }
+.sources ul { margin: .4rem 0 0; padding-left: 1.1rem; }

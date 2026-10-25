@@ -94,6 +94,67 @@
     }
   });
 
+  /* ---------- 4. la cola de proyectos: arrastrar y soltar ---------- */
+  const queue = $('queue');
+  let dragged = null;
+
+  function renumber() {
+    Array.from(queue.querySelectorAll('.qcard')).forEach((card, index) => {
+      const num = card.querySelector('.qnum');
+      if (num) num.textContent = '#' + (index + 1);
+    });
+  }
+
+  async function persistOrder() {
+    const names = Array.from(queue.querySelectorAll('.qcard')).map((card) => card.dataset.project);
+    const {ok, data} = await api('/api/projects/order', {method: 'POST', body: JSON.stringify({names})});
+    const note = document.createElement('p');
+    note.className = 'snote ' + (ok ? 'ok' : 'bad');
+    note.textContent = ok ? 'cola guardada: ' + (data.order || []).join(' → ')
+      : ('no se pudo guardar: ' + (data.reason || 'motivo desconocido'));
+    queue.parentNode.insertBefore(note, queue);
+    window.setTimeout(() => note.remove(), 6000);
+  }
+
+  if (queue) {
+    queue.addEventListener('dragstart', (event) => {
+      const card = event.target.closest('.qcard');
+      if (!card) return;
+      dragged = card;
+      card.classList.add('dragging');
+      event.dataTransfer.effectAllowed = 'move';
+      event.dataTransfer.setData('text/plain', card.dataset.project || '');
+    });
+    queue.addEventListener('dragend', () => {
+      if (dragged) dragged.classList.remove('dragging');
+      dragged = null;
+    });
+    queue.addEventListener('dragover', (event) => {
+      event.preventDefault();
+      const over = event.target.closest('.qcard');
+      if (!over || !dragged || over === dragged) return;
+      const box = over.getBoundingClientRect();
+      const after = (event.clientY - box.top) > box.height / 2;
+      queue.insertBefore(dragged, after ? over.nextSibling : over);
+    });
+    queue.addEventListener('drop', (event) => {
+      event.preventDefault();
+      if (!dragged) return;
+      renumber();
+      persistOrder();
+    });
+  }
+
+  /* ---------- 5. el buscador de las carpetas sin gobernanza ---------- */
+  for (const input of document.querySelectorAll('[data-filter]')) {
+    input.addEventListener('input', () => {
+      const needle = input.value.trim().toLowerCase();
+      for (const row of document.querySelectorAll(input.dataset.filter)) {
+        row.hidden = Boolean(needle) && !(row.dataset.name || '').includes(needle);
+      }
+    });
+  }
+
   /* ---------- 3. los modelos que existen, por proveedor ---------- */
   document.addEventListener('change', (event) => {
     const select = event.target;

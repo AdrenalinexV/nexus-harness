@@ -22,7 +22,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import parse_qs, quote, urlparse
 
-from . import __version__
+from . import __version__, api
 from .cockpit import Cockpit
 
 # PyInstaller unpacks data under `sys._MEIPASS`; a source checkout has `web/` next to this file. One
@@ -34,11 +34,9 @@ TYPES = {".html": "text/html; charset=utf-8", ".css": "text/css; charset=utf-8",
          ".png": "image/png", ".ico": "image/x-icon", ".json": "application/json",
          ".woff2": "font/woff2"}
 JSON_TYPE = "application/json; charset=utf-8"
-# El contrato con el frontend. Se publica en `/api/health` para que una pagina nueva pueda DETECTAR un
-# motor viejo: sin esto, un proceso lanzado antes de un cambio deja botones que no responden y el
-# operador no tiene forma de saber por que (medido: las vistas de gobernanza daban 404 y no lo decia
-# nadie).
-API_VERSION = 2
+# El contrato con el frontend vive en `api.py` (`API_VERSION`), junto a la ruta que lo publica: una
+# pagina nueva detecta un motor viejo comparandolo con `/api/health`, y sin eso un proceso lanzado
+# antes de un cambio deja botones que no responden sin decir por que.
 
 
 class Handler(BaseHTTPRequestHandler):
@@ -147,48 +145,15 @@ class Handler(BaseHTTPRequestHandler):
             answer = settings_api.handle(self.cockpit, "GET", path, query, {})
             if answer is not None:
                 return self._json(*answer)
+        answer = api.get(self.cockpit, path, query)
+        if answer is not None:
+            return self._json(*answer)
         if path.startswith("/gov/api/"):
             return self._forward(path, query, {})
         # Los estaticos se sirven por extension, no por lista blanca: una lista se olvida en cuanto se
         # anade un fichero, y el fallo aparece como una pagina sin estilos.
         if Path(path).suffix.lower() in TYPES:
             return self._static(path.lstrip("/"))
-        if path == "/api/health":
-            return self._json(200, {"ok": True, "seq": self.cockpit.bus.seq,
-                                    "version": __version__, "api": API_VERSION})
-        if path == "/api/state":
-            return self._json(200, self.cockpit.state())
-        if path == "/api/chat":
-            return self._json(200, self.cockpit.chat_state())
-        if path == "/api/sessions":
-            return self._json(200, {"sessions": self.cockpit.sessions()})
-        if path == "/api/memory":
-            return self._json(200, self.cockpit.memory_state())
-        if path == "/api/models":
-            return self._json(200, self.cockpit.catalog())
-        if path == "/api/relay":
-            return self._json(200, self.cockpit.relay_status())
-        if path == "/api/onboarding":
-            return self._json(200, self.cockpit.onboarding_state())
-        if path == "/api/projects":
-            from .onboarding import projects as list_projects
-            workspace = (query.get("workspace") or [None])[0]
-            return self._json(200, {"projects": list_projects(workspace)})
-        if path == "/api/mcp":
-            return self._json(200, self.cockpit.mcp_state())
-        if path == "/api/skills":
-            name = (query.get("name") or [""])[0]
-            payload = self.cockpit.skill_read(name) if name else self.cockpit.skills_list()
-            return self._json(200 if payload.get("ok", True) else 404, payload)
-        if path == "/api/bridge/daemon":
-            return self._json(200, self.cockpit.daemon_state())
-        if path == "/api/events":
-            since = int((query.get("since") or ["0"])[0] or 0)
-            return self._json(200, {"events": self.cockpit.bus.since(since),
-                                    "seq": self.cockpit.bus.seq})
-        if path == "/api/gov":
-            from . import gov
-            return self._json(200, gov.status())
         return self._json(404, {"ok": False, "reason": "no route %s" % path})
 
     # -- la gobernanza, servida desde aqui ------------------------------------------------------
@@ -235,25 +200,6 @@ class Handler(BaseHTTPRequestHandler):
             return self._forward(path, query, body)
         if path == "/gov/action":
             return self._gov_action(body)
-        if path == "/api/chat":
-            ok, payload = self.cockpit.send(body.get("text"), body.get("attachments") or [])
-            if ok:
-                return self._json(202, dict(payload, ok=True))
-            busy = "in flight" in str(payload)
-            return self._json(409 if busy else 400, {"ok": False, "reason": payload})
-        if path == "/api/onboarding":
-            return self._json(200, self.cockpit.onboarding_apply(body))
-        if path == "/api/mcp":
-            return self._json(200, self.cockpit.mcp_reload())
-        if path == "/api/skills":
-            saved = self.cockpit.skill_save(body.get("name"), body.get("text"))
-            return self._json(200 if saved.get("ok") else 400, saved)
-        if path == "/api/bridge/daemon":
-            if str(body.get("action") or "toggle") == "stop":
-                return self._json(200, self.cockpit.daemon_stop())
-            return self._json(200, self.cockpit.daemon_toggle(body.get("provider") or ""))
-        if path == "/api/stop":
-            return self._json(200, {"ok": True, "stopped": self.cockpit.stop()})
         if path == "/api/shutdown":
             # The desktop shell closes the window and asks the engine to leave: without this, killing
             # PyInstaller's bootloader parent leaves the real engine running and holding its own exe,
@@ -261,38 +207,9 @@ class Handler(BaseHTTPRequestHandler):
             self._json(200, {"ok": True, "version": __version__})
             threading.Thread(target=self.server.stop_engine, daemon=True).start()
             return None
-        if path == "/api/chat/new":
-            session = self.cockpit.new_chat(body.get("title") or "", body.get("project"))
-            return self._json(200, {"ok": True, "session": session})
-        if path == "/api/chat/load":
-            session = self.cockpit.load_chat(body.get("id"), body.get("project"))
-            if session is None:
-                return self._json(404, {"ok": False, "reason": "no such conversation"})
-            return self._json(200, {"ok": True, "session": session})
-        if path == "/api/chat/delete":
-            gone = self.cockpit.delete_session(body.get("id"), body.get("project"))
-            return self._json(200 if gone else 404, {"ok": gone})
-        if path == "/api/chat/rename":
-            done = self.cockpit.rename_session(body.get("id"), body.get("title"), body.get("project"))
-            return self._json(200 if done else 404, {"ok": done})
-        if path == "/api/memory":
-            if "remove" in body:
-                return self._json(200, self.cockpit.memory_remove(body.get("remove")))
-            return self._json(200, self.cockpit.memory_add(body.get("text")))
-        if path == "/api/run":
-            ok, payload = self.cockpit.start(body.get("goal"), body.get("project"),
-                                             body.get("test_command"))
-            if ok:
-                return self._json(202, dict(payload, ok=True))
-            busy = "in flight" in str(payload)
-            return self._json(409 if busy else 400, {"ok": False, "reason": payload})
-        if path == "/api/roles":
-            ok, payload = self.cockpit.swap(body.get("role"), body.get("spec"))
-            return self._json(200 if ok else 400,
-                              {"ok": ok, "info": payload} if ok else {"ok": False, "reason": payload})
-        if path == "/api/bridge":
-            rows = self.cockpit.tick_bridge()
-            return self._json(200, {"ok": True, "ran": len(rows), "rows": rows})
+        answer = api.post(self.cockpit, path, body, query)
+        if answer is not None:
+            return self._json(*answer)
         return self._json(404, {"ok": False, "reason": "no route %s" % path})
 
     def _form(self):

@@ -6,10 +6,12 @@ Dos decisiones que se repiten aqui:
   panel que miente.
 - Lo que se puede HACER va por `POST /api/settings/do` y contesta un 303 al panel: funciona sin script
   y recargar no reenvia la accion.
-"""
-from pathlib import Path
 
-from . import gov, panels
+Las estadisticas llevan tres graficos, y son SVG escritos por `charts.py`: el motor congelado no
+descarga nada, asi que una libreria de graficos seria una pantalla en blanco en cuanto no hubiera red.
+Cada grafico declara su fuente; si no hay medida, se dice con palabras en el mismo hueco.
+"""
+from . import charts, gov, ledger, panels, projects
 from . import settings_kit as kit
 
 # La ultima respuesta de una accion (el arquitecto, el doctor). Vive en memoria del motor a proposito:
@@ -130,6 +132,120 @@ def _doctor_kpi():
                 "última pasada de esta sesión")
 
 
+# -- las graficas ---------------------------------------------------------------------------------
+def _gate_panels(state):
+    """Los proyectos con registro de gates, por nombre. Un panel `present: False` no se dibuja."""
+    rows = {}
+    for panel in ((state.get("impact") or {}).get("panels") or []):
+        name = str(panel.get("name") or "")
+        if name and panel.get("present"):
+            rows[name] = panel
+    return rows
+
+
+def _queue_names(cockpit):
+    return [row["name"] for row in projects.queue(cockpit.config)]
+
+
+def _token_rows(cockpit, state, aggregate):
+    """Tokens consumidos y tokens que el gate evito, por proyecto. Dos fuentes, cada una declarada."""
+    panels = _gate_panels(state)
+    rows = []
+    for name in _queue_names(cockpit)[:6]:
+        panel = panels.get(name) or {}
+        measured = panel.get("tokens_total")
+        if measured is None:
+            measured = ((aggregate.get("by_project") or {}).get(name) or {}).get("tokens", 0)
+        rows.append({"label": name, "parts": [
+            {"value": measured or 0, "tone": "accent"},
+            {"value": panel.get("tokens_blocked") or 0, "tone": "ok"}]})
+    return rows
+
+
+def _triad_rows(aggregate, state):
+    """La eficacia de la triada: primero el libro del arnes; si esta vacio, el registro de gates."""
+    if aggregate.get("turns"):
+        return ([{"label": "Aprobado a la primera (Director)", "value": aggregate["first_pass"],
+                  "tone": "ok"},
+                 {"label": "Reparado por el Obrero", "value": aggregate["repaired"], "tone": "warn"},
+                 {"label": "Bloqueado por Gate/Juez", "value": aggregate["blocked"], "tone": "bad"}],
+                "turnos", "libro de turnos del arnés · %d turnos" % aggregate["turns"])
+    tally = {"0": 0, "10": 0, "20": 0}
+    for panel in _gate_panels(state).values():
+        for code, count in (panel.get("by_exit") or {}).items():
+            if str(code) in tally:
+                tally[str(code)] += int(count or 0)
+    rows = [{"label": "Verde (exit 0)", "value": tally["0"], "tone": "ok"},
+            {"label": "Bloqueado (exit 10)", "value": tally["10"], "tone": "bad"},
+            {"label": "Sin verificar (exit 20)", "value": tally["20"], "tone": "warn"}]
+    return rows, "runs", "registro de gates del gobernador (el libro del arnés aún no tiene turnos)"
+
+
+def _minutes_per_block(money):
+    """Los minutos por cierre bloqueado, derivados del propio ledger: la misma constante declarada."""
+    hours = money.get("hours")
+    blocked = money.get("blocked")
+    if not hours or not blocked:
+        return 0.0
+    return float(hours) / float(blocked) * 60.0
+
+
+def _health_charts(cockpit, state):
+    """Las tres barras horizontales del grafico 3: criterios, runs verdes y horas por proyecto."""
+    queue = projects.queue(cockpit.config)[:8]
+    panels = _gate_panels(state)
+    minutes = _minutes_per_block(state.get("money") or {})
+    criteria, green, hours = [], [], []
+    for row in queue:
+        name = row["name"]
+        panel = panels.get(name) or {}
+        criteria.append({"label": name, "value": (row.get("spec") or {}).get("criteria") or 0,
+                         "tone": "accent", "show_zero": True})
+        green.append({"label": name, "value": (panel.get("by_exit") or {}).get("0") or 0,
+                      "tone": "ok", "show_zero": True})
+        blocked = int(panel.get("blocked") or 0)
+        hours.append({"label": name, "value": round(blocked * minutes / 60.0, 1),
+                      "tone": "violet", "show_zero": True})
+    blocks = (("Criterios de Spec congelados", criteria, ""),
+              ("Runs verdes del gate", green, ""),
+              ("Horas ahorradas (bloqueos × minutos)", hours, " h"))
+    return '<div class="chartgrid">%s</div>' % "".join(
+        '<div class="chartcard"><h4>%s</h4>%s</div>'
+        % (kit.esc(title),
+           charts.bars(rows, width=430, label_width=140, unit=unit,
+                       why="sin medidas todavía"))
+        for title, rows, unit in blocks)
+
+
+def _charts(cockpit, state, aggregate):
+    """Los tres graficos nativos, con su fuente escrita al lado. Sin CDN, sin script, sin adivinar."""
+    money = state.get("money") or {}
+    currency = money.get("currency") or "USD"
+    net = money.get("net")
+    avoided = money.get("avoided_tokens")
+    tokens = charts.columns(_token_rows(cockpit, state, aggregate), width=600, height=220,
+                            why="sin proyectos gobernados con medidas")
+    triad_rows, centre, source = _triad_rows(aggregate, state)
+    donut = charts.donut(triad_rows, size=200, centre=centre)
+    price = (money.get("active") or {}).get("label") or "sin tarifa declarada"
+    caption = ("Ledger del gobernador: <strong>%s</strong> tokens evitados · ahorro neto "
+               "<strong>%s %s</strong> a la tarifa «%s»."
+               % (charts.fmt(avoided) if avoided is not None else "sin medir",
+                  charts.fmt(net) if net is not None else "sin medir", kit.esc(currency),
+                  kit.esc(price)))
+    return ('<h3 class="ssub">Gráfico 1 · Tokens consumidos vs evitados por proyecto</h3>'
+            '<div class="chartcard">%s<div class="vlegends">'
+            '<span class="vlegend"><i style="background:#3b82f6"></i>consumidos</span>'
+            '<span class="vlegend"><i style="background:#22c55e"></i>evitados por el gate</span></div>'
+            '<p class="dim">%s</p></div>'
+            '<h3 class="ssub">Gráfico 2 · Eficacia de la tríada y del gate</h3>'
+            '<div class="chartcard chartrow">%s<div class="chartside">%s'
+            '<p class="dim">%s</p></div></div>'
+            '<h3 class="ssub">Gráfico 3 · Actividad y salud por proyecto gobernado</h3>%s'
+            % (tokens, caption, donut, charts.legend(triad_rows), kit.esc(source),
+               _health_charts(cockpit, state)))
+
+
 def stats(cockpit):
     state, reason = gov.installer_state()
     money = state.get("money") if isinstance(state.get("money"), dict) else {}
@@ -142,11 +258,14 @@ def stats(cockpit):
     active = (money.get("active") or {}).get("label") or "sin tarifa declarada"
     currency = money.get("currency") or "USD"
     net = money.get("net")
+    rows = ledger.history(cockpit.config.workspace, _queue_names(cockpit), extra=[cockpit.root])
+    aggregate = ledger.aggregate(rows)
     cards = [
         _kpi("Proyectos Gobernados", "%s / %s" % (counts.get("governed", "?"),
                                                   counts.get("workspace", "?")),
              "ok" if counts.get("governed") else "off", "con .ai/CURRENT_SPEC.json"),
-        _kpi("Tokens Evitados", money.get("avoided_tokens", "—"), "ok", "podados por el motor durmiente"),
+        _kpi("Tokens Evitados", money.get("avoided_tokens", "—"), "ok",
+             "podados por el motor durmiente"),
         _kpi("Ahorro", ("%s %s" % (_shorter(net, 2), currency)) if net is not None else "sin medir",
              "ok" if net else "off", "neto, con la tarifa activa"),
         _kpi("Horas Ahorradas", _shorter(money.get("hours"), 1), "ok", "estimadas del ledger"),
@@ -154,15 +273,24 @@ def stats(cockpit):
              "el gobernador, medido ahora"),
         _doctor_kpi(),
         _kpi("Último Gate", ("exit %s" % verdict.get("exit")) if verdict else "sin turno",
-             "ok" if verdict.get("ok") else ("bad" if verdict else "off"), "del último turno del chat"),
+             "ok" if verdict.get("ok") else ("bad" if verdict else "off"),
+             "del último turno del chat"),
         _kpi("Último Juez", judgement,
              "ok" if judgement == "approve" else ("warn" if judgement == "—" else "bad"),
              "veredicto del modelo juez"),
+        _kpi("Turnos Medidos", "%d" % aggregate.get("turns", 0),
+             "ok" if aggregate.get("turns") else "off", "libro de turnos del arnés"),
         _kpi("Tarifa Activa", active, "ok", "precio por turno declarado"),
     ]
     if reason:
         cards.append(_kpi("Gobernanza", "no disponible", "warn", reason))
-    body = ['<div class="kpigrid">%s</div>' % "".join(cards)]
+    body = ['<div class="kpigrid four">%s</div>' % "".join(cards)]
+    body.append(_charts(cockpit, state, aggregate))
+    assumptions = money.get("assumptions") or []
+    if assumptions:
+        body.append('<details class="sources"><summary>De dónde sale cada cifra</summary>'
+                    '<ul class="dim">%s</ul></details>'
+                    % "".join("<li>%s</li>" % kit.esc(one) for one in assumptions))
     if LAST.get("doctor"):
         body.append('<h3 class="ssub">Última pasada del doctor</h3>')
         body.append('<pre class="sout">%s</pre>' % kit.esc(LAST["doctor"]))
@@ -172,5 +300,6 @@ def stats(cockpit):
                 'Pasar el doctor del protocolo</button>'
                 '<span class="dim">tarda ~1 minuto: recorre todos los self-tests del gobernador</span>'
                 '</div></form>')
-    return ("Estadísticas & Auditoría", "Lo que el protocolo mide de esta máquina, y el último gate.",
+    return ("Estadísticas & Auditoría",
+            "Lo que el protocolo mide de esta máquina, el último gate y tres gráficos con datos reales.",
             "".join(body))

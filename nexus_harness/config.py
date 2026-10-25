@@ -52,6 +52,9 @@ DEFAULTS = {
     # Comando de test POR PROYECTO (`{"AXV-AdrenalineX": "npm test"}`). Es lo que pide un proyecto y no
     # lo que pide la maquina: el mismo operador tiene Python, C# y npm en carpetas distintas.
     "project_tests": {},
+    # La cola de importancia, en orden: el nombre tal como se llama la carpeta del workspace. La escribe
+    # el tablero de arrastrar y soltar (`projects.save_order`) y la obedece el bucle autonomo.
+    "project_order": [],
     "lang": "es",
     "temperature": 0.2,
     "max_tokens": 4096,
@@ -113,6 +116,7 @@ class HarnessConfig:
     shell_policy: str = "standard"
     test_command: object = None
     project_tests: dict = field(default_factory=dict)
+    project_order: list = field(default_factory=list)
     lang: str = "es"
     temperature: float = 0.2
     max_tokens: int = 4096
@@ -147,6 +151,10 @@ class HarnessConfig:
                     role, spec = pair.split("=", 1)
                     roles[role.strip()] = spec.strip()
         workspace = Path(from_file.get("workspace") or WORKSPACE_DEFAULT)
+        # La cola de prioridad es una lista de nombres: si el fichero trae otra cosa (un texto, un
+        # objeto), se descarta aqui y el tablero vuelve a su orden alfabetico en vez de reventar.
+        if not isinstance(values.get("project_order", []), list):
+            values.pop("project_order", None)
         config = cls(roles=roles, workspace=workspace,
                      default_root=Path(root) if root else Path.cwd(),
                      secrets=load_secrets(from_file.get("secrets_file")),
@@ -172,6 +180,7 @@ class HarnessConfig:
                 "cost_limit": self.cost_limit, "max_steps": self.max_steps,
                 "max_repairs": self.max_repairs, "test_command": self.test_command,
                 "project_tests": dict(self.project_tests or {}),
+                "project_order": list(self.project_order or []),
                 "max_children": self.max_children, "subagent_steps": self.subagent_steps,
                 "tool_workers": self.tool_workers, "shell_policy": self.shell_policy,
                 "lang": self.lang, "source": self.source,

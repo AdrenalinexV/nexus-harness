@@ -8,9 +8,9 @@ the numbers.
 
 ```
 $ python tools/verify.py --frozen
-lint      exit 0   files=88 findings=0 max_lines=400
-selftest  exit 0   suites=23 failures=0
-frozen    exit 0   suites=23 failures=0 (same as the source)
+lint      exit 0   files=102 findings=0 max_lines=400
+selftest  exit 0   suites=28 failures=0
+frozen    exit 0   suites=28 failures=0 (same as the source)
 verify: GREEN
 ```
 
@@ -19,42 +19,47 @@ verify: GREEN
 ```
 providers        OK    0.00s
 retry            OK    0.00s
-repair           OK    0.27s
-tools            OK    0.26s
+repair           OK    0.17s
+tools            OK    0.19s
 edit_v4a         OK    0.05s
-shell_session    OK    1.73s
-shell_policy     OK    0.33s
-checkpoint       OK    0.30s
-subagents        OK    0.02s
+shell_session    OK    1.34s
+shell_policy     OK    0.13s
+checkpoint       OK    0.27s
+subagents        OK    0.01s
 warning: The `fitz` API is deprecated and will be removed in future. Use `import pymupdf` instead.
-attachments      OK    0.17s
-onboarding       OK    0.10s
-mcp_client       OK    0.70s
-sidecar          OK    5.13s
+attachments      OK    0.14s
+onboarding       OK    0.11s
+mcp_client       OK    0.38s
+sidecar          OK    5.14s
 estado listo: 2 criterios (2 pendientes)
 a -> exit 0 (VERDE)
 findings=0
 b -> exit 10 (ROJO)
 b marcado blocked
 criterio desconocido: zzz
-cerrojo ocupado: el turno de noche ya esta en marcha: pid 38216 desde 2026-10-25T18:21:04+00:00 (suite)
-no se toca nada. Si esa sesion ya no corre, el cerrojo se hereda solo; para forzarlo a mano, borra C:\Users\Vexus\AppData\Local\Temp\nightshift-0rxmi4ss\.nexus\harness\nightshift.lock
+cerrojo ocupado: el turno de noche ya esta en marcha: pid 23792 desde 2026-10-25T21:15:14+00:00 (suite)
+no se toca nada. Si esa sesion ya no corre, el cerrojo se hereda solo; para forzarlo a mano, borra C:\Users\Vexus\AppData\Local\Temp\nightshift-hwjjhz09\.nexus\harness\nightshift.lock
 TOCA: b — falla
   prueba: python -c "raise SystemExit(10)"
   estado: blocked (intentos 1)
 a -> exit 0 (VERDE)
 findings=0
-nightshift       OK    0.52s
-context_router   OK    0.10s
-triad_loop       OK    2.39s
-session_relay    OK    1.45s
-compaction       OK    0.03s
-chat             OK    0.20s
-memory           OK    0.35s
-ui               OK    0.86s
-bridge           OK    0.07s
+nightshift       OK    0.33s
+context_router   OK    0.07s
+triad_loop       OK    1.68s
+session_relay    OK    0.97s
+compaction       OK    0.02s
+chat             OK    0.15s
+memory           OK    0.58s
+ui               OK    0.83s
+bridge           OK    0.06s
 budget           OK    0.03s
-suites=23 failures=0
+charts           OK    0.00s
+activity         OK    0.00s
+projects         OK    0.65s
+autonomy         OK    0.26s
+ux               OK    1.64s
+suites=28 failures=0
 ```
 
 What each one actually proves:

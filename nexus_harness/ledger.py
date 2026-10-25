@@ -1,0 +1,147 @@
+"""El libro de turnos del arnes: una linea por turno, en el proyecto donde ocurrio.
+
+Por que un fichero aparte del transcript: el transcript guarda la CONVERSACION (lo que hay que
+repintar), y esto guarda la MEDIDA (que paso con el gate, cuanto costo, si hubo que reparar). Son dos
+preguntas distintas y mezclarlas hace que un cambio de formato de chat reescriba el historial de
+calidad.
+
+Formato: JSON por linea en `<proyecto>/.nexus/harness/ledger.jsonl`, solo se anade. Un turno escrito a
+medias se descarta al leer (la linea tiene que ser JSON valido): el libro no adivina.
+
+Un cero no es una medida: `aggregate()` devuelve `{"turns": 0}` y la pantalla lo dice con palabras en
+vez de dibujar un anillo vacio.
+"""
+import json
+import time
+from pathlib import Path
+
+LEDGER_REL = Path(".nexus") / "harness" / "ledger.jsonl"
+MAX_ROWS = 4000
+
+
+def _now():
+    return time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
+
+
+class TurnLedger:
+    """Un libro por proyecto. `append()` nunca lanza: perder una medida no puede tumbar un turno."""
+
+    def __init__(self, root):
+        self.root = Path(root)
+        self.path = self.root / LEDGER_REL
+
+    def append(self, record):
+        row = {"at": _now()}
+        row.update({key: value for key, value in (record or {}).items() if value is not None})
+        try:
+            self.path.parent.mkdir(parents=True, exist_ok=True)
+            with self.path.open("a", encoding="utf-8") as handle:
+                handle.write(json.dumps(row, ensure_ascii=False) + "\n")
+        except OSError:
+            return False
+        return True
+
+    def rows(self, limit=MAX_ROWS):
+        if not self.path.is_file():
+            return []
+        out = []
+        try:
+            text = self.path.read_text(encoding="utf-8", errors="replace")
+        except OSError:
+            return []
+        for line in text.splitlines()[-int(limit):]:
+            line = line.strip()
+            if not line:
+                continue
+            try:
+                row = json.loads(line)
+            except ValueError:
+                continue
+            if isinstance(row, dict):
+                out.append(row)
+        return out
+
+
+def from_turn(turn, project="", session="", source="chat"):
+    """La medida de un turno de chat o de una corrida de la triada, con los nombres del libro."""
+    turn = turn or {}
+    verdict = turn.get("verdict") or {}
+    judgement = turn.get("judgement") or {}
+    budget = turn.get("cost") or turn.get("budget") or {}
+    direct = turn.get("tokens") if isinstance(turn.get("tokens"), dict) else {}
+    nested = budget.get("tokens") if isinstance(budget.get("tokens"), dict) else {}
+    prompt = _int(direct.get("prompt")) or _int(nested.get("prompt")) or _int(budget.get("prompt"))
+    completion = (_int(direct.get("completion")) or _int(nested.get("completion"))
+                  or _int(budget.get("completion")))
+    exit_code = turn.get("exit")
+    return {"project": _name(project), "session": session or "", "source": source,
+            "exit": None if exit_code is None else _int(exit_code),
+            "gate": bool(verdict.get("ok")) if verdict else None,
+            "judge": (judgement or {}).get("verdict") or "",
+            "repairs": _int(turn.get("repairs")),
+            "steps": _int(turn.get("steps")),
+            "prompt_tokens": prompt, "completion_tokens": completion,
+            "tokens": prompt + completion,
+            "touched": len(turn.get("touched") or [])}
+
+
+def _int(value):
+    try:
+        return int(value or 0)
+    except (TypeError, ValueError):
+        return 0
+
+
+def _name(project):
+    text = str(project or "").replace("\\", "/").rstrip("/")
+    return text.split("/")[-1] if text else ""
+
+
+def aggregate(rows):
+    """Los cuatro numeros que la pantalla necesita, contados de las filas que existen."""
+    first_pass = repaired = blocked = 0
+    tokens = prompt = completion = 0
+    by_project = {}
+    for row in rows or []:
+        exit_code = row.get("exit")
+        repairs = _int(row.get("repairs"))
+        if exit_code in (0, None) and not repairs:
+            first_pass += 1
+        elif exit_code in (0, None):
+            repaired += 1
+        else:
+            blocked += 1
+        tokens += _int(row.get("tokens"))
+        prompt += _int(row.get("prompt_tokens"))
+        completion += _int(row.get("completion_tokens"))
+        name = row.get("project") or "(sin proyecto)"
+        bucket = by_project.setdefault(name, {"turns": 0, "tokens": 0, "first_pass": 0,
+                                              "repaired": 0, "blocked": 0})
+        bucket["turns"] += 1
+        bucket["tokens"] += _int(row.get("tokens"))
+        if exit_code in (0, None) and not repairs:
+            bucket["first_pass"] += 1
+        elif exit_code in (0, None):
+            bucket["repaired"] += 1
+        else:
+            bucket["blocked"] += 1
+    return {"turns": len(rows or []), "first_pass": first_pass, "repaired": repaired,
+            "blocked": blocked, "tokens": tokens, "prompt_tokens": prompt,
+            "completion_tokens": completion, "by_project": by_project}
+
+
+def history(workspace, names=(), extra=()):
+    """Las filas de todos los proyectos mirados, con proyecto unico y de mas viejo a mas nuevo."""
+    roots = [Path(workspace) / name for name in names or []]
+    roots += [Path(path) for path in extra or []]
+    rows, seen = [], set()
+    for root in roots:
+        for row in TurnLedger(root).rows():
+            row.setdefault("project", _name(root))
+            key = (row.get("at"), row.get("session"), row.get("project"), row.get("tokens"))
+            if key in seen:
+                continue
+            seen.add(key)
+            rows.append(row)
+    rows.sort(key=lambda row: str(row.get("at") or ""))
+    return rows

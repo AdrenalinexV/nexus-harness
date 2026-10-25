@@ -16,6 +16,7 @@ import threading
 import time
 from dataclasses import dataclass, field
 
+from . import ledger
 from .budget import CostBudget
 from .compaction import Compactor
 from .gate import EXIT_GREEN, EXIT_UNAVAILABLE, Gate
@@ -71,6 +72,7 @@ class RunResult:
     judgement: dict = field(default_factory=dict)
     budget: dict = field(default_factory=dict)
     cost: dict = field(default_factory=dict)
+    tokens: dict = field(default_factory=dict)
     started: str = ""
     finished: str = ""
 
@@ -79,7 +81,7 @@ class RunResult:
                 "steps": self.steps, "repairs": self.repairs, "touched": self.touched,
                 "sessions": self.sessions, "phases": self.phases, "verdict": self.verdict,
                 "judgement": self.judgement, "budget": self.budget, "cost": self.cost,
-                "started": self.started, "finished": self.finished}
+                "tokens": self.tokens, "started": self.started, "finished": self.finished}
 
 
 def _now():
@@ -103,6 +105,7 @@ class Triad:
             threshold=getattr(config, "compact_threshold", 0.55))
         self.touched = set()
         self.injections = []
+        self.tokens = {"prompt": 0, "completion": 0}
         self._stop = threading.Event()
         self.registry.stop = self._stop
         if getattr(self.registry, "delegate", None) is None:
@@ -190,6 +193,9 @@ class Triad:
             if not reply.wants_tools:
                 break
             for call in reply.tool_calls:
+                # `tool.start` es lo que la barra en vivo pinta como "en curso": sin el, el hilo solo
+                # muestra herramientas que YA acabaron y parece que nada esta pasando.
+                self._emit("tool.start", call.name, args=call.arguments)
                 observation = self.registry.call(call.name, call.arguments) \
                     if not call.parse_error else _bad_arguments(call)
                 self.touched.update(observation.files)
@@ -222,6 +228,10 @@ class Triad:
 
     def _absorb(self, reply):
         self.cost.observe(reply.usage, reply.model)
+        # Los tokens del run se cuentan aqui y viajan en el resultado: el libro de turnos los necesita
+        # para que la grafica de ahorro tenga cifras propias, no las del gobernador.
+        self.tokens["prompt"] += int(getattr(reply.usage, "prompt", 0) or 0)
+        self.tokens["completion"] += int(getattr(reply.usage, "completion", 0) or 0)
         if self.relay is not None:
             self.relay.observe(reply.usage)
 
@@ -322,13 +332,21 @@ class Triad:
             result.exit = 10
         result.steps, result.repairs = steps_total, repairs
         result.cost = self.cost.state()
+        result.tokens = dict(self.tokens, total=sum(self.tokens.values()))
         result.touched, result.finished = sorted(self.touched), _now()
         if self.relay is not None:
             self.relay.finish(result.exit)
             result.budget = self.relay.meter.state()
             result.sessions = self.relay.store.ids()
+        self._record(result)
         self._emit("run.end", "exit %s" % result.exit, ok=result.ok, summary=result.summary[:600])
         return result
+
+    def _record(self, result):
+        """El run tambien se mide: una linea en el libro de turnos del proyecto, como un turno de chat."""
+        ledger.TurnLedger(self.config.default_root).append(
+            ledger.from_turn(result.as_dict(), str(self.config.default_root),
+                             (result.sessions or [""])[-1], "run"))
 
     def _plan(self, goal):
         facts = self._facts()

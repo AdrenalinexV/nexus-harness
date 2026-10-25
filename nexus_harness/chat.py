@@ -17,7 +17,7 @@ import threading
 from dataclasses import dataclass, field
 
 from . import attachments as attachment_tools
-from . import checkpoint
+from . import checkpoint, ledger
 from .budget import CostBudget
 from .compaction import Compactor
 from .message import Message, as_text
@@ -57,12 +57,14 @@ class Turn:
     attachments: list = field(default_factory=list)
     checkpoint: str = ""
     budget: dict = field(default_factory=dict)
+    tokens: dict = field(default_factory=dict)
 
     def as_dict(self):
         return {"reply": self.reply, "exit": self.exit, "steps": self.steps,
                 "repairs": self.repairs, "touched": self.touched, "skills": self.skills,
                 "verdict": self.verdict, "judgement": self.judgement, "stopped": self.stopped,
-                "attachments": self.attachments, "checkpoint": self.checkpoint, "budget": self.budget}
+                "attachments": self.attachments, "checkpoint": self.checkpoint,
+                "budget": self.budget, "tokens": self.tokens}
 
 
 class Chat:
@@ -86,6 +88,7 @@ class Chat:
         self._stop = threading.Event()
         self.last_turn = Turn()
         self.checkpoint = None
+        self.turn_tokens = {"prompt": 0, "completion": 0}
         self.used = 0
         self.cost = CostBudget(limit_usd=float(getattr(config, "cost_limit", 0.0) or 0.0))
         self.compactor = Compactor(limit=int(getattr(config, "budget_limit", 60000) or 0),
@@ -181,6 +184,7 @@ class Chat:
                 temperature=self.config.temperature, max_tokens=self.config.max_tokens)
             steps += 1
             self.used += int(getattr(reply.usage, "total", 0) or 0)
+            self._count(reply.usage)
             self.cost.observe(reply.usage, reply.model)
             if reply.reasoning:
                 self._emit("worker.reasoning", reply.reasoning[:1000], model=reply.model)
@@ -200,6 +204,11 @@ class Chat:
             self._emit("chat.limit", "max_steps=%d" % int(max_steps or self.config.max_steps))
         return text, steps
 
+    def _count(self, usage):
+        """Suma los tokens del turno. Sin esto, el libro de turnos no puede decir cuanto costo."""
+        self.turn_tokens["prompt"] += int(getattr(usage, "prompt", 0) or 0)
+        self.turn_tokens["completion"] += int(getattr(usage, "completion", 0) or 0)
+
     def _dispatch(self, calls):
         """Run the model's tool calls: read-only ones together, everything else in order."""
         calls = list(calls or [])
@@ -207,6 +216,13 @@ class Chat:
         results = {}
         if len(ready) > 1:
             self._emit("tool.parallel", "%d llamadas en paralelo" % len(ready),
+                       names=[call.name for call, _ in ready],
+                       args={"paths": [str((call.arguments or {}).get("path") or
+                                           (call.arguments or {}).get("pattern") or "")
+                                        for call, _ in ready][:4]})
+            # La barra en vivo necesita saber que EMPEZO, no solo que acabo: `tool.start` es el aviso
+            # de que el motor esta tocando algo ahora mismo.
+            self._emit("tool.start", "%d tools" % len(ready),
                        names=[call.name for call, _ in ready])
             workers = int(getattr(self.config, "tool_workers", 4) or 4)
             for observation, (_call, index) in zip(
@@ -214,6 +230,7 @@ class Chat:
                 results[index] = observation
         elif ready:
             call, index = ready[0]
+            self._emit("tool.start", call.name, args=call.arguments)
             results[index] = self.registry.call(call.name, call.arguments)
         for index, call in enumerate(calls):
             yield (index, call,
@@ -240,6 +257,7 @@ class Chat:
         checkpoint.set_active(self.checkpoint)
         turn.checkpoint = self.checkpoint.name
         self._emit("turn.checkpoint", self.checkpoint.name)
+        self.turn_tokens = {"prompt": 0, "completion": 0}
         reply, steps = self._turn(tools=True)
         turn.steps += steps
         if self._stop.is_set():
@@ -272,6 +290,7 @@ class Chat:
             turn.judgement = judgement.as_dict()
         turn.reply, turn.touched = reply, sorted(self.touched)
         turn.budget = self.cost.state()
+        turn.tokens = dict(self.turn_tokens, total=sum(self.turn_tokens.values()))
         injection = getattr(self.skills, "last", None)
         turn.skills = list(getattr(injection, "names", []) or [])
         self.last_turn = turn
@@ -285,6 +304,11 @@ class Chat:
             # la manana) no debe caer dentro de la instantanea de este.
             self._emit("checkpoint.closed", self.checkpoint.name, files=len(self.checkpoint.entries))
             checkpoint.set_active(None)
+        # El libro de turnos se escribe ANTES de guardar el transcript: una conversacion sin fichero
+        # (sin transcripts) sigue midiendo su gate, y las graficas de estadisticas se alimentan de aqui.
+        ledger.TurnLedger(self.config.default_root).append(
+            ledger.from_turn(turn.as_dict(), str(self.config.default_root),
+                             str((self.session or {}).get("id") or ""), "chat"))
         if self.transcripts is None or self.session is None:
             return
         self.session["messages"] = [message.to_openai() for message in self.history]

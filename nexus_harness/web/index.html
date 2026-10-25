@@ -12,8 +12,35 @@
      (`/settings`), que se abre con el boton de la barra lateral. -->
 <header class="topbar chat-top">
   <div class="brand">NEXUS<span>·</span>HARNESS</div>
+  <!-- La barra en vivo: fase activa, herramienta en curso y progreso. Al pulsar, el ultimo turno y el
+       control del Autopilot. La pinta `activity.js` desde `/api/activity`. -->
   <div class="top-right">
-    <span id="status" class="pill info">en reposo</span>
+    <button id="activity" class="activity idle" type="button" aria-expanded="false"
+            aria-controls="activity-pop" title="Estado del motor en vivo">
+      <span id="activity-glyph" class="aglyph" aria-hidden="true">🟢</span>
+      <span id="activity-label" class="alabel">conectando…</span>
+      <span id="activity-bar" class="abar" hidden aria-hidden="true"><i></i></span>
+    </button>
+    <div id="activity-pop" class="popover" role="dialog" aria-label="Último turno y Autopilot" hidden>
+      <header class="pophead">
+        <strong>Último turno</strong>
+        <span id="pop-when" class="dim"></span>
+      </header>
+      <p id="pop-summary" class="dim">todavía sin turnos en este proyecto</p>
+      <div id="pop-files" class="chips"></div>
+      <div id="pop-gate" class="poprows"></div>
+      <footer class="popfoot">
+        <label class="quick">Iteraciones
+          <input id="auto-iterations" type="number" value="3" min="1" max="50"
+                 title="cuántos ciclos hace el bucle antes de parar">
+        </label>
+        <button id="auto-start" class="primary"
+                title="Backup, planifica, ejecuta, verifica y avanza hasta terminar o agotar ciclos">
+          🚀 Modo Autónomo Iterativo</button>
+        <button id="auto-stop" class="ghost" hidden>Detener bucle</button>
+      </footer>
+      <p id="pop-note" class="dim popnote"></p>
+    </div>
   </div>
 </header>
 
@@ -63,5 +90,6 @@
 
 <script src="app.js"></script>
 <script src="panels.js"></script>
+<script src="activity.js"></script>
 </body>
 </html>

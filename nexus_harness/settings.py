@@ -15,7 +15,7 @@ from html import escape
 
 from . import gov, onboarding, panels, vault
 from . import settings_kit as kit
-from . import settings_models, settings_skills, settings_tools, settings_work
+from . import settings_models, settings_projects, settings_skills, settings_tools, settings_work
 
 TITLE = "Configuración"
 SECTIONS = (
@@ -46,7 +46,7 @@ def _render(name, cockpit, sub, item, query):
     if name == "modelos":
         return settings_models.panel(cockpit, sub)
     if name == "espacio":
-        return settings_work.espacio(cockpit)
+        return settings_projects.espacio(cockpit)
     if name == "seguridad":
         return settings_work.seguridad(cockpit)
     if name == "memoria":
@@ -125,6 +125,7 @@ LAYOUT = """<!doctype html>
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Nexus Harness · Configuración</title>
 <link rel="stylesheet" href="app.css">
+<link rel="stylesheet" href="settings.css">
 </head>
 <body class="settings-body">
 <header class="settings-top">
@@ -189,25 +190,9 @@ def save(cockpit, body):
                 notes.append("números del turno guardados")
         cockpit.reload_config()
     elif section == "espacio":
-        tests = {str(key)[5:]: str(value).strip() for key, value in body.items()
-                 if str(key).startswith("test:")}
-        merged = dict(cockpit.config.project_tests or {})
-        for name, command in tests.items():
-            if command:
-                merged[name] = command
-            else:
-                merged.pop(name, None)
-        saved, problems = onboarding.save_settings({"project_tests": merged})
-        notes += problems
-        if "project_tests" in saved:
-            notes.append("%d comandos de test por proyecto" % len(saved["project_tests"]))
-        numbers = _numbers({k: v for k, v in body.items() if k == "workspace"})
-        if numbers:
-            saved2, problems2 = onboarding.save_settings(numbers)
-            notes += problems2
-            if saved2:
-                notes.append("espacio de trabajo → %s" % saved2.get("workspace", ""))
-        cockpit.reload_config()
+        # La cola, el alta y el workspace los sabe guardar su propio panel: una seccion, un dueno.
+        note, ok = settings_projects.save(cockpit, body)
+        return (note, ok)
     elif section == "seguridad":
         keys = {str(key)[4:]: str(value) for key, value in body.items()
                 if str(key).startswith("key:") and str(value).strip()}
@@ -237,16 +222,9 @@ def action(cockpit, body):
     """Las acciones que no son «guardar». Devuelve `(nota, ok, seccion)`."""
     what = str(body.get("what") or "")
     section = str(body.get("section") or "modelos")
-    if what == "auto_spec":
-        project = str(body.get("project") or "").strip()
-        result = onboarding.apply(cockpit.config, {"project": project, "governance": True})
-        spec = result.get("saved", {}).get("spec") or {}
-        if result.get("saved", {}).get("governance"):
-            return ("Auto-Spec de %s: %s criterios (sha %s)"
-                    % (project, spec.get("cas_count", "?"), str(spec.get("sha256") or "")[:12]),
-                    True, "espacio")
-        return ("%s · %s" % (project, "; ".join(result.get("notes") or ["sin cambios"])),
-                bool(result.get("saved", {}).get("governance")), "espacio")
+    if what in ("auto_spec", "project_new", "project_move", "autonomy_start", "autonomy_stop"):
+        # Las acciones del panel de proyectos las ejecuta su dueno, con su propia validacion.
+        return settings_projects.action(cockpit, body)
     if what == "memory_add":
         answer = cockpit.memory_add(body.get("text"))
         return ("memoria: %s" % ("añadido" if answer.get("ok") else answer.get("reason")),

@@ -17,7 +17,8 @@ import time
 from dataclasses import replace
 from pathlib import Path
 
-from . import __version__, panels
+from . import __version__, panels, runner
+from .autonomy import Autopilot, model_planner
 from .bridge import Bridge
 from .chat import Chat
 from .config import HarnessConfig
@@ -28,10 +29,8 @@ from .judge import Judge
 from .mcp_client import McpManager
 from .memory import Memory
 from .providers import Router
-from .session_relay import SessionRelay
 from .tools import default_registry
 from .transcripts import Transcripts
-from .triad_loop import Triad
 
 
 def _dirs(workspace):
@@ -56,6 +55,8 @@ class Cockpit:
         self.last = None
         self.chat = None
         self._triad = None
+        self._autopilot = None
+        self._autopilot_key = None
         self.mcp_manager = None
         self._mcp_started = False
         self._catalog = (0.0, None)
@@ -197,7 +198,7 @@ class Cockpit:
                 self._busy = False
 
     def stop(self):
-        """Detener reaches the chat, the triad run and every process behind them."""
+        """Detener reaches the chat, the triad run, the autonomy loop and every process behind them."""
         stopped = False
         if self.chat is not None:
             self.chat.stop()
@@ -205,7 +206,30 @@ class Cockpit:
         if self._triad is not None:
             self._triad.stop()
             stopped = True
+        if self._autopilot is not None and self._autopilot.stop():
+            stopped = True
         return stopped
+
+    @property
+    def busy(self):
+        """Hay un turno o un run en vuelo. Publico porque la barra en vivo lo pregunta cada segundo."""
+        return self._busy
+
+    @property
+    def autopilot(self):
+        """El bucle autonomo, atado al router y al workspace EN VIGOR: tras un cambio se rehace.
+
+        Nunca se rehace con un bucle corriendo: dos escritores sobre el mismo repositorio es el fallo
+        que la cola existe para evitar.
+        """
+        key = (id(self.router), str(self.config.workspace))
+        running = self._autopilot is not None and self._autopilot.state().get("running")
+        if self._autopilot is None or (key != self._autopilot_key and not running):
+            self._autopilot = Autopilot(self.config, runner=self.run_autonomous,
+                                        planner=model_planner(self.router, self.config),
+                                        bus=self.bus)
+            self._autopilot_key = key
+        return self._autopilot
 
     def chat_state(self):
         chat = self.chat if self.chat is not None else self.chat_for(self.root)
@@ -277,19 +301,12 @@ class Cockpit:
         return True, {"goal": goal, "root": str(root)}
 
     def _execute(self, goal, root, test_command=None):
-        # El comando de test se resuelve por proyecto antes que por maquina: `project_tests` manda, y
-        # `test_command` es el que vale para cualquiera. Lo que manda el turno (`/api/run`) gana a los dos.
-        per_project = (self.config.project_tests or {}).get(Path(root).name) or ""
-        config = replace(self.config, default_root=root,
-                         test_command=test_command or per_project or self.config.test_command)
-        relay = SessionRelay(root, goal=goal, config=config, bus=self.bus)
-        relay.start()
-        triad = Triad(self.router, config, registry=default_registry(root, config),
-                      gate=Gate(root, config), judge=Judge(self.router, config.lang),
-                      skills=ContextRouter(config.lang), bus=self.bus, relay=relay)
-        self._triad = triad
+        # El comando de test se resuelve por proyecto antes que por maquina (`runner.config_for`).
         try:
-            self.last = triad.run(goal).as_dict()
+            result, triad = runner.run_triad(self.config, root, goal, self.router, bus=self.bus,
+                                             test_command=test_command)
+            self._triad = triad
+            self.last = result.as_dict()
         except Exception as exc:
             self.bus.emit("worker.error", "%s: %s" % (type(exc).__name__, exc))
             self.last = {"goal": goal, "ok": False, "exit": 10,
@@ -303,15 +320,13 @@ class Cockpit:
         """Synchronous entry used by the bridge: returns the exit code the gate produced."""
         if self._runner is not None:
             return self._runner(goal, root)
-        config = replace(self.config, default_root=Path(root))
-        relay = SessionRelay(root, goal=goal, config=config, bus=self.bus)
-        relay.start()
-        triad = Triad(self.router, config, registry=default_registry(root, config),
-                      gate=Gate(root, config), judge=Judge(self.router, config.lang),
-                      skills=ContextRouter(config.lang), bus=self.bus, relay=relay)
-        result = triad.run(goal)
+        return self.run_autonomous(goal, root).get("exit", 10)
+
+    def run_autonomous(self, goal, root):
+        """Un ciclo autonomo: la triada entera CON su veredicto, que es lo que decide commit o alto."""
+        result, _triad = runner.run_triad(self.config, root, goal, self.router, bus=self.bus)
         self.last = result.as_dict()
-        return result.exit
+        return self.last
 
     def tick_bridge(self):
         return self.bridge.tick(self.run_project)

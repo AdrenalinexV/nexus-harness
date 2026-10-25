@@ -1,108 +1,13 @@
-"""Paneles 02, 03 y 04: espacio de trabajo, seguridad y memoria.
+"""Paneles 03 y 04: seguridad y memoria (el 02 vive en `settings_projects.py`).
 
-Los tres tienen la misma forma: se enseña lo que HAY (medido, no recordado), se cambia lo que se puede
+Los dos tienen la misma forma: se enseña lo que HAY (medido, no recordado), se cambia lo que se puede
 cambiar, y lo que no se puede cambiar desde aquí se dice con su motivo en vez de esconderse.
 """
-import json
-from pathlib import Path
-
-from . import onboarding, vault
+from . import vault
 from . import settings_kit as kit
 
-SPEC_RELATIVE = Path(".ai") / "CURRENT_SPEC.json"
 KEY_NAMES = ("OPENAI_API_KEY", "ANTHROPIC_API_KEY", "DEEPSEEK_API_KEY", "OPENROUTER_API_KEY",
              "TYPESAFE_API_KEY", "GITHUB_TOKEN", "DISCORD_BOT_TOKEN", "TELEGRAM_BOT_TOKEN")
-
-
-# -- 02 espacio de trabajo y proyectos -----------------------------------------------------------
-def _spec_summary(project):
-    """Lo que el proyecto tiene congelado, tal cual esta en disco. `None` si no hay nada congelado."""
-    path = Path(project) / SPEC_RELATIVE
-    if not path.is_file():
-        return None
-    try:
-        spec = json.loads(path.read_text(encoding="utf-8"))
-    except (OSError, ValueError):
-        return {"error": "ilegible"}
-    return {"goal": spec.get("goal") or "", "cas": spec.get("cas_count"),
-            "sha": str(spec.get("cas_sha256") or "")[:12], "id": spec.get("id") or ""}
-
-
-def _project_card(name, spec, config):
-    """Un proyecto gobernado: sus criterios congelados, su comando de test y sus tres acciones."""
-    root = Path(config.workspace) / name
-    criteria = spec.get("cas") if spec.get("cas") is not None else "?"
-    tone = "ok" if spec.get("cas") else "warn"
-    command = (config.project_tests or {}).get(name, "")
-    raw = ""
-    path = root / SPEC_RELATIVE
-    if path.is_file():
-        try:
-            raw = path.read_text(encoding="utf-8")
-        except OSError:
-            raw = ""
-    return ('<article class="projcard">'
-            '<header class="skhead"><strong>%s</strong>'
-            '<span class="chip %s">%s criterios · sha %s</span></header>'
-            '<p class="dim">%s</p>'
-            '<form class="sform" method="post" action="/api/settings">%s'
-            '<div class="sgrow"><input name="test:%s" value="%s" '
-            'placeholder="comando de test (pytest, npm test…)">'
-            '<button class="primary">Guardar comando de test</button></div></form>'
-            '<details class="specview"><summary>Ver Spec JSON (qué exige el Gate)</summary>'
-            '<pre class="sout">%s</pre></details>'
-            '<footer class="skfoot">'
-            '<form class="sform" method="post" action="/api/settings/do">%s%s'
-            '<button class="ghost">Regenerar Auto-Spec</button></form>'
-            '<a class="chip" href="/?project=%s">Abrir en el Chat</a>'
-            '</footer></article>'
-            % (kit.esc(name), tone, kit.esc(criteria), kit.esc(str(spec.get("sha") or "—")),
-               kit.esc(spec.get("goal") or "sin objetivo declarado"),
-               kit.hidden("section", "espacio"), kit.esc(name), kit.esc(command),
-               kit.esc(raw or "(no se pudo leer el spec)"),
-               kit.hidden("section", "espacio"), kit.hidden("what", "auto_spec")
-               + kit.hidden("project", name), kit.esc(name)))
-
-
-def _plain_card(name):
-    """Un proyecto sin gobernanza: se dice, y se ofrece el unico paso que falta."""
-    return ('<article class="projcard plain"><header class="skhead"><strong>%s</strong>'
-            '<span class="chip off">sin gobernanza</span></header>'
-            '<p class="dim">Sin <code>.ai/CURRENT_SPEC.json</code>: el gate no tiene criterios que '
-            'exigir aquí.</p>'
-            '<footer class="skfoot"><form class="sform" method="post" action="/api/settings/do">%s%s'
-            '<button class="primary">Activar Gobernanza + Generar Auto-Spec</button></form>'
-            '<a class="chip" href="/?project=%s">Abrir en el Chat</a></footer></article>'
-            % (kit.esc(name), kit.hidden("section", "espacio"), kit.hidden("what", "auto_spec")
-               + kit.hidden("project", name), kit.esc(name)))
-
-
-def espacio(cockpit):
-    """Gobernados y no gobernados, en dos bloques. Una lista plana mezcla dos estados distintos."""
-    config = cockpit.config
-    governed, others = [], []
-    for name in onboarding.projects(config.workspace):
-        spec = _spec_summary(Path(config.workspace) / name)
-        (governed if spec and not spec.get("error") else others).append((name, spec or {}))
-    blocks = ('<div class="sgrid">%s</div>'
-              % ("".join(_project_card(name, spec, config) for name, spec in governed)
-                 or '<p class="dim">Ningún proyecto tiene criterios congelados todavía.</p>'))
-    plain = ('<div class="sgrid">%s</div>'
-             % ("".join(_plain_card(name) for name, _spec in others)
-                or '<p class="dim">Todas las carpetas del workspace están gobernadas.</p>'))
-    body = ('<h3 class="ssub">1 · Proyectos gobernados activos <span class="tag">%d</span></h3>'
-            '%s'
-            '<h3 class="ssub">2 · Otras carpetas del workspace <span class="tag">%d</span></h3>'
-            '%s'
-            '<h3 class="ssub">Carpeta de proyectos (workspace)</h3>%s'
-            % (len(governed), blocks, len(others), plain,
-               kit.form("/api/settings", "espacio",
-                        kit.field("Workspace", '<input name="workspace" value="%s">'
-                                  % kit.esc(config.workspace),
-                                  "donde viven los proyectos y de donde salen las conversaciones"),
-                        submit="Guardar workspace")))
-    return ("Espacio de trabajo & Proyectos",
-            "Qué se gobierna, qué tiene congelado cada proyecto y con qué se prueba.", body)
 
 
 # -- 03 seguridad y boveda ----------------------------------------------------------------------
