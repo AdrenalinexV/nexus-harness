@@ -13,6 +13,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 FROZEN = ROOT / "dist" / "nexus-harness-engine.exe"
+DOC = ROOT / "docs" / "VERIFICATION.md"
 
 
 def run(command):
@@ -47,6 +48,53 @@ def frozen_row(source_summary):
 
 
 
+def report_lines(rows):
+    """Las lineas que se imprimen Y las que se escriben en el registro: una sola fuente.
+
+    Si la impresion y lo que se guarda salieran de dos sitios distintos, el documento acabaria contando
+    una noche que no fue la que corrio.
+    """
+    lines = ["%-9s exit %-3s %s" % (name, code, detail) for name, code, detail in rows]
+    failed = [name for name, code, _detail in rows if code != 0]
+    lines.append("verify: %s" % ("GREEN" if not failed else "RED (%s)" % ", ".join(failed)))
+    return lines, failed
+
+
+def _fenced(lines):
+    return "```\n%s\n```" % "\n".join(lines)
+
+
+def _replace_block(text, marker, body):
+    """Sustituye el bloque cercado que sigue a `marker`, o None si el documento no tiene esa forma."""
+    start = text.find(marker)
+    opening = text.find("```", start) if start >= 0 else -1
+    closing = text.find("```", opening + 3) if opening >= 0 else -1
+    if closing < 0:
+        return None
+    return text[:opening] + body + text[closing + 3:]
+
+
+def sync_doc(lines, command, suites):
+    """El registro (`docs/VERIFICATION.md`) se actualiza con lo que se acaba de medir.
+
+    El fichero decia que "se actualiza ejecutando `python tools/verify.py`" y no lo hacia: seguia
+    anunciando `files=55 suites=12` con el arbol en 80 y 23. Se reescriben SOLO los dos bloques medidos
+    (el resumen y la lista de suites, con el comando tal como se lanzo); el resto del registro es
+    historia de su momento y no se toca.
+    """
+    if not DOC.is_file():
+        return "no hay registro en %s" % DOC.relative_to(ROOT)
+    text = DOC.read_text(encoding="utf-8")
+    updated = _replace_block(text, "## The one command", _fenced(["$ " + command] + lines))
+    if updated is not None:
+        updated = _replace_block(updated, "## The suites, individually",
+                                 _fenced([line for line in suites.splitlines() if line.strip()]))
+    if updated is None:
+        return "el registro no tiene los bloques esperados; no se toca"
+    DOC.write_text(updated, encoding="utf-8")
+    return "actualizado %s" % DOC.relative_to(ROOT)
+
+
 def main(argv=None):
     parser = argparse.ArgumentParser(prog="verify")
     parser.add_argument("--audit", action="store_true", help="also run the adversarial audit")
@@ -58,16 +106,19 @@ def main(argv=None):
     rows.append(("lint", code, summary(output)))
     code, output = run([sys.executable, "-m", "nexus_harness", "selftest"])
     source = summary(output)
+    suites = output
     rows.append(("selftest", code, source))
     if args.frozen:
         rows.append(frozen_row(source))
     if args.audit:
         code, output = run([sys.executable, str(ROOT / "tools" / "adversary_audit.py")])
         rows.append(("audit", code, summary(output)[:160]))
-    for name, code, detail in rows:
-        print("%-9s exit %-3s %s" % (name, code, detail))
-    failed = [name for name, code, _detail in rows if code != 0]
-    print("verify: %s" % ("GREEN" if not failed else "RED (%s)" % ", ".join(failed)))
+    lines, failed = report_lines(rows)
+    for line in lines:
+        print(line)
+    command = "python tools/verify.py" + (" --frozen" if args.frozen else "") + \
+              (" --audit" if args.audit else "")
+    print(sync_doc(lines, command, suites))
     return 0 if not failed else 1
 
 

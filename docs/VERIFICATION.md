@@ -7,29 +7,54 @@ the numbers.
 ## The one command
 
 ```
-$ python tools/verify.py
-lint      exit 0   files=55 findings=0 max_lines=400
-selftest  exit 0   suites=12 failures=0
+$ python tools/verify.py --frozen
+lint      exit 0   files=80 findings=0 max_lines=400
+selftest  exit 0   suites=23 failures=0
+frozen    exit 0   suites=23 failures=0 (same as the source)
 verify: GREEN
 ```
 
 ## The suites, individually
 
 ```
-$ python -m nexus_harness selftest
 providers        OK    0.00s
-tools            OK    0.11s
-edit_v4a         OK    0.03s
-shell_session    OK    1.31s
+retry            OK    0.00s
+repair           OK    0.17s
+tools            OK    0.12s
+edit_v4a         OK    0.04s
+shell_session    OK    1.39s
+shell_policy     OK    0.12s
+checkpoint       OK    0.23s
 subagents        OK    0.01s
+warning: The `fitz` API is deprecated and will be removed in future. Use `import pymupdf` instead.
+attachments      OK    0.14s
+onboarding       OK    0.08s
+mcp_client       OK    0.31s
+sidecar          OK    5.13s
+estado listo: 2 criterios (2 pendientes)
+a -> exit 0 (VERDE)
+findings=0
+b -> exit 10 (ROJO)
+b marcado blocked
+criterio desconocido: zzz
+cerrojo ocupado: el turno de noche ya esta en marcha: pid 34036 desde 2026-10-25T11:44:39+00:00 (suite)
+no se toca nada. Si esa sesion ya no corre, el cerrojo se hereda solo; para forzarlo a mano, borra C:\Users\Vexus\AppData\Local\Temp\nightshift-8jg6vji9\.nexus\harness\nightshift.lock
+TOCA: b — falla
+  prueba: python -c "raise SystemExit(10)"
+  estado: blocked (intentos 1)
+a -> exit 0 (VERDE)
+findings=0
+nightshift       OK    0.29s
 context_router   OK    0.01s
-triad_loop       OK    1.63s
-session_relay    OK    0.87s
-chat             OK    0.03s
-memory           OK    0.24s
-ui               OK    0.82s
+triad_loop       OK    1.64s
+session_relay    OK    0.90s
+compaction       OK    0.02s
+chat             OK    0.14s
+memory           OK    0.30s
+ui               OK    0.84s
 bridge           OK    0.05s
-suites=12 failures=0
+budget           OK    0.02s
+suites=23 failures=0
 ```
 
 What each one actually proves:
