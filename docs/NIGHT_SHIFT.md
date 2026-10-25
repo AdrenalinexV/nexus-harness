@@ -128,6 +128,26 @@ correr y sube la exigencia de la misma. Se anota aqui con la evidencia observada
    Evidencia observada: `check installer` -> exit 0, `repo sha256=17854d734d15 == instalado
    sha256=17854d734d15`, `desinstalar: exit 0`, `sala: eliminada, sin fichero bloqueado`.
 
+## Revision de dia: la rubrica se audita, no se cree
+
+La pregunta del dia siguiente no es "¿esta verde?" sino "¿estas pruebas pueden ponerse rojas, o
+pasan hagan lo que hagan?". Se midio, y no hay ninguna que no pueda fallar:
+
+1. Las suites no llevan `assert` sino un `check(name, got, expected, failures)` que apila el fallo y
+   lo cuenta `selftests/__init__.py`; una suite que ni importa cuenta como fallo, no como skip.
+   **Falsificacion medida** (`test_retry`, politica rota en memoria: `RETRY_STATUS=(500,)` con el
+   429 fuera): `sano failures=0` -> `roto failures=8`, primer fallo
+   `el reintento devuelve la respuesta del segundo intento: None, esperaba {'ok': True}`.
+2. `lint_harness`: **falsificado** sobre un arbol sintetico con un fichero de 401 lineas ->
+   `R2 big.py:0 401 lines > 400`, `files=1 findings=1`, exit **1**. La ley de 400 muerde.
+3. Historia de `.ai/HARNESS_RUBRIC.json` (3 commits): ningun umbral bajado. Hay dos subidas
+   documentadas arriba (`frozen-engine` y `installer`) y un `contains` endurecido
+   (`failures=0` -> `suites=17 failures=0`, hoy `(same as the source)`). Cero borrados de pruebas:
+   `git log -S xfail -S skip` sobre las suites no devuelve nada.
+
+Exit codes de esta revision: `lint_harness` 0 · `selftest` 0 (20 suites) · `verify` 0 ·
+`verify --frozen` 0 · `report` 0 · `report --check` 0 · `status` 14/14.
+
 ## Por qué esto prueba el protocolo Nexus
 
 Porque el turno de noche **no puede hacer trampa sin que se note**: cada afirmación suya deja un exit
