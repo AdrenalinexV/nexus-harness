@@ -17,6 +17,7 @@ import threading
 from dataclasses import dataclass, field
 
 from . import attachments as attachment_tools
+from .compaction import Compactor
 from .message import Message, as_text
 from .subagents import Delegate
 from .toolbox import process_manager
@@ -81,6 +82,8 @@ class Chat:
         self._stop = threading.Event()
         self.last_turn = Turn()
         self.used = 0
+        self.compactor = Compactor(limit=int(getattr(config, "budget_limit", 60000) or 0),
+                                   threshold=float(getattr(config, "compact_threshold", 0.55) or 0.0))
         self.children = []
         registry.stop = self._stop
         registry.delegate = delegate or Delegate(
@@ -146,6 +149,13 @@ class Chat:
         return "\n\n".join(parts)
 
     # -- the loop ----------------------------------------------------------------------------
+    def _maybe_compact(self, messages):
+        """Condense the history when it approaches the budget. True when it did."""
+        result = self.compactor.maybe(messages)
+        if result.applied:
+            self._emit("context.compacted", result.reason, compaction=result.as_dict())
+        return result.applied
+
     def _turn(self, tools=True, max_steps=None):
         """Model calls until it stops asking for tools. Returns (text, steps)."""
         text, steps = "", 0
@@ -153,6 +163,9 @@ class Chat:
             if self._stop.is_set():
                 return text, steps
             messages = [Message(role="system", content=self._system(self.touched))] + self.history
+            if self._maybe_compact(messages):
+                # The system message was just rebuilt; the compacted remainder is the new history.
+                self.history = messages[1:]
             reply = self.router.role("worker").chat(
                 messages, tools=self.registry.schemas() if tools else None,
                 temperature=self.config.temperature, max_tokens=self.config.max_tokens)

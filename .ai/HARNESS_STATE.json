@@ -27,12 +27,12 @@
       "status": "met"
     },
     "context-compaction": {
-      "attempts": 1,
+      "attempts": 2,
       "last": {
-        "at": "2026-10-25T01:04:31Z",
+        "at": "2026-10-25T01:07:17Z",
         "command": "python -m nexus_harness selftest compaction",
         "exit": 0,
-        "head": "146071d",
+        "head": "95bdc25",
         "ok": true,
         "tail": "compaction       OK    0.01s\nsuites=1 failures=0"
       },
@@ -40,40 +40,40 @@
       "status": "met"
     },
     "evidence-export": {
-      "attempts": 1,
+      "attempts": 2,
       "last": {
-        "at": "2026-10-25T00:01:09Z",
+        "at": "2026-10-25T01:07:54Z",
         "command": "python tools/nightshift.py report --check",
         "exit": 0,
-        "head": "8dd4ff4",
+        "head": "95bdc25",
         "ok": true,
-        "tail": "escrito docs\\NIGHT_REPORT.md (4/14 en verde)\nok: el informe cubre los 14 criterios"
+        "tail": "escrito docs\\NIGHT_REPORT.md (11/14 en verde)\nok: el informe cubre los 14 criterios"
       },
       "note": "",
       "status": "met"
     },
     "frozen-engine": {
-      "attempts": 3,
+      "attempts": 4,
       "last": {
-        "at": "2026-10-25T00:59:33Z",
+        "at": "2026-10-25T01:07:52Z",
         "command": "python tools/verify.py --frozen",
         "exit": 0,
-        "head": "a582099",
+        "head": "95bdc25",
         "ok": true,
-        "tail": "lint      exit 0   files=69 findings=0 max_lines=400\nselftest  exit 0   suites=18 failures=0\nfrozen    exit 0   suites=18 failures=0 (same as the source)\nverify: GREEN"
+        "tail": "lint      exit 0   files=71 findings=0 max_lines=400\nselftest  exit 0   suites=19 failures=0\nfrozen    exit 0   suites=19 failures=0 (same as the source)\nverify: GREEN"
       },
       "note": "",
       "status": "met"
     },
     "gate-lint": {
-      "attempts": 1,
+      "attempts": 2,
       "last": {
-        "at": "2026-10-25T00:00:51Z",
+        "at": "2026-10-25T01:07:29Z",
         "command": "python tools/lint_harness.py",
         "exit": 0,
-        "head": "8dd4ff4",
+        "head": "95bdc25",
         "ok": true,
-        "tail": "files=67 findings=0 max_lines=400"
+        "tail": "files=71 findings=0 max_lines=400"
       },
       "note": "",
       "status": "met"
@@ -143,14 +143,14 @@
       "status": "met"
     },
     "suites-source": {
-      "attempts": 1,
+      "attempts": 2,
       "last": {
-        "at": "2026-10-25T00:01:03Z",
+        "at": "2026-10-25T01:07:28Z",
         "command": "python -m nexus_harness selftest",
         "exit": 0,
-        "head": "8dd4ff4",
+        "head": "95bdc25",
         "ok": true,
-        "tail": "providers        OK    0.00s\ntools            OK    0.16s\nedit_v4a         OK    0.03s\nshell_session    OK    1.36s\nsubagents        OK    0.01s\nwarning: The `fitz` API is deprecated and will be removed in future. Use `import pymupdf` instead.\nattachments      OK    0.22s\nonboarding       OK    0.13s\nmcp_client       OK    0.32s\nsidecar          OK    5.11s\nestado listo: 2 criterios (2 pendientes)\na -> exit 0 (VERDE)\nfindings=0\nb -> exit 10 (ROJO)\n\nb marcado blocked\ncriterio desconocido: zzz\nnightshift       OK    0.19s\ncontext_router   OK    0.01s\ntriad_loop       OK    1.65s\nsession_relay    OK    0.92s\nchat             OK    0.10s\nmemory           OK    0.49s\nui               OK    0.89s\nbridge           OK    0.06s\nsuites=17 failures=0"
+        "tail": "providers        OK    0.00s\nretry            OK    0.00s\ntools            OK    0.12s\nedit_v4a         OK    0.03s\nshell_session    OK    1.34s\nsubagents        OK    0.01s\nwarning: The `fitz` API is deprecated and will be removed in future. Use `import pymupdf` instead.\nattachments      OK    0.13s\nonboarding       OK    0.11s\nmcp_client       OK    0.31s\nsidecar          OK    5.12s\nestado listo: 2 criterios (2 pendientes)\na -> exit 0 (VERDE)\nfindings=0\nb -> exit 10 (ROJO)\n\nb marcado blocked\ncriterio desconocido: zzz\nnightshift       OK    0.18s\ncontext_router   OK    0.00s\ntriad_loop       OK    1.60s\nsession_relay    OK    0.87s\ncompaction       OK    0.01s\nchat             OK    0.09s\nmemory           OK    0.30s\nui               OK    0.86s\nbridge           OK    0.06s\nsuites=19 failures=0"
       },
       "note": "",
       "status": "met"
@@ -253,9 +253,44 @@
       "head": "146071d",
       "id": "context-compaction",
       "ok": true
+    },
+    {
+      "at": "2026-10-25T01:07:17Z",
+      "exit": 0,
+      "head": "95bdc25",
+      "id": "context-compaction",
+      "ok": true
+    },
+    {
+      "at": "2026-10-25T01:07:28Z",
+      "exit": 0,
+      "head": "95bdc25",
+      "id": "suites-source",
+      "ok": true
+    },
+    {
+      "at": "2026-10-25T01:07:29Z",
+      "exit": 0,
+      "head": "95bdc25",
+      "id": "gate-lint",
+      "ok": true
+    },
+    {
+      "at": "2026-10-25T01:07:52Z",
+      "exit": 0,
+      "head": "95bdc25",
+      "id": "frozen-engine",
+      "ok": true
+    },
+    {
+      "at": "2026-10-25T01:07:54Z",
+      "exit": 0,
+      "head": "95bdc25",
+      "id": "evidence-export",
+      "ok": true
     }
   ],
-  "iteration": 13,
+  "iteration": 18,
   "rubric_version": 1,
   "started": "2026-10-25T00:00:50Z",
   "version": 1

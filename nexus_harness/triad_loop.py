@@ -16,6 +16,7 @@ import threading
 import time
 from dataclasses import dataclass, field
 
+from .compaction import Compactor
 from .gate import EXIT_GREEN, EXIT_UNAVAILABLE, Gate
 from .judge import Judge
 from .message import Message, as_text
@@ -85,7 +86,7 @@ def _now():
 
 class Triad:
     def __init__(self, router, config, registry=None, gate=None, judge=None, skills=None,
-                 bus=None, relay=None):
+                 bus=None, relay=None, compactor=None):
         self.router = router
         self.config = config
         self.registry = registry or default_registry(config.default_root, config)
@@ -94,6 +95,9 @@ class Triad:
         self.skills = skills
         self.bus = bus
         self.relay = relay
+        self.compactor = compactor if compactor is not None else Compactor(
+            limit=getattr(config, "budget_limit", 60000),
+            threshold=getattr(config, "compact_threshold", 0.55))
         self.touched = set()
         self.injections = []
         self._stop = threading.Event()
@@ -127,6 +131,13 @@ class Triad:
                    available=injection.available, note=injection.note)
         return "%s\n\n%s" % (base, injection.brief) if injection.brief else base
 
+    def _maybe_compact(self, messages):
+        """Condense the transcript in place when it approaches the budget. True when it did."""
+        result = self.compactor.maybe(messages)
+        if result.applied:
+            self._emit("context.compacted", result.reason, compaction=result.as_dict())
+        return result.applied
+
     def _ask(self, role, messages, tools=None, max_tokens=None):
         info = self.router.info(role)
         if not info.ready:
@@ -147,6 +158,7 @@ class Triad:
                 self._emit("worker.stopped", "interrupción pedida en el paso %d" % step)
                 break
             messages[0] = Message(role="system", content=self._system(WORKER_PROMPT, self.touched))
+            self._maybe_compact(messages)
             try:
                 reply = self._ask("worker", messages, tools=self.registry.schemas())
             except RuntimeError as exc:

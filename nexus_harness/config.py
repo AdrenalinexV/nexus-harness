@@ -32,6 +32,9 @@ DEFAULTS = {
     "host": "127.0.0.1",
     "budget_limit": 60000,
     "relay_threshold": 0.70,
+    # The ramp before the relay's cliff: the transcript is compacted in place once it passes this
+    # share of the budget, so a long turn keeps its footing instead of arriving jadeando at 70 %.
+    "compact_threshold": 0.55,
     "max_steps": 14,
     "max_repairs": 3,
     "max_children": 3,
@@ -89,6 +92,7 @@ class HarnessConfig:
     host: str = "127.0.0.1"
     budget_limit: int = 60000
     relay_threshold: float = 0.70
+    compact_threshold: float = 0.55
     max_steps: int = 14
     max_repairs: int = 3
     max_children: int = 3
@@ -152,7 +156,8 @@ class HarnessConfig:
         """The config as the cockpit shows it: every field, and not one secret."""
         return {"roles": dict(self.roles), "workspace": str(self.workspace),
                 "port": self.port, "host": self.host, "budget_limit": self.budget_limit,
-                "relay_threshold": self.relay_threshold, "max_steps": self.max_steps,
+                "relay_threshold": self.relay_threshold, "compact_threshold": self.compact_threshold,
+                "max_steps": self.max_steps,
                 "max_repairs": self.max_repairs, "test_command": self.test_command,
                 "max_children": self.max_children, "subagent_steps": self.subagent_steps,
                 "tool_workers": self.tool_workers,

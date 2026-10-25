@@ -18,3 +18,17 @@ N traductores pequeños. El exit code **es** el veredicto; el cuerpo de la puert
 Hermes, así que gobernar otro harness no añade una segunda implementación del juicio, sólo una
 traducción. Cuando el código no se puede atar a un veredicto, el contrato responde `10` (vuelve), nunca
 `0`: un adaptador que no sabe qué pasó no puede dejar cerrar el turno.
+
+## Compactación de contexto (criterio `context-compaction`)
+
+| Fuente | Qué dice | Qué hacemos |
+|---|---|---|
+| [Claude Code — Explore the context window](https://code.claude.com/docs/en/context-window) | Al acercarse al límite, la conversación se compacta **automáticamente**: el resumen conserva patrones de código, estado de ficheros y decisiones, y tras compactar re-lee hasta cinco ficheros vistos en la sesión. El umbral es configurable (`/autocompact <tokens>`). | Se adopta el disparador por **umbral configurable** (`compact_threshold`, 0.55 por defecto, por debajo del 0.70 del relevo) y la idea de preservar lo reciente en vez de truncarlo por antigüedad. Se descarta la re-lectura automática de ficheros: en este harness el Obrero ya tiene `read_file` y el gate vuelve a medir, así que re-inyectar contenido sin que el turno lo pida solo infla la ventana. |
+| [OpenCode — Compaction](https://opencode.ai/v2/docs/compaction/) | El esquema es explícito: `[system prompt][conversación vieja][recent 15k][trabajo pendiente]` -> se resume lo viejo y **se conservan intactos** el system prompt, los tokens recientes y el trabajo pendiente; hay una compactación en segundo plano al 85 % del umbral que se aplica al cruzar el umbral. | Se adopta el **layout** (system prompt y cola reciente intactos, el medio condensado) y que la compactación sea un paso previo, no el final de la sesión. Se descarta la compactación en segundo plano: aquí no hay un resumen «en vuelo» que sostener, y un proceso de fondo por sesión añade un huérfano potencial a cambio de nada. |
+| [Anthropic — Compaction (server-side)](https://platform.claude.com/docs/en/build-with-claude/compaction) | El resumen lo escribe el modelo en el servidor; el cliente no aporta código de resumen. | Se descarta, y es la decisión de diseño central: **un resumen escrito por el modelo puede afirmar un hecho que el turno nunca tuvo**, y este repositorio exige que la misma entrada dé la misma salida. El digest es una función pura de los mensajes (herramientas contadas, ficheros tocados, errores vistos, líneas de texto), así que es determinista, testeable y no puede alucinar. |
+
+**Decisión de diseño**: la compactación es una **rampa** antes del acantilado del relevo. A `0.55` del
+presupuesto el transcript se reescribe en sitio (cabeza, objetivo, digest del medio, cola verbatim); a
+`0.70` el relevo sigue haciendo lo suyo. La cola se corta siempre en una frontera válida de OpenAI
+—nunca se deja un mensaje `tool` sin su `tool_calls`— porque un huérfano es un 400 en cualquier
+servidor con esa forma.
