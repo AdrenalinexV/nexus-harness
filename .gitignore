@@ -2,6 +2,8 @@ __pycache__/
 *.pyc
 .venv/
 .nexus/harness/sessions/
+# El cerrojo del turno de noche es estado de ESTA maquina (lleva un PID y una hora), no del repo.
+.nexus/harness/nightshift.lock*
 .pytest_cache/
 .nexus/NEXT_SESSION_PROMPT.md
 dist/

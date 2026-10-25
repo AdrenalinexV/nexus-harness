@@ -25,6 +25,15 @@ import subprocess
 import sys
 from pathlib import Path
 
+# Este fichero vive en `tools/`. Cuando la suite lo carga como modulo (`spec_from_file_location`) ese
+# directorio NO esta en sys.path, asi que el import del cerrojo se prepara aqui y no en el llamante.
+TOOLS_DIR = Path(__file__).resolve().parent
+if str(TOOLS_DIR) not in sys.path:
+    sys.path.insert(0, str(TOOLS_DIR))
+
+from nightshift_lock import (LockHeld, RELATIVE as LOCK_RELATIVE,  # noqa: E402
+                             release as release_lock, take as take_lock)
+
 ROOT = Path(__file__).resolve().parents[1]
 RUBRIC = ROOT / ".ai" / "HARNESS_RUBRIC.json"
 STATE = ROOT / ".ai" / "HARNESS_STATE.json"
@@ -33,6 +42,10 @@ INSTALLER = ROOT / "dist" / "NexusHarness-Setup-0.3.0.exe"
 PROOF_TIMEOUT = 900
 WINDOWS_FLAGS = 0x08000000 if os.name == "nt" else 0  # CREATE_NO_WINDOW
 STATUSES = ("unmet", "met", "blocked")
+# Comandos que ESCRIBEN estado: solo esos toman el cerrojo. `status` y `next` son lecturas, y saber
+# donde va la noche no puede depender de que otra sesion este trabajando.
+WRITERS = ("init", "check", "mark", "report", "install")
+LOCK_ROOT = ROOT
 
 
 # -- estado ----------------------------------------------------------------------------------
@@ -272,8 +285,8 @@ def selftest():
     """La maquina de estados, con una rubrica y un estado temporales: no toca los reales."""
     import tempfile
 
-    global RUBRIC, STATE
-    original = (RUBRIC, STATE)
+    global RUBRIC, STATE, LOCK_ROOT
+    original = (RUBRIC, STATE, LOCK_ROOT)
     problems = []
 
     def check(name, got, expected):
@@ -288,7 +301,7 @@ def selftest():
              "contains": "findings=0", "priority": 1, "area": "x"},
             {"id": "b", "title": "falla", "proof": "python -c \"raise SystemExit(10)\"",
              "priority": 2, "area": "x"}]}), encoding="utf-8")
-        RUBRIC, STATE = rubric, state
+        RUBRIC, STATE, LOCK_ROOT = rubric, state, base
         cmd_init(argparse.Namespace(force=True))
         check("el estado nace con dos criterios", len(load_state()["criteria"]), 2)
         check("el primero pasa", cmd_check(argparse.Namespace(id="a")), 0)
@@ -301,7 +314,11 @@ def selftest():
             id="b", status="blocked", note="falta el binario")), 0)
         check("y el estado lo refleja", load_state()["criteria"]["b"]["status"], "blocked")
         check("un id desconocido no rompe", cmd_check(argparse.Namespace(id="zzz")), 20)
-    RUBRIC, STATE = original
+        # El cerrojo contra dos sesiones vive con el cerrojo (aqui no cabe: este fichero esta en su
+        # techo de 400 lineas). Se le pasa `main` para pinchar la integracion de verdad.
+        from nightshift_lock import selftest as lock_selftest
+        problems.extend(lock_selftest(base, main, check))
+    RUBRIC, STATE, LOCK_ROOT = original
     return problems
 
 
@@ -342,7 +359,22 @@ def main(argv=None):
     install.add_argument("--check", action="store_true")
     install.set_defaults(func=cmd_install)
     args = parser.parse_args(argv)
-    return args.func(args)
+    if args.command not in WRITERS:
+        return args.func(args)
+    # Solo los comandos que ESCRIBEN toman el cerrojo, y se suelta pase lo que pase: un candado que
+    # sobrevive a su proceso lo hereda la sesion siguiente (con aviso), pero no se deja puesto por un
+    # `return` temprano.
+    try:
+        path = take_lock(LOCK_ROOT, note="%s %s" % (args.command, getattr(args, "id", "") or ""))
+    except LockHeld as exc:
+        print("cerrojo ocupado: %s" % exc)
+        print("no se toca nada. Si esa sesion ya no corre, el cerrojo se hereda solo; para forzarlo a "
+              "mano, borra %s" % (LOCK_ROOT / LOCK_RELATIVE))
+        return 20
+    try:
+        return args.func(args)
+    finally:
+        release_lock(path)
 
 
 if __name__ == "__main__":
