@@ -32,3 +32,18 @@ presupuesto el transcript se reescribe en sitio (cabeza, objetivo, digest del me
 `0.70` el relevo sigue haciendo lo suyo. La cola se corta siempre en una frontera válida de OpenAI
 —nunca se deja un mensaje `tool` sin su `tool_calls`— porque un huérfano es un 400 en cualquier
 servidor con esa forma.
+
+## El instalador, medido (criterio `installer`)
+
+| Fuente | Qué dice | Qué hacemos |
+|---|---|---|
+| [NSIS — Command line usage](https://nsis.sourceforge.io/Docs/Chapter3.html) | `/S` instala o desinstala en silencio; `/D=<ruta>` fija `$INSTDIR` y **tiene que ser el último parámetro, sin comillas**, y solo admite rutas absolutas. El desinstalador admite `_?=<ruta>`, que evita que se copie a TEMP y permite esperarlo con `ExecWait`, a cambio de dejar el `uninstall.exe` en su sitio. | Se adopta `/S /D=` como la prueba real, con dos consecuencias en el código: la sala tiene que ser absoluta y **no llevar espacios** (si los lleva, la prueba se declara *no verificable* en vez de pasar en falso) y `/D=` viaja como último argumento. Se descarta `_?=`: interesa observar que la sala desaparece de verdad —el ejemplo del propio manual tiene que hacer `RMDir` después—, así que se espera a que se vacíe. |
+| [Tauri — Windows Installer](https://v2.tauri.app/distribute/windows-installer/) | El bundle NSIS es por usuario (`installMode: currentUser`, sin permisos de administrador) y la guía de empaquetado recomienda probar el artefacto con `/passive`, `/quiet` o `/silent` en lugar de dar por bueno que compila. | Se adopta la regla de fondo: **un instalador no está verificado hasta que se instala**, y se instala en una sala de usar y tirar (`%LOCALAPPDATA%\NexusHarnessVerify`) para no tocar la instalación real del usuario. Se descarta el `.msi`/WiX: un instalador que exige habilitar VBSCRIPT opcional en Windows es una dependencia del equipo, no del producto. |
+
+**Decisión de diseño**: la prueba instala de verdad y compara **sha256** del motor instalado con el del
+repositorio. La `--version` no vale: se midió `0.1.0` en la instalación frente a `0.3.0` en el repo (rojo,
+bien), pero dos builds `0.3.0` distintos se habrían dado por buenos, y el instalador llegó a llevar un
+motor con 16 suites mientras el fuente corría 17. Además se comprueba que la ventana instalada es un
+binario de interfaz leyendo el **subsistema PE** (`2` = GUI, `3` = consola), y se desinstala. El registro
+de HKCU que el instalador escribe se fotografía antes y se devuelve como estaba: verificar no le cambia
+nada al usuario.

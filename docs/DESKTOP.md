@@ -58,6 +58,32 @@ cd apps/desktop && npm install && npx tauri icon src-tauri/app-icon.png && npx t
 
 Salida: `apps/desktop/src-tauri/target/release/bundle/nsis/Nexus Harness_0.3.0_x64-setup.exe`.
 
+## Verificarlo sin tocar tu instalación
+
+Un instalador no está verificado hasta que se instala, y hacerlo sobre la instalación real del usuario
+es justo lo que no queremos en una prueba que corre cada noche. La verificación instala en silencio en
+una sala de usar y tirar, compara bytes y la desinstala:
+
+```
+$ python tools/nightshift.py install --check
+sala       : C:\Users\<usuario>\AppData\Local\NexusHarnessVerify (no existia)
+instalador : NexusHarness-Setup-0.3.0.exe -> exit 0
+ventana    : nexus-harness-desktop.exe subsystem=2 (2 = interfaz)
+motor      : repo     sha256=82589bc520e8
+           : instalado sha256=82589bc520e8
+desinstalar: exit 0
+sala       : eliminada, sin fichero bloqueado
+registro   : devuelto como estaba
+ok: el instalador deja el motor del repositorio y una ventana de interfaz, y se desinstala limpio
+```
+
+Por qué **sha256** y no `--version`: dos builds `0.3.0` distintos se darían por buenos, y el instalador
+llegó a llevar un motor con 16 suites mientras el fuente corría 17. El sha256 no tiene ese hueco: o el
+fichero instalado **es** el del repositorio, o no lo es. El **subsistema PE** de la ventana (`2` = GUI,
+`3` = consola) es lo que distingue una app de escritorio de un motor con un `.exe` al lado. El registro
+de HKCU que el instalador escribe se fotografía antes y se devuelve como estaba, así que verificar no le
+cambia nada a quien tenga la app instalada. El código de esta prueba vive en `tools/installer_verify.py`.
+
 ## Firma
 
 El instalador sale **sin firmar**: Windows mostrará «editor desconocido» la primera vez (SmartScreen).

@@ -31,6 +31,7 @@ STATE = ROOT / ".ai" / "HARNESS_STATE.json"
 REPORT = ROOT / "docs" / "NIGHT_REPORT.md"
 INSTALLER = ROOT / "dist" / "NexusHarness-Setup-0.3.0.exe"
 PROOF_TIMEOUT = 900
+WINDOWS_FLAGS = 0x08000000 if os.name == "nt" else 0  # CREATE_NO_WINDOW
 STATUSES = ("unmet", "met", "blocked")
 
 
@@ -240,29 +241,31 @@ def cmd_report(args):
 
 
 def cmd_install(args):
-    """Verifica el instalador sin instalar: existe, y el motor instalado es el del repo."""
-    if not INSTALLER.is_file():
-        print("no hay instalador en %s" % INSTALLER.relative_to(ROOT))
+    """El instalador, medido instalando: el trabajo vive en `tools/installer_verify.py`, en su proceso.
+
+    Se lanza como proceso y no se importa, por dos razones: la verificacion ejecuta un instalador de
+    Windows y merece una frontera clara, y el motor congelado (que empaqueta este fichero para su
+    suite) no tiene por que cargar codigo que solo sirve para verificar un instalador.
+    """
+    script = Path(__file__).resolve().parent / "installer_verify.py"
+    command = [sys.executable, str(script), "--verify", str(INSTALLER),
+               str(ROOT / "dist" / "nexus-harness-engine.exe")]
+    try:
+        # `capture_output` es obligatorio aqui, y se midio: en Windows, un subproceso creado con
+        # CREATE_NO_WINDOW y sin handles explicitos pierde su stdout -- la prueba pasaba (exit 0) con
+        # la salida vacia, y el `contains` del criterio se quedaba sin el "ok" que tiene que leer.
+        completed = subprocess.run(command, timeout=PROOF_TIMEOUT, capture_output=True, text=True,
+                                   errors="replace", creationflags=WINDOWS_FLAGS)
+    except subprocess.TimeoutExpired:
+        print("la verificacion del instalador no termino en %ss" % PROOF_TIMEOUT)
+        return 124
+    except (OSError, subprocess.SubprocessError) as exc:
+        print("no se pudo lanzar la verificacion del instalador: %s" % exc)
         return 20
-    installed = Path(os.environ.get("LOCALAPPDATA", "")) / "Nexus Harness" / "engine" / \
-        "nexus-harness-engine.exe"
-    if not installed.is_file():
-        print("no hay instalacion en %s" % installed)
-        return 20
-    def version(binary):
-        completed = subprocess.run([str(binary), "--version"], capture_output=True, text=True,
-                                   errors="replace", timeout=180)
-        return (completed.stdout or "").strip()
-    source = version(ROOT / "dist" / "nexus-harness-engine.exe")
-    target = version(installed)
-    print("instalador : %s (%d bytes)" % (INSTALLER.name, INSTALLER.stat().st_size))
-    print("repo       : %s" % source)
-    print("instalado  : %s" % target)
-    if source and source == target:
-        print("ok: el motor instalado es el del repositorio")
-        return 0
-    print("el motor instalado NO es el del repositorio (fichero en uso o instalacion vieja)")
-    return 10
+    output = ((completed.stdout or "") + (completed.stderr or "")).strip()
+    if output:
+        print(output)
+    return completed.returncode
 
 
 def selftest():
