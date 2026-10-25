@@ -2,10 +2,10 @@
 
 Generado por `tools/nightshift.py report` (no se escribe a mano).
 
-- fecha: 2026-10-25T00:51:20Z
-- HEAD: `1455d87`
-- iteracion: 7
-- criterios: **7/14**
+- fecha: 2026-10-25T00:56:47Z
+- HEAD: `f2756b9`
+- iteracion: 9
+- criterios: **8/14**
 
 ## Rubrica
 
@@ -16,7 +16,7 @@ Generado por `tools/nightshift.py report` (no se escribe a mano).
 | `suites-source` | gobernanza | Toda la suite determinista pasa desde el codigo fuente | OK | 0 |
 | `adapter-aider` | multi-harness | Adaptador Aider: lint/test del gate escritos en su config, verificable | OK | 0 |
 | `evidence-export` | evidencia | El informe de evidencia se genera desde el estado y cubre los 14 criterios | OK | 0 |
-| `frozen-engine` | empaquetado | El motor congelado pasa la misma suite | unmet | — |
+| `frozen-engine` | empaquetado | El motor congelado pasa la misma suite | OK | 0 |
 | `no-orphans` | operacion | El motor no sobrevive a su shell (vigilante) y esta probado | OK | 0 |
 | `protocol-lint` | gobernanza | NexusProtocol sigue en 0 hallazgos | OK | 0 |
 | `providers-retry` | motor | Reintento acotado con backoff en 429/5xx, medido | unmet | — |
@@ -91,6 +91,37 @@ ok: aider -- lint-cmd and test-cmd written to .aider.conf.yml, and the lint entr
 $ python tools/nightshift.py report --check
 escrito docs\NIGHT_REPORT.md (4/14 en verde)
 ok: el informe cubre los 14 criterios
+```
+
+### frozen-engine (exit 0, 2026-10-25T00:56:42Z)
+
+```
+$ dist\nexus-harness-engine.exe selftest
+providers        OK    0.00s
+tools            OK    0.13s
+edit_v4a         OK    0.03s
+shell_session    OK    1.31s
+subagents        OK    0.01s
+attachments      OK    0.09s
+onboarding       OK    0.11s
+mcp_client       OK    0.33s
+sidecar          OK    5.12s
+estado listo: 2 criterios (2 pendientes)
+a -> exit 0 (VERDE)
+findings=0
+b -> exit 10 (ROJO)
+
+b marcado blocked
+criterio desconocido: zzz
+nightshift       OK    0.18s
+context_router   OK    0.00s
+triad_loop       OK    1.58s
+session_relay    OK    0.81s
+chat             OK    0.11s
+memory           OK    0.27s
+ui               OK    0.86s
+bridge           OK    0.07s
+suites=17 failures=0
 ```
 
 ### no-orphans (exit 0, 2026-10-25T00:01:09Z)

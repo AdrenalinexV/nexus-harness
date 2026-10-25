@@ -50,11 +50,8 @@ aparece en la ventana y en el navegador a la vez. Hay un front-end, no uno por c
 
 ```
 python tools/make_icon.py apps/desktop/src-tauri/app-icon.png     # icono (sin librerías)
-.build/venv/Scripts/python.exe -m PyInstaller --onefile --console \
-  --name nexus-harness-engine --paths C:/Proyectos/NexusProtocol --paths . \
-  --collect-submodules nexus --collect-submodules nexus_harness \
-  --add-data "<repo>/nexus_harness/web;web" \
-  --distpath dist --workpath .build/pyi --specpath .build tools/engine_entry.py
+.build/venv/Scripts/pyinstaller.exe --noconfirm \
+  --distpath dist --workpath .build/pyi tools/engine.spec         # el motor, con la receta del repo
 cp dist/nexus-harness-engine.exe apps/desktop/src-tauri/engine/
 cd apps/desktop && npm install && npx tauri icon src-tauri/app-icon.png && npx tauri build
 ```
