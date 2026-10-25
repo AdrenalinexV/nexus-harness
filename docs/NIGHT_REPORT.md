@@ -2,9 +2,9 @@
 
 Generado por `tools/nightshift.py report` (no se escribe a mano).
 
-- fecha: 2026-10-25T01:08:29Z
-- HEAD: `a33c1ab`
-- iteracion: 14
+- fecha: 2026-10-25T01:12:46Z
+- HEAD: `6412d2c`
+- iteracion: 15
 - criterios: **12/14**
 
 ## Rubrica
@@ -141,7 +141,7 @@ compaction       OK    0.01s
 suites=1 failures=0
 ```
 
-### protocol-doctor (exit 0, 2026-10-25T01:08:20Z)
+### protocol-doctor (exit 0, 2026-10-25T01:12:28Z)
 
 ```
 $ python C:/Proyectos/NexusProtocol/nexus/cli.py doctor

@@ -111,12 +111,12 @@
       "status": "met"
     },
     "protocol-doctor": {
-      "attempts": 1,
+      "attempts": 2,
       "last": {
-        "at": "2026-10-25T01:08:20Z",
+        "at": "2026-10-25T01:12:28Z",
         "command": "python C:/Proyectos/NexusProtocol/nexus/cli.py doctor",
         "exit": 0,
-        "head": "a33c1ab",
+        "head": "6412d2c",
         "ok": true,
         "tail": "t read the same number, and a smaller file on disk cannot move it \n  ok   the desktop launcher: console-less target, a dry run that writes nothing, and an instance file that is reused instead of a second server \n  ok   applying init in batch, and the baseline only the installer can testify about \n  ok   the judge chain: a local SystemOne judge, a declared order, and no silent substitution \n  ok   the judge's two routes: three measured endpoints, and two refusals with no panel behind them \n  ok   the skills already on this disk: marked by origin, folded, and never offered a mode \n  ok   the local judge's models: a catalogue, a measured recommendation, a download that does not block \n  ok   the judge calibration: the metrics that compare backends, on arithmetic that cannot drift \n  ok   the MCP surface: three read-only tools, no verb to close a turn, and a stream that survives a rotten line \n  ok   the judge declares itself only when the machine can prove one, once, and never over the operator's own decision \n  ok   the audit log travels as OTLP spans: every row from a real line, and the ones it cannot read are counted instead of invented \n\n  everything a self-test can prove is green"
       },
@@ -267,9 +267,16 @@
       "head": "a33c1ab",
       "id": "protocol-doctor",
       "ok": true
+    },
+    {
+      "at": "2026-10-25T01:12:28Z",
+      "exit": 0,
+      "head": "6412d2c",
+      "id": "protocol-doctor",
+      "ok": true
     }
   ],
-  "iteration": 14,
+  "iteration": 15,
   "rubric_version": 1,
   "started": "2026-10-25T00:00:50Z",
   "version": 1
