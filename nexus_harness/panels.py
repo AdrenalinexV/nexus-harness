@@ -217,6 +217,23 @@ def _mcp_card(cockpit):
             % (_esc(state.get("tools") or 0), "".join(rows), _esc(state.get("config") or "-")))
 
 
+def _vault_card(cockpit):
+    """El cofre, visto desde el arnes: QUE claves hay guardadas, nunca sus valores.
+
+    Los nombres son lo que un operador necesita para saber si le falta una; escribirla y probarla es
+    de la vista de setup del protocolo, que es quien tiene el formulario y el sondeo de conexion.
+    """
+    names = keys_state().get("names") or []
+    if names:
+        rows = "".join('<span class="cell">%s</span>' % _esc(name) for name in names)
+    else:
+        rows = '<p class="warn">Ninguna clave guardada todavia (el cofre es DPAPI, por usuario)</p>'
+    return ('<section class="hsec"><h3>Cofre de claves <span class="dim">'
+            '(%d guardadas)</span></h3>'
+            '<p class="dim">Solo nombres: un valor no sale del cofre ni para pintarlo.</p>'
+            '<div class="row">%s</div></section>' % (len(names), rows))
+
+
 def _bridge_card(cockpit):
     state = daemon_status(cockpit)
     running = bool(state.get("running"))
@@ -249,8 +266,9 @@ def harness_sections(cockpit):
     bloqueado, y el estado de MCP y del puente es justo lo que el operador viene a mirar.
     """
     try:
-        return ("<style>%s</style><div class=\"hsec-wrap\">%s%s%s</div>"
-                % (SECTION_CSS, _triad_card(cockpit), _mcp_card(cockpit), _bridge_card(cockpit)))
+        return ("<style>%s</style><div class=\"hsec-wrap\">%s%s%s%s</div>"
+                % (SECTION_CSS, _triad_card(cockpit), _vault_card(cockpit), _mcp_card(cockpit),
+                   _bridge_card(cockpit)))
     except Exception as exc:  # noqa: BLE001 -- un panel roto no puede tumbar la vista: se dice
         return ('<section class="hsec"><h3>Controles del harness</h3>'
                 '<p class="bad">No se pudieron leer: %s: %s</p></section>'
