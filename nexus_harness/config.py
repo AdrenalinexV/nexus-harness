@@ -49,6 +49,9 @@ DEFAULTS = {
     # `standard` refuses catastrophic and reckless commands; the opt-in is one line here, on purpose.
     "shell_policy": "standard",
     "test_command": None,
+    # Comando de test POR PROYECTO (`{"AXV-AdrenalineX": "npm test"}`). Es lo que pide un proyecto y no
+    # lo que pide la maquina: el mismo operador tiene Python, C# y npm en carpetas distintas.
+    "project_tests": {},
     "lang": "es",
     "temperature": 0.2,
     "max_tokens": 4096,
@@ -109,6 +112,7 @@ class HarnessConfig:
     shell_timeout: int = 180
     shell_policy: str = "standard"
     test_command: object = None
+    project_tests: dict = field(default_factory=dict)
     lang: str = "es"
     temperature: float = 0.2
     max_tokens: int = 4096
@@ -167,6 +171,7 @@ class HarnessConfig:
                 "relay_threshold": self.relay_threshold, "compact_threshold": self.compact_threshold,
                 "cost_limit": self.cost_limit, "max_steps": self.max_steps,
                 "max_repairs": self.max_repairs, "test_command": self.test_command,
+                "project_tests": dict(self.project_tests or {}),
                 "max_children": self.max_children, "subagent_steps": self.subagent_steps,
                 "tool_workers": self.tool_workers, "shell_policy": self.shell_policy,
                 "lang": self.lang, "source": self.source,

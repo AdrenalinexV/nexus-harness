@@ -41,41 +41,47 @@ aparece en la ventana y en el navegador a la vez. Hay un front-end, no uno por c
   gate automático en cuanto se toca un fichero, y reparación sin intervención si sale rojo.
 - Elegir proyecto de `C:\Proyectos` (el compositor queda bloqueado hasta que haya proyecto: un chat no
   debe editar tu carpeta de instalación).
-- Cambiar de modelo por rol (director / obrero / juez) en caliente.
-- Escribir memoria durable (viaja en cada prompt) y ver las skills que se inyectan en RAM.
-- Ver el presupuesto de la conversación y el estado del gate y del juez del último turno.
+- Cambiar el modelo del Director al vuelo, bajo la caja de escribir.
+- Buscar, renombrar y borrar conversaciones desde la barra lateral.
 - Retomar conversaciones: se guardan en `<proyecto>/.nexus/harness/chat/`.
+- Todo lo demás (modelos de la tríada, claves, memoria y contexto, skills, MCP, puente móvil,
+  estadísticas) vive en **⚙ Configuración**, una pantalla propia.
 
-## Una barra, cinco vistas (0.4.0)
+## El chat, y una pantalla de Configuración (0.4.0)
 
-La ventana tiene **una** barra de navegación y cinco vistas. El chat es la página de este arnés; las
-cuatro de gobernanza son la GUI **real** de NexusProtocol, servida dentro de esta misma aplicación:
+La ventana tiene **dos** pantallas y ni una pestaña más:
 
-| Vista | De qué es dueña |
-|---|---|
-| `💬 Espacio de trabajo` | El chat: proyecto, conversaciones (buscar, renombrar, borrar), hilo, inspector en vivo. |
-| `⚙ 01 Setup, Modelos & Conectores` | Tríada de modelos, cofre de claves, conectores MCP y puente móvil con el estado del demonio. |
-| `📁 02 Proyectos & Auto-Spec` | Los proyectos de `C:\Proyectos`, su gobernanza y el generador de criterios. |
-| `🧠 03 Skills & Architect` | Buscador y editor de `SKILL.md`, y el panel del arquitecto. |
-| `📊 04 Stats, Ledger & Auditoría` | Ahorro medido, tokens podados, auditorías y canarios. |
+- **El chat** (`/`): ocupando el ancho entero, sin barra lateral derecha. Lo que pasa durante un turno
+  (una herramienta, el veredicto del gate, el juez, las skills que viajan en RAM) aparece como una
+  **tira discreta dentro del propio hilo**, no en un panel fijo. Abajo, la caja de escribir ocupa todo
+  el ancho, con `+ Adjuntar`, `Enviar`, `Detener` cuando trabaja, y el selector del modelo del Director
+  a un lado. El campo de «comando de test» que había ahí se fue a Configuración: es un ajuste del
+  proyecto, no algo que se toque en cada mensaje.
+- **⚙ Configuración** (`/settings`), con el botón en la barra lateral izquierda del chat: pantalla
+  completa, buscador arriba (`Ctrl+K`), `✕` arriba a la derecha (o `Esc`) para volver, y un árbol de
+  categorías desplegables a la izquierda con **ocho secciones**: `⚙ Modelos (Tríada IA)` (con sus
+  submenús de Director / Obrero / Juez / Subagentes), `📁 Espacio de trabajo & Proyectos` (incluido el
+  **Auto-Spec Generator** y el comando de test por proyecto), `🛡 Seguridad & Bóveda`, `🧠 Memoria y
+  contexto`, `⚡ Skills & Skill Architect`, `🔌 Conectores MCP`, `📱 Puente Móvil (Bots)` y
+  `📊 Estadísticas & Auditoría`.
 
 Cómo está montado, y por qué así:
 
-- **No hay una segunda copia de la gobernanza.** `nexus_harness/gov.py` arranca la GUI del protocolo
-  EN ESTE PROCESO, en un puerto de loopback efímero, y reenvía por él las peticiones de la vista: una
-  implementación, dos consumidores. Reescribir sus ~9.400 líneas de render sería un segundo producto
-  que se separa del primero a la primera corrección.
-- **Una barra, no dos.** El HTML que sirve el protocolo se devuelve con la barra de este arnés
-  inyectada y su `/api/...` renombrado a `/gov/api/...`. El número de rutas traducidas viaja en un
-  comentario del documento servido: una ruta sin traducir no falla aquí, falla en el navegador.
-- **La sesión de la gobernanza no la pone el navegador.** El token de un solo uso y la cookie de
-  sesión se quedan dentro del proceso del motor; el navegador solo habla con este arnés, en su mismo
-  origen.
-- **Los controles propios del arnés** (MCP, puente móvil, tríada) se inyectan como tarjetas en la
-  vista 01 y funcionan por formulario, sin script: un `<form>` no puede poner cabeceras, así que su
-  acción va por `/gov/action`, que contesta un 303 de vuelta a la vista.
-- **Cambiar de vista no pierde el turno**: el turno vive en el motor, no en el DOM; al volver al chat
-  se reengancha con su hilo y su actividad.
+- **Cada panel lo escribe su módulo dueño** (`settings_models.py`, `settings_work.py`,
+  `settings_tools.py`) y el marco (`settings.py`) solo pinta el árbol y el panel. Guardar es un
+  `<form>` de verdad contra `/api/settings`: responde un **303** de vuelta al panel con una nota, así
+  que funciona con el script bloqueado y recargar no reenvía nada. `settings.js` solo añade `Ctrl+K`.
+- **Un ajuste, una casa.** El presupuesto de contexto y el umbral de relevo salen en dos secciones
+  (Modelos y Memoria) a propósito: son los MISMOS campos del mismo fichero, así que dos puertas dan a
+  la misma habitación. Un ajuste duplicado solo es un problema cuando cada puerta guarda en un sitio.
+- **Se enseña lo que se puede leer ahora**: el catálogo real de skills (escaneado por el protocolo),
+  los servidores MCP que contestan, el demonio con su PID y su cola. Un panel que presume de 215 skills
+  y no las puede abrir es un panel que miente.
+- **Lo que no cabe aquí se dice, no se esconde**: la política de comandos muestra su tabla de rechazos;
+  el cofre enseña nombres y nunca valores; el panel de espacio dice qué proyecto no tiene gobernanza.
+- **Un motor viejo se detecta**: la página compara su contrato (`API_VERSION`) con el que publica
+  `/api/health` y, si el proceso en marcha es anterior, lo dice en una banda con la instrucción de
+  reiniciar. Sin eso, actualizar el código deja botones que no responden y ninguna pista.
 
 ## Construirlo desde el código
 

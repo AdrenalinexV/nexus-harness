@@ -128,6 +128,50 @@ def _govern(root):
             "test_command": result.get("test_command"), "language": result.get("language")}
 
 
+def save_settings(changes):
+    """Guarda ajustes del arnes en `~/.nexus/harness.json`. Devuelve `(guardado, notas)`.
+
+    Con lista blanca y con tipos, y no por burocracia: un ajuste guardado con el tipo equivocado no
+    falla al guardar, falla al ARRANCAR -- y entonces el operador tiene un motor que no arranca y un
+    fichero de configuracion que el no escribio. Lo que no este aqui (`secrets`, `secrets_file`) no lo
+    escribe un formulario, punto.
+    """
+    from . import policy
+    typed = {"budget_limit": int, "relay_threshold": float, "compact_threshold": float,
+             "cost_limit": float, "max_steps": int, "max_repairs": int, "max_children": int,
+             "subagent_steps": int, "subagent_depth": int, "tool_workers": int,
+             "shell_timeout": int, "request_timeout": int, "max_tokens": int,
+             "temperature": float, "lang": str, "workspace": str}
+    out, saved, notes = {}, {}, []
+    for name, value in (changes or {}).items():
+        if name == "shell_policy":
+            mode = str(value or "").strip().lower()
+            if mode not in policy.MODES:
+                notes.append("shell_policy: %r no es uno de %s" % (value, ", ".join(policy.MODES)))
+                continue
+            out[name] = saved[name] = mode
+        elif name == "project_tests":
+            if not isinstance(value, dict):
+                notes.append("project_tests: se esperaba un objeto {proyecto: comando}")
+                continue
+            clean = {str(key).strip(): str(command).strip()
+                     for key, command in value.items()
+                     if str(key).strip() and str(command).strip()}
+            out[name] = saved[name] = clean
+        elif name == "test_command":
+            out[name] = saved[name] = str(value or "").strip()
+        elif name in typed:
+            try:
+                out[name] = saved[name] = typed[name](str(value).strip())
+            except (TypeError, ValueError):
+                notes.append("%s: %r no vale como %s" % (name, value, typed[name].__name__))
+        else:
+            notes.append("%s: esta pantalla no cambia ese ajuste" % name)
+    if out:
+        saved["config_file"] = str(_write_config(out))
+    return saved, notes
+
+
 def apply(config, payload):
     """Accept what the operator chose. Returns what landed, what did not, and the new config."""
     payload = dict(payload or {})

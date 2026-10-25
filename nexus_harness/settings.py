@@ -1,0 +1,289 @@
+"""La pantalla de configuración: ocho secciones, una pantalla, un solo sitio que cambia cosas.
+
+Por qué una pantalla y no un modal: ocho secciones con submenús, búsqueda y vuelta atrás no caben en un
+modal, y además así el chat se queda limpio y de lado a lado, que es lo que se pidió.
+
+Cómo funciona cada sección: el árbol de la izquierda son `<details>` nativos (desplegables sin script),
+el panel de la derecha lo escribe el módulo dueño de esa sección, y guardar es un `POST /api/settings`
+que contesta un **303 de vuelta** con una nota. `settings.js` solo añade Ctrl+K y el filtro del árbol:
+si ese script no corre, navegar y guardar siguen funcionando.
+"""
+import json
+import subprocess
+import sys
+from html import escape
+
+from . import gov, onboarding, panels
+from . import settings_kit as kit
+from . import settings_models, settings_tools, settings_work
+
+TITLE = "Configuración"
+SECTIONS = (
+    ("modelos", "\u2699 Modelos (Tr\u00edada IA)", tuple(settings_models.SUBS)),
+    ("espacio", "\U0001f4c1 Espacio de trabajo & Proyectos", ()),
+    ("seguridad", "\U0001f6e1 Seguridad & B\u00f3veda", ()),
+    ("memoria", "\U0001f9e0 Memoria y contexto", ()),
+    ("skills", "\u26a1 Skills & Skill Architect", ()),
+    ("mcp", "\U0001f50c Conectores MCP", ()),
+    ("puente", "\U0001f4f1 Puente M\u00f3vil (Bots)", ()),
+    ("stats", "\U0001f4ca Estad\u00edsticas & Auditor\u00eda", ()),
+)
+NAMES = tuple(name for name, _label, _subs in SECTIONS)
+SUBS_OF = {name: tuple(value for value, _text in subs) for name, _label, subs in SECTIONS}
+
+
+def resolve(section, sub):
+    """La sección y el submenú que se van a pintar, aceptando lo que llegue por la URL."""
+    name = str(section or "").strip().lower()
+    if name not in NAMES:
+        name = "modelos"
+    subs = SUBS_OF[name]
+    chosen = str(sub or "").strip().lower()
+    return name, (chosen if chosen in subs else (subs[0] if subs else ""))
+
+
+def _render(name, cockpit, sub, item):
+    if name == "modelos":
+        return settings_models.panel(cockpit, sub)
+    if name == "espacio":
+        return settings_work.espacio(cockpit)
+    if name == "seguridad":
+        return settings_work.seguridad(cockpit)
+    if name == "memoria":
+        return settings_work.memoria(cockpit)
+    if name == "skills":
+        return settings_tools.skills(cockpit, item)
+    if name == "mcp":
+        return settings_tools.mcp(cockpit)
+    if name == "puente":
+        return settings_tools.puente(cockpit)
+    return settings_tools.stats(cockpit)
+
+
+def _tree(active, sub, needle, current):
+    """El árbol de categorías. `needle` filtra por título: es el buscador de arriba, sin script."""
+    out = []
+    for name, label, subs in SECTIONS:
+        hit = (not needle or needle in label.lower()
+               or any(needle in text.lower() for _value, text in subs)
+               or needle in name)
+        if not hit and needle:
+            continue
+        opened = " open" if name == active else ""
+        items = "".join('<li class="%s"><a href="/settings?section=%s&sub=%s">%s</a></li>'
+                        % ("on" if (name == active and value == sub) else "", escape(name),
+                           escape(value), escape(text)) for value, text in subs)
+        # Una categoría SIN submenús tiene que ser un enlace: si su etiqueta solo despliega, el panel
+        # no se abre con un clic y parece que la pantalla no responde (medido en el navegador: siete de
+        # las ocho categorías no llevaban a ningún sitio).
+        head = (escape(label) if subs else
+                '<a href="/settings?section=%s">%s</a>' % (escape(name), escape(label)))
+        out.append('<details class="scat%s"%s><summary class="%s">%s</summary>'
+                   '<ul class="ssubs">%s</ul></details>'
+                   % (" on" if name == active else "", opened,
+                      "on" if name == active else "", head, items))
+    if not out:
+        out.append('<p class="dim">Nada coincide con «%s».</p>' % escape(needle))
+    return ('<nav class="settings-tree">%s<p class="dim tree-foot">Motor %s · config %s</p></nav>'
+            % ("".join(out), escape(current.get("version", "?")), escape(current.get("config_file", "?"))))
+
+
+def screen(cockpit, query):
+    """El HTML de la pantalla entera, con la sección pedida ya pintada."""
+    section, sub = resolve((query.get("section") or [""])[0], (query.get("sub") or [""])[0])
+    item = str((query.get("item") or [""])[0])
+    needle = str((query.get("q") or [""])[0]).strip().lower()
+    title, subtitle, body = _render(section, cockpit, sub, item)
+    note = kit.note_from(query)
+    state = cockpit.state()
+    return LAYOUT % {
+        "note": note,
+        "tree": _tree(section, sub, needle, state.get("config") or {}),
+        "title": escape(title),
+        "subtitle": escape(subtitle),
+        "body": body,
+        "query": escape((query.get("q") or [""])[0]),
+        "section": escape(section),
+        "sub": escape(sub),
+    }
+
+
+LAYOUT = """<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Nexus Harness · Configuración</title>
+<link rel="stylesheet" href="app.css">
+</head>
+<body class="settings-body">
+<header class="settings-top">
+  <div class="brand">NEXUS<span>·</span>HARNESS <span class="dim">Configuración</span></div>
+  <form class="settings-search" method="get" action="/settings">
+    <input id="settings-search" name="q" type="search" value="%(query)s"
+           placeholder="Buscar en la configuración…  (Ctrl+K)">
+    <input type="hidden" name="section" value="%(section)s">
+    <input type="hidden" name="sub" value="%(sub)s">
+    <button class="ghost">Buscar</button>
+  </form>
+  <a class="settings-close" id="settings-close" href="/" title="Volver al chat (Esc)">✕</a>
+</header>
+%(note)s
+<div class="settings-app">
+  %(tree)s
+  <section class="settings-panel">
+    <h1>%(title)s</h1>
+    <p class="dim">%(subtitle)s</p>
+    %(body)s
+  </section>
+</div>
+<script src="settings.js"></script>
+</body>
+</html>
+"""
+
+
+# -- guardar -------------------------------------------------------------------------------------
+def _numbers(body):
+    """Los campos de contexto que comparten dos paneles, tal como llegan del formulario."""
+    changes = {}
+    for name in ("budget_limit", "relay_threshold", "compact_threshold", "temperature", "max_tokens",
+                 "cost_limit", "max_steps", "max_repairs", "max_children", "subagent_steps",
+                 "subagent_depth", "tool_workers", "shell_timeout", "test_command", "workspace",
+                 "shell_policy"):
+        if name in body and str(body.get(name)).strip() != "":
+            changes[name] = body[name]
+    return changes
+
+
+def save(cockpit, body):
+    """Guarda lo que mandó un panel. Devuelve `(nota, ok)`."""
+    section = str(body.get("section") or "")
+    notes, ok = [], True
+    if section == "modelos":
+        role = str(body.get("role") or "")
+        vendor = str(body.get("vendor") or "").strip()
+        model = str(body.get("model") or "").strip()
+        if role in ("director", "worker", "judge") and vendor and model:
+            result = onboarding.apply(cockpit.config, {"roles": {role: "%s:%s" % (vendor, model)}})
+            notes += result.get("notes") or []
+            if result.get("saved", {}).get("roles"):
+                notes.append("%s → %s:%s" % (role, vendor, model))
+            cockpit.reload_config()
+    elif section == "espacio":
+        tests = {str(key)[5:]: str(value).strip() for key, value in body.items()
+                 if str(key).startswith("test:")}
+        merged = dict(cockpit.config.project_tests or {})
+        for name, command in tests.items():
+            if command:
+                merged[name] = command
+            else:
+                merged.pop(name, None)
+        saved, problems = onboarding.save_settings({"project_tests": merged})
+        notes += problems
+        if "project_tests" in saved:
+            notes.append("%d comandos de test por proyecto" % len(saved["project_tests"]))
+        numbers = _numbers({k: v for k, v in body.items() if k == "workspace"})
+        if numbers:
+            saved2, problems2 = onboarding.save_settings(numbers)
+            notes += problems2
+            if saved2:
+                notes.append("espacio de trabajo → %s" % saved2.get("workspace", ""))
+        cockpit.reload_config()
+    elif section == "seguridad":
+        keys = {str(key)[4:]: str(value) for key, value in body.items()
+                if str(key).startswith("key:") and str(value).strip()}
+        if keys:
+            result = onboarding.apply(cockpit.config, {"keys": keys})
+            notes += result.get("notes") or []
+            notes.append("guardadas: %s" % ", ".join(result.get("saved", {}).get("keys") or []))
+        saved, problems = onboarding.save_settings(_numbers(body))
+        notes += problems
+        if "shell_policy" in saved:
+            notes.append("política de comandos → %s" % saved["shell_policy"])
+        cockpit.reload_config()
+    elif section == "memoria":
+        saved, problems = onboarding.save_settings(_numbers(body))
+        notes += problems
+        if saved:
+            notes.append("contexto guardado")
+        cockpit.reload_config()
+    else:
+        ok = False
+        notes.append("esa sección no guarda nada por formulario")
+    return (" · ".join(note for note in notes if note) or "sin cambios", ok)
+
+
+# -- acciones ------------------------------------------------------------------------------------
+def action(cockpit, body):
+    """Las acciones que no son «guardar». Devuelve `(nota, ok, seccion)`."""
+    what = str(body.get("what") or "")
+    section = str(body.get("section") or "modelos")
+    if what == "auto_spec":
+        project = str(body.get("project") or "").strip()
+        result = onboarding.apply(cockpit.config, {"project": project, "governance": True})
+        spec = result.get("saved", {}).get("spec") or {}
+        if result.get("saved", {}).get("governance"):
+            return ("Auto-Spec de %s: %s criterios (sha %s)"
+                    % (project, spec.get("cas_count", "?"), str(spec.get("sha256") or "")[:12]),
+                    True, "espacio")
+        return ("%s · %s" % (project, "; ".join(result.get("notes") or ["sin cambios"])),
+                bool(result.get("saved", {}).get("governance")), "espacio")
+    if what == "memory_add":
+        answer = cockpit.memory_add(body.get("text"))
+        return ("memoria: %s" % ("añadido" if answer.get("ok") else answer.get("reason")),
+                bool(answer.get("ok")), "memoria")
+    if what == "memory_remove":
+        answer = cockpit.memory_remove(body.get("entry"))
+        return ("memoria: %s" % ("quitado" if answer.get("ok") else "no estaba"),
+                bool(answer.get("ok")), "memoria")
+    if what == "mcp_reload":
+        answer = panels.mcp_reload(cockpit)
+        return ("conectores: %s tools" % answer.get("tools"), bool(answer.get("ok")), "mcp")
+    if what == "bridge":
+        provider = str(body.get("provider") or "telegram")
+        answer = (panels.daemon_toggle(cockpit, provider) if str(body.get("on") or "") == "on"
+                  else panels.daemon_stop(cockpit))
+        return ("puente: %s" % ("ON" if answer.get("running") else "OFF"),
+                bool(answer.get("ok", True)), "puente")
+    if what == "save_skill":
+        answer = panels.skills_save(cockpit, body.get("name"), body.get("text"))
+        return ("SKILL.md de %s: %s" % (body.get("name"),
+                                        "guardado" if answer.get("ok") else answer.get("reason")),
+                bool(answer.get("ok")), "skills")
+    if what == "architect":
+        return _architect(cockpit, body)
+    if what == "doctor":
+        return _doctor()
+    return ("acción desconocida: %s" % what, False, section)
+
+
+def _architect(cockpit, body):
+    message = str(body.get("message") or "").strip()
+    if len(message) < 3:
+        return ("escribe qué skill falta o qué mejorar", False, "skills")
+    ok, answer = gov.action("/api/architect", {"message": message,
+                                               "github": bool(body.get("github"))})
+    text = ""
+    if isinstance(answer, dict):
+        text = str(answer.get("reply") or answer.get("answer") or answer.get("text") or "")
+        if not text:
+            text = json.dumps(answer, indent=2, ensure_ascii=False)[:4000]
+    else:
+        text = str(answer)[:4000]
+    settings_tools.LAST["architect"] = text or "(sin respuesta)"
+    return ("arquitecto: %s" % ("contestó" if ok else "no pudo contestar"), bool(ok), "skills")
+
+
+def _doctor():
+    """Pasa el doctor del protocolo y guarda su cola para el panel. Es lento (~1 min) y se dice."""
+    command = [sys.executable, str(gov.PROTOCOL / "nexus" / "cli.py"), "doctor"]
+    try:
+        done = subprocess.run(command, capture_output=True, text=True, errors="replace",
+                              timeout=300, cwd=str(gov.PROTOCOL))
+    except (OSError, subprocess.SubprocessError) as exc:
+        return ("el doctor no se pudo ejecutar: %s" % exc, False, "stats")
+    tail = ((done.stdout or "") + (done.stderr or "")).strip().splitlines()[-14:]
+    settings_tools.LAST["doctor"] = "\n".join(tail)
+    green = done.returncode == 0 and "green" in (done.stdout or "").lower()
+    return ("doctor: %s" % ("verde" if green else "revisar"), green, "stats")

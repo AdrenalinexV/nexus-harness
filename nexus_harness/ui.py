@@ -20,7 +20,7 @@ import sys
 import threading
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
-from urllib.parse import parse_qs, urlparse
+from urllib.parse import parse_qs, quote, urlparse
 
 from . import __version__
 from .cockpit import Cockpit
@@ -34,6 +34,11 @@ TYPES = {".html": "text/html; charset=utf-8", ".css": "text/css; charset=utf-8",
          ".png": "image/png", ".ico": "image/x-icon", ".json": "application/json",
          ".woff2": "font/woff2"}
 JSON_TYPE = "application/json; charset=utf-8"
+# El contrato con el frontend. Se publica en `/api/health` para que una pagina nueva pueda DETECTAR un
+# motor viejo: sin esto, un proceso lanzado antes de un cambio deja botones que no responden y el
+# operador no tiene forma de saber por que (medido: las vistas de gobernanza daban 404 y no lo decia
+# nadie).
+API_VERSION = 2
 
 
 class Handler(BaseHTTPRequestHandler):
@@ -134,6 +139,9 @@ class Handler(BaseHTTPRequestHandler):
             return self._page((WEB / "index.html").read_bytes())
         if path == "/gov":
             return self._gov((query.get("tab") or [""])[0])
+        if path == "/settings":
+            from . import settings
+            return self._page(settings.screen(self.cockpit, query))
         if path.startswith("/gov/api/"):
             return self._forward(path, query, {})
         # Los estaticos se sirven por extension, no por lista blanca: una lista se olvida en cuanto se
@@ -142,7 +150,7 @@ class Handler(BaseHTTPRequestHandler):
             return self._static(path.lstrip("/"))
         if path == "/api/health":
             return self._json(200, {"ok": True, "seq": self.cockpit.bus.seq,
-                                    "version": __version__})
+                                    "version": __version__, "api": API_VERSION})
         if path == "/api/state":
             return self._json(200, self.cockpit.state())
         if path == "/api/chat":
@@ -207,6 +215,11 @@ class Handler(BaseHTTPRequestHandler):
         parsed = urlparse(self.path)
         path = parsed.path
         query = parse_qs(parsed.query)
+        # Los formularios de la pantalla de configuracion son formularios de verdad (urlencoded), asi
+        # que se leen ANTES de intentar el cuerpo JSON: ese intento consume el flujo y dejaria vacio al
+        # que de verdad sabe leerlo.
+        if path in ("/api/settings", "/api/settings/do"):
+            return self._settings_action(path)
         body = self._body()
         if path.startswith("/gov/api/"):
             return self._forward(path, query, body)
@@ -271,6 +284,40 @@ class Handler(BaseHTTPRequestHandler):
             rows = self.cockpit.tick_bridge()
             return self._json(200, {"ok": True, "ran": len(rows), "rows": rows})
         return self._json(404, {"ok": False, "reason": "no route %s" % path})
+
+    def _form(self):
+        """El cuerpo de un formulario de verdad: urlencoded, o JSON si alguien lo manda asi."""
+        length = int(self.headers.get("Content-Length") or 0)
+        if not length:
+            return {}
+        raw = self.rfile.read(length).decode("utf-8", errors="replace")
+        if "json" in (self.headers.get("Content-Type") or ""):
+            try:
+                payload = json.loads(raw or "{}")
+            except ValueError:
+                return {}
+            return payload if isinstance(payload, dict) else {}
+        return {key: values[0] for key, values in parse_qs(raw, keep_blank_values=True).items()}
+
+    def _settings_action(self, path):
+        """Guarda o ejecuta lo que mando la pantalla de configuracion, y vuelve al panel con la nota.
+
+        Responde un 303 en vez de un JSON porque quien manda es un `<form>`: asi funciona sin script, y
+        recargar despues no reenvia el guardado.
+        """
+        from . import settings
+        payload = self._form()
+        if path == "/api/settings":
+            note, ok = settings.save(self.cockpit, payload)
+        else:
+            note, ok, section = settings.action(self.cockpit, payload)
+            payload.setdefault("section", section)
+        target = "/settings?section=%s&note=%s%s" % (quote(str(payload.get("section") or "modelos")),
+                                                     quote(note), "" if ok else "&bad=1")
+        sub = str(payload.get("sub") or payload.get("back") or "")
+        if sub:
+            target += "&sub=" + quote(sub)
+        return self._see_other(target)
 
     def _gov_action(self, body):
         """Los controles del ARNES dentro de la vista de gobernanza (MCP, puente movil), por formulario.

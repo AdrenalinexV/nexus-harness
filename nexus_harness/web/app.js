@@ -1,12 +1,18 @@
-/* Nexus-Harness client. One page, one engine: this file is what the desktop window and the browser
-   load, so a fix here is a fix in both. No framework, no build step: vanilla DOM and fetch.
+/* Nexus-Harness — el chat. Una pagina, un motor: lo que carga la ventana de escritorio y lo que
+   carga el navegador, asi que un arreglo aqui lo es en los dos. Sin framework y sin build.
 
-   Every interpolation below goes through esc(); the only unescaped strings are fixed markup this file
-   writes itself. The thread carries model output, so that is not decoration. */
+   Reglas de este fichero:
+   - Toda interpolacion pasa por esc(); lo unico sin escapar es el marcado fijo que escribe el propio
+     fichero. El hilo lleva salida de un modelo: no es decoracion.
+   - Nada de la barra lateral derecha: se quito. La configuracion vive en `/settings` y lo que pasa
+     durante un turno (tool, gate, juez, skills) se cuenta EN EL HILO, en una tira discreta.
+   - `API_VERSION` es el contrato con el motor. Si el proceso en marcha es mas viejo que esta pagina,
+     se dice en una banda: un boton que no responde es la peor forma de enterarse. */
 
 const $ = (id) => document.getElementById(id);
 const TOKEN = new URLSearchParams(location.search).get('token') || '';
-let since = 0, currentSession = null, polling = false, allSessions = [];
+const API_VERSION = 2;
+let since = 0, currentSession = null, polling = false, allSessions = [], feed = [];
 
 const LABEL = {
   'chat.user': 'TÚ', 'chat.assistant': 'NEXUS', 'chat.turn': 'TURNO', 'chat.repair': 'REPARACIÓN',
@@ -17,7 +23,7 @@ const LABEL = {
   'tool.parallel': 'PARALELO', 'subagent.start': 'SUBAGENTES', 'subagent.result': 'SUBAGENTE',
   'subagent.tool': 'SUB-TOOL', 'subagent.end': 'SUBAGENTES', 'subagent.limit': 'SUB-LÍMITE',
   'chat.stopping': 'DETENIENDO', 'run.stopping': 'DETENIENDO', 'worker.stopped': 'DETENIDO',
-  'session.relay': 'RELEVO',
+  'session.relay': 'RELEVO', 'chat.rename': 'RENOMBRADA', 'skills.saved': 'SKILL',
 };
 
 function esc(text) {
@@ -33,7 +39,24 @@ function api(path, options = {}) {
   });
 }
 
-/* ---------- thread ---------- */
+function warn(message) {
+  $('warn').hidden = false;
+  $('warn').textContent = message;
+}
+
+/* ---------- el motor que esta en marcha ---------- */
+async function checkEngine() {
+  const {ok, data} = await api('/api/health');
+  if (!ok) {
+    warn('El motor no contesta a /api/health. Si acabas de actualizar el código, cierra esta ventana y vuelve a lanzar Nexus-Harness.bat.');
+    return;
+  }
+  if ((data.api || 0) < API_VERSION) {
+    warn(`El motor en marcha es más viejo que esta interfaz (api ${data.api || 0} < ${API_VERSION}): por eso los botones no hacen nada. Cierra esta ventana y vuelve a lanzar Nexus-Harness.bat.`);
+  }
+}
+
+/* ---------- hilo ---------- */
 function msgText(content) {
   if (Array.isArray(content)) {
     return content.filter((part) => part && part.type === 'text' && !String(part.text || '').startsWith('<document'))
@@ -82,55 +105,65 @@ function addMessage(role, text, meta) {
   return wrap;
 }
 
-function renderThread(messages) {
-  $('thread').innerHTML = '';
-  if (!messages.length) {
-    $('thread').innerHTML = `<div class="empty"><h1>¿Qué construimos?</h1>
-      <p>Pide una tarea o haz una pregunta. El gate (lint Nexus, ley de 400, tests) se ejecuta en cuanto
-      se toca un fichero; si sale rojo, el obrero lo repara antes de contestarte.</p></div>`;
-    return;
+/* La tira de lo que pasa durante el turno: dentro del hilo, al final, discreta. Es lo que antes vivia
+   en una barra lateral derecha fija, que sobraba en el chat. */
+function paintFeed() {
+  const box = $('inline');
+  if (!box) return;
+  box.innerHTML = '';
+  for (const row of feed.slice(-14)) {
+    const line = document.createElement('div');
+    line.className = 'feed-row' + (row.kind === 'gate.verdict' || row.kind === 'judge.verdict' ? ' gate' : '');
+    line.innerHTML = `<span class="k">${esc(LABEL[row.kind] || row.kind)}</span>
+                      <span class="d">${esc(String(row.detail || '').slice(0, 160))}</span>`;
+    box.appendChild(line);
   }
-  const pending = {};
-  for (const message of messages) {
-    if (message.role === 'user') {
-      addMessage('user', msgText(message.content) || '·', {attachments: msgAttachments(message)});
-    } else if (message.role === 'assistant') {
-      const tools = (message.tool_calls || []).map((call) => {
-        let args = {};
-        try { args = JSON.parse(call.function.arguments || '{}'); } catch (error) { args = {}; }
-        const tool = {name: call.function.name, args, id: call.id, ok: true};
-        pending[tool.id] = tool;
-        return tool;
-      });
-      if ((message.content || '').trim() || tools.length) {
-        addMessage('assistant', (message.content || '').trim() || '·', {tools});
-      }
-    } else if (message.role === 'tool') {
-      const tool = pending[message.tool_call_id];
-      if (tool) {
-        tool.result = message.content || '';
-        tool.ok = !String(message.content || '').startsWith('ERROR');
+  if (feed.length) $('thread').scrollTop = $('thread').scrollHeight;
+}
+
+function renderThread(messages) {
+  const thread = $('thread');
+  thread.innerHTML = '';
+  if (!messages.length) {
+    thread.innerHTML = `<div class="empty"><h1>¿Qué construimos?</h1>
+      <p>Pide una tarea o haz una pregunta. El gate (lint Nexus, ley de 400, tests) se ejecuta en cuanto
+      se toca un fichero; si sale rojo, el obrero lo repara antes de contestarte.</p>
+      <p class="dim">El modelo de la tríada, las claves, la memoria y las skills se cambian en
+      <a href="/settings">Configuración</a>.</p></div>`;
+  } else {
+    const pending = {};
+    for (const message of messages) {
+      if (message.role === 'user') {
+        addMessage('user', msgText(message.content) || '·', {attachments: msgAttachments(message)});
+      } else if (message.role === 'assistant') {
+        const tools = (message.tool_calls || []).map((call) => {
+          let args = {};
+          try { args = JSON.parse(call.function.arguments || '{}'); } catch (error) { args = {}; }
+          const tool = {name: call.function.name, args, id: call.id, ok: true};
+          pending[tool.id] = tool;
+          return tool;
+        });
+        if ((message.content || '').trim() || tools.length) {
+          addMessage('assistant', (message.content || '').trim() || '·', {tools});
+        }
+      } else if (message.role === 'tool') {
+        const tool = pending[message.tool_call_id];
+        if (tool) {
+          tool.result = message.content || '';
+          tool.ok = !String(message.content || '').startsWith('ERROR');
+        }
       }
     }
   }
-  $('thread').scrollTop = $('thread').scrollHeight;
+  const inline = document.createElement('div');
+  inline.id = 'inline';
+  inline.className = 'inline-feed';
+  thread.appendChild(inline);
+  paintFeed();
+  thread.scrollTop = thread.scrollHeight;
 }
 
-/* ---------- panels ---------- */
-function setSkills(names) {
-  const list = names || [];
-  $('skills-count').textContent = list.length ? String(list.length) : '';
-  $('skills').textContent = '';
-  for (const name of list) {
-    // DOM nodes, not innerHTML: a skill name is data, and data never becomes markup.
-    const chip = document.createElement('span');
-    chip.textContent = name;
-    chip.title = 'abrir y editar';
-    chip.onclick = () => window.NexusUI && window.NexusUI.skill(name);
-    $('skills').appendChild(chip);
-  }
-}
-
+/* ---------- estado y conversaciones ---------- */
 function fillSelect(el, options, value) {
   const current = value || el.value;
   el.innerHTML = options.map((option) => `<option value="${esc(option)}">${esc(option)}</option>`).join('');
@@ -140,42 +173,24 @@ function fillSelect(el, options, value) {
 function paintState(s) {
   const run = s.run || {};
   const last = (s.chat && s.chat.last) || {};
-  const budget = (run.budget && run.budget.limit) ? run.budget
-    : ((s.chat && s.chat.budget && s.chat.budget.limit) ? s.chat.budget
-      : ((s.relay || {}).budget || {}));
-  const limit = budget.limit || 0, used = budget.used || 0;
-  const ratio = budget.ratio == null ? 0 : Math.min(1, budget.ratio);
-  $('budget-fill').style.width = (ratio * 100).toFixed(1) + '%';
-  $('budget-text').textContent = limit
-    ? `${used}/${limit} tokens · ${(ratio * 100).toFixed(0)}% (relevo al 70%)` : 'unmeasured';
   const green = Boolean(last.verdict && last.verdict.ok && (last.verdict.checks || []).length);
   $('status').textContent = s.running ? 'trabajando' : green ? 'verde' : last.exit ? 'rojo' : 'en reposo';
   $('status').className = 'pill ' + (s.running ? 'warn' : green ? 'ok' : last.exit ? 'bad' : 'info');
   $('stop').disabled = !s.running;
+  $('stop').style.display = s.running ? '' : 'none';
   const chosen = $('project').value && $('project').value !== '— elige un proyecto —';
   $('send').disabled = !chosen;
   $('input').placeholder = chosen
     ? 'Escribe una tarea o una pregunta…  (Ctrl+Enter envía)'
     : 'Elige un proyecto en la barra lateral para empezar';
-  paintRolePills(s.roles || {});
   $('title').textContent = (s.chat && s.chat.session && (s.chat.session.title || s.chat.session.id))
     || 'sin conversación';
   $('engine').textContent = `${s.config.host}:${s.config.port} · ${s.config.root}`;
-  if (last.verdict && (last.verdict.checks || []).length) {
-    const checks = (last.verdict.checks || []).map((c) =>
-      `<span class="pill ${c.ok ? 'ok' : 'bad'}">${esc(c.name)}</span>`).join(' ');
-    $('gate').innerHTML = `<span class="pill ${last.verdict.ok ? 'ok' : 'bad'}">exit ${last.verdict.exit}</span> ${checks}`;
+  if (last.skills && last.skills.length && !feed.some((row) => row.kind === 'skills.injected')) {
+    feed.push({kind: 'skills.injected', detail: last.skills.join(', ')});
+    paintFeed();
   }
-  if (last.judgement && last.judgement.verdict) {
-    const j = last.judgement;
-    $('judge').innerHTML = `<span class="pill ${j.verdict === 'approve' ? 'ok' : j.verdict === 'skipped' ? 'warn' : 'bad'}">${esc(j.verdict)}</span> ${esc((j.reason || '').slice(0, 140))}`;
-  }
-  $('last-turn').textContent = last.steps
-    ? `${last.steps} pasos · ${last.repairs || 0} reparaciones · ${(last.touched || []).length} ficheros`
-      + ((last.touched || []).length ? '\n' + (last.touched || []).join(', ') : '')
-    : 'todavía nada';
-  if (last.skills) setSkills(last.skills);
-  $('memory-count').textContent = `${(s.memory || {}).count || 0}`;
+  void run;
   const projects = (s.models || {}).projects || [];
   // The conversation's project is the authority, not the engine's start directory.
   const chatProject = (s.chat && s.chat.project) || s.config.root;
@@ -185,61 +200,12 @@ function paintState(s) {
   fillSelect($('project'), known ? projects : [placeholder].concat(projects),
              known ? current : placeholder);
   const options = (s.models || {}).options || [];
-  void options;
-}
-
-/* Las pildoras de la cabecera: el modelo de cada rol, y nada mas. Cambiar de modelo se hace en la
-   vista 01 (la pildora ES un enlace), porque los selectores completos -- temperatura, juez
-   adversario, limite de contexto -- viven alli, y tenerlos en dos sitios acaba en dos verdades. */
-function shortModel(spec) {
-  const text = String(spec || '');
-  const tail = text.includes(':') ? text.split(':').slice(1).join(':') : text;
-  return tail.length > 26 ? tail.slice(0, 25) + '…' : tail;
-}
-
-function paintRolePills(roles) {
-  const names = {director: 'Director', worker: 'Obrero', judge: 'Juez'};
-  for (const role of Object.keys(names)) {
-    const info = roles[role] || {};
-    const pill = $('pill-' + role);
-    pill.textContent = `${names[role]}: ${shortModel(info.model || info.spec) || '—'}`;
-    pill.className = 'pill ' + (info.ready ? 'ok' : 'bad');
-    pill.title = `${role}: ${info.spec || 'sin modelo'}`
-      + (info.ready ? '' : ` — ${info.why_not_ready || 'no ready'}`);
-  }
-}
-
-/* Conectores y puente no vienen en /api/state a proposito: son dos procesos que pueden estar caidos
-   sin que el chat deje de funcionar, asi que se preguntan aparte y su pildora lo dice. */
-async function refreshPills() {
-  const [mcp, bridge, gov] = await Promise.all([
-    api('/api/mcp'), api('/api/bridge/daemon'), api('/api/gov')]);
-  if (mcp.ok) {
-    const servers = mcp.data.servers || [];
-    const live = servers.filter((server) => server.ready).length;
-    $('pill-mcp').textContent = `MCP: ${live}/${servers.length} · ${mcp.data.tools || 0} tools`;
-    $('pill-mcp').className = 'pill ' + (!servers.length ? 'bad' : live === servers.length ? 'ok' : 'warn');
-  } else {
-    $('pill-mcp').textContent = 'MCP: off';
-    $('pill-mcp').className = 'pill bad';
-  }
-  if (bridge.ok) {
-    const running = Boolean(bridge.data.running);
-    const queue = bridge.data.queue_known ? bridge.data.queue : '?';
-    $('pill-bridge').textContent = `Puente: ${running ? 'ON' : 'OFF'}${running ? ` · ${queue} en cola` : ''}`;
-    $('pill-bridge').className = 'pill ' + (running ? 'ok' : 'info');
-  } else {
-    $('pill-bridge').textContent = 'Puente: ?';
-    $('pill-bridge').className = 'pill warn';
-  }
-  if (gov.ok && gov.data && gov.data.ok === false) {
-    $('pill-bridge').title = `gobernanza: ${gov.data.reason || 'sin motivo'}`;
-  }
+  const director = ((s.roles || {}).director) || {};
+  fillSelect($('quick-director'), options.length ? options : [director.spec || ''], director.spec);
 }
 
 function matchesSession(row, needle) {
-  const haystack = `${row.title || ''} ${row.id || ''}`.toLowerCase();
-  return !needle || haystack.includes(needle);
+  return !needle || `${row.title || ''} ${row.id || ''}`.toLowerCase().includes(needle);
 }
 
 function paintSessions(rows) {
@@ -263,38 +229,21 @@ function paintSessions(rows) {
     name.textContent = `${row.title || row.id} · ${row.turns || 0}`;
     name.title = row.id;
     name.onclick = () => loadSession(row.id);
-    const actions = [['✎', 'renombrar', () => renameSession(row)],
-                     ['✕', 'borrar', () => deleteSession(row)]];
     item.appendChild(name);
-    for (const [glyph, label, handler] of actions) {
+    for (const [glyph, label, handler] of [['✎', 'renombrar', () => renameSession(row)],
+                                           ['✕', 'borrar', () => deleteSession(row)]]) {
       const act = document.createElement('span');
       act.className = 'act';
       act.textContent = glyph;
       act.title = label;
-      act.onclick = (event) => {
-        event.stopPropagation();
-        handler();
-      };
+      act.onclick = (event) => { event.stopPropagation(); handler(); };
       item.appendChild(act);
     }
     list.appendChild(item);
   }
 }
 
-function paintMemory(memory) {
-  $('memory-count').textContent = `${memory.count || 0}/${memory.limit_entries || '?'}`;
-  $('memory').innerHTML = (memory.entries || []).map((entry, index) =>
-    `<li><span>${esc(entry)}</span><b data-index="${index}">✕</b></li>`).join('');
-  for (const button of $('memory').querySelectorAll('b')) {
-    button.onclick = async () => {
-      const entry = memory.entries[Number(button.dataset.index)];
-      await api('/api/memory', {method: 'POST', body: JSON.stringify({remove: entry})});
-      refreshMemory();
-    };
-  }
-}
-
-/* ---------- data ---------- */
+/* ---------- datos ---------- */
 async function refreshState() {
   const {ok, data} = await api('/api/state');
   if (ok) paintState(data);
@@ -304,10 +253,9 @@ async function refreshChat() {
   const {ok, data} = await api('/api/chat');
   if (!ok) return;
   const next = data.session ? data.session.id : null;
-  if (next !== currentSession) { since = 0; $('activity').innerHTML = ''; }
+  if (next !== currentSession) { since = 0; feed = []; }
   currentSession = next;
   renderThread(data.messages || []);
-  if (data.last && data.last.skills) setSkills(data.last.skills);
 }
 
 async function refreshSessions() {
@@ -315,12 +263,7 @@ async function refreshSessions() {
   if (ok) paintSessions(data.sessions);
 }
 
-async function refreshMemory() {
-  const {ok, data} = await api('/api/memory');
-  if (ok) paintMemory(data);
-}
-
-/* ---------- actions ---------- */
+/* ---------- acciones ---------- */
 async function send() {
   const attachments = (window.NexusUI && window.NexusUI.take()) || [];
   const text = $('input').value.trim();
@@ -344,12 +287,11 @@ async function stopTurn() {
 async function newChat() {
   const project = $('project').value;
   if (!project || project === '— elige un proyecto —') return;
-  const {ok, data} = await api('/api/chat/new',
-    {method: 'POST', body: JSON.stringify({project})});
+  const {ok, data} = await api('/api/chat/new', {method: 'POST', body: JSON.stringify({project})});
   if (!ok) return;
   currentSession = data.session ? data.session.id : null;
+  feed = [];
   renderThread([]);
-  $('activity').innerHTML = '';
   since = 0;
   refreshSessions();
 }
@@ -359,7 +301,6 @@ async function loadSession(id) {
   if (!ok) return;
   currentSession = id;
   since = 0;
-  $('activity').innerHTML = '';
   await refreshChat();
   refreshSessions();
 }
@@ -370,21 +311,29 @@ async function renameSession(row) {
   const {ok} = await api('/api/chat/rename',
     {method: 'POST', body: JSON.stringify({id: row.id, title: title.trim()})});
   if (ok) refreshSessions();
-  else addMessage('assistant', 'no se pudo renombrar la conversación');
+  else warn('No se pudo renombrar la conversación.');
 }
 
 async function deleteSession(row) {
   if (!window.confirm(`¿Borrar «${row.title || row.id}»? No se puede deshacer.`)) return;
   const {ok} = await api('/api/chat/delete', {method: 'POST', body: JSON.stringify({id: row.id})});
   if (!ok) {
-    addMessage('assistant', 'no se pudo borrar la conversación');
+    warn('No se pudo borrar la conversación.');
     return;
   }
   if (row.id === currentSession) {
     currentSession = null;
+    feed = [];
     renderThread([]);
   }
   refreshSessions();
+}
+
+async function swapDirector(spec) {
+  if (!spec) return;
+  const {ok, data} = await api('/api/roles', {method: 'POST', body: JSON.stringify({role: 'director', spec})});
+  if (!ok) warn(data.reason || 'modelo rechazado');
+  refreshState();
 }
 
 async function pollEvents() {
@@ -395,15 +344,10 @@ async function pollEvents() {
     if (!ok) return;
     for (const event of data.events || []) {
       since = Math.max(since, event.seq);
-      const kind = LABEL[event.kind];
-      if (!kind) continue;
-      if (event.kind === 'skills.injected') setSkills((event.payload || {}).names || []);
-      const row = document.createElement('div');
-      row.innerHTML = `<span class="k">${kind}</span> ${esc((event.detail || '').slice(0, 120))}`;
-      $('activity').appendChild(row);
-      while ($('activity').children.length > 60) $('activity').removeChild($('activity').firstChild);
+      if (!LABEL[event.kind]) continue;
+      feed.push({kind: event.kind, detail: event.detail || ''});
     }
-    $('activity').scrollTop = $('activity').scrollHeight;
+    if ((data.events || []).length) paintFeed();
   } finally { polling = false; }
 }
 
@@ -412,27 +356,18 @@ $('send').onclick = send;
 $('stop').onclick = stopTurn;
 $('new-chat').onclick = newChat;
 $('session-search').addEventListener('input', () => paintSessions(allSessions));
+$('quick-director').addEventListener('change', (event) => swapDirector(event.target.value));
 $('input').addEventListener('keydown', (event) => {
   if ((event.ctrlKey || event.metaKey) && event.key === 'Enter') send();
 });
 $('project').addEventListener('change', newChat);
-$('memory-add').onclick = async () => {
-  const text = $('memory-input').value.trim();
-  if (!text) return;
-  await api('/api/memory', {method: 'POST', body: JSON.stringify({text})});
-  $('memory-input').value = '';
-  refreshMemory();
-  refreshState();
-};
 
 (async function boot() {
+  await checkEngine();
   await refreshState();
   await refreshChat();
   await refreshSessions();
-  await refreshMemory();
-  refreshPills();          // no se espera: arranca la GUI de gobernanza (~1s) y no debe frenar el chat
   setInterval(pollEvents, 800);
   setInterval(refreshState, 2500);
   setInterval(refreshChat, 2500);
-  setInterval(refreshPills, 5000);
 })();

@@ -8,36 +8,18 @@
 </head>
 <body>
 
-<!-- Una barra, cinco vistas. El chat es esta pagina; las cuatro de gobernanza las sirve el arnes
-     desde la GUI real de NexusProtocol, con esta misma barra dentro. Son enlaces de verdad, no
-     script: por eso el turno del chat sigue corriendo en el motor aunque cambies de vista y vuelvas
-     (el turno vive en el motor, no en el DOM). -->
-<header class="topbar">
+<!-- El chat, y solo el chat: ancho de lado a lado. La configuracion vive en su propia pantalla
+     (`/settings`), que se abre con el boton de la barra lateral. -->
+<header class="topbar chat-top">
   <div class="brand">NEXUS<span>·</span>HARNESS</div>
-  <nav class="hnav">
-    <a class="hnav-link on" href="#" aria-current="page">💬 Espacio de trabajo</a>
-    <a class="hnav-link" href="/gov?tab=setup">⚙ 01 Setup, Modelos &amp; Conectores</a>
-    <a class="hnav-link" href="/gov?tab=projects">📁 02 Proyectos &amp; Auto-Spec</a>
-    <a class="hnav-link" href="/gov?tab=skills">🧠 03 Skills &amp; Architect</a>
-    <a class="hnav-link" href="/gov?tab=stats">📊 04 Stats, Ledger &amp; Auditoría</a>
-  </nav>
-  <div class="pills">
-    <a class="pill ghost-pill" id="pill-director" href="/gov?tab=setup"
-       title="Cambiar de modelo: vista 01">Director: —</a>
-    <a class="pill ghost-pill" id="pill-worker" href="/gov?tab=setup"
-       title="Cambiar de modelo: vista 01">Obrero: —</a>
-    <a class="pill ghost-pill" id="pill-judge" href="/gov?tab=setup"
-       title="Juez y juez adversario: vista 01">Juez: —</a>
-    <a class="pill ghost-pill" id="pill-mcp" href="/gov?tab=setup"
-       title="Conectores MCP: vista 01">MCP: —</a>
-    <a class="pill ghost-pill" id="pill-bridge" href="/gov?tab=setup"
-       title="Puente móvil: vista 01">Puente: —</a>
+  <div class="top-right">
     <span id="status" class="pill info">en reposo</span>
-    <button id="stop" class="ghost" disabled>Detener</button>
   </div>
 </header>
 
-<div class="app">
+<div id="warn" class="warn" hidden></div>
+
+<div class="app chat-only">
   <aside class="sidebar">
     <label class="field">Proyecto<select id="project"></select></label>
     <button id="new-chat" class="primary wide">Nueva conversación</button>
@@ -45,6 +27,7 @@
     <input id="session-search" class="search" type="search" placeholder="buscar conversación…">
     <ul id="sessions" class="sessions"></ul>
     <div class="spacer"></div>
+    <a id="settings" class="settings-btn" href="/settings">⚙ Configuración</a>
     <div id="engine" class="foot"></div>
   </aside>
 
@@ -53,76 +36,29 @@
       <div id="title" class="title">sin conversación</div>
     </header>
 
-    <section id="thread" class="thread" aria-live="polite">
-      <div class="empty" id="empty">
-        <h1>¿Qué construimos?</h1>
-        <p>Pide una tarea o haz una pregunta. El gate (lint Nexus, ley de 400, tests) se ejecuta en
-           cuanto se toca un fichero; si sale rojo, el obrero lo repara antes de contestarte.</p>
-      </div>
-    </section>
+    <section id="thread" class="thread" aria-live="polite"></section>
 
     <section class="composer">
       <div id="pending" class="pending"></div>
-      <textarea id="input" rows="2"
-        placeholder="Elige un proyecto en la barra lateral para empezar"></textarea>
-      <div class="composer-right">
-        <button id="attach" class="ghost" title="Adjuntar imagen o documento">+ Adjuntar</button>
-        <button id="send" class="primary">Enviar</button>
-        <input id="test-command" placeholder="comando de test (opcional)">
+      <div class="composer-box">
+        <textarea id="input" rows="3"
+          placeholder="Elige un proyecto en la barra lateral para empezar"></textarea>
+        <div class="composer-tools">
+          <button id="attach" class="ghost" title="Adjuntar imagen o documento">+ Adjuntar</button>
+          <button id="send" class="primary">Enviar</button>
+          <button id="stop" class="ghost" disabled>Detener</button>
+        </div>
+      </div>
+      <div class="composer-foot">
+        <label class="quick">Director
+          <select id="quick-director" title="Modelo del Director para los próximos turnos"></select>
+        </label>
+        <span class="dim hint-inline">Ctrl+Enter envía · pega una imagen o arrastra un fichero</span>
       </div>
       <input id="file" type="file" multiple hidden
         accept=".png,.jpg,.jpeg,.webp,.gif,.txt,.md,.json,.py,.pdf">
     </section>
   </main>
-
-  <aside class="rail">
-    <div class="card">
-      <h3>Último turno</h3>
-      <div id="last-turn" class="mono dim">todavía nada</div>
-    </div>
-    <div class="card">
-      <h3>Gate</h3>
-      <div id="gate" class="mono dim">pendiente</div>
-      <h3 class="sub">Juez</h3>
-      <div id="judge" class="mono dim">pendiente</div>
-    </div>
-    <div class="card">
-      <h3>Skills en RAM <span id="skills-count" class="tag"></span></h3>
-      <div id="skills" class="chips"></div>
-      <p class="hint">Pincha una skill para leer y editar su <code>SKILL.md</code>.</p>
-    </div>
-    <div class="card">
-      <h3>Presupuesto</h3>
-      <div class="bar"><i id="budget-fill"></i><b id="budget-mark"></b></div>
-      <div id="budget-text" class="mono dim">unmeasured</div>
-    </div>
-    <div class="card">
-      <h3>Memoria <span id="memory-count" class="tag"></span></h3>
-      <ul id="memory" class="memory"></ul>
-      <div class="row">
-        <input id="memory-input" placeholder="hecho duradero…">
-        <button id="memory-add" class="ghost">+</button>
-      </div>
-    </div>
-    <div class="card">
-      <h3>Actividad</h3>
-      <div id="activity" class="activity mono"></div>
-    </div>
-  </aside>
-</div>
-
-<div id="modal" class="modal" hidden>
-  <div class="modal-box">
-    <header>
-      <h2 id="modal-title">Configuración</h2>
-      <button id="modal-close" class="ghost">✕</button>
-    </header>
-    <div id="modal-body" class="modal-body"></div>
-    <footer>
-      <span id="modal-note" class="mono dim"></span>
-      <button id="modal-save" class="primary">Guardar</button>
-    </footer>
-  </div>
 </div>
 
 <script src="app.js"></script>

@@ -100,6 +100,21 @@ def up():
         return "http://127.0.0.1:%d" % server.server_address[1], ""
 
 
+def installer_state():
+    """El `state()` del protocolo, o `({}, motivo)`. La MISMA fuente que pinta su GUI, sin copia.
+
+    Existe para que un panel pueda enseñar los numeros del gobernador (ahorro, impacto, flota) sin
+    volver a medirlos por su cuenta y sin inventarse un segundo camino que se desvie.
+    """
+    base, reason = up()
+    if not base or _boot["installer"] is None:
+        return {}, reason or "la gobernanza no esta arrancada"
+    try:
+        return _boot["installer"].state(), ""
+    except Exception as exc:  # noqa: BLE001 -- se informa del motivo, no se adivina
+        return {}, "%s: %s" % (type(exc).__name__, exc)
+
+
 def down():
     """Para el servidor de gobernanza. Se llama al cerrar: un puerto suelto y un hilo vivo no dejan
     salir al proceso, y el motor congelado es justo el que mas lo nota."""

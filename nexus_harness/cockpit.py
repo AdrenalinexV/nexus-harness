@@ -277,8 +277,11 @@ class Cockpit:
         return True, {"goal": goal, "root": str(root)}
 
     def _execute(self, goal, root, test_command=None):
+        # El comando de test se resuelve por proyecto antes que por maquina: `project_tests` manda, y
+        # `test_command` es el que vale para cualquiera. Lo que manda el turno (`/api/run`) gana a los dos.
+        per_project = (self.config.project_tests or {}).get(Path(root).name) or ""
         config = replace(self.config, default_root=root,
-                         test_command=test_command or self.config.test_command)
+                         test_command=test_command or per_project or self.config.test_command)
         relay = SessionRelay(root, goal=goal, config=config, bus=self.bus)
         relay.start()
         triad = Triad(self.router, config, registry=default_registry(root, config),
