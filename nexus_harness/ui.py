@@ -47,15 +47,40 @@ class Handler(BaseHTTPRequestHandler):
         return self.server.cockpit
 
     # -- plumbing ----------------------------------------------------------------------------
-    def _send(self, code, body, content_type=JSON_TYPE):
+    def _send(self, code, body, content_type=JSON_TYPE, extra=()):
         data = body if isinstance(body, bytes) else str(body).encode("utf-8")
         self.send_response(code)
         self.send_header("Content-Type", content_type)
         self.send_header("Content-Length", str(len(data)))
         self.send_header("Cache-Control", "no-store")
         self.send_header("X-Content-Type-Options", "nosniff")
+        for key, value in extra:
+            self.send_header(key, value)
         self.end_headers()
         self.wfile.write(data)
+
+    def _page(self, body, content_type=None):
+        """Una pagina del arnes. Deja el token en una cookie: un `<form>` no puede poner cabeceras, y
+        la vista de gobernanza tiene que poder tocar cosas sin script."""
+        token = getattr(self.server, "token", "") or ""
+        extra = ([("Set-Cookie", "nexus_token=%s; Path=/; SameSite=Strict; HttpOnly" % token)]
+                 if token else [])
+        return self._send(200, body, content_type or TYPES[".html"], extra)
+
+    def _see_other(self, location):
+        """303 y a otra cosa: es lo que evita que recargar reenvie el ultimo formulario."""
+        self.send_response(303)
+        self.send_header("Location", location)
+        self.send_header("Content-Length", "0")
+        self.end_headers()
+        return None
+
+    def _cookie(self, name):
+        for chunk in (self.headers.get("Cookie") or "").split(";"):
+            key, _, value = chunk.strip().partition("=")
+            if key == name:
+                return value
+        return ""
 
     def _json(self, code, payload):
         self._send(code, json.dumps(payload, ensure_ascii=False), JSON_TYPE)
@@ -74,7 +99,7 @@ class Handler(BaseHTTPRequestHandler):
         expected = getattr(self.server, "token", "") or ""
         if not expected:
             return True
-        sent = self.headers.get("X-Nexus-Token") or ""
+        sent = self.headers.get("X-Nexus-Token") or self._cookie("nexus_token")
         if not sent:
             sent = (parse_qs(urlparse(self.path).query).get("token") or [""])[0]
         return secrets.compare_digest(str(sent), str(expected))
@@ -106,8 +131,14 @@ class Handler(BaseHTTPRequestHandler):
         query = parse_qs(parsed.query)
         path = parsed.path
         if path in ("/", "/index.html"):
-            return self._static("index.html")
-        if path in ("/app.css", "/app.js", "/favicon.ico"):
+            return self._page((WEB / "index.html").read_bytes())
+        if path == "/gov":
+            return self._gov((query.get("tab") or [""])[0])
+        if path.startswith("/gov/api/"):
+            return self._forward(path, query, {})
+        # Los estaticos se sirven por extension, no por lista blanca: una lista se olvida en cuanto se
+        # anade un fichero, y el fallo aparece como una pagina sin estilos.
+        if Path(path).suffix.lower() in TYPES:
             return self._static(path.lstrip("/"))
         if path == "/api/health":
             return self._json(200, {"ok": True, "seq": self.cockpit.bus.seq,
@@ -142,14 +173,45 @@ class Handler(BaseHTTPRequestHandler):
             since = int((query.get("since") or ["0"])[0] or 0)
             return self._json(200, {"events": self.cockpit.bus.since(since),
                                     "seq": self.cockpit.bus.seq})
+        if path == "/api/gov":
+            from . import gov
+            return self._json(200, gov.status())
         return self._json(404, {"ok": False, "reason": "no route %s" % path})
+
+    # -- la gobernanza, servida desde aqui ------------------------------------------------------
+    def _gov(self, tab):
+        """La vista de gobernanza: el HTML real del protocolo, con la barra del arnes dentro.
+
+        El fallo se dice en una pagina, no en un 500 vacio: si NexusProtocol no esta donde el
+        repositorio dice, el operador tiene que leerlo aqui y no en la consola del motor.
+        """
+        from . import gov, panels
+        token = (parse_qs(urlparse(self.path).query).get("token") or [""])[0]
+        extra = panels.harness_sections(self.cockpit) if gov.resolve(tab) == "setup" else ""
+        html, reason = gov.page(tab, token, extra)
+        return self._page(html if html else gov.refusal_page(reason))
+
+    def _forward(self, path, query, body):
+        """Reenvia una accion del navegador a la GUI del protocolo: una implementacion, dos consumidores."""
+        from . import gov
+        payload = dict(body or {})
+        payload.update({key: values[0] for key, values in query.items() if key != "token"})
+        status, answer = gov.action(path[len("/gov"):], payload,
+                                    method="POST" if body else "GET")
+        return self._json(status, answer)
 
     # -- POST --------------------------------------------------------------------------------
     def do_POST(self):  # noqa: N802
         if self._blocked():
             return None
-        path = urlparse(self.path).path
+        parsed = urlparse(self.path)
+        path = parsed.path
+        query = parse_qs(parsed.query)
         body = self._body()
+        if path.startswith("/gov/api/"):
+            return self._forward(path, query, body)
+        if path == "/gov/action":
+            return self._gov_action(body)
         if path == "/api/chat":
             ok, payload = self.cockpit.send(body.get("text"), body.get("attachments") or [])
             if ok:
@@ -187,6 +249,9 @@ class Handler(BaseHTTPRequestHandler):
         if path == "/api/chat/delete":
             gone = self.cockpit.delete_session(body.get("id"), body.get("project"))
             return self._json(200 if gone else 404, {"ok": gone})
+        if path == "/api/chat/rename":
+            done = self.cockpit.rename_session(body.get("id"), body.get("title"), body.get("project"))
+            return self._json(200 if done else 404, {"ok": done})
         if path == "/api/memory":
             if "remove" in body:
                 return self._json(200, self.cockpit.memory_remove(body.get("remove")))
@@ -207,6 +272,26 @@ class Handler(BaseHTTPRequestHandler):
             return self._json(200, {"ok": True, "ran": len(rows), "rows": rows})
         return self._json(404, {"ok": False, "reason": "no route %s" % path})
 
+    def _gov_action(self, body):
+        """Los controles del ARNES dentro de la vista de gobernanza (MCP, puente movil), por formulario.
+
+        No pasa por `/api/*` a proposito: un formulario sin script no puede poner la cabecera del
+        token, y estas dos cosas tienen que funcionar tambien con el script bloqueado. Responde un 303
+        de vuelta a la vista, que es lo que evita reenviar la accion al recargar.
+        """
+        what = str(body.get("what") or "")
+        if what == "bridge":
+            answer = (self.cockpit.daemon_toggle(str(body.get("provider") or ""))
+                      if str(body.get("on") or "") == "on" else self.cockpit.daemon_stop())
+        elif what == "mcp":
+            answer = self.cockpit.mcp_reload()
+        else:
+            answer = {"ok": False, "reason": "accion desconocida: %r" % what}
+        target = str(body.get("next") or "/gov?tab=setup")
+        if not answer.get("ok", True):
+            target += ("&" if "?" in target else "?") + "problem=" + str(answer.get("reason"))[:120]
+        return self._see_other(target)
+
 
 class Server(ThreadingHTTPServer):
     daemon_threads = True
@@ -214,7 +299,9 @@ class Server(ThreadingHTTPServer):
 
     def stop_engine(self):
         """Leave for real: close the socket, then exit the process (not just the HTTP loop)."""
+        from . import gov
         try:
+            gov.down()
             self.shutdown()
             self.server_close()
         finally:

@@ -4,6 +4,8 @@ __pycache__/
 .nexus/harness/sessions/
 # El cerrojo del turno de noche es estado de ESTA maquina (lleva un PID y una hora), no del repo.
 .nexus/harness/nightshift.lock*
+# La colmena es estado vivo del puente movil (PID, latido, cola), no del repositorio.
+.nexus/hive/
 .pytest_cache/
 .nexus/NEXT_SESSION_PROMPT.md
 dist/

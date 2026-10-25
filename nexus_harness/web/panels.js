@@ -115,94 +115,6 @@
     $('modal-note').textContent = message || 'guardado';
   };
 
-  function field(label, node) {
-    const wrap = document.createElement('label');
-    wrap.className = 'field';
-    const span = document.createElement('span');
-    span.textContent = label;
-    wrap.append(span, node);
-    return wrap;
-  }
-
-  function select(options, value) {
-    const el = document.createElement('select');
-    for (const option of options) {
-      const item = document.createElement('option');
-      item.value = option;
-      item.textContent = option;
-      el.appendChild(item);
-    }
-    if (options.includes(value)) el.value = value;
-    return el;
-  }
-
-  /* ---------- onboarding ---------- */
-  async function openOnboarding() {
-    const {ok, data} = await api('/api/onboarding');
-    if (!ok) return;
-    const body = document.createElement('div');
-    const heading = document.createElement('p');
-    heading.className = 'dim mono';
-    const alive = ['lmstudio', 'ollama']
-      .map((name) => `${name}: ${(data.local || {})[name] && data.local[name].ready
-        ? `${(data.local[name].models || []).length} modelos` : 'apagado'}`).join(' · ');
-    heading.textContent = `Detectado ahora — ${alive}`;
-    body.appendChild(heading);
-
-    const choices = [];
-    for (const [vendor, row] of Object.entries(data.local || {})) {
-      for (const model of row.models || []) choices.push(`${vendor}:${model}`);
-    }
-    const roles = {};
-    for (const role of ['director', 'worker', 'judge']) {
-      const current = (data.roles || {})[role] || {};
-      const options = [current.spec || '', ...choices, 'openai:gpt-4o-mini',
-                       'anthropic:claude-sonnet-4-5', 'deepseek:deepseek-chat']
-        .filter((value, index, all) => value && all.indexOf(value) === index);
-      const el = select(options, current.spec || '');
-      roles[role] = el;
-      body.appendChild(field(role[0].toUpperCase() + role.slice(1), el));
-    }
-
-    const projectList = document.createElement('datalist');
-    projectList.id = 'project-options';
-    for (const name of data.projects || []) {
-      const option = document.createElement('option');
-      option.value = name;
-      projectList.appendChild(option);
-    }
-    const project = document.createElement('input');
-    project.value = data.project || '';
-    project.setAttribute('list', 'project-options');
-    body.append(projectList, field('Proyecto', project));
-
-    const keys = {};
-    for (const name of ['OPENROUTER_API_KEY', 'OPENAI_API_KEY', 'ANTHROPIC_API_KEY']) {
-      const input = document.createElement('input');
-      input.type = 'password';
-      input.placeholder = (data.keys || []).includes(name) ? 'guardada (DPAPI)' : 'no configurada';
-      keys[name] = input;
-      body.appendChild(field(name, input));
-    }
-
-    const governance = document.createElement('input');
-    governance.type = 'checkbox';
-    governance.checked = !(data.governance || {}).complete;
-    body.appendChild(field('Generar gobernanza (.ai/CURRENT_SPEC.json)', governance));
-
-    openModal('Configuración', body, async () => {
-      const payload = {roles: {}, project: project.value.trim(), governance: governance.checked,
-                       keys: {}};
-      for (const [role, el] of Object.entries(roles)) if (el.value) payload.roles[role] = el.value;
-      for (const [name, input] of Object.entries(keys)) if (input.value.trim()) payload.keys[name] = input.value.trim();
-      const saved = await api('/api/onboarding', {method: 'POST', body: JSON.stringify(payload)});
-      if (!saved.ok) return saved.data.reason || 'no se pudo guardar';
-      const notes = (saved.data.notes || []).join(' · ');
-      if (window.refreshState) window.refreshState();
-      return notes || 'guardado: modelos y proyecto aplicados';
-    }, (data.governance || {}).complete ? 'gobernanza ya presente' : 'se generará la spec inicial');
-  }
-
   /* ---------- skills ---------- */
   async function openSkill(name) {
     const {ok, data} = await api('/api/skills?name=' + encodeURIComponent(name));
@@ -223,57 +135,13 @@
     }, 'el contrato se valida antes de escribir');
   }
 
-  /* ---------- connectors and the mobile bridge ---------- */
-  async function refreshMCP() {
-    const {ok, data} = await api('/api/mcp');
-    if (!ok) return;
-    const list = $('mcp');
-    list.textContent = '';
-    $('mcp-count').textContent = data.tools ? String(data.tools) : '';
-    for (const server of data.servers || []) {
-      const row = document.createElement('li');
-      row.textContent = `${server.ready ? '●' : '○'} ${server.name} · ${(server.tools || []).length} tools`;
-      row.title = server.error || '';
-      list.appendChild(row);
-    }
-    if (!(data.servers || []).length) {
-      const row = document.createElement('li');
-      row.className = 'dim';
-      row.textContent = 'sin conectores';
-      list.appendChild(row);
-    }
-  }
-
-  async function refreshDaemon() {
-    const {ok, data} = await api('/api/bridge/daemon');
-    if (!ok) return;
-    const button = $('daemon');
-    button.textContent = data.running ? 'ON' : 'OFF';
-    button.classList.toggle('on', !!data.running);
-    button.title = data.running ? `pid ${data.pid} · ${data.queue} en cola` : 'detenido';
-  }
-
-  $('mcp-reload').onclick = async () => {
-    $('mcp-reload').textContent = 'recargando…';
-    await api('/api/mcp', {method: 'POST', body: '{}'});
-    await refreshMCP();
-    $('mcp-reload').textContent = 'Recargar conectores';
-  };
-  $('daemon').onclick = async () => {
-    const result = await api('/api/bridge/daemon', {method: 'POST', body: JSON.stringify({action: 'toggle'})});
-    if (!result.ok) $('daemon').title = result.data.reason || 'no se pudo cambiar';
-    refreshDaemon();
-  };
-  $('onboarding').onclick = openOnboarding;
+  /* ---------- lo que queda: adjuntos, modal y el editor de SKILL.md ----------
+     Los conectores MCP, el puente movil y los selectores de modelos vivian aqui, en un modal pobre.
+     Ahora son la vista 01 de la gobernanza (la GUI real de NexusProtocol, con la barra del arnes
+     dentro), asi que este fichero no los dibuja dos veces: los enlaces de la cabecera llevan alli. */
 
   window.NexusUI = {
     take: () => { const items = pending.splice(0, pending.length); paintPending(); return items; },
     skill: openSkill,
-    onboarding: openOnboarding,
   };
-
-  refreshMCP();
-  refreshDaemon();
-  setInterval(refreshDaemon, 8000);
-  setInterval(refreshMCP, 20000);
 }());

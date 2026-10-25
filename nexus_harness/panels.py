@@ -12,6 +12,7 @@ text the operator can act on, and nothing here raises into the HTTP handler.
 """
 import os
 import sys
+from html import escape
 from pathlib import Path
 
 from . import onboarding, vault
@@ -145,3 +146,112 @@ def daemon_stop(cockpit):
 def keys_state():
     """Only names: the modal must be able to say what is saved without ever showing a value."""
     return {"names": vault.names()}
+
+
+# -- los controles del arnes dentro de la vista de gobernanza ---------------------------------
+SECTION_CSS = """
+.hsec{margin:0 0 1.4rem;padding:1rem 1.1rem;background:var(--card,#11151b);
+  border:1px solid var(--line,#232b35);border-radius:var(--radius,14px);max-width:1200px}
+.hsec h3{margin:0 0 .2rem;font-size:.95rem;letter-spacing:.02em;text-transform:uppercase;
+  color:var(--muted,#8b97a6)}
+.hsec p{margin:.35rem 0;color:var(--fg,#e7eef6)}
+.hsec .row{display:flex;flex-wrap:wrap;gap:.5rem;align-items:center;margin-top:.6rem}
+.hsec .cell{padding:.45rem .65rem;background:var(--card2,#151b23);border:1px solid var(--line,#232b35);
+  border-radius:9px;font-size:.86rem}
+.hsec button,.hsec select{font:inherit;padding:.42rem .7rem;border-radius:9px;
+  border:1px solid var(--line2,#2e3844);background:var(--card2,#151b23);color:var(--fg,#e7eef6)}
+.hsec button.primary{background:var(--accent,#3b82f6);border-color:var(--accent,#3b82f6);color:#fff}
+.hsec .ok{color:var(--ok,#22c55e)} .hsec .bad{color:var(--bad,#ef4444)} .hsec .warn{color:var(--warn,#f59e0b)}
+.hsec .dim{color:var(--muted,#8b97a6)}
+"""
+
+
+def _esc(value):
+    return escape(str(value if value is not None else ""))
+
+
+def sections_css():
+    return SECTION_CSS
+
+
+def _triad_card(cockpit):
+    roles = (cockpit.state().get("roles") or {})
+    budget = cockpit.relay_status().get("budget") or {}
+    cells = []
+    for role in ("director", "worker", "judge"):
+        info = roles.get(role) or {}
+        tone = "ok" if info.get("ready") else "bad"
+        cells.append('<span class="cell">%s: <b class="%s">%s</b>%s</span>'
+                     % (_esc(role), tone, _esc(info.get("model") or "sin modelo"),
+                        "" if info.get("ready") else
+                        ' <span class="bad">(%s)</span>' % _esc(info.get("why_not_ready") or "no ready")))
+    limit = budget.get("limit") or cockpit.config.budget_limit
+    used = budget.get("used")
+    relay = int(round(float(getattr(cockpit.config, "relay_threshold", 0.7)) * 100))
+    return ('<section class="hsec"><h3>Tríada de modelos</h3>'
+            '<p class="dim">Autodetectados en esta máquina. Los selectores completos, la temperatura y '
+            'el juez adversario viven en la vista del protocolo, más abajo.</p>'
+            '<div class="row">%s</div>'
+            '<p class="dim">Presupuesto: %s de %s tokens · relevo automático al %d%%</p></section>'
+            % ("".join(cells), _esc(used if used is not None else "sin medir"), _esc(limit), relay))
+
+
+def _mcp_card(cockpit):
+    state = mcp_status(cockpit)
+    rows = []
+    for server in state.get("servers") or []:
+        tone = "ok" if server.get("ready") else "bad"
+        tools = ", ".join(server.get("tools") or []) or "sin tools"
+        rows.append('<div class="row"><span class="cell">%s <b class="%s">%s</b> · pid %s · %s</span>'
+                    % (_esc(server.get("name")), tone,
+                       "conectado" if server.get("ready") else "caído",
+                       _esc(server.get("pid") or "-"), _esc(tools)))
+    if not rows:
+        rows.append('<p class="warn">Sin conectores configurados en %s</p>'
+                    % _esc(state.get("config") or "-"))
+    return ('<section class="hsec"><h3>Conectores MCP <span class="dim">(%s tools)</span></h3>'
+            '%s<form method="post" action="/gov/action"><input type="hidden" name="what" value="mcp">'
+            '<input type="hidden" name="next" value="/gov?tab=setup">'
+            '<div class="row"><button>Recargar conectores</button>'
+            '<span class="dim">config: %s</span></div></form></section>'
+            % (_esc(state.get("tools") or 0), "".join(rows), _esc(state.get("config") or "-")))
+
+
+def _bridge_card(cockpit):
+    state = daemon_status(cockpit)
+    running = bool(state.get("running"))
+    tone = "ok" if running else "dim"
+    detail = ("PID %s desde %s" % (_esc(state.get("pid") or "-"), _esc(state.get("since") or "-"))
+              if running else "parado")
+    provider = _esc(state.get("provider") or "telegram")
+    forms = ('<form method="post" action="/gov/action"><input type="hidden" name="what" value="bridge">'
+             '<input type="hidden" name="next" value="/gov?tab=setup">'
+             '<div class="row"><input type="hidden" name="on" value="%s">'
+             '<select name="provider"><option value="telegram"%s>telegram</option>'
+             '<option value="discord"%s>discord</option></select>'
+             '<button class="primary">%s</button>'
+             '<span class="dim">cola: %s mensajes</span></div></form>'
+             % ("off" if running else "on",
+                " selected" if provider == "telegram" else "",
+                " selected" if provider == "discord" else "",
+                "Detener el puente" if running else "Arrancar el puente",
+                _esc(state.get("queue") if state.get("queue_known") else "?")))
+    return ('<section class="hsec"><h3>Puente móvil <span class="%s">%s</span></h3>'
+            '<p class="%s">%s</p>%s</section>'
+            % (tone, "ON" if running else "OFF", tone, detail, forms))
+
+
+def harness_sections(cockpit):
+    """Las tarjetas del ARNES dentro de la vista de gobernanza, servidas sin una linea de script.
+
+    Un formulario no puede poner cabeceras, asi que estas acciones van por `/gov/action` (que responde
+    un 303 a la vista) y no por `/api/*`: la vista de setup tiene que funcionar tambien con el script
+    bloqueado, y el estado de MCP y del puente es justo lo que el operador viene a mirar.
+    """
+    try:
+        return ("<style>%s</style><div class=\"hsec-wrap\">%s%s%s</div>"
+                % (SECTION_CSS, _triad_card(cockpit), _mcp_card(cockpit), _bridge_card(cockpit)))
+    except Exception as exc:  # noqa: BLE001 -- un panel roto no puede tumbar la vista: se dice
+        return ('<section class="hsec"><h3>Controles del harness</h3>'
+                '<p class="bad">No se pudieron leer: %s: %s</p></section>'
+                % (type(exc).__name__, _esc(exc)))

@@ -85,3 +85,12 @@ class Transcripts:
             return False
         path.unlink()
         return True
+
+    def rename(self, session_id, title):
+        """Retitle a conversation and nothing else: messages, turns and exit code stay where they were."""
+        session = self.load(session_id)
+        if session is None:
+            return False
+        session["title"] = str(title or "")[:MAX_TITLE]
+        self.save(session)
+        return True

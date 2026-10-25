@@ -3,44 +3,54 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Nexus-Harness</title>
+<title>Nexus Harness</title>
 <link rel="stylesheet" href="app.css">
 </head>
 <body>
-<div class="app">
 
+<!-- Una barra, cinco vistas. El chat es esta pagina; las cuatro de gobernanza las sirve el arnes
+     desde la GUI real de NexusProtocol, con esta misma barra dentro. Son enlaces de verdad, no
+     script: por eso el turno del chat sigue corriendo en el motor aunque cambies de vista y vuelvas
+     (el turno vive en el motor, no en el DOM). -->
+<header class="topbar">
+  <div class="brand">NEXUS<span>·</span>HARNESS</div>
+  <nav class="hnav">
+    <a class="hnav-link on" href="#" aria-current="page">💬 Espacio de trabajo</a>
+    <a class="hnav-link" href="/gov?tab=setup">⚙ 01 Setup, Modelos &amp; Conectores</a>
+    <a class="hnav-link" href="/gov?tab=projects">📁 02 Proyectos &amp; Auto-Spec</a>
+    <a class="hnav-link" href="/gov?tab=skills">🧠 03 Skills &amp; Architect</a>
+    <a class="hnav-link" href="/gov?tab=stats">📊 04 Stats, Ledger &amp; Auditoría</a>
+  </nav>
+  <div class="pills">
+    <a class="pill ghost-pill" id="pill-director" href="/gov?tab=setup"
+       title="Cambiar de modelo: vista 01">Director: —</a>
+    <a class="pill ghost-pill" id="pill-worker" href="/gov?tab=setup"
+       title="Cambiar de modelo: vista 01">Obrero: —</a>
+    <a class="pill ghost-pill" id="pill-judge" href="/gov?tab=setup"
+       title="Juez y juez adversario: vista 01">Juez: —</a>
+    <a class="pill ghost-pill" id="pill-mcp" href="/gov?tab=setup"
+       title="Conectores MCP: vista 01">MCP: —</a>
+    <a class="pill ghost-pill" id="pill-bridge" href="/gov?tab=setup"
+       title="Puente móvil: vista 01">Puente: —</a>
+    <span id="status" class="pill info">en reposo</span>
+    <button id="stop" class="ghost" disabled>Detener</button>
+  </div>
+</header>
+
+<div class="app">
   <aside class="sidebar">
-    <div class="brand">NEXUS<span>·</span>HARNESS</div>
     <label class="field">Proyecto<select id="project"></select></label>
-    <div class="row">
-      <button id="new-chat" class="primary">Nueva conversación</button>
-      <button id="onboarding" class="ghost" title="Configurar modelos, claves y proyecto">⚙︎</button>
-    </div>
+    <button id="new-chat" class="primary wide">Nueva conversación</button>
     <div class="side-title">Conversaciones</div>
+    <input id="session-search" class="search" type="search" placeholder="buscar conversación…">
     <ul id="sessions" class="sessions"></ul>
-    <div class="side-title">Puente móvil</div>
-    <div class="row">
-      <div id="bridge" class="mini">0 en cola</div>
-      <button id="daemon" class="ghost" title="Arrancar / detener el listener">OFF</button>
-    </div>
     <div class="spacer"></div>
-    <div class="side-title">Conectores MCP <span id="mcp-count" class="tag"></span></div>
-    <ul id="mcp" class="sessions"></ul>
-    <button id="mcp-reload" class="ghost wide">Recargar conectores</button>
-    <div class="side-title">Modelos</div>
-    <label class="field">Director<select id="role-director"></select></label>
-    <label class="field">Obrero<select id="role-worker"></select></label>
-    <label class="field">Juez<select id="role-judge"></select></label>
     <div id="engine" class="foot"></div>
   </aside>
 
   <main class="main">
-    <header class="topbar">
+    <header class="topbar-inner">
       <div id="title" class="title">sin conversación</div>
-      <div class="top-right">
-        <span id="status" class="pill info">en reposo</span>
-        <button id="stop" class="ghost" disabled>Detener</button>
-      </div>
     </header>
 
     <section id="thread" class="thread" aria-live="polite">
@@ -54,7 +64,7 @@
     <section class="composer">
       <div id="pending" class="pending"></div>
       <textarea id="input" rows="2"
-        placeholder="Escribe una tarea, pega una imagen (Ctrl+V) o arrastra un fichero…  (Ctrl+Enter envía)"></textarea>
+        placeholder="Elige un proyecto en la barra lateral para empezar"></textarea>
       <div class="composer-right">
         <button id="attach" class="ghost" title="Adjuntar imagen o documento">+ Adjuntar</button>
         <button id="send" class="primary">Enviar</button>
@@ -73,12 +83,13 @@
     <div class="card">
       <h3>Gate</h3>
       <div id="gate" class="mono dim">pendiente</div>
-      <h3 style="margin-top:10px">Juez</h3>
+      <h3 class="sub">Juez</h3>
       <div id="judge" class="mono dim">pendiente</div>
     </div>
     <div class="card">
       <h3>Skills en RAM <span id="skills-count" class="tag"></span></h3>
       <div id="skills" class="chips"></div>
+      <p class="hint">Pincha una skill para leer y editar su <code>SKILL.md</code>.</p>
     </div>
     <div class="card">
       <h3>Presupuesto</h3>

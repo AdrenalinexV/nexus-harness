@@ -220,6 +220,12 @@ class Cockpit:
     def delete_session(self, session_id, project=None):
         return Transcripts(self._project_root(project)).delete(session_id)
 
+    def rename_session(self, session_id, title, project=None):
+        renamed = Transcripts(self._project_root(project)).rename(session_id, title)
+        if renamed:
+            self.bus.emit("chat.rename", "%s -> %s" % (session_id, str(title)[:60]))
+        return renamed
+
     def memory_state(self):
         return self.memory.as_dict()
 

@@ -28,6 +28,11 @@ from PyInstaller.utils.hooks import collect_submodules  # noqa: E402  (el path s
 # y sin Pillow cada imagen grande se convierte en un rechazo en vez de una previsualizacion.
 hiddenimports = (collect_submodules("PIL") + collect_submodules("nexus")
                  + collect_submodules("nexus_harness"))
+# `webbrowser` viaja a mano, y se midio: la GUI del protocolo lo importa en el nivel del modulo
+# (`nexus/gui.py`), y sin el el motor congelado contesta a las vistas de gobernanza con un "no es
+# importable" perfectamente honesto -- y perfectamente inutil. Un dato o un modulo que solo existe en
+# la maquina del build es la razon de que este spec este en el repositorio.
+hiddenimports += ["webbrowser"]
 
 a = Analysis(
     [str(REPO / "tools" / "engine_entry.py")],
@@ -37,7 +42,16 @@ a = Analysis(
     # congelado pasa LA MISMA suite, y esa suite mide la maquina del turno de noche. Un dato que la
     # suite necesita y el .exe no lleva es una suite que solo puede pasar en la maquina del build.
     datas=[(str(REPO / "nexus_harness" / "web"), "web"),
-           (str(REPO / "tools" / "nightshift.py"), "tools")],
+           # El turno de noche y su cerrojo: los dos, porque el segundo es un modulo que el primero
+           # importa. Medido: con solo `nightshift.py` dentro, la suite congelada moria con
+           # "No module named 'nightshift_lock'" -- una suite que solo pasa en la maquina del build.
+           (str(REPO / "tools" / "nightshift.py"), "tools"),
+           (str(REPO / "tools" / "nightshift_lock.py"), "tools"),
+           # Los datos del protocolo que su GUI lee EN CALIENTE (`fleet` lee el manifiesto de
+           # instalacion, `gui_fixtures` sus ejemplos). Sin ellos, el motor congelado sirve las vistas
+           # de gobernanza hasta que una de ellas necesita un fichero y se queda a medias.
+           (str(PROTOCOL / "nexus" / "spec"), "nexus/spec"),
+           (str(PROTOCOL / "nexus" / "fixtures"), "nexus/fixtures")],
     hiddenimports=hiddenimports,
     hookspath=[],
     hooksconfig={},

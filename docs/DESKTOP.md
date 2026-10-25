@@ -46,6 +46,37 @@ aparece en la ventana y en el navegador a la vez. Hay un front-end, no uno por c
 - Ver el presupuesto de la conversación y el estado del gate y del juez del último turno.
 - Retomar conversaciones: se guardan en `<proyecto>/.nexus/harness/chat/`.
 
+## Una barra, cinco vistas (0.4.0)
+
+La ventana tiene **una** barra de navegación y cinco vistas. El chat es la página de este arnés; las
+cuatro de gobernanza son la GUI **real** de NexusProtocol, servida dentro de esta misma aplicación:
+
+| Vista | De qué es dueña |
+|---|---|
+| `💬 Espacio de trabajo` | El chat: proyecto, conversaciones (buscar, renombrar, borrar), hilo, inspector en vivo. |
+| `⚙ 01 Setup, Modelos & Conectores` | Tríada de modelos, cofre de claves, conectores MCP y puente móvil con el estado del demonio. |
+| `📁 02 Proyectos & Auto-Spec` | Los proyectos de `C:\Proyectos`, su gobernanza y el generador de criterios. |
+| `🧠 03 Skills & Architect` | Buscador y editor de `SKILL.md`, y el panel del arquitecto. |
+| `📊 04 Stats, Ledger & Auditoría` | Ahorro medido, tokens podados, auditorías y canarios. |
+
+Cómo está montado, y por qué así:
+
+- **No hay una segunda copia de la gobernanza.** `nexus_harness/gov.py` arranca la GUI del protocolo
+  EN ESTE PROCESO, en un puerto de loopback efímero, y reenvía por él las peticiones de la vista: una
+  implementación, dos consumidores. Reescribir sus ~9.400 líneas de render sería un segundo producto
+  que se separa del primero a la primera corrección.
+- **Una barra, no dos.** El HTML que sirve el protocolo se devuelve con la barra de este arnés
+  inyectada y su `/api/...` renombrado a `/gov/api/...`. El número de rutas traducidas viaja en un
+  comentario del documento servido: una ruta sin traducir no falla aquí, falla en el navegador.
+- **La sesión de la gobernanza no la pone el navegador.** El token de un solo uso y la cookie de
+  sesión se quedan dentro del proceso del motor; el navegador solo habla con este arnés, en su mismo
+  origen.
+- **Los controles propios del arnés** (MCP, puente móvil, tríada) se inyectan como tarjetas en la
+  vista 01 y funcionan por formulario, sin script: un `<form>` no puede poner cabeceras, así que su
+  acción va por `/gov/action`, que contesta un 303 de vuelta a la vista.
+- **Cambiar de vista no pierde el turno**: el turno vive en el motor, no en el DOM; al volver al chat
+  se reengancha con su hilo y su actividad.
+
 ## Construirlo desde el código
 
 ```

@@ -6,7 +6,7 @@
 
 const $ = (id) => document.getElementById(id);
 const TOKEN = new URLSearchParams(location.search).get('token') || '';
-let since = 0, currentSession = null, polling = false;
+let since = 0, currentSession = null, polling = false, allSessions = [];
 
 const LABEL = {
   'chat.user': 'TÚ', 'chat.assistant': 'NEXUS', 'chat.turn': 'TURNO', 'chat.repair': 'REPARACIÓN',
@@ -157,7 +157,7 @@ function paintState(s) {
   $('input').placeholder = chosen
     ? 'Escribe una tarea o una pregunta…  (Ctrl+Enter envía)'
     : 'Elige un proyecto en la barra lateral para empezar';
-  $('bridge').textContent = `${(s.bridge || {}).pending || 0} en cola`;
+  paintRolePills(s.roles || {});
   $('title').textContent = (s.chat && s.chat.session && (s.chat.session.title || s.chat.session.id))
     || 'sin conversación';
   $('engine').textContent = `${s.config.host}:${s.config.port} · ${s.config.root}`;
@@ -185,21 +185,98 @@ function paintState(s) {
   fillSelect($('project'), known ? projects : [placeholder].concat(projects),
              known ? current : placeholder);
   const options = (s.models || {}).options || [];
-  for (const role of ['director', 'worker', 'judge']) {
-    const info = (s.roles || {})[role] || {};
-    fillSelect($('role-' + role), options.length ? options : [info.spec || ''], info.spec);
+  void options;
+}
+
+/* Las pildoras de la cabecera: el modelo de cada rol, y nada mas. Cambiar de modelo se hace en la
+   vista 01 (la pildora ES un enlace), porque los selectores completos -- temperatura, juez
+   adversario, limite de contexto -- viven alli, y tenerlos en dos sitios acaba en dos verdades. */
+function shortModel(spec) {
+  const text = String(spec || '');
+  const tail = text.includes(':') ? text.split(':').slice(1).join(':') : text;
+  return tail.length > 26 ? tail.slice(0, 25) + '…' : tail;
+}
+
+function paintRolePills(roles) {
+  const names = {director: 'Director', worker: 'Obrero', judge: 'Juez'};
+  for (const role of Object.keys(names)) {
+    const info = roles[role] || {};
+    const pill = $('pill-' + role);
+    pill.textContent = `${names[role]}: ${shortModel(info.model || info.spec) || '—'}`;
+    pill.className = 'pill ' + (info.ready ? 'ok' : 'bad');
+    pill.title = `${role}: ${info.spec || 'sin modelo'}`
+      + (info.ready ? '' : ` — ${info.why_not_ready || 'no ready'}`);
   }
 }
 
+/* Conectores y puente no vienen en /api/state a proposito: son dos procesos que pueden estar caidos
+   sin que el chat deje de funcionar, asi que se preguntan aparte y su pildora lo dice. */
+async function refreshPills() {
+  const [mcp, bridge, gov] = await Promise.all([
+    api('/api/mcp'), api('/api/bridge/daemon'), api('/api/gov')]);
+  if (mcp.ok) {
+    const servers = mcp.data.servers || [];
+    const live = servers.filter((server) => server.ready).length;
+    $('pill-mcp').textContent = `MCP: ${live}/${servers.length} · ${mcp.data.tools || 0} tools`;
+    $('pill-mcp').className = 'pill ' + (!servers.length ? 'bad' : live === servers.length ? 'ok' : 'warn');
+  } else {
+    $('pill-mcp').textContent = 'MCP: off';
+    $('pill-mcp').className = 'pill bad';
+  }
+  if (bridge.ok) {
+    const running = Boolean(bridge.data.running);
+    const queue = bridge.data.queue_known ? bridge.data.queue : '?';
+    $('pill-bridge').textContent = `Puente: ${running ? 'ON' : 'OFF'}${running ? ` · ${queue} en cola` : ''}`;
+    $('pill-bridge').className = 'pill ' + (running ? 'ok' : 'info');
+  } else {
+    $('pill-bridge').textContent = 'Puente: ?';
+    $('pill-bridge').className = 'pill warn';
+  }
+  if (gov.ok && gov.data && gov.data.ok === false) {
+    $('pill-bridge').title = `gobernanza: ${gov.data.reason || 'sin motivo'}`;
+  }
+}
+
+function matchesSession(row, needle) {
+  const haystack = `${row.title || ''} ${row.id || ''}`.toLowerCase();
+  return !needle || haystack.includes(needle);
+}
+
 function paintSessions(rows) {
+  allSessions = rows || [];
+  const needle = String($('session-search').value || '').trim().toLowerCase();
   const list = $('sessions');
   list.innerHTML = '';
-  for (const row of rows || []) {
+  const visible = allSessions.filter((row) => matchesSession(row, needle));
+  if (!visible.length) {
+    const empty = document.createElement('li');
+    empty.className = 'dim';
+    empty.textContent = allSessions.length ? 'sin resultados' : 'todavía ninguna';
+    list.appendChild(empty);
+    return;
+  }
+  for (const row of visible) {
     const item = document.createElement('li');
-    item.textContent = `${row.title || row.id} · ${row.turns || 0}`;
-    item.title = row.id;
     if (row.id === currentSession) item.className = 'active';
-    item.onclick = () => loadSession(row.id);
+    const name = document.createElement('span');
+    name.className = 'name';
+    name.textContent = `${row.title || row.id} · ${row.turns || 0}`;
+    name.title = row.id;
+    name.onclick = () => loadSession(row.id);
+    const actions = [['✎', 'renombrar', () => renameSession(row)],
+                     ['✕', 'borrar', () => deleteSession(row)]];
+    item.appendChild(name);
+    for (const [glyph, label, handler] of actions) {
+      const act = document.createElement('span');
+      act.className = 'act';
+      act.textContent = glyph;
+      act.title = label;
+      act.onclick = (event) => {
+        event.stopPropagation();
+        handler();
+      };
+      item.appendChild(act);
+    }
     list.appendChild(item);
   }
 }
@@ -287,9 +364,27 @@ async function loadSession(id) {
   refreshSessions();
 }
 
-async function swapRole(role, spec) {
-  const {ok, data} = await api('/api/roles', {method: 'POST', body: JSON.stringify({role, spec})});
-  if (!ok) addMessage('assistant', data.reason || 'modelo rechazado');
+async function renameSession(row) {
+  const title = window.prompt('Nuevo título de la conversación', row.title || row.id);
+  if (title === null || !title.trim()) return;
+  const {ok} = await api('/api/chat/rename',
+    {method: 'POST', body: JSON.stringify({id: row.id, title: title.trim()})});
+  if (ok) refreshSessions();
+  else addMessage('assistant', 'no se pudo renombrar la conversación');
+}
+
+async function deleteSession(row) {
+  if (!window.confirm(`¿Borrar «${row.title || row.id}»? No se puede deshacer.`)) return;
+  const {ok} = await api('/api/chat/delete', {method: 'POST', body: JSON.stringify({id: row.id})});
+  if (!ok) {
+    addMessage('assistant', 'no se pudo borrar la conversación');
+    return;
+  }
+  if (row.id === currentSession) {
+    currentSession = null;
+    renderThread([]);
+  }
+  refreshSessions();
 }
 
 async function pollEvents() {
@@ -316,12 +411,10 @@ async function pollEvents() {
 $('send').onclick = send;
 $('stop').onclick = stopTurn;
 $('new-chat').onclick = newChat;
+$('session-search').addEventListener('input', () => paintSessions(allSessions));
 $('input').addEventListener('keydown', (event) => {
   if ((event.ctrlKey || event.metaKey) && event.key === 'Enter') send();
 });
-for (const role of ['director', 'worker', 'judge']) {
-  $('role-' + role).addEventListener('change', (event) => swapRole(role, event.target.value));
-}
 $('project').addEventListener('change', newChat);
 $('memory-add').onclick = async () => {
   const text = $('memory-input').value.trim();
@@ -337,7 +430,9 @@ $('memory-add').onclick = async () => {
   await refreshChat();
   await refreshSessions();
   await refreshMemory();
+  refreshPills();          // no se espera: arranca la GUI de gobernanza (~1s) y no debe frenar el chat
   setInterval(pollEvents, 800);
   setInterval(refreshState, 2500);
   setInterval(refreshChat, 2500);
+  setInterval(refreshPills, 5000);
 })();
