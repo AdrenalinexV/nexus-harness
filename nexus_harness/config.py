@@ -42,6 +42,9 @@ DEFAULTS = {
     "subagent_depth": 1,
     "tool_workers": 4,
     "shell_timeout": 180,
+    # Zero-trust command policy (`nexus_harness/policy.py`): read_only | standard | unrestricted.
+    # `standard` refuses catastrophic and reckless commands; the opt-in is one line here, on purpose.
+    "shell_policy": "standard",
     "test_command": None,
     "lang": "es",
     "temperature": 0.2,
@@ -100,6 +103,7 @@ class HarnessConfig:
     subagent_depth: int = 1
     tool_workers: int = 4
     shell_timeout: int = 180
+    shell_policy: str = "standard"
     test_command: object = None
     lang: str = "es"
     temperature: float = 0.2
@@ -160,6 +164,6 @@ class HarnessConfig:
                 "max_steps": self.max_steps,
                 "max_repairs": self.max_repairs, "test_command": self.test_command,
                 "max_children": self.max_children, "subagent_steps": self.subagent_steps,
-                "tool_workers": self.tool_workers,
+                "tool_workers": self.tool_workers, "shell_policy": self.shell_policy,
                 "lang": self.lang, "source": self.source,
                 "secret_names": sorted(self.secrets)}

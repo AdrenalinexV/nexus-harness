@@ -97,10 +97,10 @@ la que empezó a las 23:00.
 
 ## Definición de "nivel top" (lo que la rúbrica exige hoy)
 
-Gobernanza (lint propio, suites, protocolo), empaquetado (motor congelado, instalador verificable),
-multi-harness (contrato `--hook` + adaptadores Aider/Claude), motor (reintentos con backoff,
-reparación de argumentos de tool), contexto (compactación determinista), evidencia (informe con exit
-codes) y operación (cero huérfanos). 14 criterios, 14 comandos, 0 adjetivos.
+Gobernanza (lint propio, suites, protocolo, política zero-trust de comandos), empaquetado (motor
+congelado, instalador verificable), multi-harness (contrato `--hook` + adaptadores Aider/Claude), motor
+(reintentos con backoff, reparación de argumentos de tool), contexto (compactación determinista),
+evidencia (informe con exit codes) y operación (cero huérfanos). 15 criterios, 15 comandos, 0 adjetivos.
 
 ## Correcciones a la rubrica (para revisar al dia siguiente)
 
@@ -147,6 +147,39 @@ pasan hagan lo que hagan?". Se midio, y no hay ninguna que no pueda fallar:
 
 Exit codes de esta revision: `lint_harness` 0 · `selftest` 0 (20 suites) · `verify` 0 ·
 `verify --frozen` 0 · `report` 0 · `report --check` 0 · `status` 14/14.
+
+## Subida del liston: la politica de comandos deja de ser una tupla escondida (criterio 15)
+
+Esto **no** cambia ningun umbral de los 14 anteriores: **anade** un criterio. La regla de la rubrica
+dice que un criterio no se ablanda; subir el liston tambien se anota aqui, con su evidencia.
+
+Que habia: `shell_session.py` llevaba una tupla `FORBIDDEN` de cinco expresiones regulares, dentro del
+propio modulo del shell, sin modo, sin configuracion y **sin ninguna prueba** (medido: `grep refused`
+sobre `selftests/` no devolvia nada). Un control que no se puede poner rojo no es un control.
+
+Que exige ahora `shell-policy`: `python -m nexus_harness selftest shell_policy` con `failures=0`. La
+politica vive en `nexus_harness/policy.py` y tiene tres niveles -- `catastrophic` (se niega en los tres
+modos), `reckless` (`read_only` y `standard`) y `mutating` (solo `read_only`) -- un modo por defecto
+(`standard`) configurable por `shell_policy` en `~/.nexus/harness.json`, y la negativa sale como
+observacion (`ok=False`, texto que empieza por `refused`), nunca como excepcion que escape al bucle.
+
+Evidencia de esta sesion:
+
+1. `nightshift check shell-policy` -> exit **0** (VERDE), `suites=1 failures=0`.
+2. **Falsificacion medida**: con `policy.classify` sustituido en memoria por un `allowed=True` fijo, la
+   suite pasa de `sano failures=0` a `roto failures=29`, primer fallo
+   `borrar la raiz se niega en read_only: True, esperaba False`. La prueba muerde.
+3. `verify --frozen` -> exit **0**, `frozen suites=21 failures=0 (same as the source)`: el motor
+   congelado se reconstruyo con la politica dentro, no se comparo contra un numero guardado.
+4. `nightshift check installer` -> exit **0**, `repo sha256=c7bb2d0b8edc == instalado sha256=c7bb2d0b8edc`
+   (el instalador se reconstruyo con el motor nuevo; si no, el criterio 14 se habria puesto rojo solo,
+   que es exactamente lo que ese criterio existe para detectar).
+5. `lint_harness` -> exit **0**, `files=75 findings=0`; `selftest` -> exit **0**, `suites=21 failures=0`.
+
+Limite escrito, no escondido: la coincidencia es sobre el comando **tal y como se escribe** (la misma
+postura que Claude Code documenta para sus reglas `Bash`), asi que un comando ofuscado
+(`$(printf 'rm -rf /')`) no lo para esta tabla -- lo paran el gate y el sistema de ficheros. Se anota
+aqui para que nadie lea esta politica como una jaula.
 
 ## Por qué esto prueba el protocolo Nexus
 

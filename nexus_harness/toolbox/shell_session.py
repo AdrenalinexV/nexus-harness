@@ -13,6 +13,8 @@ subprocess per command. What persists is what a developer actually relies on:
 Output is clipped head+tail (`output_clip`), the full text goes to `.nexus/harness/logs/`, and long
 runs go to `process_manager` when `background=True`. Every Windows spawn carries
 `CREATE_NO_WINDOW`: zero black consoles, which is the difference between an app and a batch file.
+
+Before any of that, `policy.classify` decides -- the deny-list is a mode, not a string in this file.
 """
 import os
 import re
@@ -20,20 +22,15 @@ import shutil
 import subprocess
 import threading
 
+from .. import policy
 from . import output_clip, process_manager
 
 DEFAULT_TIMEOUT = 180
 CWD_MARK = "__NEXUS_CWD__"
 MSYS_PATH = re.compile(r"^/(?:cygdrive/)?([a-zA-Z])(/.*)?$")
 EXPORT = re.compile(r"^\s*(?:export|set)\s+([A-Za-z_][A-Za-z0-9_]*)=(.+?)\s*$")
-FORBIDDEN = (
-    (r"format\s+[a-z]:", "formatting a drive"),
-    (r"\brm\s+-rf\s+/(\s|$)", "deleting the filesystem root"),
-    (r"remove-item\s+.*-recurse\s+.*c:\\?\s*$", "deleting C:\\ recursively"),
-    (r"\bshutdown\b", "shutting the machine down"),
-    (r":\(\)\s*\{\s*:\|:&\s*\}", "fork bomb"),
-)
 WINDOWS_FLAGS = 0x08000000 if os.name == "nt" else 0
+
 
 
 class ShellSession:
@@ -108,13 +105,13 @@ class ShellSession:
         return body.rstrip("\n")
 
     # -- running -----------------------------------------------------------------------------
-    def run(self, command, timeout=None, background=False, label=""):
+    def run(self, command, timeout=None, background=False, label="", mode=None):
         command = str(command or "").strip()
         if not command:
             raise ValueError("empty command")
-        for pattern, reason in FORBIDDEN:
-            if re.search(pattern, command.lower()):
-                raise ValueError("refused: %s" % reason)
+        verdict = policy.classify(command, policy.normalise(mode))
+        if not verdict.allowed:
+            raise ValueError(policy.refusal(verdict))
         script, _shell = self._absorb_exports(command)
         if background:
             text, meta = process_manager.manager_for(self.root).spawn(script, label or "shell")
@@ -169,7 +166,8 @@ def reset(root):
 
 def shell(root, command, timeout=None, config=None, background=False):
     limit = timeout or getattr(config, "shell_timeout", DEFAULT_TIMEOUT)
-    return session_for(root).run(command, limit, background=bool(background))
+    return session_for(root).run(command, limit, background=bool(background),
+                                mode=policy.mode_of(config))
 
 
 HANDLERS = {"shell": lambda root, args, config: shell(

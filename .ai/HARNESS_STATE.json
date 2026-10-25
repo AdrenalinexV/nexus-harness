@@ -92,14 +92,14 @@
       "status": "met"
     },
     "installer": {
-      "attempts": 4,
+      "attempts": 5,
       "last": {
-        "at": "2026-10-25T02:23:37Z",
+        "at": "2026-10-25T06:36:20Z",
         "command": "python tools/nightshift.py install --check",
         "exit": 0,
-        "head": "90100ba",
+        "head": "1ffbbf0",
         "ok": true,
-        "tail": "sala       : C:\\Users\\Vexus\\AppData\\Local\\NexusHarnessVerify (no existia)\ninstalador : NexusHarness-Setup-0.3.0.exe -> exit 0\nventana    : nexus-harness-desktop.exe subsystem=2 (2 = interfaz)\nmotor      : repo     sha256=17854d734d15\n           : instalado sha256=17854d734d15\ndesinstalar: exit 0\nsala       : eliminada, sin fichero bloqueado\nregistro   : devuelto como estaba\nok: el instalador deja el motor del repositorio y una ventana de interfaz, y se desinstala limpio"
+        "tail": "sala       : C:\\Users\\Vexus\\AppData\\Local\\NexusHarnessVerify (no existia)\ninstalador : NexusHarness-Setup-0.3.0.exe -> exit 0\nventana    : nexus-harness-desktop.exe subsystem=2 (2 = interfaz)\nmotor      : repo     sha256=c7bb2d0b8edc\n           : instalado sha256=c7bb2d0b8edc\ndesinstalar: exit 0\nsala       : eliminada, sin fichero bloqueado\nregistro   : devuelto como estaba\nok: el instalador deja el motor del repositorio y una ventana de interfaz, y se desinstala limpio"
       },
       "note": "",
       "status": "met"
@@ -152,6 +152,19 @@
         "head": "90100ba",
         "ok": true,
         "tail": "retry            OK    0.00s\nsuites=1 failures=0"
+      },
+      "note": "",
+      "status": "met"
+    },
+    "shell-policy": {
+      "attempts": 1,
+      "last": {
+        "at": "2026-10-25T06:35:16Z",
+        "command": "python -m nexus_harness selftest shell_policy",
+        "exit": 0,
+        "head": "1ffbbf0",
+        "ok": true,
+        "tail": "shell_policy     OK    0.13s\nsuites=1 failures=0"
       },
       "note": "",
       "status": "met"
@@ -414,9 +427,23 @@
       "head": "90100ba",
       "id": "installer",
       "ok": true
+    },
+    {
+      "at": "2026-10-25T06:35:16Z",
+      "exit": 0,
+      "head": "1ffbbf0",
+      "id": "shell-policy",
+      "ok": true
+    },
+    {
+      "at": "2026-10-25T06:36:20Z",
+      "exit": 0,
+      "head": "1ffbbf0",
+      "id": "installer",
+      "ok": true
     }
   ],
-  "iteration": 33,
+  "iteration": 35,
   "rubric_version": 1,
   "started": "2026-10-25T00:00:50Z",
   "version": 1

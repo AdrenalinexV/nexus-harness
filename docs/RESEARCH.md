@@ -47,3 +47,18 @@ motor con 16 suites mientras el fuente corría 17. Además se comprueba que la v
 binario de interfaz leyendo el **subsistema PE** (`2` = GUI, `3` = consola), y se desinstala. El registro
 de HKCU que el instalador escribe se fotografía antes y se devuelve como estaba: verificar no le cambia
 nada al usuario.
+
+## Política de comandos (criterio `shell-policy`)
+
+| Fuente | Qué dice | Qué hacemos |
+|---|---|---|
+| [Claude Code — Configure permissions](https://code.claude.com/docs/en/permissions) | Las reglas `deny` **ganan** sobre las `allow` y sobre cualquier ámbito (si el usuario permite y el proyecto deniega, deniega). Una regla `Bash(...)` coincide con el texto del comando **tal y como se escribe**, y la propia documentación avisa de que un `deny` no ve dentro de `sh -c`: es un límite declarado, no una jaula. | Se adopta la **precedencia denegar-primero** (en `classify` lo catastrófico se mira antes que lo demás y no hay modo que lo levante) y la coincidencia sobre el texto escrito, con el límite escrito también en el docstring del módulo. Se descarta el modelo `allow`/`deny` por herramienta: aquí la decisión tiene que caber en una línea de configuración, no en un fichero de reglas. |
+| [Claude Code — Sandboxed Bash tool](https://code.claude.com/docs/en/sandboxing) | El aislamiento real es del sistema operativo (ficheros y red); además, `rm`/`rmdir` sobre una **ruta crítica** sigue pasando por el prompt normal aunque el sandbox esté en modo auto-permitir. | Se adopta la idea de que hay comandos que **no se delegan al modo**: esa es la tabla `catastrophic`, que ni `unrestricted` levanta. Se descarta el sandbox por SO: exige un contenedor o un job object por comando, es dependiente de la plataforma y añade un modo de fallo propio (y en este arnés el gate y la ley de 400 ya son el backstop). |
+| [Codex — Agent approvals & security](https://learn.chatgpt.com/docs/agent-approvals-security) | Separa dos controles que trabajan juntos: `sandbox_mode` (qué puede hacer técnicamente) y `approval_policy` (cuándo debe parar y preguntar), ambos en `config.toml`. | Se adopta la separación **política vs. aprobación** y se resuelve en el eje que este arnés sí tiene: la política se decide **antes** de la llamada (`shell_policy` en `~/.nexus/harness.json`) y no hay prompt interactivo, porque el turno corre a las 03:00 sin nadie al teclado: una aprobación que nadie puede contestar es un cuelgue, no un control. Se descarta `on-request`. |
+
+**Decisión de diseño**: la denegación es una **observación**, no una excepción. `tools.Registry.call`
+ya convertía `ValueError` en `ok=False` con el texto del motivo, así que la política se limitó a hablar
+ese idioma: el modelo lee `refused [standard/reckless]: empujar con --force -- sube la politica ...` y
+puede corregirse en el turno siguiente, que es justo lo que la ley 2 del protocolo pide. Y el nivel se
+elige por **efecto medido**, no por el texto de la config: la suite crea un directorio con `standard`,
+lo borra con `unrestricted` y comprueba que un `read_only` ni eso.

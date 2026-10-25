@@ -2,10 +2,10 @@
 
 Generado por `tools/nightshift.py report` (no se escribe a mano).
 
-- fecha: 2026-10-25T05:31:18Z
-- HEAD: `d01a9a5`
-- iteracion: 33
-- criterios: **14/14**
+- fecha: 2026-10-25T06:37:15Z
+- HEAD: `1ffbbf0`
+- iteracion: 35
+- criterios: **15/15**
 
 ## Rubrica
 
@@ -15,11 +15,12 @@ Generado por `tools/nightshift.py report` (no se escribe a mano).
 | `hook-contract` | multi-harness | Contrato generico `nexus gate --hook` (JSON por stdin, exit 0/10/20/30) | OK | 0 |
 | `suites-source` | gobernanza | Toda la suite determinista pasa desde el codigo fuente | OK | 0 |
 | `adapter-aider` | multi-harness | Adaptador Aider: lint/test del gate escritos en su config, verificable | OK | 0 |
-| `evidence-export` | evidencia | El informe de evidencia se genera desde el estado y cubre los 14 criterios | OK | 0 |
+| `evidence-export` | evidencia | El informe de evidencia se genera desde el estado y cubre los 15 criterios | OK | 0 |
 | `frozen-engine` | empaquetado | El motor congelado pasa la misma suite | OK | 0 |
 | `no-orphans` | operacion | El motor no sobrevive a su shell (vigilante) y esta probado | OK | 0 |
 | `protocol-lint` | gobernanza | NexusProtocol sigue en 0 hallazgos | OK | 0 |
 | `providers-retry` | motor | Reintento acotado con backoff en 429/5xx, medido | OK | 0 |
+| `shell-policy` | gobernanza | Politica zero-trust de comandos: lo catastrofico se niega en los tres modos y la negativa es una observacion | OK | 0 |
 | `adapter-claude` | multi-harness | Adaptador Claude Code: hook Stop que no deja cerrar sin evidencia | OK | 0 |
 | `context-compaction` | contexto | Compactacion determinista al acercarse al presupuesto, con test | OK | 0 |
 | `protocol-doctor` | gobernanza | El doctor del protocolo esta verde | OK | 0 |
@@ -128,6 +129,14 @@ retry            OK    0.00s
 suites=1 failures=0
 ```
 
+### shell-policy (exit 0, 2026-10-25T06:35:16Z)
+
+```
+$ python -m nexus_harness selftest shell_policy
+shell_policy     OK    0.13s
+suites=1 failures=0
+```
+
 ### adapter-claude (exit 0, 2026-10-25T02:23:28Z)
 
 ```
@@ -166,15 +175,15 @@ repair           OK    0.15s
 suites=1 failures=0
 ```
 
-### installer (exit 0, 2026-10-25T02:23:37Z)
+### installer (exit 0, 2026-10-25T06:36:20Z)
 
 ```
 $ python tools/nightshift.py install --check
 sala       : C:\Users\Vexus\AppData\Local\NexusHarnessVerify (no existia)
 instalador : NexusHarness-Setup-0.3.0.exe -> exit 0
 ventana    : nexus-harness-desktop.exe subsystem=2 (2 = interfaz)
-motor      : repo     sha256=17854d734d15
-           : instalado sha256=17854d734d15
+motor      : repo     sha256=c7bb2d0b8edc
+           : instalado sha256=c7bb2d0b8edc
 desinstalar: exit 0
 sala       : eliminada, sin fichero bloqueado
 registro   : devuelto como estaba

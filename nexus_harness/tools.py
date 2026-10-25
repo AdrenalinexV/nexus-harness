@@ -63,7 +63,9 @@ SCHEMAS = [
             {"patch": {"type": "string"}}, ["patch"]),
     _schema("shell",
             "Run a shell command in the project root. The working directory persists between calls; "
-            "the exit code comes back in the metadata. Use background for servers and long builds.",
+            "the exit code comes back in the metadata. Use background for servers and long builds. "
+            "Destructive commands come back refused with the rule that stopped them (policy mode "
+            "`shell_policy`: read_only/standard/unrestricted).",
             {"command": {"type": "string"}, "timeout": {"type": "integer"},
              "background": {"type": "boolean"}}, ["command"]),
     _schema("process_manage",
