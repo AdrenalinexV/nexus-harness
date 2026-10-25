@@ -117,6 +117,17 @@ correr y sube la exigencia de la misma. Se anota aqui con la evidencia observada
    no queda ningun numero que mantener a mano en la rubrica, y un motor viejo se pone rojo solo
    (visto: `source='suites=18 failures=0' frozen='suites=17 failures=0'` -> exit 10).
 
+2. **`installer`: la prueba deja de mirar la instalacion del equipo y pasa a instalar de verdad.** El
+   comando de la rubrica no cambia (`python tools/nightshift.py install --check`), pero lo que hace si.
+   Antes leia `%LOCALAPPDATA%\Nexus Harness\engine\...` y comparaba su sha256 con el del repositorio:
+   eso mide **el equipo**, no el instalador, y en una maquina limpia no podia pasar (exit 20). Ahora
+   instala en silencio en una sala de usar y tirar (`/S /D=`), compara el sha256 del motor instalado
+   con el del repositorio, comprueba que la ventana instalada es un binario de interfaz (subsistema
+   PE = 2) y desinstala. El registro de HKCU que el instalador escribe se fotografia antes y se
+   devuelve como estaba, asi que verificar no le cambia nada a quien tenga la app instalada.
+   Evidencia observada: `check installer` -> exit 0, `repo sha256=17854d734d15 == instalado
+   sha256=17854d734d15`, `desinstalar: exit 0`, `sala: eliminada, sin fichero bloqueado`.
+
 ## Por qué esto prueba el protocolo Nexus
 
 Porque el turno de noche **no puede hacer trampa sin que se note**: cada afirmación suya deja un exit

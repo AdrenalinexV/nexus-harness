@@ -1,25 +1,25 @@
 {
   "criteria": {
     "adapter-aider": {
-      "attempts": 1,
+      "attempts": 2,
       "last": {
-        "at": "2026-10-25T00:51:19Z",
+        "at": "2026-10-25T02:23:27Z",
         "command": "python -m nexus.harness.adapters --check aider --root .",
         "exit": 0,
-        "head": "1455d87",
+        "head": "90100ba",
         "ok": true,
-        "tail": "ok: aider -- lint-cmd and test-cmd written to .aider.conf.yml, and the lint entry point answered: files=68 findings=0"
+        "tail": "ok: aider -- lint-cmd and test-cmd written to .aider.conf.yml, and the lint entry point answered: files=73 findings=0"
       },
       "note": "",
       "status": "met"
     },
     "adapter-claude": {
-      "attempts": 1,
+      "attempts": 2,
       "last": {
-        "at": "2026-10-25T01:01:52Z",
+        "at": "2026-10-25T02:23:28Z",
         "command": "python -m nexus.harness.adapters --check claude --root .",
         "exit": 0,
-        "head": "146071d",
+        "head": "90100ba",
         "ok": true,
         "tail": "ok: claude -- .claude/settings.json carries a Stop handler that ran twice: it lets an inert turn close and it blocks a frozen one with the gate's own message"
       },
@@ -27,12 +27,12 @@
       "status": "met"
     },
     "context-compaction": {
-      "attempts": 1,
+      "attempts": 2,
       "last": {
-        "at": "2026-10-25T01:04:31Z",
+        "at": "2026-10-25T02:23:29Z",
         "command": "python -m nexus_harness selftest compaction",
         "exit": 0,
-        "head": "146071d",
+        "head": "90100ba",
         "ok": true,
         "tail": "compaction       OK    0.01s\nsuites=1 failures=0"
       },
@@ -40,51 +40,51 @@
       "status": "met"
     },
     "evidence-export": {
-      "attempts": 1,
+      "attempts": 2,
       "last": {
-        "at": "2026-10-25T00:01:09Z",
+        "at": "2026-10-25T02:23:29Z",
         "command": "python tools/nightshift.py report --check",
         "exit": 0,
-        "head": "8dd4ff4",
+        "head": "90100ba",
         "ok": true,
-        "tail": "escrito docs\\NIGHT_REPORT.md (4/14 en verde)\nok: el informe cubre los 14 criterios"
+        "tail": "escrito docs\\NIGHT_REPORT.md (14/14 en verde)\nok: el informe cubre los 14 criterios"
       },
       "note": "",
       "status": "met"
     },
     "frozen-engine": {
-      "attempts": 3,
+      "attempts": 4,
       "last": {
-        "at": "2026-10-25T00:59:33Z",
+        "at": "2026-10-25T02:21:13Z",
         "command": "python tools/verify.py --frozen",
         "exit": 0,
-        "head": "a582099",
+        "head": "90100ba",
         "ok": true,
-        "tail": "lint      exit 0   files=69 findings=0 max_lines=400\nselftest  exit 0   suites=18 failures=0\nfrozen    exit 0   suites=18 failures=0 (same as the source)\nverify: GREEN"
+        "tail": "lint      exit 0   files=73 findings=0 max_lines=400\nselftest  exit 0   suites=20 failures=0\nfrozen    exit 0   suites=20 failures=0 (same as the source)\nverify: GREEN"
       },
       "note": "",
       "status": "met"
     },
     "gate-lint": {
-      "attempts": 1,
+      "attempts": 2,
       "last": {
-        "at": "2026-10-25T00:00:51Z",
+        "at": "2026-10-25T02:20:38Z",
         "command": "python tools/lint_harness.py",
         "exit": 0,
-        "head": "8dd4ff4",
+        "head": "90100ba",
         "ok": true,
-        "tail": "files=67 findings=0 max_lines=400"
+        "tail": "files=73 findings=0 max_lines=400"
       },
       "note": "",
       "status": "met"
     },
     "hook-contract": {
-      "attempts": 1,
+      "attempts": 2,
       "last": {
-        "at": "2026-10-25T00:44:36Z",
+        "at": "2026-10-25T02:23:27Z",
         "command": "python C:/Proyectos/NexusProtocol/nexus/cli.py gate --hook --selftest --json",
         "exit": 0,
-        "head": "2d22433",
+        "head": "90100ba",
         "ok": true,
         "tail": "{\n  \"action\": \"selftest\",\n  \"failures\": [],\n  \"ok\": true\n}"
       },
@@ -92,31 +92,38 @@
       "status": "met"
     },
     "installer": {
-      "attempts": 0,
-      "last": {},
+      "attempts": 4,
+      "last": {
+        "at": "2026-10-25T02:23:37Z",
+        "command": "python tools/nightshift.py install --check",
+        "exit": 0,
+        "head": "90100ba",
+        "ok": true,
+        "tail": "sala       : C:\\Users\\Vexus\\AppData\\Local\\NexusHarnessVerify (no existia)\ninstalador : NexusHarness-Setup-0.3.0.exe -> exit 0\nventana    : nexus-harness-desktop.exe subsystem=2 (2 = interfaz)\nmotor      : repo     sha256=17854d734d15\n           : instalado sha256=17854d734d15\ndesinstalar: exit 0\nsala       : eliminada, sin fichero bloqueado\nregistro   : devuelto como estaba\nok: el instalador deja el motor del repositorio y una ventana de interfaz, y se desinstala limpio"
+      },
       "note": "",
-      "status": "unmet"
+      "status": "met"
     },
     "no-orphans": {
-      "attempts": 1,
+      "attempts": 2,
       "last": {
-        "at": "2026-10-25T00:01:09Z",
+        "at": "2026-10-25T02:23:34Z",
         "command": "python -m nexus_harness selftest sidecar",
         "exit": 0,
-        "head": "8dd4ff4",
+        "head": "90100ba",
         "ok": true,
-        "tail": "sidecar          OK    5.11s\nsuites=1 failures=0"
+        "tail": "sidecar          OK    5.14s\nsuites=1 failures=0"
       },
       "note": "",
       "status": "met"
     },
     "protocol-doctor": {
-      "attempts": 2,
+      "attempts": 3,
       "last": {
-        "at": "2026-10-25T01:12:28Z",
+        "at": "2026-10-25T02:23:26Z",
         "command": "python C:/Proyectos/NexusProtocol/nexus/cli.py doctor",
         "exit": 0,
-        "head": "6412d2c",
+        "head": "90100ba",
         "ok": true,
         "tail": "t read the same number, and a smaller file on disk cannot move it \n  ok   the desktop launcher: console-less target, a dry run that writes nothing, and an instance file that is reused instead of a second server \n  ok   applying init in batch, and the baseline only the installer can testify about \n  ok   the judge chain: a local SystemOne judge, a declared order, and no silent substitution \n  ok   the judge's two routes: three measured endpoints, and two refusals with no panel behind them \n  ok   the skills already on this disk: marked by origin, folded, and never offered a mode \n  ok   the local judge's models: a catalogue, a measured recommendation, a download that does not block \n  ok   the judge calibration: the metrics that compare backends, on arithmetic that cannot drift \n  ok   the MCP surface: three read-only tools, no verb to close a turn, and a stream that survives a rotten line \n  ok   the judge declares itself only when the machine can prove one, once, and never over the operator's own decision \n  ok   the audit log travels as OTLP spans: every row from a real line, and the ones it cannot read are counted instead of invented \n\n  everything a self-test can prove is green"
       },
@@ -124,12 +131,12 @@
       "status": "met"
     },
     "protocol-lint": {
-      "attempts": 1,
+      "attempts": 2,
       "last": {
-        "at": "2026-10-25T00:01:04Z",
+        "at": "2026-10-25T02:21:13Z",
         "command": "python -c \"import sys; sys.path.insert(0, r'C:/Proyectos/NexusProtocol'); from nexus.checks import rules_lint; r=rules_lint.lint_repo(r'C:/Proyectos/NexusProtocol'); print('findings=%d' % len(r['findings'])); raise SystemExit(0 if not r['findings'] else 1)\"",
         "exit": 0,
-        "head": "8dd4ff4",
+        "head": "90100ba",
         "ok": true,
         "tail": "findings=0"
       },
@@ -137,12 +144,12 @@
       "status": "met"
     },
     "providers-retry": {
-      "attempts": 1,
+      "attempts": 2,
       "last": {
-        "at": "2026-10-25T00:59:10Z",
+        "at": "2026-10-25T02:23:28Z",
         "command": "python -m nexus_harness selftest retry",
         "exit": 0,
-        "head": "a582099",
+        "head": "90100ba",
         "ok": true,
         "tail": "retry            OK    0.00s\nsuites=1 failures=0"
       },
@@ -150,27 +157,27 @@
       "status": "met"
     },
     "suites-source": {
-      "attempts": 1,
+      "attempts": 2,
       "last": {
-        "at": "2026-10-25T00:01:03Z",
+        "at": "2026-10-25T02:20:50Z",
         "command": "python -m nexus_harness selftest",
         "exit": 0,
-        "head": "8dd4ff4",
+        "head": "90100ba",
         "ok": true,
-        "tail": "providers        OK    0.00s\ntools            OK    0.16s\nedit_v4a         OK    0.03s\nshell_session    OK    1.36s\nsubagents        OK    0.01s\nwarning: The `fitz` API is deprecated and will be removed in future. Use `import pymupdf` instead.\nattachments      OK    0.22s\nonboarding       OK    0.13s\nmcp_client       OK    0.32s\nsidecar          OK    5.11s\nestado listo: 2 criterios (2 pendientes)\na -> exit 0 (VERDE)\nfindings=0\nb -> exit 10 (ROJO)\n\nb marcado blocked\ncriterio desconocido: zzz\nnightshift       OK    0.19s\ncontext_router   OK    0.01s\ntriad_loop       OK    1.65s\nsession_relay    OK    0.92s\nchat             OK    0.10s\nmemory           OK    0.49s\nui               OK    0.89s\nbridge           OK    0.06s\nsuites=17 failures=0"
+        "tail": "providers        OK    0.00s\nretry            OK    0.00s\nrepair           OK    0.15s\ntools            OK    0.11s\nedit_v4a         OK    0.03s\nshell_session    OK    1.34s\nsubagents        OK    0.01s\nwarning: The `fitz` API is deprecated and will be removed in future. Use `import pymupdf` instead.\nattachments      OK    0.13s\nonboarding       OK    0.11s\nmcp_client       OK    0.31s\nsidecar          OK    5.14s\nestado listo: 2 criterios (2 pendientes)\na -> exit 0 (VERDE)\nfindings=0\nb -> exit 10 (ROJO)\n\nb marcado blocked\ncriterio desconocido: zzz\nnightshift       OK    0.19s\ncontext_router   OK    0.00s\ntriad_loop       OK    1.55s\nsession_relay    OK    0.84s\ncompaction       OK    0.01s\nchat             OK    0.08s\nmemory           OK    0.29s\nui               OK    0.87s\nbridge           OK    0.05s\nsuites=20 failures=0"
       },
       "note": "",
       "status": "met"
     },
     "tool-arg-repair": {
-      "attempts": 1,
+      "attempts": 2,
       "last": {
-        "at": "2026-10-25T02:10:49Z",
+        "at": "2026-10-25T02:23:28Z",
         "command": "python -m nexus_harness selftest repair",
         "exit": 0,
-        "head": "069c4e7",
+        "head": "90100ba",
         "ok": true,
-        "tail": "repair           OK    0.14s\nsuites=1 failures=0"
+        "tail": "repair           OK    0.15s\nsuites=1 failures=0"
       },
       "note": "",
       "status": "met"
@@ -288,9 +295,128 @@
       "head": "069c4e7",
       "id": "tool-arg-repair",
       "ok": true
+    },
+    {
+      "at": "2026-10-25T02:18:32Z",
+      "exit": 0,
+      "head": "6af9963",
+      "id": "installer",
+      "ok": false
+    },
+    {
+      "at": "2026-10-25T02:18:59Z",
+      "exit": 0,
+      "head": "6af9963",
+      "id": "installer",
+      "ok": true
+    },
+    {
+      "at": "2026-10-25T02:20:28Z",
+      "exit": 0,
+      "head": "90100ba",
+      "id": "installer",
+      "ok": true
+    },
+    {
+      "at": "2026-10-25T02:20:38Z",
+      "exit": 0,
+      "head": "90100ba",
+      "id": "gate-lint",
+      "ok": true
+    },
+    {
+      "at": "2026-10-25T02:20:50Z",
+      "exit": 0,
+      "head": "90100ba",
+      "id": "suites-source",
+      "ok": true
+    },
+    {
+      "at": "2026-10-25T02:21:13Z",
+      "exit": 0,
+      "head": "90100ba",
+      "id": "frozen-engine",
+      "ok": true
+    },
+    {
+      "at": "2026-10-25T02:21:13Z",
+      "exit": 0,
+      "head": "90100ba",
+      "id": "protocol-lint",
+      "ok": true
+    },
+    {
+      "at": "2026-10-25T02:23:26Z",
+      "exit": 0,
+      "head": "90100ba",
+      "id": "protocol-doctor",
+      "ok": true
+    },
+    {
+      "at": "2026-10-25T02:23:27Z",
+      "exit": 0,
+      "head": "90100ba",
+      "id": "hook-contract",
+      "ok": true
+    },
+    {
+      "at": "2026-10-25T02:23:27Z",
+      "exit": 0,
+      "head": "90100ba",
+      "id": "adapter-aider",
+      "ok": true
+    },
+    {
+      "at": "2026-10-25T02:23:28Z",
+      "exit": 0,
+      "head": "90100ba",
+      "id": "adapter-claude",
+      "ok": true
+    },
+    {
+      "at": "2026-10-25T02:23:28Z",
+      "exit": 0,
+      "head": "90100ba",
+      "id": "providers-retry",
+      "ok": true
+    },
+    {
+      "at": "2026-10-25T02:23:28Z",
+      "exit": 0,
+      "head": "90100ba",
+      "id": "tool-arg-repair",
+      "ok": true
+    },
+    {
+      "at": "2026-10-25T02:23:29Z",
+      "exit": 0,
+      "head": "90100ba",
+      "id": "context-compaction",
+      "ok": true
+    },
+    {
+      "at": "2026-10-25T02:23:29Z",
+      "exit": 0,
+      "head": "90100ba",
+      "id": "evidence-export",
+      "ok": true
+    },
+    {
+      "at": "2026-10-25T02:23:34Z",
+      "exit": 0,
+      "head": "90100ba",
+      "id": "no-orphans",
+      "ok": true
+    },
+    {
+      "at": "2026-10-25T02:23:37Z",
+      "exit": 0,
+      "head": "90100ba",
+      "id": "installer",
+      "ok": true
     }
   ],
-  "iteration": 16,
+  "iteration": 33,
   "rubric_version": 1,
   "started": "2026-10-25T00:00:50Z",
   "version": 1
