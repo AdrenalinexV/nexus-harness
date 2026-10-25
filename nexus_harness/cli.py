@@ -106,6 +106,34 @@ def cmd_chat(args):
     return 0 if turn.get("exit", 0) == 0 else int(turn["exit"])
 
 
+def cmd_checkpoint(args):
+    """Ver y deshacer el turno: el diario vive en `<proyecto>/.nexus/checkpoints`.
+
+    Exit codes: 0 hecho, 10 restauracion incompleta (falta una instantanea), 20 no hay diario.
+    """
+    from . import checkpoint
+    root = Path(args.project) if args.project else HarnessConfig.load().default_root
+    if args.undo is not None:
+        journal = checkpoint.find(root, args.undo) if args.undo else checkpoint.latest(root)
+        if journal is None:
+            print("no hay turno que deshacer en %s" % checkpoint.checkpoints_dir(root))
+            return 20
+        report = journal.undo()
+        print("undo %s: restored=%d deleted=%d skipped=%d %s"
+              % (journal.name, report["restored"], report["deleted"], len(report["skipped"]),
+                 report["note"]))
+        for path in report["skipped"]:
+            print("  - sin instantanea: %s" % path)
+        return 0 if report["ok"] else 10
+    rows = checkpoint.history(root)
+    for journal in rows:
+        row = journal.as_dict()
+        print("%-24s %-16s undone=%-5s files=%d" % (row["turn"], row["label"], row["undone"],
+                                                    row["files"]))
+    print("turnos=%d" % len(rows))
+    return 0
+
+
 def cmd_selftest(args):
     from .selftests import run
     failures = run(args.suites or None)
@@ -223,6 +251,12 @@ def build_parser():
     chat.add_argument("--project", default=None)
     chat.add_argument("--test-command", default=None)
     chat.set_defaults(func=cmd_chat)
+
+    checkpoint = sub.add_parser("checkpoint", help="el diario del turno: ver y deshacer")
+    checkpoint.add_argument("--project", default=None)
+    checkpoint.add_argument("--undo", nargs="?", const="", default=None,
+                            help="deshacer el ultimo turno (o el que se nombre)")
+    checkpoint.set_defaults(func=cmd_checkpoint)
 
     selftest = sub.add_parser("selftest", help="run the deterministic suites")
     selftest.add_argument("suites", nargs="*")

@@ -4,6 +4,7 @@ Measured with the fake gate so the count is exact, and with the real toolbox so 
 on disk. The conversation is persisted and reloaded, because a desktop chat that forgets is a demo.
 """
 from .fakes import FakeRouter, FakeGate, ScriptedProvider, ScriptedSkills, TempProject, reply
+from .. import checkpoint
 from ..chat import Chat
 from ..config import HarnessConfig
 from ..events import Bus
@@ -84,6 +85,31 @@ def test_edit_runs_gate_and_repairs(failures):
               "chat.repair" in [event["kind"] for event in bus.all()], True, failures)
 
 
+def test_a_turn_leaves_an_undoable_checkpoint(failures):
+    """El turno deja diario; `undo` devuelve el codigo y **no** toca la conversacion."""
+    with TempProject() as root:
+        patch = reply(tools=[("c1", "patch_replace", {
+            "path": "calc.py", "old_string": "return a - b", "new_string": "return a + b"})])
+        worker = ScriptedProvider([patch, reply("Hecho.")])
+        chat, _bus = build(root, worker, FakeGate(verdicts=[verdict(True)]))
+        session = chat.new("con diario")
+        before = files.read_text(root / "calc.py")
+        turn = chat.send("suma en vez de restar")
+        check("el turno nombra su diario", bool(turn["checkpoint"]), True, failures)
+        check("el diario anota el fichero tocado", [entry["path"] for entry in chat.checkpoint.entries],
+              ["calc.py"], failures)
+        check("y el diario queda desarmado al cerrar el turno", checkpoint.active(), None, failures)
+        transcript = root / ".nexus" / "harness" / "chat" / (session["id"] + ".json")
+        check("la conversacion se persistio fuera del diario", transcript.is_file(), True, failures)
+        report = chat.checkpoint.undo()
+        check("undo restaura los bytes de antes del turno", files.read_text(root / "calc.py"), before,
+              failures)
+        check("y el fichero habia cambiado durante el turno", before != "def add(a, b):\n    return a + b\n",
+              True, failures)
+        check("y lo declara", (report["ok"], report["restored"]), (True, 1), failures)
+        check("sin llevarse la conversacion por delante", transcript.is_file(), True, failures)
+
+
 def test_stop_and_reload(failures):
     with TempProject() as root:
         worker = ScriptedProvider([reply("primero"), reply("segundo")])
@@ -126,5 +152,6 @@ def run():
     test_project_survives_a_state_read(failures)
     test_talk_only_does_not_gate(failures)
     test_edit_runs_gate_and_repairs(failures)
+    test_a_turn_leaves_an_undoable_checkpoint(failures)
     test_stop_and_reload(failures)
     return failures

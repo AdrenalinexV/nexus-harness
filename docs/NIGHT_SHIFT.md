@@ -181,6 +181,42 @@ postura que Claude Code documenta para sus reglas `Bash`), asi que un comando of
 (`$(printf 'rm -rf /')`) no lo para esta tabla -- lo paran el gate y el sistema de ficheros. Se anota
 aqui para que nadie lea esta politica como una jaula.
 
+## Subida del liston: el turno se puede deshacer (criterio 16)
+
+Igual que el anterior, esto **anade** un criterio y no toca ningun umbral de los 15 que ya estaban.
+
+Que habia: no habia forma de volver atras. `file_ops.write` y `edit.patch_replace` escribian con
+verificacion sha256, pero el *antes* no existia en ninguna parte: un turno que edita ocho ficheros a las
+03:00 dejaba el arbol cambiado y la unica recuperacion era `git diff` a mano del operador. Medido:
+`grep -ril checkpoint --include=*.py nexus_harness` no devolvia nada propio.
+
+Que exige ahora `turn-checkpoint`: `python -m nexus_harness selftest checkpoint` con `failures=0`. El
+diario vive en `nexus_harness/checkpoint.py` (manifiesto + blobs en `<proyecto>/.nexus/checkpoints/`),
+el gancho vive en `file_ops` (el suelo comun a toda escritura) y no en cada herramienta, y `undo` se
+lanza desde el CLI (`python -m nexus_harness checkpoint --undo`).
+
+Evidencia de esta sesion:
+
+1. `nightshift check turn-checkpoint` -> exit **0** (VERDE), `suites=1 failures=0`.
+2. **Falsificacion medida**: con `Journal.record` sustituido en memoria por un no-op, la suite pasa de
+   `sano failures=0` a `roto failures=19`, primer fallo `el turno anota lo que creo: [], esperaba
+   ['nuevo.py']`. La prueba muerde. (La primera medicion salio con `AttributeError` en vez de con
+   `check` fallidos; se endurecio la propia suite para que una averia del diario se lea como fallo y no
+   como excepcion, que es lo que la ley 2 pide.)
+3. `verify --frozen` -> exit **0**, `frozen suites=22 failures=0 (same as the source)`: el motor
+   congelado se reconstruyo con el diario dentro.
+4. `nightshift check installer` -> exit **0**, `repo sha256=c2878532b23b == instalado
+   sha256=c2878532b23b` (el instalador se reconstruyo con el motor nuevo; sin eso el criterio 14 se
+   habria puesto rojo solo, que es lo que ese criterio existe para detectar).
+5. `lint_harness` -> exit **0**, `files=77 findings=0 max_lines=400`; `selftest` -> exit **0**,
+   `suites=22 failures=0`.
+6. Barrido completo: los **16** criterios re-corridos en esta sesion, los 16 con exit 0.
+
+Limite escrito, no escondido: el diario guarda bytes **antes** de la escritura, asi que no cubre lo que
+un comando de shell escriba por su cuenta (`echo x > f`, `git checkout`) -- eso sigue siendo del gate y
+del operador. Y `undo` es de un turno, no de una sesion: no hay `redo`, y deshacer dos veces es un
+no-op declarado, no un salto al turno anterior.
+
 ## Por qué esto prueba el protocolo Nexus
 
 Porque el turno de noche **no puede hacer trampa sin que se note**: cada afirmación suya deja un exit

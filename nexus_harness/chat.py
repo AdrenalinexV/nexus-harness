@@ -17,6 +17,7 @@ import threading
 from dataclasses import dataclass, field
 
 from . import attachments as attachment_tools
+from . import checkpoint
 from .compaction import Compactor
 from .message import Message, as_text
 from .subagents import Delegate
@@ -53,12 +54,13 @@ class Turn:
     judgement: dict = field(default_factory=dict)
     stopped: bool = False
     attachments: list = field(default_factory=list)
+    checkpoint: str = ""
 
     def as_dict(self):
         return {"reply": self.reply, "exit": self.exit, "steps": self.steps,
                 "repairs": self.repairs, "touched": self.touched, "skills": self.skills,
                 "verdict": self.verdict, "judgement": self.judgement, "stopped": self.stopped,
-                "attachments": self.attachments}
+                "attachments": self.attachments, "checkpoint": self.checkpoint}
 
 
 class Chat:
@@ -81,6 +83,7 @@ class Chat:
         self.touched = set()
         self._stop = threading.Event()
         self.last_turn = Turn()
+        self.checkpoint = None
         self.used = 0
         self.compactor = Compactor(limit=int(getattr(config, "budget_limit", 60000) or 0),
                                    threshold=float(getattr(config, "compact_threshold", 0.55) or 0.0))
@@ -225,6 +228,10 @@ class Chat:
                    attachments=attachment_tools.chips(blocks), notes=rejected)
         self.history.append(Message(role="user", content=content))
         turn = Turn(attachments=attachment_tools.chips(blocks))
+        self.checkpoint = checkpoint.begin(self.config.default_root, self.session.get("id", "turno"))
+        checkpoint.set_active(self.checkpoint)
+        turn.checkpoint = self.checkpoint.name
+        self._emit("turn.checkpoint", self.checkpoint.name)
         reply, steps = self._turn(tools=True)
         turn.steps += steps
         if self._stop.is_set():
@@ -264,6 +271,11 @@ class Chat:
         return turn.as_dict()
 
     def _persist(self, turn):
+        if self.checkpoint is not None:
+            # El turno termina aqui, y con el el diario: lo que venga despues (otro turno, el gate de
+            # la manana) no debe caer dentro de la instantanea de este.
+            self._emit("checkpoint.closed", self.checkpoint.name, files=len(self.checkpoint.entries))
+            checkpoint.set_active(None)
         if self.transcripts is None or self.session is None:
             return
         self.session["messages"] = [message.to_openai() for message in self.history]

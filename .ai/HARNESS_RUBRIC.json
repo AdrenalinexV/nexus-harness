@@ -112,9 +112,18 @@
       "priority": 3
     },
     {
-      "id": "evidence-export",
+     "id": "turn-checkpoint",
+     "area": "gobernanza",
+     "title": "El turno se deshace: cada escritura deja su instantanea y undo deja el arbol byte a byte",
+     "why": "Un agente que no puede volver atras convierte un turno malo en un repositorio roto.",
+     "proof": "python -m nexus_harness selftest checkpoint",
+     "contains": "failures=0",
+     "priority": 2
+    },
+    {
+     "id": "evidence-export",
       "area": "evidencia",
-      "title": "El informe de evidencia se genera desde el estado y cubre los 15 criterios",
+      "title": "El informe de evidencia se genera desde el estado y cubre los 16 criterios",
       "why": "Sin evidencia exportada, 'funciona' es una opinion.",
       "proof": "python tools/nightshift.py report --check",
       "contains": "ok",

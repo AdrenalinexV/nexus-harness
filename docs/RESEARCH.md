@@ -62,3 +62,20 @@ ese idioma: el modelo lee `refused [standard/reckless]: empujar con --force -- s
 puede corregirse en el turno siguiente, que es justo lo que la ley 2 del protocolo pide. Y el nivel se
 elige por **efecto medido**, no por el texto de la config: la suite crea un directorio con `standard`,
 lo borra con `unrestricted` y comprueba que un `read_only` ni eso.
+
+## Deshacer el turno (criterio `turn-checkpoint`)
+
+| Fuente | Qué dice | Qué hacemos |
+|---|---|---|
+| [Claude Code — Checkpointing](https://code.claude.com/docs/en/checkpointing) | La instantanea se toma **antes de cada turno**, cubre lo que tocaron sus herramientas de edicion, `Restore code` revierte los ficheros dejando la conversacion, y una instantanea que ya no esta **falla fuerte** (`No files were restored`) en vez de restaurar a medias. La propia pagina avisa de que un checkpoint **no sustituye** al control de versiones, y que un symlink o hard link se salta con aviso. | Se adopta la unidad **turno** (no fichero), la restauracion de bytes y el fallo ruidoso: si falta un blob o su sha256 no cuadra, `undo` devuelve `ok=False` con la ruta en `skipped` y el fichero se queda como estaba -- nunca media restauracion contada como exito. Se adopta tambien quedarse en el nivel de sesion: git sigue siendo del operador. |
+| [Aider — Git integration](https://aider.chat/docs/git.html) y [In-chat commands](https://aider.chat/docs/usage/commands.html) | `/undo` es `git revert` del ultimo commit de aider, y aider commitea **cada** edicion para que ese undo exista; sin repositorio, `--no-git` desactiva la funcion entera. | Se descarta git como mecanismo: exige que el proyecto sea un repositorio y que el arnes escriba commits en la historia del operador. El bucle propio se mantiene como modo **sin dependencias**, asi que el diario es propio (`.nexus/checkpoints/NNNN-slug`, manifiesto + blobs) y no toca la historia de nadie. |
+| [Claude Code — Checkpointing](https://code.claude.com/docs/en/checkpointing) (retencion) | Guarda los 100 checkpoints mas recientes por sesion, borra lo que ya no referencia nadie, y barre por antiguedad (~30 dias). | Se adopta la idea de que el diario **se poda solo** y se simplifica: los ultimos 20 turnos del proyecto, podados al abrir el siguiente (`prune` en `begin`). Sin barrido por fecha: un diario viejo es disco, no historia, y el reloj no tiene que decidir nada. |
+
+**Decisión de diseño**: el gancho vive en `file_ops`, el suelo por el que pasa **toda** escritura del
+arnes, y no en cada herramienta. Asi una edicion que entra por `edit.patch_replace`, por `write_file` o
+por un parche V4A queda anotada sin que ninguna de ellas sepa que existe un diario, y la suite lo
+comprueba con la herramienta real (`edit.patch_replace` sobre el fichero del proyecto de usar y tirar).
+La instantanea se toma **antes** del `os.replace`, porque una copia tomada despues ya no sirve para
+deshacer nada; y el diario escribe su propio manifiesto con `atomic_write_bytes` -- el suelo que **no**
+consulta el diario -- para que anotar un turno no se anote a si mismo.
+

@@ -163,11 +163,37 @@ def _yaml_check(text):
 
 
 # -- writing ---------------------------------------------------------------------------------
-def atomic_write(path, text, bom=False):
-    """Replace `path` with `text` atomically and return the SHA-256 of what is now on disk."""
+_JOURNAL = None
+
+
+def set_journal(journal):
+    """Arma (o desarma con `None`) el diario que anota cada escritura del turno.
+
+    Se llama `record(path, previous_bytes_or_None)` sobre el objeto que llegue aqui. El modulo no
+    importa `checkpoint`: el diario es quien depende del suelo de escritura, no al reves.
+    """
+    global _JOURNAL
+    _JOURNAL = journal
+    return journal
+
+
+def journal():
+    return _JOURNAL
+
+
+def previous_bytes(path):
+    """Los bytes que hay ahora en `path`, o `None` si no existe. Sin levantar por permisos."""
+    try:
+        with open(path, "rb") as handle:
+            return handle.read()
+    except OSError:
+        return None
+
+
+def atomic_write_bytes(path, payload):
+    """Bytes al disco de una vez y verificados: el suelo que comparten la escritura y el diario."""
     target = Path(path)
     target.parent.mkdir(parents=True, exist_ok=True)
-    payload = (BOM + text if bom else text).encode("utf-8")
     temporary = target.with_name(".%s.nexus-tmp" % target.name)
     with open(temporary, "wb") as handle:
         handle.write(payload)
@@ -179,6 +205,18 @@ def atomic_write(path, text, bom=False):
     if digest != hashlib.sha256(payload).hexdigest():
         raise OSError("write verification failed for %s (sha256 mismatch)" % target)
     return digest
+
+
+def atomic_write(path, text, bom=False):
+    """Replace `path` with `text` atomically and return the SHA-256 of what is now on disk.
+
+    El diario del turno, si esta armado, se lleva la version anterior **antes** del reemplazo: una
+    instantanea tomada despues no serviria para deshacer nada.
+    """
+    payload = (BOM + text if bom else text).encode("utf-8")
+    if _JOURNAL is not None:
+        _JOURNAL.record(path, previous_bytes(path))
+    return atomic_write_bytes(path, payload)
 
 
 def write(root, path, content):
