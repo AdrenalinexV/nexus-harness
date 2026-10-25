@@ -2,9 +2,9 @@
 
 Generado por `tools/nightshift.py report` (no se escribe a mano).
 
-- fecha: 2026-10-25T12:02:25Z
-- HEAD: `f8b877f`
-- iteracion: 92
+- fecha: 2026-10-25T12:10:28Z
+- HEAD: `683ae52`
+- iteracion: 95
 - criterios: **17/17**
 
 ## Rubrica
@@ -124,7 +124,7 @@ sidecar          OK    5.13s
 suites=1 failures=0
 ```
 
-### protocol-lint (exit 0, 2026-10-25T08:58:43Z)
+### protocol-lint (exit 0, 2026-10-25T12:06:10Z)
 
 ```
 $ python -c "import sys; sys.path.insert(0, r'C:/Proyectos/NexusProtocol'); from nexus.checks import rules_lint; r=rules_lint.lint_repo(r'C:/Proyectos/NexusProtocol'); print('findings=%d' % len(r['findings'])); raise SystemExit(0 if not r['findings'] else 1)"
@@ -170,7 +170,7 @@ compaction       OK    0.02s
 suites=1 failures=0
 ```
 
-### protocol-doctor (exit 0, 2026-10-25T09:00:53Z)
+### protocol-doctor (exit 0, 2026-10-25T12:09:11Z)
 
 ```
 $ python C:/Proyectos/NexusProtocol/nexus/cli.py doctor
@@ -193,7 +193,7 @@ repair           OK    0.15s
 suites=1 failures=0
 ```
 
-### installer (exit 0, 2026-10-25T12:01:50Z)
+### installer (exit 0, 2026-10-25T12:09:51Z)
 
 ```
 $ python tools/nightshift.py install --check
