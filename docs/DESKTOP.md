@@ -5,7 +5,7 @@ corre el motor de este repositorio, congelado, y el protocolo Nexus vive en él:
 plugin, no depende de tener Python en el equipo destino.
 
 ```
-NexusHarness-Setup-0.5.0.exe          instalador NSIS, por usuario, sin permisos de administrador
+NexusHarness-Setup-1.0.0.exe          instalador NSIS, por usuario, sin permisos de administrador
 └── %LOCALAPPDATA%\Nexus Harness\
     ├── nexus-harness-desktop.exe     ventana nativa (Tauri 2 / WebView2)
     ├── engine\nexus-harness-engine.exe   motor congelado (Python + NexusProtocol dentro)
@@ -95,7 +95,7 @@ Cómo está montado, y por qué así:
   `/api/health` y, si el proceso en marcha es anterior, lo dice en una banda con la instrucción de
   reiniciar. Sin eso, actualizar el código deja botones que no responden y ninguna pista.
 
-## 0.5.0: barra en vivo, cola de proyectos y bucle autónomo
+## 1.0.0: barra en vivo, cola de proyectos y bucle autónomo
 
 Cinco correcciones de producto, cada una con su prueba determinista (`selftests/test_ux.py` las mide
 por HTTP y sobre el HTML servido, no sobre la intención):
@@ -136,7 +136,7 @@ cp dist/nexus-harness-engine.exe apps/desktop/src-tauri/engine/
 cd apps/desktop && npm install && npx tauri icon src-tauri/app-icon.png && npx tauri build
 ```
 
-Salida: `apps/desktop/src-tauri/target/release/bundle/nsis/Nexus Harness_0.5.0_x64-setup.exe`.
+Salida: `apps/desktop/src-tauri/target/release/bundle/nsis/Nexus Harness_1.0.0_x64-setup.exe`.
 
 ## Verificarlo sin tocar tu instalación
 
@@ -147,7 +147,7 @@ una sala de usar y tirar, compara bytes y la desinstala:
 ```
 $ python tools/nightshift.py install --check
 sala       : C:\Users\<usuario>\AppData\Local\NexusHarnessVerify (no existia)
-instalador : NexusHarness-Setup-0.5.0.exe -> exit 0
+instalador : NexusHarness-Setup-1.0.0.exe -> exit 0
 ventana    : nexus-harness-desktop.exe subsystem=2 (2 = interfaz)
 motor      : repo     sha256=82589bc520e8
            : instalado sha256=82589bc520e8
@@ -169,7 +169,7 @@ cambia nada a quien tenga la app instalada. El código de esta prueba vive en `t
 El instalador sale **sin firmar**: Windows mostrará «editor desconocido» la primera vez (SmartScreen).
 Una firma autofirmada no elimina ese aviso; solo cambia el nombre del editor, y añade un certificado que
 hay que instalar en el equipo para que sea creíble. Si algún día hay un certificado de firma de código
-real, el paso es `signtool sign /fd sha256 /f cert.pfx /p <pass> "Nexus Harness_0.5.0_x64-setup.exe"`
+real, el paso es `signtool sign /fd sha256 /f cert.pfx /p <pass> "Nexus Harness_1.0.0_x64-setup.exe"`
 antes de distribuir; Tauri también acepta `bundle.windows.certificateThumbprint`.
 
 ## Límites conocidos

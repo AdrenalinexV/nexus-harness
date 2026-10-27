@@ -32,6 +32,25 @@ def test_modes(failures):
     check("una evidencia real de gate cuenta", mode_for([], "line_law: ok", False), "code", failures)
     check("'no gate' explicito no es codigo", mode_for([], "(no gate run)", False), "conversation",
           failures)
+    check("modo conversacion por defecto", mode_for([], "", False), "conversation", failures)
+
+
+def test_a_reasoning_model_with_dirty_json_is_still_read(failures):
+    """Un juez que razona antes de contestar ensucia el JSON; el veredicto no se puede perder por eso."""
+    from ..judge import parse_verdict
+    check("dos objetos: gana el que parsea",
+          parse_verdict("pienso {esto no es json} y luego {\"verdict\": \"approve\", \"reason\": "
+                        "\"util\"}")[0], "approve", failures)
+    check("coma final tolerada",
+          parse_verdict('{"verdict": "approve", "reason": "ok",}')[0], "approve", failures)
+    check("comillas curvas toleradas",
+          parse_verdict('{\u201cverdict\u201d: \u201capprove\u201d}')[0], "approve", failures)
+    check("truncado pero explicito se lee",
+          parse_verdict('{"verdict": "approve"')[0], "approve", failures)
+    check("sin JSON y sin veredicto NO se aprueba",
+          parse_verdict("me parece bien el trabajo")[0], "reject", failures)
+    check("un reject explicito sigue siendo reject",
+          parse_verdict('{"verdict": "reject", "reason": "falta"}')[0], "reject", failures)
 
 
 def test_judge_uses_the_right_system_prompt(failures):
@@ -86,6 +105,7 @@ def test_the_pill_reports_the_new_events(failures):
 def run():
     failures = []
     test_modes(failures)
+    test_a_reasoning_model_with_dirty_json_is_still_read(failures)
     test_judge_uses_the_right_system_prompt(failures)
     test_second_failure_gets_the_real_lines(failures)
     test_the_pill_reports_the_new_events(failures)

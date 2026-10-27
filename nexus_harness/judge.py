@@ -18,7 +18,7 @@ from dataclasses import dataclass
 
 from .message import Message
 
-JSON_BLOCK = re.compile(r"\{.*\}", re.S)
+# El JSON del juez se recorta ahora con `_objects` (escaneo de llaves), no con una regex codiciosa.
 MAX_SUMMARY = 2500
 
 SYSTEM = {
@@ -77,16 +77,70 @@ class Judgement:
                 "model": self.model, "mode": self.mode}
 
 
+def _objects(text):
+    """Todos los objetos `{...}` completos, contando llaves y respetando cadenas.
+
+    La regex `\\{.*\\}` se comia DOS objetos cuando el modelo razonaba antes de contestar y devolvia
+    `json.loads` con basura entre ellos ("the judge's JSON is malformed"), y el turno se rechazaba con
+    el gate en verde. Un escaner de llaves no adivina: recorta objetos completos y elige el que parsea.
+    """
+    found, depth, start, quote, escape = [], 0, -1, "", False
+    for index, char in enumerate(text):
+        if quote:
+            if escape:
+                escape = False
+            elif char == "\\":
+                escape = True
+            elif char == quote:
+                quote = ""
+            continue
+        if char in "\"'":
+            quote = char
+        elif char == "{":
+            if depth == 0:
+                start = index
+            depth += 1
+        elif char == "}" and depth:
+            depth -= 1
+            if depth == 0 and start >= 0:
+                found.append(text[start:index + 1])
+    return found
+
+
+def _load(candidate):
+    """`json.loads` tolerante con lo que un modelo escribe de verdad: comillas curvas y comas finales."""
+    cleaned = (candidate.replace("\u201c", '"').replace("\u201d", '"')
+               .replace("\u2018", "'").replace("\u2019", "'"))
+    cleaned = re.sub(r",\s*([}\]])", r"\1", cleaned)
+    try:
+        data = json.loads(cleaned)
+    except ValueError:
+        return None
+    return data if isinstance(data, dict) else None
+
+
+def _word(data):
+    return str(data.get("verdict") or data.get("decision") or "").strip().lower()
+
+
 def parse_verdict(text):
     """`(verdict, reason)` from a model answer, or `("reject", why_it_could_not_be_read)`."""
-    match = JSON_BLOCK.search(str(text or ""))
-    if not match:
-        return "reject", "the judge did not answer with JSON"
-    try:
-        data = json.loads(match.group(0))
-    except ValueError:
-        return "reject", "the judge's JSON is malformed"
-    verdict = str(data.get("verdict") or data.get("decision") or "").strip().lower()
+    raw = str(text or "")
+    candidates = sorted(_objects(raw), key=len, reverse=True)
+    for candidate in candidates:
+        data = _load(candidate)
+        if data is not None and _word(data):
+            break
+    else:
+        # Sin objeto parseable, se acepta SOLO una declaracion explicita de veredicto. Extraer la
+        # palabra `approve` de una frase suelta seria adivinar; exigir `"verdict": approve` no.
+        loose = re.search(r"[\"']?(?:verdict|decision)[\"']?\s*[:=]\s*[\"']?"
+                          r"(approve|approved|ok|pass|reject|rejected|fail|no)\b", raw, re.I)
+        if not loose:
+            return "reject", "the judge did not answer with JSON"
+        data = {"verdict": loose.group(1),
+                "reason": "veredicto leido de una respuesta con JSON roto"}
+    verdict = _word(data)
     reason = str(data.get("reason") or data.get("why") or "").strip()[:400]
     if verdict in ("approve", "approved", "ok", "pass"):
         return "approve", reason or "approved"
