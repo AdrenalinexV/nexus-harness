@@ -209,6 +209,15 @@
    "proof": "python tools/proofs.py priority",
    "contains": "failures=0",
    "priority": 1
+  },
+  {
+   "id": "savings-engines",
+   "area": "ahorro",
+   "title": "Los cuatro motores de ahorro miden tokens reales por request y el libro los guarda",
+   "why": "El ahorro era una cifra de otra fuente; ahora se mide request a request con baseline.",
+   "proof": "python tools/proofs.py savings",
+   "contains": "failures=0",
+   "priority": 1
   }
  ]
 }

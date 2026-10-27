@@ -195,6 +195,19 @@
       "note": "",
       "status": "met"
     },
+    "savings-engines": {
+      "attempts": 1,
+      "last": {
+        "at": "2026-10-27T21:20:03Z",
+        "command": "python tools/proofs.py savings",
+        "exit": 0,
+        "head": "2a23a09",
+        "ok": true,
+        "tail": "failures=0"
+      },
+      "note": "",
+      "status": "met"
+    },
     "shell-policy": {
       "attempts": 5,
       "last": {
@@ -1196,9 +1209,16 @@
       "head": "99ed438",
       "id": "spec-priority",
       "ok": true
+    },
+    {
+      "at": "2026-10-27T21:20:03Z",
+      "exit": 0,
+      "head": "2a23a09",
+      "id": "savings-engines",
+      "ok": true
     }
   ],
-  "iteration": 128,
+  "iteration": 129,
   "rubric_version": 1,
   "started": "2026-10-25T00:00:50Z",
   "version": 1

@@ -19,6 +19,7 @@ SUITES = {
     "worktree": "test_worktree",
     "deploy": "test_deploy",
     "judge": "test_judge_repair",
+    "savings": "test_savings",
 }
 
 

@@ -108,7 +108,11 @@ def compare(a, b):
     sent_b = int((b.get("savings") or {}).get("sent") or 0)
     peak_a = int((a.get("savings") or {}).get("peak_sent") or 0)
     peak_b = int((b.get("savings") or {}).get("peak_sent") or 0)
+    steps_a = int(a.get("steps") or 0) or 1
+    steps_b = int(b.get("steps") or 0) or 1
     return {"sent_a": sent_a, "sent_b": sent_b, "saved": max(0, sent_a - sent_b),
+            "per_step_a": round(sent_a / float(steps_a), 1),
+            "per_step_b": round(sent_b / float(steps_b), 1),
             "savings_pct": (round(100.0 * (sent_a - sent_b) / sent_a, 1) if sent_a else None),
             "peak_a": peak_a, "peak_b": peak_b,
             "peak_reduction_pct": (round(100.0 * (peak_a - peak_b) / peak_a, 1) if peak_a else None),
@@ -141,6 +145,8 @@ def write_doc(payload):
                  payload["compare"]["peak_reduction_pct"]),
              "| vida de la ventana | x1 | x%s | — |" % payload["compare"]["window_life_multiplier"],
              "| pasos | %s | %s | — |" % (payload["compare"]["steps_a"], payload["compare"]["steps_b"]),
+             "| tokens por paso | %s | %s | **ver abajo** |" % (
+                 payload["compare"].get("per_step_a"), payload["compare"].get("per_step_b")),
              "| gate verde | %s | %s | — |" % (payload["compare"]["ok_a"], payload["compare"]["ok_b"]),
              "", "## Ahorro del modo B por motor", "",
              "```json", json.dumps(payload["b"]["savings"], indent=2, ensure_ascii=False), "```",
@@ -151,6 +157,11 @@ def write_doc(payload):
     lines += ["", stats_savings.NOTE, "",
               "Modo A: `nexus_engines=False` (indice completo de skills, sin poda, sin mapa, reparacion "
               "en el hilo). Modo B: los cuatro motores. El mismo modelo y la misma tarea en los dos.",
+              "",
+              "**Limite declarado:** A y B no dan necesariamente el mismo numero de pasos, porque el "
+              "modelo decide cuando parar y su contexto cambia entre modos. Por eso la tabla lleva los "
+              "tokens POR PASO ademas del total: comparar solo el total premiaria al modo que se dio "
+              "por vencido antes.",
               "", payload["vendor_note"]]
     OUT_DOC.parent.mkdir(parents=True, exist_ok=True)
     OUT_DOC.write_text("\n".join(lines) + "\n", encoding="utf-8")
@@ -158,11 +169,19 @@ def write_doc(payload):
 
 def main(argv=None):
     parser = argparse.ArgumentParser(prog="benchmark_ab_savings")
+    parser.add_argument("--doc-only", action="store_true",
+                        help="regenera el informe desde la ultima medida guardada, sin volver a correr")
     parser.add_argument("--steps", type=int, default=8)
     parser.add_argument("--vendor", default="auto", choices=("auto", "local", "deepseek"))
     parser.add_argument("--task", default=DEFAULT_TASK)
     args = parser.parse_args(argv)
 
+    if args.doc_only:
+        payload = json.loads(OUT_JSON.read_text(encoding="utf-8"))
+        payload["compare"] = compare(payload["a"], payload["b"])
+        write_doc(payload)
+        print(json.dumps(payload["compare"], ensure_ascii=False))
+        return 0
     config = HarnessConfig.load()
     specs, vendor_note = role_specs(args.vendor, config)
     if specs is None:
