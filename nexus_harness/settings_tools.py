@@ -11,7 +11,7 @@ Las estadisticas llevan tres graficos, y son SVG escritos por `charts.py`: el mo
 descarga nada, asi que una libreria de graficos seria una pantalla en blanco en cuanto no hubiera red.
 Cada grafico declara su fuente; si no hay medida, se dice con palabras en el mismo hueco.
 """
-from . import charts, gov, ledger, panels, projects
+from . import charts, gov, ledger, panels, projects, stats_savings
 from . import settings_kit as kit
 
 # La ultima respuesta de una accion (el arquitecto, el doctor). Vive en memoria del motor a proposito:
@@ -107,6 +107,14 @@ def puente(cockpit):
     return ("Puente Móvil & Deploy VPS (Hive 24/7)",
             "Los dos modos de tener la colmena encendida: el demonio de este PC o el nodo 24/7 en el VPS.",
             body)
+
+
+def _fmt_int(value):
+    """Numeros con separador de miles: una cifra de ahorro sin separador no se lee."""
+    try:
+        return "{:,}".format(int(value or 0)).replace(",", ".")
+    except (TypeError, ValueError):
+        return str(value)
 
 
 def _shorter(value, digits):
@@ -226,14 +234,20 @@ def _charts(cockpit, state, aggregate):
     currency = money.get("currency") or "USD"
     net = money.get("net")
     avoided = money.get("avoided_tokens")
-    tokens = charts.columns(_token_rows(cockpit, state, aggregate), width=600, height=220,
-                            why="sin proyectos gobernados con medidas")
+    tokens = charts.columns(stats_savings.token_rows(cockpit, aggregate), width=600, height=220,
+                            why="sin requests medidas por el motor en los proyectos de la cola")
     triad_rows, centre, source = _triad_rows(aggregate, state)
     donut = charts.donut(triad_rows, size=200, centre=centre)
     price = (money.get("active") or {}).get("label") or "sin tarifa declarada"
-    caption = ("Ledger del gobernador: <strong>%s</strong> tokens evitados · ahorro neto "
-               "<strong>%s %s</strong> a la tarifa «%s»."
-               % (charts.fmt(avoided) if avoided is not None else "sin medir",
+    # La tarjeta y estas barras leen el MISMO agregado del motor. Lo del gobernador se nombra como
+    # suyo, con su cifra, en su linea: mezclar las dos fuentes en un grafico fue el defecto original.
+    values = stats_savings.cards(aggregate)
+    caption = ("Motor (libro del arnés): <strong>%s</strong> enviados · <strong>%s</strong> evitados "
+               "· ahorro <strong>%s%%</strong>. Gobernador (su ledger, aparte): %s tokens evitados · "
+               "ahorro neto %s %s a la tarifa «%s»."
+               % (charts.fmt(values["sent"]), charts.fmt(values["saved"]),
+                  values["pct"] if values["pct"] is not None else "sin medir",
+                  charts.fmt(avoided) if avoided is not None else "sin medir",
                   charts.fmt(net) if net is not None else "sin medir", kit.esc(currency),
                   kit.esc(price)))
     return ('<h3 class="ssub">Gráfico 1 · Tokens consumidos vs evitados por proyecto</h3>'
@@ -267,10 +281,15 @@ def stats(cockpit):
         _kpi("Proyectos Gobernados", "%s / %s" % (counts.get("governed", "?"),
                                                   counts.get("workspace", "?")),
              "ok" if counts.get("governed") else "off", "con .ai/CURRENT_SPEC.json"),
-        _kpi("Tokens Evitados", money.get("avoided_tokens", "—"), "ok",
-             "podados por el motor durmiente"),
-        _kpi("Ahorro", ("%s %s" % (_shorter(net, 2), currency)) if net is not None else "sin medir",
-             "ok" if net else "off", "neto, con la tarifa activa"),
+        _kpi("Tokens Evitados (motor)", _fmt_int(stats_savings.cards(aggregate)["saved"]), "ok",
+             "baseline - enviado, medido por request"),
+        _kpi("Ahorro real", ("%s %%" % stats_savings.cards(aggregate)["pct"])
+             if stats_savings.cards(aggregate)["pct"] is not None else "sin medir",
+             "ok" if stats_savings.cards(aggregate)["measured"] else "off",
+             "sobre el baseline tradicional · x%s de contexto"
+             % (stats_savings.cards(aggregate)["multiplier"] or "?")),
+        _kpi("Ahorro del gobernador", ("%s %s" % (_shorter(net, 2), currency)) if net is not None
+             else "sin medir", "off", "su ledger, contado aparte"),
         _kpi("Horas Ahorradas", _shorter(money.get("hours"), 1), "ok", "estimadas del ledger"),
         _kpi("Lint del Protocolo", "%s hallazgos" % findings, "ok" if findings == 0 else "bad",
              "el gobernador, medido ahora"),
@@ -289,6 +308,7 @@ def stats(cockpit):
         cards.append(_kpi("Gobernanza", "no disponible", "warn", reason))
     body = ['<div class="kpigrid four">%s</div>' % "".join(cards)]
     body.append(_charts(cockpit, state, aggregate))
+    body.append(stats_savings.block(cockpit, aggregate, money))
     assumptions = money.get("assumptions") or []
     if assumptions:
         body.append('<details class="sources"><summary>De dónde sale cada cifra</summary>'
