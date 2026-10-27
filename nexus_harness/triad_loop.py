@@ -22,6 +22,7 @@ from .compaction import Compactor
 from .gate import EXIT_GREEN, EXIT_UNAVAILABLE, Gate
 from .judge import Judge
 from .message import Message, as_text
+from .relay_state import prune_tool_outputs
 from .subagents import Delegate
 from .toolbox import process_manager
 from .tools import default_registry
@@ -138,11 +139,20 @@ class Triad:
         return "%s\n\n%s" % (base, injection.brief) if injection.brief else base
 
     def _maybe_compact(self, messages):
-        """Condense the transcript in place when it approaches the budget. True when it did."""
+        """Nivel 1 del presupuesto: condensar y podar salidas de herramientas antes del relevo.
+
+        La poda corre SIEMPRE (es barata y determinista), no solo cuando toca compactar: el transcript
+        de un turno largo acumula lecturas enteras que ya no aportan nada, y cada una cuesta tokens en
+        la siguiente llamada. Se emite lo podado, porque un ahorro invisible no se puede auditar.
+        """
+        pruned, refs = prune_tool_outputs(messages)
+        if pruned:
+            self._emit("context.pruned", "%d salidas podadas" % pruned, count=pruned,
+                       references=refs[:8])
         result = self.compactor.maybe(messages)
         if result.applied:
             self._emit("context.compacted", result.reason, compaction=result.as_dict())
-        return result.applied
+        return bool(result.applied or pruned)
 
     def _ask(self, role, messages, tools=None, max_tokens=None):
         info = self.router.info(role)
@@ -250,6 +260,12 @@ class Triad:
     def _verify(self):
         verdict = self.gate.run(sorted(self.touched))
         self._emit("gate.verdict", "exit %s" % verdict.exit, verdict=verdict.as_dict())
+        if self.relay is not None:
+            # El gate es la unica opinion que cuenta para el relevo: se guarda con su exit real.
+            self.relay.state.gate(verdict.exit, verdict.failures or "%d comprobaciones" % len(
+                verdict.checks))
+            self.relay.state.touched(sorted(self.touched))
+            self.relay.state.save()
         return verdict
 
     def _judge(self, goal, summary):

@@ -22,6 +22,8 @@ import time
 from dataclasses import dataclass, field
 from pathlib import Path
 
+from .relay_state import RelayState
+
 PROTOCOL = "nexus.harness.session/1"
 MAX_PROMPT_CHARS = 12000
 SESSIONS_REL = Path(".nexus") / "harness" / "sessions"
@@ -175,6 +177,7 @@ class SessionRelay:
         self.phases = list(phases or [])
         self.handovers = []
         self.last_warning = ""
+        self.state = RelayState.load(self.root)
 
     def _emit(self, kind, detail="", **payload):
         if self.bus is not None:
@@ -245,23 +248,23 @@ class SessionRelay:
             self._emit("relay.warning", self.last_warning)
             return ""
 
-    def _fallback_prompt(self, reason):
-        return ("# Continuación de sesión\n\n"
-                "Objetivo: %s\n\nMotivo del relevo: %s\n\n"
-                "Presupuesto consumido: %s/%s tokens (%s)\n\n"
-                "La sesión anterior se archivó en %s. Continúa desde el estado del repositorio: lee "
-                "los ficheros que ya existen y ejecuta el gate antes de dar nada por terminado.\n"
-                % (self.goal, reason, self.meter.used, self.meter.limit,
-                   "unmeasured" if self.meter.ratio is None else "%.0f%%" % (self.meter.ratio * 100),
-                   (SESSIONS_REL / "archive").as_posix()))
-
     def hand_over(self, reason="budget", summary="", files=()):
         """Archive this session and open a clean one carrying the prompt. Returns a `Handover`."""
         if not self.session:
             self.start()
+        # El estado verificado se escribe ANTES del prompt: la sesion hija tiene que poder leer de disco
+        # lo mismo que dice su primer mensaje, sin depender de que el protocolo este importable.
+        state = RelayState.load(self.root)
+        state.own["goal"] = state.own.get("goal") or self.goal
+        state.next(str(summary or "")[:400] or state.own.get("next_step") or "")
+        state.touched(files)
+        state.session(self.session.get("id", ""), self.store.next_id(), reason)
+        state.own["tokens"] = {"used": self.meter.used, "limit": self.meter.limit}
+        state.save()
+        self.state = state
         prompt = self._protocol_prompt()
         if not prompt.strip():
-            prompt = self._fallback_prompt(reason)
+            prompt = state.prompt()
             if summary:
                 prompt += "\n## Trabajo hasta ahora\n%s\n" % str(summary)[:2000]
             if files:
@@ -308,4 +311,5 @@ class SessionRelay:
                 "sessions": self.store.ids(), "warning": self.last_warning,
                 "handovers": [item.as_dict() for item in self.handovers],
                 "prompt": str(self.root / PROMPT_REL),
+                "relay_state": self.state.as_dict(),
                 "prompt_exists": (self.root / PROMPT_REL).is_file()}
