@@ -15,7 +15,8 @@ from html import escape
 
 from . import gov, onboarding, panels, vault
 from . import settings_kit as kit
-from . import settings_models, settings_projects, settings_skills, settings_tools, settings_work
+from . import (settings_models, settings_projects, settings_skills, settings_tools, settings_vps,
+               settings_work)
 
 TITLE = "Configuración"
 SECTIONS = (
@@ -222,6 +223,8 @@ def action(cockpit, body):
     """Las acciones que no son «guardar». Devuelve `(nota, ok, seccion)`."""
     what = str(body.get("what") or "")
     section = str(body.get("section") or "modelos")
+    if what.startswith("vps_"):
+        return settings_vps.action(cockpit, body)
     if what in ("auto_spec", "project_new", "project_move", "autonomy_start", "autonomy_stop"):
         # Las acciones del panel de proyectos las ejecuta su dueno, con su propia validacion.
         return settings_projects.action(cockpit, body)
