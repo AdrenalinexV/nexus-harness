@@ -23,6 +23,7 @@ from .gate import EXIT_GREEN, EXIT_UNAVAILABLE, Gate
 from .judge import Judge
 from .message import Message, as_text
 from .relay_state import prune_tool_outputs
+from .repair_guard import isolated_repair
 from .subagents import Delegate
 from .toolbox import process_manager
 from .tools import default_registry
@@ -260,10 +261,8 @@ class Triad:
     def _verify(self):
         verdict = self.gate.run(sorted(self.touched))
         self._emit("gate.verdict", "exit %s" % verdict.exit, verdict=verdict.as_dict())
-        if self.relay is not None:
-            # El gate es la unica opinion que cuenta para el relevo: se guarda con su exit real.
-            self.relay.state.gate(verdict.exit, verdict.failures or "%d comprobaciones" % len(
-                verdict.checks))
+        if self.relay is not None:  # el gate es la unica opinion que cuenta para el relevo
+            self.relay.state.gate(verdict.exit, verdict.failures or "checks: %d" % len(verdict.checks))
             self.relay.state.touched(sorted(self.touched))
             self.relay.state.save()
         return verdict
@@ -303,7 +302,9 @@ class Triad:
             messages = [Message(role="system", content=self._system(WORKER_PROMPT, self.touched)),
                         Message(role="user", content="%s\n\nPLAN DEL DIRECTOR:\n%s" % (hint, plan))]
             for attempt in range(max_repairs + 1):
-                text, steps = self._work(messages, max_steps)
+                sandbox = attempt and getattr(self.config, "worktree_repairs", False)
+                text, steps = (isolated_repair(self, messages, max_steps) if sandbox else
+                               self._work(messages, max_steps))
                 steps_total += steps
                 verdict = self._verify()
                 self._verdict = verdict
