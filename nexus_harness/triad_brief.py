@@ -77,6 +77,19 @@ def map_block(config):
     return block[:2]
 
 
+def proof_block(config):
+    """La comprobacion que el gate va a ejecutar, escrita para el Obrero.
+
+    Sin esto, un test que comprueba mas de lo que dice el enunciado se convierte en un rojo que el
+    modelo no puede explicarse (medido: el Obrero arreglo `add` y no miro `mul`, que el test tambien
+    exigia). El Obrero tiene derecho a saber con que se le mide: es lo que hace un buen encargo.
+    """
+    command = getattr(config, "test_command", None)
+    if not command:
+        return ""
+    return "## Comprobacion que ejecutara el gate\n%s\nDeja ESA comprobacion en verde." % command
+
+
 def plan_for(triad, goal):
     """El plan del Director, con el estado del repositorio y su coste contado en el ahorro."""
     from .message import Message
@@ -111,6 +124,11 @@ def selftest():
     check("y las entradas", "nexus_harness" in facts("C:/Proyectos/Nexus-Harness"), True)
     check("los prompts existen", bool(DIRECTOR_PROMPT and WORKER_PROMPT and REPAIR_PROMPT), True)
     check("el prompt del Obrero pide rangos", "offset=X" in WORKER_PROMPT, True)
+    check("sin test_command no hay bloque", proof_block(_Config(".")), "")
+    check("con test_command se dice cual",
+          "pytest -q" in proof_block(_Config(".", test_command="pytest -q")), True)
+    check("y se pide dejarlo verde",
+          "en verde" in proof_block(_Config(".", test_command="pytest -q")), True)
     return problems
 
 

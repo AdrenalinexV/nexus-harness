@@ -111,15 +111,36 @@ una fila local que no es dinero: KV-cache (`0,25 MB/token` de 27B) y segundos de
 ## PASO 4 · Calibración del Gate/Juez
 
 1. `parse_verdict` ya no pierde un veredicto por formato (su suite cubre: dos objetos, coma final,
-   comillas curvas, JSON truncado y «sin declaración → reject»).
+   comillas curvas, JSON truncado y «sin declaración → reject»). Prueba en producción: el turno real de
+   chat de este informe quedó en `judge: approve` con la nota «veredicto leido de una respuesta con JSON
+   roto» — antes eso era un rechazo.
 2. Una corrida ya no se cuenta dos veces (regresión en `test_savings`).
-3. El bucle distingue «gate rojo» de «Juez en contra» al reportar (arreglado esa misma noche).
-4. Corrida verde medida hoy: el modo B del benchmark termina con `gate verde: True` y el Juez
-   aprobando; el ciclo rojo→verde del worktree está medido en `test_worktree` (gate rojo dentro del
-   sandbox no promueve; verde promueve y se re-mide).
+3. El bucle distingue «gate rojo» de «Juez en contra» al reportar.
+4. **El Obrero ahora sabe con qué se le mide**: `triad_brief.proof_block` inyecta el comando de test del
+   proyecto en su system prompt («Deja ESA comprobacion en verde»). Medido antes y después con el mismo
+   escenario: el modelo que sólo arreglaba lo que decía el enunciado (`add`) dejaba el test en rojo por
+   la segunda función; con el comando delante, `qwen3.8-27b` arregló las dos y el turno salió **verde a
+   la primera** (gate exit 0, 55,5 % de ahorro, ×2,25 de contexto).
+5. **Ciclo «rojo → reparado en el worktree → verde», probado**: `tools/prove_repair_cycle.py` construye
+   un proyecto donde el primer intento tiene que fallar (el test exige dos funciones, el enunciado una).
 
-Pendiente declarado: forzar de forma **reproducible** un ciclo «rojo → reparado en worktree → verde» con
-el modelo real (en el benchmark el Obrero acertó a la primera). No se afirma: se anota.
+   ```
+   $ python tools/prove_repair_cycle.py --fake
+   gate_verdicts: ["exit 10", "exit 0"] · sandbox_used: true · promoted: 1 · exit: 0 · cycle: true
+   ```
+
+   Con modelos reales: `kat-coder-35B` no reparó (su turno de sandbox no escribió nada: `promoted: 0`,
+   tres gates rojos) y `qwen3.8-27b` no necesitó reparar (verde a la primera). Las dos cosas se dicen
+   porque las dos ocurrieron; el mecanismo está probado, y si se usa depende del modelo.
+
+## PASO 4-bis · Coherencia del panel (defecto encontrado al leerlo)
+
+Al renderizar la pantalla sin navegador (`tools/render_stats.py`, nuevo) apareció lo mismo que en la
+tarjeta: **la barra de «enviados» dibujaba 0** al lado de 4.859 evitados, porque el agregado guardaba el
+bucket como `sent` y el gráfico leía `tokens_sent`. Arreglado con los mismos nombres en los dos sitios y
+con regresión (`test_the_bars_and_the_card_read_the_same_number`). Y «Runs verdes del gate» leía sólo
+los `impact panels` del gobernador, así que el turno verde medido hoy no salía: ahora sale del libro del
+arnés cuando ese proyecto tiene turnos, y del gobernador cuando no.
 
 ---
 
@@ -159,6 +180,9 @@ tabla de costes se recalcula sola. No se ha inventado ninguna llamada de nube.
 | pantalla de ahorro + extrapolación | `nexus_harness/stats_savings.py` | idem |
 | auditoría reproducible | `tools/audit_context.py` | `python tools/audit_context.py` |
 | benchmark A/B | `tools/benchmark_ab_savings.py` | `python tools/benchmark_ab_savings.py --doc-only` |
+| ciclo rojo→reparado→verde | `tools/prove_repair_cycle.py` | `python tools/prove_repair_cycle.py --fake` |
+| panel legible sin navegador | `tools/render_stats.py` | `python tools/render_stats.py` |
 | modo tradicional medible | `config.nexus_engines` | `python -m nexus_harness selftest savings` |
 
-Criterio de rúbrica nuevo: `savings-engines` → `python tools/proofs.py savings` (`failures=0`).
+Criterios de rúbrica nuevos: `savings-engines` → `python tools/proofs.py savings` (`failures=0`) y
+`repair-cycle` → `python tools/prove_repair_cycle.py --fake` (`"cycle": true`).

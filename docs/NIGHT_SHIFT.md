@@ -288,3 +288,33 @@ Evidencia de la sesión (toda medida, no deducida):
 
 Límite escrito: el deploy se probó en seco porque la bóveda de esta máquina no tiene claves `VPS_*`;
 la prueba contra un host real queda pendiente y está anotada en `docs/MORNING_REPORT.md`.
+
+## Subida del listón: el ahorro se mide, no se presume (criterios 24-25)
+
+Añade dos criterios; no toca ninguno de los 23 anteriores.
+
+| criterio | exige | prueba |
+|---|---|---|
+| `savings-engines` | los cuatro motores miden tokens reales por request, con baseline y multiplicador, y el libro de turnos guarda `tokens_sent/baseline/saved` | `python tools/proofs.py savings` |
+| `repair-cycle` | un turno que empieza en rojo se repara en el `git worktree` y termina en verde | `python tools/prove_repair_cycle.py --fake` |
+
+Evidencia de la sesión:
+
+1. **Auditoría medida** (`tools/audit_context.py`): el libro de turnos no tenía **ningún** campo de
+   ahorro; la tarjeta del panel (3.653.208) y las barras verdes (1.091.148) salían de dos fuentes
+   distintas del gobernador; el arnés aportaba 0. Con la poda, un turno sintético de 8 pasos pasa de
+   28.042 a 12.823 tokens de entrada (**−54,3 %**); el índice de las 173 skills instaladas son 3.369
+   tokens por request que ya no viajan.
+2. **Doble contabilidad medida y arreglada**: 411.886 = 2 × 205.943 (el ejecutor y el bucle escribían la
+   misma corrida). Ahora una fila por corrida (`recorded`) + `ledger.dedupe()`.
+3. **Contabilidad por request** con baseline (`sent − repo_map + skills_dormidas + podado + aislado`),
+   `tokens_saved`, `savings_pct` y `context_multiplier`, y una sola fuente por cifra en el panel
+   (motor vs gobernador, cada uno etiquetado).
+4. **Benchmark A/B en vivo** (`tools/benchmark_ab_savings.py`): 36.673 → 15.451 tokens (**−57,9 %**),
+   prompt máximo 6.544 → 3.589 (**−45,2 %**), ventana ×1,82, mismo modelo y misma tarea. Corrió en local
+   porque la bóveda no tiene clave de nube; con `--vendor deepseek` y la clave en la bóveda se repite.
+5. **Ciclo rojo→verde** probado determinísticamente (`gate 10 → repair.sandbox.promoted → gate 0`) y con
+   modelos reales: `qwen3.8-27b` verde a la primera tras inyectar el comando de test en el prompt del
+   Obrero (`proof_block`), `kat-coder-35B` no reparó y se declara.
+6. Falsificación del panel: al leerlo sin navegador (`tools/render_stats.py`) la barra de enviados
+   dibujaba **0** junto a 4.859 evitados (alias `sent` vs `tokens_sent`); hay regresión que lo cubre.

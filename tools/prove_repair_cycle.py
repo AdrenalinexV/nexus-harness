@@ -76,9 +76,13 @@ def main(argv=None):
     parser.add_argument("--steps", type=int, default=10)
     parser.add_argument("--task", default=TASK)
     parser.add_argument("--fake", action="store_true", help="modelos guionizados, determinista")
+    parser.add_argument("--worker", default="", help="spec del Obrero, p. ej. lmstudio:otro-modelo")
     args = parser.parse_args(argv)
 
     config = HarnessConfig.load()
+    if args.worker:
+        config = HarnessConfig(**{**config.__dict__,
+                                  "roles": dict(config.roles, worker=args.worker)})
     config = HarnessConfig(**{**config.__dict__, "worktree_repairs": True, "nexus_engines": True,
                               "max_steps": args.steps, "max_repairs": 2,
                               "project_tests": {PROJECT: TEST_COMMAND}})

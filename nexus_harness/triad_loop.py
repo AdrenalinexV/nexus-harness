@@ -131,6 +131,9 @@ class Triad:
         block, _tokens = triad_brief.map_block(self.config)
         if block:
             parts.append("## Mapa de simbolos (usa read_file con offset/limit)\n%s" % block)
+        proof = triad_brief.proof_block(self.config)
+        if proof:
+            parts.append(proof)
         return "\n\n".join(parts)
 
     def _maybe_compact(self, messages):
