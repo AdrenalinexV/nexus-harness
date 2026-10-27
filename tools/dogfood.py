@@ -38,7 +38,8 @@ def config_for_dogfood(iterations):
     if PROJECT not in order:
         order.insert(0, PROJECT)
     config = HarnessConfig(**{**config.__dict__, "project_tests": tests, "project_order": order,
-                              "max_steps": 10, "max_repairs": 1, "default_root": ROOT,
+                              "max_steps": 18, "max_repairs": 1, "default_root": ROOT,
+                              "budget_limit": max(int(config.budget_limit or 0), 120000),
                               "workspace": ROOT.parent})
     return config
 

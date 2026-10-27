@@ -40,6 +40,43 @@ def _run(command, cwd, timeout=300):
     return done.returncode, ((done.stdout or "") + (done.stderr or "")).strip()
 
 
+def reap(root, max_age_minutes=180):
+    """Borra worktrees HUERFANOS (proceso matado a la fuerza) y sus ramas. Devuelve sus nombres.
+
+    Un `finally` no corre cuando el proceso recibe un kill duro, y el worktree se queda: 3,4 MB de
+    copia del repositorio que el lint contaba como codigo propio (medido: 237 ficheros en vez de 115).
+    La edad es el criterio, no la existencia: un worktree de hace un minuto puede ser de otro turno.
+    """
+    import time as _time
+
+    base = Path(root) / BASE_REL
+    removed = []
+    if not base.is_dir():
+        return removed
+    _run(["git", "worktree", "prune"], root)
+    now = _time.time()
+    for path in sorted(base.iterdir()):
+        if not path.is_dir():
+            continue
+        try:
+            age = (now - path.stat().st_mtime) / 60.0
+        except OSError:
+            continue
+        if age < float(max_age_minutes):
+            continue
+        _run(["git", "worktree", "remove", "--force", str(path)], root)
+        if path.exists():
+            shutil.rmtree(path, ignore_errors=True)
+        removed.append(path.name)
+    code, branches = _run(["git", "for-each-ref", "--format=%(refname:short)",
+                           "refs/heads/nexus/sandbox/"], root)
+    if code == 0:
+        for branch in branches.splitlines():
+            if branch.strip():
+                _run(["git", "branch", "-D", branch.strip()], root)
+    return removed
+
+
 def _slug(text):
     clean = "".join(char if char.isalnum() or char in "-_" else "-" for char in str(text or ""))
     return clean.strip("-")[:40] or "wt"
@@ -61,6 +98,7 @@ class Sandbox:
     # -- ciclo de vida ---------------------------------------------------------------------------
     def create(self):
         """Crea rama y worktree desde HEAD. `{ok, path, exit, reason}`; idempotente por nombre."""
+        reap(self.root)
         self.base.mkdir(parents=True, exist_ok=True)
         if self.path.exists():
             return {"ok": False, "exit": 1, "reason": "el worktree ya existe: %s" % self.path}
@@ -207,6 +245,20 @@ def selftest():
               "VALUE = 2\n")
         code, branches = _run(["git", "branch", "--list", "nexus/sandbox/*"], root)
         check("no quedan ramas de sandbox", branches.strip(), "")
+
+        # Un kill duro no corre el `finally`: el worktree se queda. `reap` lo limpia por edad.
+        orphan = Sandbox(root, name="huerfano")
+        orphan.create()
+        check("el worktree huerfano existe", orphan.path.is_dir(), True)
+        check("reap no toca uno recien creado", reap(root, max_age_minutes=60), [])
+        import os
+        import time as _time
+        past = _time.time() - 4 * 3600
+        os.utime(orphan.path, (past, past))
+        removed = reap(root, max_age_minutes=60)
+        check("reap borra el huerfano viejo", removed, [orphan.name])
+        check("y no queda el directorio", orphan.path.exists(), False)
+        check("ni su rama", _run(["git", "branch", "--list", "nexus/sandbox/*"], root)[1].strip(), "")
     return problems
 
 

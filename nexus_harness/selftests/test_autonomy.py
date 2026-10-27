@@ -49,6 +49,17 @@ class ScriptedRunner:
                 "judgement": {"verdict": "approve"}, "touched": ["a.py"]}
 
 
+class JudgeRejectRunner(ScriptedRunner):
+    """Gate VERDE y Juez en contra: el bucle tiene que decir cual de los dos freno."""
+
+    def __call__(self, goal, root):
+        self.calls.append((goal, str(root)))
+        return {"ok": False, "exit": 10, "repairs": 0, "steps": 4,
+                "verdict": {"ok": True, "exit": 0, "checks": []},
+                "judgement": {"verdict": "reject", "reason": "no toco un solo fichero"},
+                "touched": []}
+
+
 def _project(workspace, name, criteria=3):
     root = Path(workspace) / name
     (root / ".ai").mkdir(parents=True)
@@ -212,6 +223,24 @@ def test_thread_runs_and_finishes(failures):
         shutil.rmtree(workspace, ignore_errors=True)
 
 
+def test_judge_rejection_is_not_called_a_red_gate(failures):
+    workspace = Path(tempfile.mkdtemp(prefix="nexus-autonomy-judge-"))
+    try:
+        _project(workspace, "Alpha")
+        bus = Bus()
+        ap = autonomy.Autopilot(HarnessConfig(workspace=workspace, default_root=workspace),
+                                runner=JudgeRejectRunner([]),
+                                planner=lambda root, goal, prog: {"step": "auditar", "done": False},
+                                bus=bus, snapshot=FakeSnapshot())
+        finished = ap._project("Alpha", "objetivo", 1)
+        check("el rechazo del juez para el proyecto", finished, False, failures)
+        last = ap.state()["last"]
+        check("y no se llama gate rojo", "Juez rechazo" in last, True, failures)
+        check("con su motivo", "no toco un solo fichero" in last, True, failures)
+    finally:
+        shutil.rmtree(workspace, ignore_errors=True)
+
+
 def run():
     failures = []
     test_plan_parse(failures)
@@ -221,4 +250,5 @@ def run():
     test_done_and_limits(failures)
     test_start_refusals(failures)
     test_thread_runs_and_finishes(failures)
+    test_judge_rejection_is_not_called_a_red_gate(failures)
     return failures

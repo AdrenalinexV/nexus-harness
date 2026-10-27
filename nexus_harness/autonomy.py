@@ -274,6 +274,12 @@ class Autopilot:
         if not ok:
             self._record(root, goal, progress, {"step": step, "ok": False,
                                                 "exit": result.get("exit")}, done=False)
+            # Un gate verde con el Juez en contra NO es "gate rojo": el operador tiene que saber cual
+            # de los dos freno. Medido: el bucle decia "gate rojo (exit 10)" con el gate en exit 0.
+            verdict, judgement = result.get("verdict") or {}, result.get("judgement") or {}
+            if verdict.get("ok") and judgement.get("verdict") == "reject":
+                return {"ok": False, "why": "el Juez rechazo el trabajo: %s"
+                        % (judgement.get("reason") or "sin motivo")}
             return {"ok": False, "why": "gate rojo (exit %s) tras %s reparaciones"
                     % (result.get("exit"), result.get("repairs", 0))}
         committed, note = _commit(root, "nexus autonomo: %s" % step[:120])
