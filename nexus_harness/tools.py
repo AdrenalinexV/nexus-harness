@@ -15,10 +15,12 @@ Two rules are structural, not stylistic:
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass, field
 
-from .toolbox import edit, file_ops, patch_v4a, process_manager, repo_search, shell_session, web
+from .toolbox import (edit, file_ops, patch_v4a, process_manager, repo_search, shell_session,
+                      skill_tools, web)
 
 ROOT_HANDLERS = (repo_search.HANDLERS, file_ops.HANDLERS, edit.HANDLERS, patch_v4a.HANDLERS,
-                 shell_session.HANDLERS, process_manager.HANDLERS, web.HANDLERS)
+                 shell_session.HANDLERS, process_manager.HANDLERS, web.HANDLERS,
+                 skill_tools.HANDLERS)
 READ_ONLY = frozenset({"read_file", "search_files", "list_dir"})
 MAX_PARALLEL = 4
 
@@ -76,6 +78,14 @@ SCHEMAS = [
             {"url": {"type": "string"}}, ["url"]),
     _schema("web_search", "Search the web and return titles with links.",
             {"query": {"type": "string"}, "limit": {"type": "integer"}}, ["query"]),
+    _schema("forge_or_update_skill",
+            "Write a specialist SKILL.md when you learn something critical the turn did not have. "
+            "Registered with its sha256 as origin=forged; refuses to overwrite unless overwrite=true.",
+            {"topic": {"type": "string", "description": "Domain or stack, e.g. 'Rust + Tauri v2'"},
+             "reason": {"type": "string", "description": "Why this skill is needed now"},
+             "observations": {"type": "array", "items": {"type": "string"},
+                              "description": "Concrete rules observed in THIS repository"},
+             "overwrite": {"type": "boolean"}}, ["topic", "reason"]),
 ]
 
 
