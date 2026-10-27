@@ -53,6 +53,30 @@ def test_pruning_saves_most_of_the_window(failures):
     check("podar dos veces no cambia nada", prune_tool_outputs(messages)[0], 0, failures)
 
 
+def test_prune_preserves_non_tool_messages(failures):
+    from ..message import Message, ToolCall
+
+    call = ToolCall(id="c1", name="read_file", arguments={"path": "calc.py"},
+                    raw_arguments='{"path": "calc.py"}')
+    messages = [
+        Message(role="system", content="reglas del sistema"),
+        Message(role="user", content="haz la lectura"),
+        Message(role="assistant", content="", tool_calls=[call]),
+        Message(role="tool", content=BIG, tool_call_id=call.id, name="read_file"),
+        Message(role="assistant", content="listo"),
+    ]
+    # `keep_last=0`: el caso mide la PODA, no la proteccion de la ultima lectura.
+    pruned, _ = prune_tool_outputs(messages, keep_last=0)
+    check("solo se podó una salida tool", pruned, 1, failures)
+    check("system sin cambios", messages[0].role, "system", failures)
+    check("system content intacto", messages[0].content, "reglas del sistema", failures)
+    check("user sin cambios", messages[1].role, "user", failures)
+    check("user content intacto", messages[1].content, "haz la lectura", failures)
+    check("assistant tool_calls intacto", messages[2].tool_calls, [call], failures)
+    check("assistant final sin cambios", messages[4].role, "assistant", failures)
+    check("assistant final content intacto", messages[4].content, "listo", failures)
+
+
 def test_loop_prunes_and_writes_the_state(failures):
     with TempProject({"calc.py": "def add(a, b):\n    return a + b\n", "big.txt": BIG}) as root:
         config = HarnessConfig(default_root=root, test_command=TEST_COMMAND, max_steps=6,
@@ -90,5 +114,6 @@ def run():
     failures = []
     test_module_selftest(failures)
     test_pruning_saves_most_of_the_window(failures)
+    test_prune_preserves_non_tool_messages(failures)
     test_loop_prunes_and_writes_the_state(failures)
     return failures
