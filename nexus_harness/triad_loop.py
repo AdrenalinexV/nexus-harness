@@ -15,48 +15,21 @@ Exit codes are the protocol's: `0` green, `10` red, `20` the harness could not v
 import threading
 import time
 from dataclasses import dataclass, field
+from pathlib import Path
 
-from . import ledger
+from . import ledger, triad_brief
 from .budget import CostBudget
 from .compaction import Compactor
+from .context_pruner import prune
 from .gate import EXIT_GREEN, EXIT_UNAVAILABLE, Gate
 from .judge import Judge
 from .message import Message, as_text
-from .relay_state import prune_tool_outputs
 from .repair_guard import isolated_repair
+from .savings import CACHE_REL as SKILLS_CACHE, SavingsLedger
 from .subagents import Delegate
 from .toolbox import process_manager
 from .tools import default_registry
-
-DIRECTOR_PROMPT = """Eres el Director de un harness de ingeniería autónomo.
-Recibes un objetivo y el estado del repositorio. Devuelve un PLAN BREVE (máximo 6 pasos numerados)
-que diga qué hay que cambiar y en qué ficheros, y termina con una línea "Criterio: <cómo se sabrá
-que está hecho>". No escribas código, no llames herramientas: solo el plan."""
-
-WORKER_PROMPT = """Eres el Obrero de un harness de ingeniería autónomo. Ejecutas el plan con las
-herramientas disponibles.
-
-Reglas que no se negocian:
-- Ningún fichero puede pasar de 400 líneas. Si un módulo crece, divídelo.
-- Para editar usa `patch` con el texto EXACTO que has leído; si falla por ambigüedad, lee más
-  contexto y vuelve a intentarlo. `write_file` es para ficheros nuevos o reescrituras completas.
-- Inspecciona antes de escribir: `read_file`, `search`, `list_dir`.
-- No declares nada terminado: el gate lo comprobará. Cuando hayas terminado, responde con un
-  resumen de una frase de lo que cambiaste y qué comando lo demuestra."""
-
-REPAIR_PROMPT = """El gate ha devuelto ROJO (exit 10). Esto es lo que ha observado:
-
-%s
-
-Repara exactamente eso con las herramientas y vuelve a dejarlo. No expliques: actúa."""
-
-CLOSE_PROMPT = """Se acabó el presupuesto de pasos. NO llames herramientas. Responde con DOS frases:
-qué ficheros cambiaste y con qué comando se demuestra que funciona."""
-
-JUDGE_REJECT = """El Juez rechazó el trabajo: %s
-
-Corrige lo que señala y deja el repositorio en verde otra vez."""
-
+from .triad_brief import CLOSE_PROMPT, JUDGE_REJECT, REPAIR_PROMPT, WORKER_PROMPT
 
 @dataclass
 class RunResult:
@@ -75,6 +48,8 @@ class RunResult:
     budget: dict = field(default_factory=dict)
     cost: dict = field(default_factory=dict)
     tokens: dict = field(default_factory=dict)
+    savings: dict = field(default_factory=dict)
+    recorded: bool = False
     started: str = ""
     finished: str = ""
 
@@ -83,7 +58,8 @@ class RunResult:
                 "steps": self.steps, "repairs": self.repairs, "touched": self.touched,
                 "sessions": self.sessions, "phases": self.phases, "verdict": self.verdict,
                 "judgement": self.judgement, "budget": self.budget, "cost": self.cost,
-                "tokens": self.tokens, "started": self.started, "finished": self.finished}
+                "tokens": self.tokens, "savings": self.savings, "recorded": self.recorded,
+                "started": self.started, "finished": self.finished}
 
 
 def _now():
@@ -108,6 +84,9 @@ class Triad:
         self.touched = set()
         self.injections = []
         self.tokens = {"prompt": 0, "completion": 0}
+        # La contabilidad por request vive aqui: sin baseline no hay ahorro medible.
+        self.savings = SavingsLedger.for_root(cache_path=Path(config.default_root) / SKILLS_CACHE)
+        self._injected_tokens = 0
         self._stop = threading.Event()
         self.registry.stop = self._stop
         if getattr(self.registry, "delegate", None) is None:
@@ -130,14 +109,22 @@ class Triad:
             self.bus.emit(kind, detail, **payload)
 
     def _system(self, base, files):
-        if self.skills is None:
-            return base
-        injection = self.skills.select(sorted(files))
-        self.injections.append(injection.as_dict())
-        self._emit("skills.injected", ", ".join(injection.names) or "(none)",
-                   names=injection.names, tokens=injection.tokens,
-                   available=injection.available, note=injection.note)
-        return "%s\n\n%s" % (base, injection.brief) if injection.brief else base
+        """El system prompt: reglas + skills activas + mapa AST. Todo lo que se inyecta, contado."""
+        parts = [base]
+        self._injected_tokens = 0
+        if self.skills is not None:
+            injection = self.skills.select(sorted(files))
+            self.injections.append(injection.as_dict())
+            self._emit("skills.injected", ", ".join(injection.names) or "(none)",
+                       names=injection.names, tokens=injection.tokens,
+                       available=injection.available, note=injection.note)
+            if injection.brief:
+                parts.append(injection.brief)
+            self._injected_tokens = int(injection.tokens or 0)
+        block, _tokens = triad_brief.map_block(self.config)
+        if block:
+            parts.append("## Mapa de simbolos (usa read_file con offset/limit)\n%s" % block)
+        return "\n\n".join(parts)
 
     def _maybe_compact(self, messages):
         """Nivel 1 del presupuesto: condensar y podar salidas de herramientas antes del relevo.
@@ -146,14 +133,16 @@ class Triad:
         de un turno largo acumula lecturas enteras que ya no aportan nada, y cada una cuesta tokens en
         la siguiente llamada. Se emite lo podado, porque un ahorro invisible no se puede auditar.
         """
-        pruned, refs = prune_tool_outputs(messages)
-        if pruned:
-            self._emit("context.pruned", "%d salidas podadas" % pruned, count=pruned,
-                       references=refs[:8])
+        report = prune(messages)
+        if report.pruned:
+            self.savings.observe_pruned(report)
+            self._emit("context.pruned", "%d salidas podadas (%d tokens menos)"
+                       % (report.pruned, report.tokens_saved), count=report.pruned,
+                       tokens_saved=report.tokens_saved, references=report.receipts[:8])
         result = self.compactor.maybe(messages)
         if result.applied:
             self._emit("context.compacted", result.reason, compaction=result.as_dict())
-        return bool(result.applied or pruned)
+        return bool(result.applied or report.pruned)
 
     def _ask(self, role, messages, tools=None, max_tokens=None):
         info = self.router.info(role)
@@ -162,9 +151,22 @@ class Triad:
         reply = self.router.role(role).chat(
             messages, tools=tools, temperature=self.config.temperature,
             max_tokens=max_tokens or self.config.max_tokens)
+        self._count_savings(reply, messages)
         if reply.reasoning:
             self._emit("%s.reasoning" % role, reply.reasoning[:1200], model=reply.model)
         return reply
+
+    def _count_savings(self, reply, messages):
+        """Cierra la request en el libro de ahorro: lo enviado, el baseline y por que difieren."""
+        from .compaction import estimate
+        sent = int(getattr(reply.usage, "prompt", 0) or 0) or estimate(messages)[1]
+        _block, map_tokens = triad_brief.map_block(self.config)
+        first = 0 if self.savings.repomap_tokens else map_tokens
+        row = self.savings.request(sent, injected_skill_tokens=self._injected_tokens,
+                                   repomap_tokens=first,
+                                   measured=bool(getattr(reply.usage, "measured", False)))
+        self._emit("context.savings", self.savings.note(), row=row, totals=self.savings.as_dict())
+        return row
 
     # -- one phase --------------------------------------------------------------------------
     def _work(self, messages, max_steps):
@@ -290,7 +292,7 @@ class Triad:
         self._emit("run.start", goal, root=str(self.config.default_root))
         self._emit("router.ready", self.router.info("worker").model,
                    roles={role: self.router.info(role).__dict__ for role in ("director", "worker", "judge")})
-        plan = self._plan(goal)
+        plan = triad_brief.plan_for(self, goal)
         for phase in (phases or [None]):
             hint, label = goal, "run"
             if phase:
@@ -350,6 +352,7 @@ class Triad:
         result.steps, result.repairs = steps_total, repairs
         result.cost = self.cost.state()
         result.tokens = dict(self.tokens, total=sum(self.tokens.values()))
+        result.savings = self.savings.as_dict()
         result.touched, result.finished = sorted(self.touched), _now()
         if self.relay is not None:
             self.relay.finish(result.exit)
@@ -360,31 +363,15 @@ class Triad:
         return result
 
     def _record(self, result):
-        """El run tambien se mide: una linea en el libro de turnos del proyecto, como un turno de chat."""
-        ledger.TurnLedger(self.config.default_root).append(
+        """El run tambien se mide: UNA linea en el libro, la escriba quien la escriba.
+
+        `recorded` viaja en el resultado porque hay dos llamantes (el chat y el bucle autonomo) y una
+        sola fila: el que la escribio lo declara, y el otro no la repite. Contarla dos veces inflaba el
+        consumo medido al doble (medido: 411.886 en vez de 205.943 en el libro del arnes).
+        """
+        result.recorded = ledger.TurnLedger(self.config.default_root).append(
             ledger.from_turn(result.as_dict(), str(self.config.default_root),
                              (result.sessions or [""])[-1], "run"))
-
-    def _plan(self, goal):
-        facts = self._facts()
-        prompt = "OBJETIVO:\n%s\n\nESTADO DEL REPOSITORIO:\n%s" % (goal, facts)
-        try:
-            reply = self._ask("director", [Message(role="system", content=DIRECTOR_PROMPT),
-                                           Message(role="user", content=prompt)],
-                              max_tokens=min(self.config.max_tokens, 1200))
-        except Exception as exc:
-            self._emit("director.error", "%s: %s" % (type(exc).__name__, exc))
-            return "(sin plan: %s)" % exc
-        self._emit("director.plan", reply.text[:1500], model=reply.model)
-        return reply.text or "(plan vacío)"
-
-    def _facts(self):
-        root = self.config.default_root
-        try:
-            entries = sorted(path.name for path in root.iterdir())[:40]
-        except OSError:
-            entries = []
-        return "root: %s\nentries: %s" % (root, ", ".join(entries) or "(empty)")
 
     def _checkpoint(self, phase, verdict):
         if phase is None or self.relay is None:

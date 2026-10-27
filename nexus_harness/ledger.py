@@ -62,6 +62,27 @@ class TurnLedger:
         return out
 
 
+SAVINGS_FIELDS = ("tokens_sent", "tokens_baseline", "tokens_saved", "dormant_tokens", "pruned_tokens",
+                  "isolated_tokens", "repomap_tokens", "requests")
+
+
+def _savings_of(turn):
+    """Los campos de ahorro de un turno o corrida. Sin `savings` no se inventa un cero: se omite."""
+    savings = turn.get("savings")
+    if not isinstance(savings, dict) or not savings:
+        return {}
+    row = {name: _int(savings.get(name)) for name in SAVINGS_FIELDS}
+    row["tokens_sent"] = _int(savings.get("sent"))
+    row["tokens_baseline"] = _int(savings.get("baseline"))
+    row["tokens_saved"] = _int(savings.get("saved"))
+    row["requests"] = _int(savings.get("requests"))
+    for name in ("savings_pct", "context_multiplier"):
+        value = savings.get(name)
+        if isinstance(value, (int, float)):
+            row[name] = round(float(value), 2)
+    return row
+
+
 def from_turn(turn, project="", session="", source="chat"):
     """La medida de un turno de chat o de una corrida de la triada, con los nombres del libro."""
     turn = turn or {}
@@ -82,7 +103,7 @@ def from_turn(turn, project="", session="", source="chat"):
             "steps": _int(turn.get("steps")),
             "prompt_tokens": prompt, "completion_tokens": completion,
             "tokens": prompt + completion,
-            "touched": len(turn.get("touched") or [])}
+            "touched": len(turn.get("touched") or []), **_savings_of(turn)}
 
 
 def _int(value):
@@ -101,6 +122,7 @@ def aggregate(rows):
     """Los cuatro numeros que la pantalla necesita, contados de las filas que existen."""
     first_pass = repaired = blocked = 0
     tokens = prompt = completion = 0
+    sent = baseline = saved = dormant = pruned = isolated = repomap = requests = 0
     by_project = {}
     for row in rows or []:
         exit_code = row.get("exit")
@@ -114,20 +136,38 @@ def aggregate(rows):
         tokens += _int(row.get("tokens"))
         prompt += _int(row.get("prompt_tokens"))
         completion += _int(row.get("completion_tokens"))
+        sent += _int(row.get("tokens_sent"))
+        baseline += _int(row.get("tokens_baseline"))
+        saved += _int(row.get("tokens_saved"))
+        dormant += _int(row.get("dormant_tokens"))
+        pruned += _int(row.get("pruned_tokens"))
+        isolated += _int(row.get("isolated_tokens"))
+        repomap += _int(row.get("repomap_tokens"))
+        requests += _int(row.get("requests"))
         name = row.get("project") or "(sin proyecto)"
         bucket = by_project.setdefault(name, {"turns": 0, "tokens": 0, "first_pass": 0,
                                               "repaired": 0, "blocked": 0})
         bucket["turns"] += 1
         bucket["tokens"] += _int(row.get("tokens"))
+        bucket["sent"] = bucket.get("sent", 0) + _int(row.get("tokens_sent"))
+        bucket["baseline"] = bucket.get("baseline", 0) + _int(row.get("tokens_baseline"))
+        bucket["saved"] = bucket.get("saved", 0) + _int(row.get("tokens_saved"))
+        bucket["requests"] = bucket.get("requests", 0) + _int(row.get("requests"))
         if exit_code in (0, None) and not repairs:
             bucket["first_pass"] += 1
         elif exit_code in (0, None):
             bucket["repaired"] += 1
         else:
             bucket["blocked"] += 1
-    return {"turns": len(rows or []), "first_pass": first_pass, "repaired": repaired,
+    rows_count = len(rows or [])
+    measured = {"sent": sent, "baseline": baseline, "saved": saved, "dormant": dormant,
+                "pruned": pruned, "isolated": isolated, "repomap": repomap, "requests": requests}
+    return {"turns": rows_count, "first_pass": first_pass, "repaired": repaired,
             "blocked": blocked, "tokens": tokens, "prompt_tokens": prompt,
-            "completion_tokens": completion, "by_project": by_project}
+            "completion_tokens": completion, "by_project": by_project,
+            "savings": measured,
+            "savings_pct": (round(100.0 * saved / baseline, 1) if baseline else None),
+            "context_multiplier": (round(baseline / float(sent), 2) if sent else None)}
 
 
 def history(workspace, names=(), extra=()):

@@ -14,13 +14,17 @@ losing the conversation. `stop()` sets an event the loop checks between tool cal
 cannot interrupt is a harness that owns your afternoon.
 """
 import threading
+from pathlib import Path
 from dataclasses import dataclass, field
 
 from . import attachments as attachment_tools
 from . import checkpoint, ledger
 from .budget import CostBudget
+from . import triad_brief
 from .compaction import Compactor
+from .context_pruner import prune
 from .message import Message, as_text
+from .savings import CACHE_REL as SKILLS_CACHE, SavingsLedger
 from .subagents import Delegate
 from .toolbox import process_manager
 from .tools import Observation, parallel_reads
@@ -58,13 +62,14 @@ class Turn:
     checkpoint: str = ""
     budget: dict = field(default_factory=dict)
     tokens: dict = field(default_factory=dict)
+    savings: dict = field(default_factory=dict)
 
     def as_dict(self):
         return {"reply": self.reply, "exit": self.exit, "steps": self.steps,
                 "repairs": self.repairs, "touched": self.touched, "skills": self.skills,
                 "verdict": self.verdict, "judgement": self.judgement, "stopped": self.stopped,
                 "attachments": self.attachments, "checkpoint": self.checkpoint,
-                "budget": self.budget, "tokens": self.tokens}
+                "budget": self.budget, "tokens": self.tokens, "savings": self.savings}
 
 
 class Chat:
@@ -94,6 +99,10 @@ class Chat:
         self.compactor = Compactor(limit=int(getattr(config, "budget_limit", 60000) or 0),
                                    threshold=float(getattr(config, "compact_threshold", 0.55) or 0.0))
         self.children = []
+        # Los cuatro motores miden aqui: skills dormidas, poda, mapa AST y reparacion aislada.
+        self.savings = SavingsLedger.for_root(cache_path=Path(config.default_root) / SKILLS_CACHE)
+        self._injected_tokens = 0
+        self._map_tokens = 0
         registry.stop = self._stop
         registry.delegate = delegate or Delegate(
             router, config, stop=self._stop, bus=bus, root=config.default_root)
@@ -140,6 +149,7 @@ class Chat:
     # -- prompt ------------------------------------------------------------------------------
     def _system(self, files):
         parts = [CHAT_SYSTEM]
+        self._injected_tokens = 0
         if self.memory is not None:
             block = self.memory.block()
             if block:
@@ -151,6 +161,10 @@ class Chat:
                        available=injection.available, note=injection.note)
             if injection.brief:
                 parts.append(injection.brief)
+            self._injected_tokens = int(injection.tokens or 0)
+        block, self._map_tokens = triad_brief.map_block(self.config)
+        if block:
+            parts.append("## Mapa de simbolos (pide rangos con read_file offset/limit)\n%s" % block)
         facts = "## Proyecto\n\nraíz: %s" % getattr(self.config, "default_root", ".")
         test = getattr(self.config, "test_command", None)
         facts += "\ntests: %s" % (test or "no configurado")
@@ -159,11 +173,21 @@ class Chat:
 
     # -- the loop ----------------------------------------------------------------------------
     def _maybe_compact(self, messages):
-        """Condense the history when it approaches the budget. True when it did."""
+        """Poda deslizante + compactacion: los dos niveles del presupuesto, medidos.
+
+        La poda corre en CADA paso (es lo que corta el crecimiento cuadratico de tokens de entrada) y
+        la compactacion es la rampa previa al relevo del 70 %.
+        """
+        report = prune(messages)
+        if report.pruned:
+            self.savings.observe_pruned(report)
+            self._emit("context.pruned", "%d salidas podadas (%d tokens menos)"
+                       % (report.pruned, report.tokens_saved), count=report.pruned,
+                       tokens_saved=report.tokens_saved, references=report.receipts[:8])
         result = self.compactor.maybe(messages)
         if result.applied:
             self._emit("context.compacted", result.reason, compaction=result.as_dict())
-        return result.applied
+        return bool(result.applied or report.pruned)
 
     def _turn(self, tools=True, max_steps=None):
         """Model calls until it stops asking for tools. Returns (text, steps)."""
@@ -185,6 +209,7 @@ class Chat:
             steps += 1
             self.used += int(getattr(reply.usage, "total", 0) or 0)
             self._count(reply.usage)
+            self._count_savings(reply, messages)
             self.cost.observe(reply.usage, reply.model)
             if reply.reasoning:
                 self._emit("worker.reasoning", reply.reasoning[:1000], model=reply.model)
@@ -203,6 +228,17 @@ class Chat:
         else:
             self._emit("chat.limit", "max_steps=%d" % int(max_steps or self.config.max_steps))
         return text, steps
+
+    def _count_savings(self, reply, messages):
+        """Cierra la request en el libro de ahorro del turno (baseline, ahorro y multiplicador)."""
+        from .compaction import estimate
+        sent = int(getattr(reply.usage, "prompt", 0) or 0) or estimate(messages)[1]
+        first_map = 0 if self.savings.repomap_tokens else self._map_tokens
+        row = self.savings.request(sent, injected_skill_tokens=self._injected_tokens,
+                                   repomap_tokens=first_map,
+                                   measured=bool(getattr(reply.usage, "measured", False)))
+        self._emit("context.savings", self.savings.note(), row=row, totals=self.savings.as_dict())
+        return row
 
     def _count(self, usage):
         """Suma los tokens del turno. Sin esto, el libro de turnos no puede decir cuanto costo."""
@@ -291,6 +327,7 @@ class Chat:
         turn.reply, turn.touched = reply, sorted(self.touched)
         turn.budget = self.cost.state()
         turn.tokens = dict(self.turn_tokens, total=sum(self.turn_tokens.values()))
+        turn.savings = self.savings.as_dict()
         injection = getattr(self.skills, "last", None)
         turn.skills = list(getattr(injection, "names", []) or [])
         self.last_turn = turn

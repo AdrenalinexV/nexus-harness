@@ -25,11 +25,12 @@ import json
 import time
 from pathlib import Path
 
+from .context_pruner import MARKER as PRUNED_MARK, prune
+
 PROTOCOL = "nexus.harness.relay-state/1"
 STATE_REL = Path(".nexus") / "RELAY_STATE.json"
 PRUNED_MARK = "[salida podada]"
 DEFAULT_KEEP_CHARS = 600
-OLD_ROLES = ("tool",)
 OWN_KEY = "harness"
 
 
@@ -41,45 +42,15 @@ def sha256_text(text):
     return hashlib.sha256(str(text or "").encode("utf-8", "replace")).hexdigest()
 
 
-def reference(path, content, extra=""):
-    """Una linea que sustituye a una salida: ruta, tamano y hash. Sin contenido, sin tokens."""
-    lines = str(content or "").count("\n") + 1
-    digest = sha256_text(content)
-    tail = (" " + extra) if extra else ""
-    return "%s %s (%d lineas, sha256=%s)%s" % (PRUNED_MARK, path or "?", lines, digest[:16], tail)
-
-
-def _tool_path(message, tool_paths):
-    call_id = str(getattr(message, "tool_call_id", "") or "")
-    return tool_paths.get(call_id) or str(getattr(message, "name", "") or "?")
-
-
 def prune_tool_outputs(messages, keep_chars=DEFAULT_KEEP_CHARS, keep_last=2):
-    """Poda las salidas de herramientas grandes y devuelve `(podadas, referencias)`.
+    """Poda las salidas de herramientas grandes. Delega en `context_pruner` (una sola implementacion).
 
-    Se conservan las `keep_last` mas recientes intactas: el turno en curso suele necesitar la ultima
-    lectura, y podarla justo antes de usarla seria ahorrar contexto a costa de romper el trabajo.
+    Se conserva esta puerta porque el relevo la usa con sus propios argumentos (`keep_chars`,
+    `keep_last`), y devuelve `(podadas, referencias)` como siempre. La logica de que es un "paso" y de
+    que no se toca vive en `context_pruner.prune`, que ademas mide los bytes podados.
     """
-    tool_paths = {}
-    for message in messages:
-        for call in getattr(message, "tool_calls", None) or ():
-            arguments = getattr(call, "arguments", None)
-            if isinstance(arguments, dict) and arguments.get("path"):
-                tool_paths[getattr(call, "id", "")] = str(arguments["path"])
-    tool_indexes = [index for index, message in enumerate(messages)
-                    if getattr(message, "role", "") in OLD_ROLES]
-    candidates = set(tool_indexes[:-keep_last] if keep_last > 0 else tool_indexes)
-    pruned, refs = 0, []
-    for index in sorted(candidates):
-        message = messages[index]
-        body = message.text_content() if hasattr(message, "text_content") else str(message.content)
-        if len(body) <= keep_chars or PRUNED_MARK in body:
-            continue
-        ref = reference(_tool_path(message, tool_paths), body)
-        message.content = ref
-        pruned += 1
-        refs.append(ref)
-    return pruned, refs
+    report = prune(messages, keep_last_steps=keep_last, min_chars=keep_chars)
+    return report.pruned, list(report.receipts)
 
 
 def tool_calls_seen(messages):
@@ -233,7 +204,7 @@ def selftest():
                 Message(role="tool", content="x" * 5000, tool_call_id="c1", name="read_file")]
     pruned, refs = prune_tool_outputs(messages, keep_last=0)
     check("una salida grande se poda", pruned, 1)
-    check("la referencia lleva el sha", "sha256=" in refs[0], True)
+    check("la referencia lleva el sha", "sha256:" in refs[0], True)
     check("la referencia nombra el fichero", "a.py" in refs[0], True)
     check("el sha es estable", refs[0], prune_tool_outputs(
         [Message(role="assistant", content="", tool_calls=[call]),

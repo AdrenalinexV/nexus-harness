@@ -11,6 +11,8 @@ escritura sin que se lo pidan es un arnes que rompe flujos que ya funcionaban.
 """
 from pathlib import Path
 
+from .compaction import estimate
+from .message import Message
 from .worktree_sandbox import Sandbox, _run
 
 
@@ -43,10 +45,21 @@ def isolated_repair(triad, messages, max_steps):
     original = (triad.registry.root, triad.gate.root)
     triad._emit("repair.sandbox", str(sandbox.path), ok=True, branch=sandbox.branch)
     steps = 0
+    # Motor 4: el Obrero trabaja sobre una COPIA del transcript. Sus lecturas, sus errores y sus
+    # intentos intermedios se quedan aqui; al hilo principal solo vuelve un recibo de una linea. Es la
+    # diferencia entre "reparar sin ensuciar la ventana" y "reparar en el mismo hilo y pagar 40k tokens
+    # de logs de error que ya no sirven para nada".
+    shadow = list(messages)
+    before_tokens = estimate(shadow)[1]
     try:
         triad.registry.root = sandbox.path
         triad.gate.root = sandbox.path
-        text, steps = triad._work(messages, max_steps)
+        text, steps = triad._work(shadow, max_steps)
+        kept_out = max(0, estimate(shadow)[1] - before_tokens)
+        if kept_out:
+            triad.savings.observe_isolation(kept_out)
+            triad._emit("repair.isolated", "la reparacion no entro en la ventana principal",
+                        tokens_kept_out=kept_out, steps=steps)
         touched = sandbox.changed()
         verdict = triad.gate.run(sorted(set(list(triad.touched) + touched)))
         if not verdict.ok:
@@ -54,6 +67,7 @@ def isolated_repair(triad, messages, max_steps):
                         exit=verdict.exit, failures=verdict.failures[:600])
             return text, steps
         triad.registry.root, triad.gate.root = original
+        _close_shadow(messages, shadow, text)
         promoted = sandbox.promote(touched)
         if not promoted["ok"]:
             triad._emit("repair.sandbox.red", promoted["reason"], ok=False)
@@ -65,11 +79,20 @@ def isolated_repair(triad, messages, max_steps):
         return text, steps
     except Exception as exc:  # noqa: BLE001 -- un fallo del sandbox no puede tumbar el run
         triad._emit("repair.sandbox.error", "%s: %s" % (type(exc).__name__, exc), ok=False)
+        _close_shadow(messages, shadow, "")   # el hilo principal se queda con el recibo, no con el fallo
         return "", steps
     finally:
         triad.registry.root, triad.gate.root = original
         if sandbox.path.exists():
             sandbox.discard()
+
+
+def _close_shadow(messages, shadow, text):
+    """Deja UNA linea en el hilo principal con lo que la reparacion hizo. Nada mas vuelve de alli."""
+    if len(shadow) <= len(messages) + 1:
+        return
+    detail = " ".join(str(text or "").split())[:300] or "sin resumen del Obrero"
+    messages.append(Message(role="user", content="[reparacion aislada en worktree] %s" % detail))
 
 
 def selftest():

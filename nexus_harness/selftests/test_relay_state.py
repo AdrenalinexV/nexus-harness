@@ -48,7 +48,7 @@ def test_pruning_saves_most_of_the_window(failures):
     pruned, refs = prune_tool_outputs(messages)
     after = sum(len(item.text_content()) for item in messages)
     check("se podan todas menos las dos ultimas", pruned, 4, failures)
-    check("cada referencia lleva sha256", all("sha256=" in ref for ref in refs), True, failures)
+    check("cada referencia lleva sha256", all("sha256:" in ref for ref in refs), True, failures)
     check("el ahorro supera el 60 %", after < before * 0.4, True, failures)
     check("podar dos veces no cambia nada", prune_tool_outputs(messages)[0], 0, failures)
 

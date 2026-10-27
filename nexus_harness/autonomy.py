@@ -270,7 +270,9 @@ class Autopilot:
                   % (goal or projects.spec_of(root).get("goal") or name, index, limit, name, step))
         result = self._runner(prompt, str(root)) or {}
         ok = bool(result.get("ok")) or int(result.get("exit") or 0) == 0
-        ledger.TurnLedger(root).append(ledger.from_turn(result, name, "autonomy", "autonomy"))
+        # Una fila por corrida: si el ejecutor ya la escribio (lo declara en `recorded`), no se repite.
+        if not result.get("recorded"):
+            ledger.TurnLedger(root).append(ledger.from_turn(result, name, "autonomy", "autonomy"))
         if not ok:
             self._record(root, goal, progress, {"step": step, "ok": False,
                                                 "exit": result.get("exit")}, done=False)
