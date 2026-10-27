@@ -19,26 +19,26 @@ verify: GREEN
 ```
 providers        OK    0.00s
 retry            OK    0.00s
-repair           OK    0.18s
-tools            OK    0.12s
-edit_v4a         OK    0.03s
+repair           OK    0.15s
+tools            OK    0.13s
+edit_v4a         OK    0.04s
 shell_session    OK    1.29s
-shell_policy     OK    0.11s
-checkpoint       OK    0.28s
+shell_policy     OK    0.12s
+checkpoint       OK    0.23s
 subagents        OK    0.01s
 warning: The `fitz` API is deprecated and will be removed in future. Use `import pymupdf` instead.
-attachments      OK    0.14s
-onboarding       OK    0.10s
-mcp_client       OK    0.39s
-sidecar          OK    5.10s
+attachments      OK    0.13s
+onboarding       OK    0.11s
+mcp_client       OK    0.25s
+sidecar          OK    5.09s
 estado listo: 2 criterios (2 pendientes)
 a -> exit 0 (VERDE)
 findings=0
 b -> exit 10 (ROJO)
 b marcado blocked
 criterio desconocido: zzz
-cerrojo ocupado: el turno de noche ya esta en marcha: pid 29436 desde 2026-10-27T01:49:04+00:00 (suite)
-no se toca nada. Si esa sesion ya no corre, el cerrojo se hereda solo; para forzarlo a mano, borra C:\Users\Vexus\AppData\Local\Temp\nightshift-r31ugtlr\.nexus\harness\nightshift.lock
+cerrojo ocupado: el turno de noche ya esta en marcha: pid 23692 desde 2026-10-27T01:53:29+00:00 (suite)
+no se toca nada. Si esa sesion ya no corre, el cerrojo se hereda solo; para forzarlo a mano, borra C:\Users\Vexus\AppData\Local\Temp\nightshift-8v1ynvr2\.nexus\harness\nightshift.lock
 TOCA: b — falla
   prueba: python -c "raise SystemExit(10)"
   estado: blocked (intentos 1)
@@ -48,22 +48,22 @@ nightshift       OK    0.27s
 context_router   OK    0.07s
 triad_loop       OK    1.57s
 session_relay    OK    0.86s
-relay_state      OK    0.15s
+relay_state      OK    0.14s
 skills           OK    0.08s
-worktree         OK    2.11s
-deploy           OK    0.01s
+worktree         OK    2.12s
+deploy           OK    0.02s
 judge_repair     OK    0.01s
 compaction       OK    0.02s
-chat             OK    0.14s
-memory           OK    0.27s
-ui               OK    0.87s
+chat             OK    0.13s
+memory           OK    0.48s
+ui               OK    0.86s
 bridge           OK    0.05s
 budget           OK    0.03s
 charts           OK    0.00s
 activity         OK    0.00s
-projects         OK    0.48s
+projects         OK    0.49s
 autonomy         OK    0.23s
-ux               OK    1.56s
+ux               OK    1.57s
 suites=33 failures=0
 ```
 
