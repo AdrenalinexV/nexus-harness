@@ -11,6 +11,7 @@ de aquí no pasa su comando, no existe.
 | aprendizaje: fallo repetido forja, verde tras reparar enseña | `reflection.py` | `python tools/proofs.py learning` |
 | oráculo: runner descubierto y humo de importación | `oracle.py`, `gate.py` | `python tools/proofs.py oracle` |
 | spec sintetizada: objetivo → criterios ejecutables validados | `spec_synth.py`, `nexus_harness spec` | `python tools/proofs.py spec` |
+| plan en grafo, olas y parada por criterios | `plan_graph.py`, `autonomy.py` | `python tools/proofs.py plan` |
 | reparación en `git worktree` | `worktree_sandbox.py`, `repair_guard.py` | `python tools/proofs.py worktree` |
 | deploy al VPS (SSH + Compose) | `vps_deployer.py`, `settings_vps.py` | `python tools/proofs.py deploy` |
 | juez con contexto + pista de líneas reales | `judge.py`, `repair_hint.py` | `python tools/proofs.py judge` |
@@ -58,7 +59,28 @@ factor es 1,0 — no se inventa corrección.
 Medido de punta a punta en un proyecto de prueba (`pytest.ini` + test rojo): el comando descubrió
 `python -m pytest -q`, lo ejecutó (`exit 1`), y congeló `CA1` con esa evidencia.
 
-## 4. Worktree del Obrero
+## 4. Plan como grafo y parada por criterios
+
+El Director ya no devuelve un paso suelto: devuelve `{"nodes": [...], "new_criterion": ...}` con hasta
+**7 nodos** y sus dependencias (`plan_graph.py`).
+
+- **Un ciclo se rechaza al validar**, no se ejecuta a medias: `n1 -> n2 -> n1` es un plan imposible.
+- **Olas topológicas**: `waves()` dice qué se puede hacer a la vez. La ejecución dentro de una ola es
+  secuencial a propósito — dos escrituras en el mismo árbol compiten, y ese es el fallo que el gate
+  existe para cazar. El grafo describe el paralelismo; el worktree por rama lo hará seguro.
+- **Los nodos hechos se persisten** en el progreso (`nodes`), así que un plan repetido no re-ejecuta lo
+  que ya está verde.
+
+**La parada ya no es «el Director dice que no quedan pasos»**: en cada ciclo se ejecutan los criterios
+congelados (`spec_synth.evaluate`) y, si **todos** pasan, el proyecto se cierra con **cero llamadas al
+modelo** y el paso `criterios cumplidos` en el progreso. Vacio no es éxito: una spec sin comandos no
+opina y el bucle sigue planificando.
+
+**La spec crece con el trabajo**: si el Director descubre algo que la spec no mide, devuelve
+`new_criterion`; `spec_synth.add_criterion` lo **ejecuta**, y solo si no se cumple ya y su comando
+funciona lo añade (`origin: director`, `grown_by`, sha recalculado). Nunca quita un criterio congelado.
+
+## 5. Worktree del Obrero
 
 `config.worktree_repairs` (por defecto `True`) hace que la reparación corra en
 `.nexus/harness/worktrees/<id>` sobre una rama `nexus/sandbox/*`. Allí se ejecuta el MISMO gate del
@@ -66,7 +88,7 @@ proyecto. Verde: los ficheros cambiados se copian al árbol principal y se vuelv
 Obrero lanza): el worktree se descarta y el árbol principal no se tocó. En una raíz que no es git se
 degrada al comportamiento anterior, y lo dice.
 
-## 5. Deploy 24/7
+## 6. Deploy 24/7
 
 `vps_deployer` lee `VPS_HOST`, `VPS_USER`, `VPS_PORT`, `VPS_SSH_KEY` de la bóveda, empaqueta el kit de
 `NexusProtocol/deploy` + secretos, lo sube por `scp`/`ssh` (BatchMode) y levanta
@@ -74,7 +96,7 @@ degrada al comportamiento anterior, y lo dice.
 (`plan()`, `dry_run=True`) y en `/settings` nada se ejecuta de verdad sin marcar `confirm`; el
 resultado se pinta redactado (`***`).
 
-## 6. Juez y reparación de llamadas
+## 7. Juez y reparación de llamadas
 
 `mode_for()` decide por hechos: sin ficheros ni gate es **conversación** (se juzga utilidad, no diff);
 con ficheros o gate es **código** (se exige la evidencia). `RepairHints` cuenta fallos por

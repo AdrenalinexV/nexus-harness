@@ -23,20 +23,25 @@ import threading
 import time
 from pathlib import Path
 
-from . import backup, ledger, projects
+from . import backup, ledger, plan_graph, projects, spec_synth
 from .reflection import lessons_block
 from .repo_map import RepoMap
 
 AUTONOMY_LOG = Path(".nexus") / "harness" / "autonomy.jsonl"
 
 PLANNER_PROMPT = """Eres el Director de un harness de ingenieria autonomo. Tienes un proyecto, su spec
-congelada y la lista de pasos YA hechos y verificados. Decide UNA cosa: el siguiente paso pendiente.
+congelada y los pasos YA hechos y verificados. Devuelve un PLAN CORTO en forma de grafo: entre 1 y 7
+nodos, cada uno con su `id` y las dependencias que de verdad tiene (nada de cadenas inventadas).
 
 Responde SOLO con JSON, sin texto alrededor:
-{"done": false, "step": "una frase imperativa, concreta, con el fichero que toca"}
+{"nodes": [{"id": "n1", "step": "una frase imperativa con el fichero que toca", "depends_on": []},
+           {"id": "n2", "step": "...", "depends_on": ["n1"]}],
+ "new_criterion": null}
 
-Si todos los criterios de la spec ya estan cumplidos y verificados, responde {"done": true, "step": ""}.
-No inventes criterios que la spec no pide. No propongas reescribir lo que ya esta verde."""
+`new_criterion` solo si el trabajo ha descubierto algo que la spec NO mide y se puede comprobar con un
+comando: {"title": "...", "command": "...", "expect_exit": 0}. Si no hay nada nuevo, deja null.
+Si todos los criterios ya estan cumplidos, responde {"nodes": [], "done": true}.
+No inventes criterios que nadie pida. No propongas reescribir lo que ya esta verde."""
 
 
 def _now():
@@ -44,21 +49,8 @@ def _now():
 
 
 def parse_plan(text):
-    """El JSON del Director, tolerante con las vallas de markdown. Sin JSON, el texto es el paso."""
-    raw = str(text or "").strip()
-    start, end = raw.find("{"), raw.rfind("}")
-    if start >= 0 and end > start:
-        import json
-        try:
-            data = json.loads(raw[start:end + 1])
-        except ValueError:
-            data = None
-        if isinstance(data, dict):
-            done = bool(data.get("done"))
-            step = str(data.get("step") or data.get("next") or "").strip()
-            return {"done": done, "step": step, "why": "plan del director"}
-    line = next((line.strip() for line in raw.splitlines() if line.strip()), "")
-    return {"done": False, "step": line, "why": "plan sin JSON: se usa la primera linea"}
+    """El plan del Director, como grafo. Acepta el formato viejo de un solo paso y degrada a el."""
+    return plan_graph.parse_graph(text)
 
 
 def model_planner(router, config):
@@ -254,19 +246,42 @@ class Autopilot:
         if not net.get("ok"):
             return {"ok": False, "why": "sin backup no se edita: %s" % (net.get("reason") or "?")}
         progress = projects.progress(root)
+        # La unica definicion de "terminado": los criterios ejecutables de la spec, no la opinion del
+        # Director. Si todos pasan, el proyecto esta hecho y no se gasta una llamada mas.
+        rows = spec_synth.evaluate(root, config=self.config)
+        if spec_synth.met(rows):
+            self._criteria_done(name, root, goal, progress, rows)
+            return {"ok": True, "done": True}
         plan = self._plan(root, goal, progress)
-        step = str(plan.get("step") or "").strip()
+        if self._grow(root, plan.get("new_criterion")).get("ok"):
+            rows = spec_synth.evaluate(root, config=self.config)
+            if spec_synth.met(rows):
+                self._criteria_done(name, root, goal, progress, rows)
+                return {"ok": True, "done": True}
+        nodes = plan.get("nodes") or []
+        try:
+            nodes = plan_graph.validate(nodes)
+        except plan_graph.GraphError as exc:
+            return {"ok": False, "why": "el plan no se puede ejecutar: %s" % exc}
+        done_ids = [str(one) for one in progress.get("nodes") or []]
+        ready = plan_graph.ready(nodes, done_ids)
+        node = ready[0] if ready else None
+        step = node.step if node is not None else str(plan.get("step") or "").strip()
         self._emit("autonomy.plan", step or "(sin paso)", done=bool(plan.get("done")),
-                   why=plan.get("why") or "")
+                   why=plan.get("why") or "", nodes=len(nodes), ready=len(ready))
         if plan.get("done") and not step:
             self._record(root, goal, progress, {"step": "proyecto completo", "ok": True},
                          done=True)
             self._update(done=True, last="%s: 100%% (el Director no deja pasos)" % name)
             return {"ok": True, "done": True}
         if not step:
+            if nodes:
+                return {"ok": False, "why": "el plan no tiene ningun nodo listo: %s"
+                        % ", ".join(one.id for one in nodes)}
             return {"ok": False, "why": "el planificador no propuso ningun paso (%s)"
                     % (plan.get("why") or "sin motivo")}
-        self._emit("autonomy.step", step, project=name, iteration=index, limit=limit)
+        self._emit("autonomy.step", step, project=name, iteration=index, limit=limit,
+                   node=node.id if node is not None else "")
         prompt = ("%s\n\nPASO %d/%d de la cola autonoma en %s:\n%s\n\nCuando termines, el gate tiene "
                   "que salir verde: no declares hecho lo que no has probado."
                   % (goal or projects.spec_of(root).get("goal") or name, index, limit, name, step))
@@ -289,24 +304,56 @@ class Autopilot:
         committed, note = _commit(root, "nexus autonomo: %s" % step[:120])
         # `note` y no `detail`: `_emit` ya tiene un parametro con ese nombre (ver `autonomy.backup`).
         self._emit("autonomy.commit", step[:120], ok=committed, note=note)
+        nodes_done = done_ids + ([node.id] if node is not None else [])
         steps_done = self._record(root, goal, progress,
                                   {"step": step, "ok": True, "exit": result.get("exit"),
-                                   "commit": committed, "touched": result.get("touched") or []},
-                                  done=False)
+                                   "commit": committed, "touched": result.get("touched") or [],
+                                   "node": node.id if node is not None else ""},
+                                  done=False, nodes=nodes_done)
         self._update(steps_done=steps_done, last="%s: paso %d verde" % (name, index))
+        rows = spec_synth.evaluate(root, config=self.config)
+        if spec_synth.met(rows):
+            self._criteria_done(name, root, goal, projects.progress(root), rows)
+            return {"ok": True, "done": True}
         return {"ok": True, "done": False, "step": step}
+
+    def _criteria_done(self, name, root, goal, progress, rows):
+        """El proyecto termina por criterios medidos, no por silencio del planificador."""
+        self._record(root, goal, progress, {"step": "criterios cumplidos", "ok": True,
+                                            "criteria": len(rows)}, done=True)
+        self._update(done=True, last="%s: %d criterios ejecutables pasan" % (name, len(rows)))
+        self._emit("autonomy.criteria", "todos los criterios pasan", criterios=len(rows),
+                   rows=[{"id": row["id"], "exit": row["exit"]} for row in rows])
+
+    def _grow(self, root, criterion):
+        """Un criterio que el trabajo descubrio se valida y se anade a la spec. Nunca se quita otro."""
+        if not criterion:
+            return {}
+        grown = spec_synth.add_criterion(root, criterion.get("title", ""),
+                                        criterion.get("command", ""),
+                                        int(criterion.get("expect_exit") or 0), "director",
+                                        signature="autonomy", config=self.config)
+        self._emit("autonomy.criterion", grown.get("reason") or "criterio anadido",
+                   ok=bool(grown.get("ok")), criterion=criterion, reason=grown.get("reason", ""))
+        return grown
 
     def _plan(self, root, goal, progress):
         if self._planner is not None:
             return self._planner(root, goal, progress) or {}
         return {"done": False, "step": "", "why": "sin planificador configurado"}
 
-    def _record(self, root, goal, progress, step, done=False):
-        """Escribe el progreso del proyecto: solo lo verificado llega aqui."""
+    def _record(self, root, goal, progress, step, done=False, nodes=None):
+        """Escribe el progreso del proyecto: solo lo verificado llega aqui.
+
+        `nodes` es el estado COMPLETO de nodos terminados del grafo (no el delta): el progreso se
+        reescribe entero y una lista que crece por acumulacion acabaria contando dos veces.
+        """
         progress = dict(progress or {})
         steps = list(progress.get("steps") or [])
         steps.append(dict(step, at=_now()))
+        finished = nodes if nodes is not None else progress.get("nodes") or []
         data = {"goal": goal or progress.get("goal") or "", "steps": steps,
+                "nodes": sorted({str(one) for one in finished}),
                 "iterations": int(progress.get("iterations") or 0) + 1,
                 "done": bool(done) or bool(progress.get("done")),
                 "updated_at": _now()}

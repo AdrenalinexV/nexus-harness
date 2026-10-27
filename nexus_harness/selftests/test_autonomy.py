@@ -241,6 +241,130 @@ def test_judge_rejection_is_not_called_a_red_gate(failures):
         shutil.rmtree(workspace, ignore_errors=True)
 
 
+def _spec_with_cas(workspace, name, cas):
+    """Un proyecto con criterios EJECUTABLES en su spec (la forma que escribe `spec_synth`)."""
+    root = _project(workspace, name)
+    (root / ".ai" / "CURRENT_SPEC.json").write_text(json.dumps(
+        {"format": "nexus.spec/1", "id": "spec-%s" % name, "goal": "objetivo %s" % name,
+         "cas": cas, "cas_sha256": "c" * 64}), encoding="utf-8")
+    return root
+
+
+def _ca(title, command, expect=0):
+    return {"id": "CA1", "title": title, "command": command, "expect_exit": expect,
+            "evidence": {"exit": 1, "at": "2026-10-27T00:00:00Z"}}
+
+
+def test_the_graph_decides_the_order(failures):
+    """Dos nodos con dependencia: primero n1, luego n2, y los dos quedan apuntados."""
+    workspace = Path(tempfile.mkdtemp(prefix="nexus-autonomy-graph-"))
+    try:
+        _project(workspace, "Alpha")
+        runner = ScriptedRunner([0, 0, 0])
+        plan = {"nodes": [{"id": "n1", "step": "escribe el test", "depends_on": []},
+                          {"id": "n2", "step": "arregla calc", "depends_on": ["n1"]}],
+                "done": False, "step": "escribe el test"}
+        ap = autonomy.Autopilot(HarnessConfig(workspace=workspace, default_root=workspace),
+                                runner=runner, planner=lambda root, goal, prog: plan,
+                                bus=Bus(), snapshot=FakeSnapshot())
+        ap._loop(["Alpha"], "objetivo", 2)
+        progress = projects.progress(workspace / "Alpha")
+        check("los dos nodos quedan hechos", progress.get("nodes"), ["n1", "n2"], failures)
+        check("el primero que corrio fue n1", "escribe el test" in runner.calls[0][0], True,
+              failures)
+        check("y despues n2", "arregla calc" in runner.calls[1][0], True, failures)
+        check("cada paso lleva su nodo", [row.get("node") for row in progress["steps"]],
+              ["n1", "n2"], failures)
+    finally:
+        shutil.rmtree(workspace, ignore_errors=True)
+
+
+def test_a_ready_node_is_not_repeated(failures):
+    """Con n1 hecho, el ciclo siguiente no vuelve a n1 aunque el plan sea el mismo."""
+    workspace = Path(tempfile.mkdtemp(prefix="nexus-autonomy-ready-"))
+    try:
+        _project(workspace, "Alpha")
+        plan = {"nodes": [{"id": "n1", "step": "uno", "depends_on": []},
+                          {"id": "n2", "step": "dos", "depends_on": ["n1"]}], "done": False}
+        runner = ScriptedRunner([0, 0])
+        ap = autonomy.Autopilot(HarnessConfig(workspace=workspace, default_root=workspace),
+                                runner=runner, planner=lambda root, goal, prog: plan,
+                                bus=Bus(), snapshot=FakeSnapshot())
+        ap._loop(["Alpha"], "objetivo", 2)
+        check("no repite el primero", ("uno" in runner.calls[0][0]
+                                       and "dos" in runner.calls[1][0]), True, failures)
+    finally:
+        shutil.rmtree(workspace, ignore_errors=True)
+
+
+def test_the_project_ends_when_the_criteria_pass(failures):
+    """La parada es el exit de los criterios, no el silencio del Director: cero llamadas al modelo."""
+    workspace = Path(tempfile.mkdtemp(prefix="nexus-autonomy-criteria-"))
+    try:
+        _spec_with_cas(workspace, "Alpha", [_ca("el proyecto importa",
+                                                ["python", "-c", "pass"])])
+        runner = ScriptedRunner([0, 0])
+        ap = autonomy.Autopilot(HarnessConfig(workspace=workspace, default_root=workspace),
+                                runner=runner,
+                                planner=lambda root, goal, prog: {"nodes": [{"id": "n1",
+                                                                             "step": "sobra"}],
+                                                                  "done": False},
+                                bus=Bus(), snapshot=FakeSnapshot())
+        finished = ap._project("Alpha", "objetivo", 3)
+        check("el proyecto se cierra", finished, True, failures)
+        check("sin gastar una sola llamada", runner.calls, [], failures)
+        progress = projects.progress(workspace / "Alpha")
+        check("y queda marcado como hecho", progress["done"], True, failures)
+        check("con el criterio medido", progress["steps"][0]["criteria"], 1, failures)
+        check("y el motivo en el estado", "criterios" in ap.state()["last"], True, failures)
+    finally:
+        shutil.rmtree(workspace, ignore_errors=True)
+
+
+def test_a_finding_grows_the_spec(failures):
+    """Un criterio nuevo se valida y se ANADE; el congelado sigue donde estaba."""
+    workspace = Path(tempfile.mkdtemp(prefix="nexus-autonomy-grow-"))
+    try:
+        _spec_with_cas(workspace, "Alpha", [_ca("falla hoy", ["python", "-c", "import sys; sys.exit(1)"])])
+        plan = {"nodes": [{"id": "n1", "step": "arregla calc", "depends_on": []}],
+                "done": False,
+                "new_criterion": {"title": "el doble tambien", "expect_exit": 0,
+                                  "command": "python -c \"import sys; sys.exit(2)\""}}
+        ap = autonomy.Autopilot(HarnessConfig(workspace=workspace, default_root=workspace),
+                                runner=ScriptedRunner([0]), planner=lambda root, goal, prog: plan,
+                                bus=Bus(), snapshot=FakeSnapshot())
+        ap._project("Alpha", "objetivo", 1)
+        spec = json.loads((workspace / "Alpha" / ".ai" / "CURRENT_SPEC.json").read_text(
+            encoding="utf-8"))
+        check("la spec crece a dos criterios", len(spec["cas"]), 2, failures)
+        check("el viejo no se toca", spec["cas"][0]["title"], "falla hoy", failures)
+        check("el nuevo entra con su origen", spec["cas"][1]["source"], "director", failures)
+        check("y la spec dice quien la amplio", spec.get("grown_by"), "autonomy", failures)
+        check("el sha cubre el conjunto", spec["cas_sha256"], __import__(
+            "nexus_harness.spec_synth", fromlist=["_sha"])._sha(spec["cas"]), failures)
+    finally:
+        shutil.rmtree(workspace, ignore_errors=True)
+
+
+def test_a_cycled_plan_does_not_run(failures):
+    workspace = Path(tempfile.mkdtemp(prefix="nexus-autonomy-cycle-"))
+    try:
+        _project(workspace, "Alpha")
+        runner = ScriptedRunner([0])
+        plan = {"nodes": [{"id": "a", "step": "x", "depends_on": ["b"]},
+                          {"id": "b", "step": "y", "depends_on": ["a"]}], "done": False}
+        ap = autonomy.Autopilot(HarnessConfig(workspace=workspace, default_root=workspace),
+                                runner=runner, planner=lambda root, goal, prog: plan,
+                                bus=Bus(), snapshot=FakeSnapshot())
+        finished = ap._project("Alpha", "objetivo", 2)
+        check("un plan imposible para el proyecto", finished, False, failures)
+        check("y no se ejecuta nada", runner.calls, [], failures)
+        check("con el motivo en el estado", "no se puede ejecutar" in ap.state()["last"], True,
+              failures)
+    finally:
+        shutil.rmtree(workspace, ignore_errors=True)
+
+
 def run():
     failures = []
     test_plan_parse(failures)
@@ -251,4 +375,9 @@ def run():
     test_start_refusals(failures)
     test_thread_runs_and_finishes(failures)
     test_judge_rejection_is_not_called_a_red_gate(failures)
+    test_the_graph_decides_the_order(failures)
+    test_a_ready_node_is_not_repeated(failures)
+    test_the_project_ends_when_the_criteria_pass(failures)
+    test_a_finding_grows_the_spec(failures)
+    test_a_cycled_plan_does_not_run(failures)
     return failures

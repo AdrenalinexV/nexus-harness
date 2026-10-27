@@ -26,6 +26,7 @@ SUITES = {
     "oracle": "test_oracle",
     "tokenizer": "test_tokenizer",
     "spec": "test_spec",
+    "plan": "test_plan_graph",
 }
 
 

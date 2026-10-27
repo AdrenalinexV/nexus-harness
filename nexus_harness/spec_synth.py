@@ -250,3 +250,78 @@ def synthesize(root, goal, config=None, router=None, candidates=None, write=Fals
         result["written"] = True
         result["path"] = save(root, spec)
     return result
+
+
+# -- la spec viva: evaluarla y ampliarla --------------------------------------------------------
+def evaluate(root, timeout=TIMEOUT, config=None):
+    """Ejecuta los criterios CONGELADOS y dice como esta el proyecto ahora mismo.
+
+    Es la unica definicion de "terminado" del bucle autonomo: no lo que el Director opine, sino el exit
+    de cada criterio. Una spec sin comandos (solo `cas_count`) devuelve `[]` y no opina.
+    """
+    rows = []
+    for index, ca in enumerate((load(root).get("cas") or []), start=1):
+        if not isinstance(ca, dict):
+            continue
+        argv = ca.get("command")
+        command = " ".join(argv) if isinstance(argv, list) else str(argv or "")
+        if not command.strip():
+            continue
+        exit_code, detail = _run_once(root, argv if isinstance(argv, list) else _argv(command),
+                                      command, timeout, config)
+        expect = int(ca.get("expect_exit") or 0)
+        rows.append({"id": ca.get("id") or "CA%d" % index, "title": ca.get("title") or command,
+                     "command": command, "expect_exit": expect, "exit": exit_code,
+                     "ok": exit_code is not None and exit_code == expect, "detail": detail,
+                     "at": _now()})
+    return rows
+
+
+def met(rows):
+    """`True` solo si hay criterios y todos cumplen. Vacio no es exito: es ausencia de medida."""
+    return bool(rows) and all(row.get("ok") for row in rows)
+
+
+def _run_once(root, argv, command, timeout, config=None):
+    """Un comando, con la politica delante. `(exit, detalle)`; `exit=None` = no se pudo lanzar."""
+    if not argv:
+        return None, "comando ilegible"
+    verdict = policy.classify(command, policy.mode_of(config))
+    if not verdict.allowed:
+        return None, "refusado por politica: %s" % verdict.reason
+    try:
+        done = subprocess.run(argv, cwd=str(root), capture_output=True, text=True,
+                              errors="replace", timeout=int(timeout),
+                              creationflags=WINDOWS_FLAGS)
+    except (OSError, subprocess.SubprocessError) as exc:
+        return None, "%s: %s" % (type(exc).__name__, exc)
+    output = ((done.stdout or "") + (done.stderr or "")).strip()
+    return done.returncode, output[-400:] or "(sin salida)"
+
+
+def add_criterion(root, title, command, expect_exit=0, origin="finding", signature="",
+                  config=None, timeout=TIMEOUT):
+    """ANADE un criterio descubierto durante el trabajo. Nunca quita ni debilita los congelados.
+
+    Se niega en dos casos, y los dos importan: un comando que no se puede ejecutar (seria una promesa
+    sin prueba) y un criterio que YA se cumple (no es un hueco, es ruido en la lista).
+    """
+    argv = _argv(command)
+    exit_code, detail = _run_once(root, argv, command, timeout, config)
+    if exit_code is None:
+        return {"ok": False, "reason": detail, "command": str(command)}
+    expect = int(expect_exit or 0)
+    if exit_code == expect:
+        return {"ok": False, "reason": "ya se cumple (exit %s): no es un hueco" % exit_code,
+                "command": str(command)}
+    previous = load(root)
+    cas = merge(previous, [{"title": str(title or command)[:160], "command": argv,
+                            "expect_exit": expect, "source": origin,
+                            "evidence": {"exit": exit_code, "at": _now()}}])
+    if len(cas) == len(previous.get("cas") or []):
+        return {"ok": False, "reason": "ese comando ya esta en la spec", "command": str(command)}
+    spec = build_spec(previous.get("goal"), cas, previous, origin="grown")
+    spec["grown_at"] = _now()
+    spec["grown_by"] = str(signature or origin)
+    path = save(root, spec)
+    return {"ok": True, "path": path, "added": cas[-1], "spec": spec, "exit": exit_code}
