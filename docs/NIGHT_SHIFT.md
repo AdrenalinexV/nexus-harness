@@ -254,3 +254,37 @@ llamada al modelo, no por lo que un comando de shell pueda gastar por su cuenta.
 Porque el turno de noche **no puede hacer trampa sin que se note**: cada afirmación suya deja un exit
 code en `.ai/HARNESS_STATE.json`, cada cambio deja un commit, y `nightshift report` reconstruye la
 noche desde los datos, no desde el relato. Si el agente se equivoca, la rúbrica lo dice por la mañana.
+
+## Subida del listón: autonomía real (criterios 18-23, v1.0.0)
+
+Esto **añade** seis criterios y no toca ninguno de los 17 anteriores. Cada uno tiene su comando en
+`tools/proofs.py` (una suite del código fuente) y su `contains: failures=0`; el estado fresco está en
+`.ai/HARNESS_STATE.json` y la tabla en `docs/NIGHT_REPORT.md`.
+
+| criterio | exige | prueba |
+|---|---|---|
+| `relay-auto` | poda al 55 % con `(path, líneas, sha256)` y estado del 70 % que no borra el plan del protocolo | `python tools/proofs.py relay` |
+| `skills-autonomous` | techo de 10 en RAM, catálogo dormido con sha256 y forja con procedencia | `python tools/proofs.py skills` |
+| `worktree-isolation` | el Obrero repara en `git worktree` y solo promueve con el gate verde | `python tools/proofs.py worktree` |
+| `vps-deploy` | SSH+Compose desde la bóveda, `secrets.env` 0600, plan en seco y redacción | `python tools/proofs.py deploy` |
+| `judge-context` | conversación ≠ código, y al segundo fallo las líneas reales del fichero | `python tools/proofs.py judge` |
+| `spec-priority` | Nexus-Harness #1 de la cola con `.ai/CURRENT_SPEC.json` presente y con criterios | `python tools/proofs.py priority` |
+
+Evidencia de la sesión (toda medida, no deducida):
+
+1. `nightshift check <los seis>` → exit **0** cada uno; barrido completo 23/23 exit 0.
+2. **Falsificación medida** en el relevo: al escribir el estado con una copia en memoria, la suite
+   `session_relay` pasó de 3 fases cerradas a **1** (`the protocol closed the phases with exit codes:
+   1, esperaba 3`). Por eso `RelayState.save()` relee el fichero y solo pisa la clave `harness`.
+3. **Falsificación en producción**: el dogfooding disparó `session_09 -> session_10` y
+   `session_12 -> session_13` con `context.pruned` en el log, sin intervención humana.
+4. **Falsificación del worktree**: un gate rojo dentro del sandbox no promovió nada y el árbol
+   principal quedó byte a byte igual; un Obrero que lanza tampoco lo tocó.
+5. **Falsificación del juez**: con el JSON sucio (`{razonamiento} {json}`) el turno se rechazaba con
+   el gate en verde; ahora se lee el objeto que parsea y sigue habiendo reject si no hay veredicto.
+6. El árbol principal cambió cuatro veces por defectos que encontró el dogfooding, no por una lista de
+   deseos: `reasoning_content` ignorado, juez llamado «gate rojo», worktrees huérfanos contados como
+   código y `parse_verdict` frágil.
+
+Límite escrito: el deploy se probó en seco porque la bóveda de esta máquina no tiene claves `VPS_*`;
+la prueba contra un host real queda pendiente y está anotada en `docs/MORNING_REPORT.md`.

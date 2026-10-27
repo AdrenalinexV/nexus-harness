@@ -2,9 +2,9 @@
 
 Generado por `tools/nightshift.py report` (no se escribe a mano).
 
-- fecha: 2026-10-27T01:04:13Z
-- HEAD: `0cac22d`
-- iteracion: 105
+- fecha: 2026-10-27T01:51:42Z
+- HEAD: `99ed438`
+- iteracion: 119
 - criterios: **23/23**
 
 ## Rubrica
@@ -37,14 +37,14 @@ Generado por `tools/nightshift.py report` (no se escribe a mano).
 
 ## Evidencia cruda
 
-### gate-lint (exit 0, 2026-10-25T08:58:06Z)
+### gate-lint (exit 0, 2026-10-27T01:48:39Z)
 
 ```
 $ python tools/lint_harness.py
-files=79 findings=0 max_lines=400
+files=119 findings=0 max_lines=400 ignored_runtime=0
 ```
 
-### hook-contract (exit 0, 2026-10-25T09:00:54Z)
+### hook-contract (exit 0, 2026-10-27T01:51:39Z)
 
 ```
 $ python C:/Proyectos/NexusProtocol/nexus/cli.py gate --hook --selftest --json
@@ -83,38 +83,37 @@ $ python tools/proofs.py priority
 failures=0
 ```
 
-### suites-source (exit 0, 2026-10-25T08:58:18Z)
+### suites-source (exit 0, 2026-10-27T01:48:55Z)
 
 ```
 $ python -m nexus_harness selftest
-a         OK    0.04s
-shell_session    OK    1.32s
-shell_policy     OK    0.12s
-checkpoint       OK    0.22s
-subagents        OK    0.01s
-warning: The `fitz` API is deprecated and will be removed in future. Use `import pymupdf` instead.
-attachments      OK    0.13s
-onboarding       OK    0.11s
-mcp_client       OK    0.30s
-sidecar          OK    5.09s
-estado listo: 2 criterios (2 pendientes)
+rs\Vexus\AppData\Local\Temp\nightshift-agw3j0jj\.nexus\harness\nightshift.lock
+TOCA: b — falla
+  prueba: python -c "raise SystemExit(10)"
+  estado: blocked (intentos 1)
 a -> exit 0 (VERDE)
 findings=0
-b -> exit 10 (ROJO)
-
-b marcado blocked
-criterio desconocido: zzz
-nightshift       OK    0.19s
-context_router   OK    0.01s
-triad_loop       OK    1.54s
-session_relay    OK    0.88s
-compaction       OK    0.01s
-chat             OK    0.13s
-memory           OK    0.29s
-ui               OK    0.86s
+nightshift       OK    0.27s
+context_router   OK    0.07s
+triad_loop       OK    1.63s
+session_relay    OK    0.85s
+relay_state      OK    0.15s
+skills           OK    0.08s
+worktree         OK    2.08s
+deploy           OK    0.02s
+judge_repair     OK    0.01s
+compaction       OK    0.02s
+chat             OK    0.14s
+memory           OK    0.35s
+ui               OK    0.68s
 bridge           OK    0.05s
-budget           OK    0.02s
-suites=23 failures=0
+budget           OK    0.03s
+charts           OK    0.00s
+activity         OK    0.00s
+projects         OK    0.50s
+autonomy         OK    0.23s
+ux               OK    1.53s
+suites=33 failures=0
 ```
 
 ### vps-deploy (exit 0, 2026-10-27T01:04:10Z)
@@ -131,14 +130,14 @@ $ python tools/proofs.py worktree
 failures=0
 ```
 
-### adapter-aider (exit 0, 2026-10-25T09:00:54Z)
+### adapter-aider (exit 0, 2026-10-27T01:51:39Z)
 
 ```
 $ python -m nexus.harness.adapters --check aider --root .
-ok: aider -- lint-cmd and test-cmd written to .aider.conf.yml, and the lint entry point answered: files=79 findings=0
+ok: aider -- lint-cmd and test-cmd written to .aider.conf.yml, and the lint entry point answered: files=119 findings=0
 ```
 
-### cost-budget (exit 0, 2026-10-25T09:00:57Z)
+### cost-budget (exit 0, 2026-10-27T01:51:42Z)
 
 ```
 $ python -m nexus_harness selftest budget
@@ -154,14 +153,15 @@ escrito docs\NIGHT_REPORT.md (17/17 en verde)
 ok: el informe cubre los 17 criterios
 ```
 
-### frozen-engine (exit 0, 2026-10-25T08:58:42Z)
+### frozen-engine (exit 0, 2026-10-27T01:49:29Z)
 
 ```
 $ python tools/verify.py --frozen
-lint      exit 0   files=79 findings=0 max_lines=400
-selftest  exit 0   suites=23 failures=0
-frozen    exit 0   suites=23 failures=0 (same as the source)
+lint      exit 0   files=119 findings=0 max_lines=400 ignored_runtime=0
+selftest  exit 0   suites=33 failures=0
+frozen    exit 0   suites=33 failures=0 (same as the source)
 verify: GREEN
+actualizado docs\VERIFICATION.md
 ```
 
 ### no-orphans (exit 0, 2026-10-25T09:01:03Z)
@@ -172,14 +172,14 @@ sidecar          OK    5.13s
 suites=1 failures=0
 ```
 
-### protocol-lint (exit 0, 2026-10-25T12:06:10Z)
+### protocol-lint (exit 0, 2026-10-27T01:49:30Z)
 
 ```
 $ python -c "import sys; sys.path.insert(0, r'C:/Proyectos/NexusProtocol'); from nexus.checks import rules_lint; r=rules_lint.lint_repo(r'C:/Proyectos/NexusProtocol'); print('findings=%d' % len(r['findings'])); raise SystemExit(0 if not r['findings'] else 1)"
 findings=0
 ```
 
-### providers-retry (exit 0, 2026-10-25T09:00:55Z)
+### providers-retry (exit 0, 2026-10-27T01:51:40Z)
 
 ```
 $ python -m nexus_harness selftest retry
@@ -187,38 +187,38 @@ retry            OK    0.00s
 suites=1 failures=0
 ```
 
-### shell-policy (exit 0, 2026-10-25T09:00:56Z)
+### shell-policy (exit 0, 2026-10-27T01:51:41Z)
 
 ```
 $ python -m nexus_harness selftest shell_policy
-shell_policy     OK    0.15s
+shell_policy     OK    0.12s
 suites=1 failures=0
 ```
 
-### turn-checkpoint (exit 0, 2026-10-25T09:00:57Z)
+### turn-checkpoint (exit 0, 2026-10-27T01:51:42Z)
 
 ```
 $ python -m nexus_harness selftest checkpoint
-checkpoint       OK    0.24s
+checkpoint       OK    0.36s
 suites=1 failures=0
 ```
 
-### adapter-claude (exit 0, 2026-10-25T09:00:55Z)
+### adapter-claude (exit 0, 2026-10-27T01:51:40Z)
 
 ```
 $ python -m nexus.harness.adapters --check claude --root .
 ok: claude -- .claude/settings.json carries a Stop handler that ran twice: it lets an inert turn close and it blocks a frozen one with the gate's own message
 ```
 
-### context-compaction (exit 0, 2026-10-25T09:00:56Z)
+### context-compaction (exit 0, 2026-10-27T01:51:41Z)
 
 ```
 $ python -m nexus_harness selftest compaction
-compaction       OK    0.02s
+compaction       OK    0.07s
 suites=1 failures=0
 ```
 
-### protocol-doctor (exit 0, 2026-10-25T12:09:11Z)
+### protocol-doctor (exit 0, 2026-10-27T01:51:38Z)
 
 ```
 $ python C:/Proyectos/NexusProtocol/nexus/cli.py doctor
@@ -233,11 +233,11 @@ the judge's two routes: three measured endpoints, and two refusals with no panel
   everything a self-test can prove is green
 ```
 
-### tool-arg-repair (exit 0, 2026-10-25T09:00:55Z)
+### tool-arg-repair (exit 0, 2026-10-27T01:51:40Z)
 
 ```
 $ python -m nexus_harness selftest repair
-repair           OK    0.15s
+repair           OK    0.14s
 suites=1 failures=0
 ```
 
