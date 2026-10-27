@@ -26,6 +26,7 @@ from .turn_context import apply_budget, build_turn_prefix, inject_skills
 from .gate import EXIT_GREEN, EXIT_UNAVAILABLE, Gate
 from .judge import Judge
 from .message import Message, as_text
+from .outcomes import record_skills
 from .repair_guard import isolated_repair
 from .savings import CACHE_REL as SKILLS_CACHE, SavingsLedger
 from .subagents import Delegate
@@ -249,8 +250,7 @@ class Triad:
 
     def _absorb(self, reply):
         self.cost.observe(reply.usage, reply.model)
-        # Los tokens del run se cuentan aqui y viajan en el resultado: el libro de turnos los necesita
-        # para que la grafica de ahorro tenga cifras propias, no las del gobernador.
+        # Los tokens del run viajan en el resultado: el libro los necesita para su propia grafica.
         self.tokens["prompt"] += int(getattr(reply.usage, "prompt", 0) or 0)
         self.tokens["completion"] += int(getattr(reply.usage, "completion", 0) or 0)
         if self.relay is not None:
@@ -369,6 +369,8 @@ class Triad:
             self.relay.finish(result.exit)
             result.budget = self.relay.meter.state()
             result.sessions = self.relay.store.ids()
+        record_skills(self.skills, self.config.default_root, result.exit,
+                      (result.judgement or {}).get("verdict", ""), "run")
         self._record(result)
         self._emit("run.end", "exit %s" % result.exit, ok=result.ok, summary=result.summary[:600])
         return result

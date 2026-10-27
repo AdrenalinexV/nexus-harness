@@ -25,6 +25,7 @@ from .compaction import Compactor
 from .context_compiler import TurnWindow, build_prefix
 from .context_pruner import prune
 from .message import Message, as_text
+from .outcomes import record_skills
 from .tokenizer import calibration, count_messages
 from .turn_context import (apply_budget, build_turn_prefix, inject_skills, is_delta,
                            model_of, split_history)
@@ -341,6 +342,7 @@ class Chat:
         if verdict is not None:
             turn.exit = verdict.exit
             turn.verdict = verdict.as_dict()
+            record_skills(self.skills, self.config.default_root, turn.exit, "", "chat")
         turn.repairs = attempts
         if verdict is not None and verdict.ok and self.judge is not None:
             judgement = self.judge.review(text, reply, self.touched,
@@ -352,8 +354,8 @@ class Chat:
         turn.budget = self.cost.state()
         turn.tokens = dict(self.turn_tokens, total=sum(self.turn_tokens.values()))
         turn.savings = self.savings.as_dict()
-        injection = getattr(self.skills, "last", None)
-        turn.skills = list(getattr(injection, "names", []) or [])
+        entries = getattr(self.skills, "last", None) or []
+        turn.skills = [entry.get("name") for entry in entries if isinstance(entry, dict)]
         self.last_turn = turn
         self._persist(turn)
         self._emit("chat.turn", "exit %s" % turn.exit, turn=turn.as_dict())

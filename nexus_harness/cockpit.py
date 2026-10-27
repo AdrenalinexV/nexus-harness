@@ -22,7 +22,7 @@ from .autonomy import Autopilot, model_planner
 from .bridge import Bridge
 from .chat import Chat
 from .config import HarnessConfig
-from .context_router import ContextRouter
+from .skill_router import library
 from .events import Bus
 from .gate import Gate
 from .judge import Judge
@@ -123,7 +123,7 @@ class Cockpit:
         config = replace(self.config, default_root=target)
         registry = default_registry(target, config, mcp=self.mcp())
         self.chat = Chat(self.router, config, registry, Gate(target, config),
-                         ContextRouter(config.lang), bus=self.bus, memory=self.memory,
+                         library(target), bus=self.bus, memory=self.memory,
                          transcripts=Transcripts(target), judge=Judge(self.router, config.lang))
         return self.chat
 

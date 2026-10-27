@@ -74,7 +74,8 @@ def inject_skills(skills, files, emit=None, kind="skills"):
     if skills is None:
         return "", 0
     try:
-        injection = skills.select(sorted(files or ()))
+        injection = (skills.inject(list(files or ())) if hasattr(skills, "inject")
+                     else skills.select(sorted(files or ())))
     except Exception as exc:  # noqa: BLE001 -- sin skills se trabaja; con el turno caido, no
         if emit is not None:
             emit("skills.injected", "(error)", names=[], tokens=0, available=False,

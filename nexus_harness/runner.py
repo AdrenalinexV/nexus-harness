@@ -11,7 +11,7 @@ codigo de salida es una consecuencia, no la medida.
 from dataclasses import replace
 from pathlib import Path
 
-from .context_router import ContextRouter
+from .skill_router import library
 from .gate import Gate
 from .judge import Judge
 from .session_relay import SessionRelay
@@ -32,6 +32,6 @@ def run_triad(config, root, goal, router, bus=None, test_command=None):
     relay = SessionRelay(root, goal=goal, config=local, bus=bus)
     relay.start()
     triad = Triad(router, local, registry=default_registry(root, local), gate=Gate(root, local),
-                  judge=Judge(router, local.lang), skills=ContextRouter(local.lang), bus=bus,
+                  judge=Judge(router, local.lang), skills=library(root), bus=bus,
                   relay=relay)
     return triad.run(goal), triad

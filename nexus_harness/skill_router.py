@@ -18,8 +18,10 @@ concurso que las del protocolo. Una skill forjada que nunca gana un turno es una
 """
 import json
 import re
+from dataclasses import dataclass, field
 from pathlib import Path
 
+from .outcomes import Outcomes
 from .relay_state import sha256_text
 
 MAX_ACTIVE = 10
@@ -27,6 +29,11 @@ DORMANT_REL = Path(".nexus") / "skills-dormant"
 INDEX_NAME = "index.json"
 FORGED_REL = Path(".nexus") / "skills"
 NEXUS_SOURCE = Path(r"C:\Proyectos\NexusProtocol")
+# Las raices que de verdad tiene esta maquina: el protocolo, lo forjado y el catalogo que el operador
+# ya usa en Hermes. Se declaran aqui y no se inventan rutas: una que no exista simplemente no aporta.
+HERMES_ROOTS = (Path.home() / "AppData/Local/hermes/profiles/nexus-harness/skills",
+                Path.home() / "AppData/Local/hermes/skills")
+MAX_BRIEF_CHARS = 120
 STOPWORDS = {"the", "and", "for", "con", "los", "las", "del", "que", "una", "por", "para", "este",
              "esta", "como", "mas", "pero", "sin", "sus", "sea", "hay", "todo", "cada"}
 FRONTMATTER = re.compile(r"^---\s*\n(.*?)\n---\s*\n?", re.S)
@@ -96,23 +103,59 @@ def scan(root, limit=600):
 
 
 def protocol_roots(project_root=None):
-    """Las raices reales del protocolo, si esta en esta maquina. Nunca se inventan rutas."""
+    """Las raices reales del catalogo, si estan en esta maquina. Nunca se inventan rutas."""
     roots = [Path(project_root) / FORGED_REL] if project_root else []
-    for candidate in (NEXUS_SOURCE / "skills", NEXUS_SOURCE / "nexus" / "skills"):
+    for candidate in (NEXUS_SOURCE / "skills", NEXUS_SOURCE / "nexus" / "skills") + HERMES_ROOTS:
         if candidate.is_dir():
             roots.append(candidate)
     return roots
 
 
+@dataclass
+class Injection:
+    """Lo que viaja con el turno: nombres, texto compacto, coste y por que. Un solo contrato."""
+
+    names: list = field(default_factory=list)
+    entries: list = field(default_factory=list)
+    brief: str = ""
+    tokens: int = 0
+    available: bool = True
+    note: str = ""
+
+    def as_dict(self):
+        return {"names": list(self.names), "tokens": self.tokens, "available": self.available,
+                "note": self.note, "chars": len(self.brief)}
+
+
+def brief_of(entries):
+    """El texto que viaja: una linea por skill, con su descripcion recortada.
+
+    No se manda el cuerpo entero: 173 cuerpos son ~446.000 tokens (medido). Lo que el modelo necesita
+    al planear es QUE existe y para que sirve; el cuerpo se lee con `read_file` cuando hace falta.
+    """
+    lines = []
+    for entry in entries:
+        description = " ".join(str(entry.get("description") or "").split())
+        if len(description) > MAX_BRIEF_CHARS:
+            description = description[:MAX_BRIEF_CHARS - 1] + "\u2026"
+        lines.append("- %s: %s" % (entry.get("name"), description or "(sin descripcion)"))
+    if not lines:
+        return ""
+    return "## Skills de este turno (lee el SKILL.md si necesitas la regla completa)\n%s" \
+        % "\n".join(lines)
+
+
 class SkillRouter:
     """Puntua el catalogo contra la tarea y los ficheros del turno, y aplica el techo de 10."""
 
-    def __init__(self, root=None, roots=None, max_active=MAX_ACTIVE):
+    def __init__(self, root=None, roots=None, max_active=MAX_ACTIVE, outcomes=None):
         self.root = Path(root) if root else None
         self.roots = [Path(item) for item in (roots or protocol_roots(root))]
         self.max_active = max(1, int(max_active))
         self.catalog = []
         self.last = []
+        # El libro de resultados ajusta el ORDEN; no inventa skills ni sustituye al lexico.
+        self.outcomes = outcomes
 
     def load(self):
         seen, rows = set(), []
@@ -140,6 +183,16 @@ class SkillRouter:
                 score += 2
         return score
 
+    def raise_score(self, score, name):
+        """Ajusta el score con la tasa de exito medida de esa skill (acotada, nunca secuestra)."""
+        if self.outcomes is None or score <= 0:
+            return score
+        try:
+            multiplier = float(self.outcomes.multiplier(name))
+        except Exception:  # noqa: BLE001 -- un libro ilegible no puede dejar el turno sin skills
+            return score
+        return int(round(score * multiplier))
+
     def select(self, task="", files=(), limit=None):
         """La lista que viaja: como mucho `limit` (y nunca mas de `max_active`), ordenada."""
         if not self.catalog:
@@ -148,11 +201,27 @@ class SkillRouter:
         task_words = words(task)
         file_exts = sorted({EXTENSIONS.get(Path(str(name)).suffix.lower(), "")
                             for name in files or ()} - {""})
-        scored = [(self.score(entry, task_words, file_exts), entry) for entry in self.catalog]
+        scored = [(self.raise_score(self.score(entry, task_words, file_exts), entry["name"]), entry)
+                  for entry in self.catalog]
         scored = [(score, entry) for score, entry in scored if score > 0]
         scored.sort(key=lambda pair: (-pair[0], pair[1]["name"]))
         self.last = [entry for _score, entry in scored[:cap]]
         return self.last
+
+    def inject(self, files=(), task="", limit=None):
+        """El contrato que usa el bucle: nombres, brief medido y coste. Una sola fuente de skills.
+
+        Se enruta tambien con los NOMBRES de los ficheros: un turno sobre `auth.py` lleva las skills
+        de auth aunque la frase del operador no diga la palabra.
+        """
+        if not self.catalog:
+            self.load()
+        names = sorted(str(item) for item in files or () if str(item).strip())
+        picked = self.select(" ".join([str(task or "")] + names), names, limit)
+        brief = brief_of(picked)
+        return Injection(names=[entry["name"] for entry in picked], entries=picked, brief=brief,
+                         tokens=max(0, len(brief) // 4), available=True,
+                         note="" if picked else "ninguna skill puntuo para este turno")
 
     def dormant(self):
         """El catalogo que NO viaja: lo que queda fuera del techo."""
@@ -185,6 +254,17 @@ class SkillRouter:
         return {"catalog": len(self.catalog), "active": [entry["name"] for entry in self.last],
                 "dormant": max(0, len(self.catalog) - len(self.last)), "cap": self.max_active,
                 "roots": [str(root) for root in self.roots]}
+
+
+def library(root=None, max_active=MAX_ACTIVE, outcomes=None):
+    """El UNICO catalogo del arnes: protocolo, skills forjadas y catalogo de Hermes, con su libro.
+
+    Antes habia dos enrutadores (uno de 2 especialistas y otro de 10 con dormidas) y solo uno corria.
+    Este es el que corre, y su `inject()` es el contrato que usan el chat y la triada.
+    """
+    target = Path(root) if root else None
+    book = outcomes if outcomes is not None else (Outcomes(target) if target else None)
+    return SkillRouter(target, max_active=max_active, outcomes=book).load()
 
 
 def selftest():

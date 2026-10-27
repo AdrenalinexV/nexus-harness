@@ -54,9 +54,51 @@ def test_the_tool_is_in_the_arsenal(failures):
         check("no pisa sin permiso", "ya existia" in second.text, True, failures)
 
 
+def test_one_catalog_and_the_outcome_boost(failures):
+    """Un solo catalogo, y el libro de resultados cambia el ORDEN sin inventar skills."""
+    from .. import outcomes
+
+    with TempProject() as root:
+        catalog = root / "catalogo"
+        for name in ("alpha-python", "beta-python", "gamma-python"):
+            folder = catalog / name
+            folder.mkdir(parents=True)
+            (folder / "SKILL.md").write_text(
+                "---\nname: %s\ndescription: python servicio\nkeywords: python api\n---\n\ncuerpo\n"
+                % name, encoding="utf-8")
+        book = outcomes.Outcomes(root / ".nexus" / "harness" / "o.jsonl")
+        router = skill_router.SkillRouter(root, roots=[catalog], outcomes=book).load()
+        before = [entry["name"] for entry in router.select("python", ["api.py"])]
+        check("sin muestras el orden es el lexico", before[0], "alpha-python", failures)
+        for _round in range(8):
+            book.record(["beta-python"], 0, tag="test")
+            book.record(["alpha-python"], 10, tag="test")
+        after = [entry["name"] for entry in router.select("python", ["api.py"])]
+        check("el que gana turnos sube", after[0], "beta-python", failures)
+        check("el que los pierde baja", after[-1], "alpha-python", failures)
+        check("el libro no inventa skills", sorted(after),
+              ["alpha-python", "beta-python", "gamma-python"], failures)
+        injection = router.inject(["api.py"], task="python")
+        check("inject trae el brief medido", injection.tokens > 0 and bool(injection.brief), True,
+              failures)
+        check("y respeta el techo", len(injection.names) <= skill_router.MAX_ACTIVE, True, failures)
+        check("una fila por skill y turno", len(book.rows()), 16, failures)
+        check("un turno sin exit no apunta nada", book.record(["beta-python"], None), 0, failures)
+
+
+def test_the_library_is_the_only_source(failures):
+    """El contrato que usan chat y triada: `inject()` existe y el catalogo real se escanea."""
+    library = skill_router.library(".")
+    check("el catalogo real tiene skills", len(library.catalog) > 0, True, failures)
+    injection = library.inject(["nexus_harness/chat.py"])
+    check("y devuelve un contrato Injection", hasattr(injection, "names"), True, failures)
+
+
 def run():
     failures = []
     test_module_selftests(failures)
     test_a_forged_skill_wins_the_next_turn(failures)
     test_the_tool_is_in_the_arsenal(failures)
+    test_one_catalog_and_the_outcome_boost(failures)
+    test_the_library_is_the_only_source(failures)
     return failures

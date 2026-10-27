@@ -16,7 +16,7 @@ from pathlib import Path
 from . import __version__
 from .bridge import Bridge
 from .config import HarnessConfig
-from .context_router import ContextRouter
+from .skill_router import library
 from .events import Bus
 from .gate import Gate
 from .judge import Judge
@@ -39,7 +39,7 @@ def _triad(config, bus, relay=None, lang=None):
     router = Router(config)
     return Triad(router, config, registry=default_registry(config.default_root, config),
                  gate=Gate(config.default_root, config), judge=Judge(router, lang or config.lang),
-                 skills=ContextRouter(lang or config.lang), bus=bus, relay=relay)
+                 skills=library(config.default_root), bus=bus, relay=relay)
 
 
 def cmd_run(args):
@@ -90,7 +90,7 @@ def cmd_chat(args):
     bus = Bus()
     router = Router(config)
     chat = Chat(router, config, default_registry(config.default_root, config),
-                Gate(config.default_root, config), ContextRouter(config.lang), bus=bus,
+                Gate(config.default_root, config), library(config.default_root), bus=bus,
                 memory=Memory(), transcripts=Transcripts(config.default_root),
                 judge=Judge(router, config.lang))
     chat.new(args.message[:60])
