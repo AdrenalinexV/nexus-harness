@@ -88,7 +88,9 @@ def model_planner(router, config):
         except Exception as exc:  # noqa: BLE001 -- el bucle informa del motivo, no se cae
             return {"done": False, "step": "", "why": "el Director no contesto: %s: %s"
                     % (type(exc).__name__, exc)}
-        result = parse_plan(getattr(reply, "text", ""))
+        # Un modelo de razonamiento puede devolver SOLO `reasoning_content` (Qwen/DeepSeek). Ignorarlo
+        # dejaba el plan vacio y el bucle parado con "el planificador no propuso ningun paso": medido.
+        result = parse_plan(getattr(reply, "text", "") or getattr(reply, "reasoning", ""))
         result["model"] = getattr(reply, "model", "")
         return result
 
