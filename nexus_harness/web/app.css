@@ -335,3 +335,11 @@ button.danger { color: var(--bad); border-color: color-mix(in srgb, var(--bad) 4
 #pop-summary { margin: .35rem 0 .5rem; }
 #pop-summary.ok { color: var(--ok); }
 #pop-summary.bad { color: var(--bad); }
+
+/* Razonamiento de modelos locales: plegado, escapado y con scroll propio. */
+.reasoning { margin: .2rem 0; }
+.reasoning summary { cursor: pointer; list-style: none; }
+.reasoning summary::-webkit-details-marker { display: none; }
+.reasoning pre { white-space: pre-wrap; max-height: 14rem; overflow: auto;
+  margin: .25rem 0 0; padding: .4rem .5rem; border-left: 2px solid var(--border);
+  color: var(--muted-foreground); font-size: .82rem; }

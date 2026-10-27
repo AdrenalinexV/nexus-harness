@@ -116,8 +116,21 @@ function paintFeed() {
   for (const row of feed.slice(-14)) {
     const line = document.createElement('div');
     line.className = 'feed-row' + (row.kind === 'gate.verdict' || row.kind === 'judge.verdict' ? ' gate' : '');
+    const detail = String(row.detail || '');
+    if (row.kind.endsWith('.reasoning')) {
+      /* El pensamiento de un modelo local (Qwen/DeepSeek) no se tira ni se mezcla con la respuesta:
+         va en un bloque plegable, entero y escapado. Un `<details>` no rompe el parser ni el JSON del
+         juez, y el operador puede leerlo sin que ocupe la conversacion. */
+      const fold = document.createElement('details');
+      fold.className = 'reasoning';
+      fold.innerHTML = `<summary><span class="k">${esc(LABEL[row.kind] || row.kind)}</span>
+        <span class="d">${esc(detail.slice(0, 120))}</span></summary>
+        <pre>${esc(detail)}</pre>`;
+      box.appendChild(fold);
+      continue;
+    }
     line.innerHTML = `<span class="k">${esc(LABEL[row.kind] || row.kind)}</span>
-                      <span class="d">${esc(String(row.detail || '').slice(0, 160))}</span>`;
+                      <span class="d">${esc(detail.slice(0, 160))}</span>`;
     box.appendChild(line);
   }
   if (feed.length) $('thread').scrollTop = $('thread').scrollHeight;

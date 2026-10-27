@@ -37,16 +37,44 @@ SYSTEM = {
 }
 
 
+CONVERSATION = {
+    "es": ("Eres el Juez de un harness de ingeniería. Este turno NO tocó ficheros: es una consulta o "
+           "una conversación. Evalúa si la respuesta es ÚTIL, correcta y responde a lo que se preguntó. "
+           "NO la rechaces por no haber editado nada: en un turno de solo lectura no editar es lo "
+           'correcto. Responde SOLO con JSON: {"verdict": "approve" | "reject", "reason": "<una frase>"}.'),
+    "en": ("You are the judge of an engineering harness. This turn touched NO files: it is a question "
+           "or a conversation. Judge whether the answer is USEFUL, correct and answers what was asked. "
+           "Do NOT reject it for not editing anything: in a read-only turn, not editing is correct. "
+           'Answer ONLY with JSON: {"verdict": "approve" | "reject", "reason": "<one sentence>"}.'),
+}
+
+
+def mode_for(files, gate_summary="", gate_ran=False):
+    """`conversation` o `code`, decidido con hechos: ficheros tocados y gate ejecutado.
+
+    Es la diferencia que evita el fallo mas caro de un juez: rechazar una respuesta correcta a una
+    pregunta porque "no hay diff". Sin ficheros y sin gate no hay nada que aprobar en codigo, y exigir
+    edicion convertiria cada consulta en un rojo.
+    """
+    if list(files or ()) or gate_ran:
+        return "code"
+    text = str(gate_summary or "").strip().lower()
+    if text and "no gate" not in text and "no se ejecuto" not in text:
+        return "code"
+    return "conversation"
+
+
 @dataclass
 class Judgement:
     verdict: str = "skipped"
     ok: bool = True
     reason: str = ""
     model: str = ""
+    mode: str = "code"
 
     def as_dict(self):
         return {"verdict": self.verdict, "ok": self.ok, "reason": self.reason,
-                "model": self.model}
+                "model": self.model, "mode": self.mode}
 
 
 def parse_verdict(text):
@@ -73,23 +101,25 @@ class Judge:
         self.lang = lang if lang in SYSTEM else "en"
         self.max_tokens = max_tokens
 
-    def review(self, goal, summary, files, gate_summary):
+    def review(self, goal, summary, files, gate_summary, mode=None, gate_ran=False):
         info = self.router.info("judge")
+        mode = mode or mode_for(files, gate_summary, gate_ran)
         if not info.ready:
-            return Judgement(verdict="skipped", ok=True,
+            return Judgement(verdict="skipped", ok=True, mode=mode,
                              reason="judge unavailable: %s" % (info.why_not_ready or "not configured"))
+        system = (CONVERSATION if mode == "conversation" else SYSTEM)[self.lang]
         prompt = self._prompt(goal, summary, files, gate_summary)
         try:
             reply = self.router.role("judge").chat(
-                [Message(role="system", content=SYSTEM[self.lang]),
+                [Message(role="system", content=system),
                  Message(role="user", content=prompt)],
                 temperature=0.0, max_tokens=self.max_tokens)
         except Exception as exc:  # a judge that crashes must not fail the whole run open
-            return Judgement(verdict="skipped", ok=True,
+            return Judgement(verdict="skipped", ok=True, mode=mode,
                              reason="judge call failed: %s: %s" % (type(exc).__name__, exc))
         verdict, reason = parse_verdict(reply.text or reply.reasoning)
         return Judgement(verdict=verdict, ok=(verdict != "reject"), reason=reason,
-                         model=reply.model or info.model)
+                         model=reply.model or info.model, mode=mode)
 
     def _prompt(self, goal, summary, files, gate_summary):
         listed = ", ".join(sorted(set(files or []))[:20]) or "(no file touched)"

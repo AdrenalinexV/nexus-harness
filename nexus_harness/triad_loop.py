@@ -268,8 +268,8 @@ class Triad:
         return verdict
 
     def _judge(self, goal, summary):
-        judgement = self.judge.review(goal, summary, self.touched,
-                                      self._last_verdict_text())
+        judgement = self.judge.review(goal, summary, self.touched, self._last_verdict_text(),
+                                      gate_ran=self._verdict is not None)
         self._emit("judge.verdict", judgement.verdict, judgement=judgement.as_dict())
         return judgement
 

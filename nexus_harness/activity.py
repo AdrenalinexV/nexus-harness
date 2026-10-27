@@ -26,7 +26,8 @@ LIVE_PHASES = {"tool.start": ("tool", "🔧"), "tool.call": ("tool", "🔧"),
                "autonomy.plan": ("planning", "⚡"), "autonomy.step": ("autonomy", "🚀"),
                "autonomy.commit": ("commit", "✅"), "chat.user": ("thinking", "⚡"),
                "run.start": ("thinking", "⚡"), "worker.turn": ("thinking", "⚡"),
-               "phase.start": ("thinking", "🚀")}
+               "phase.start": ("thinking", "🚀"), "session.relay": ("relay", "🔄"),
+               "context.pruned": ("compacting", "🧹")}
 # `skills.injected` NO es una fase: ocurre en cada llamada al modelo y tapaba la herramienta en curso
 # con una lista de nombres de skills. Es informacion del hilo, no del estado del motor.
 FINISHED = ("chat.turn", "run.end", "autonomy.done", "autonomy.stopped", "worker.error",
@@ -69,6 +70,13 @@ def _phase_line(event, config):
         target = _tool_target(payload.get("args"))
         return phase, glyph, "Obrero usando %s%s…" % (event.get("detail") or "tool",
                                                       (" en %s" % target) if target else "")
+    if kind == "session.relay":
+        return "relay", "🔄", "Relevo automático de contexto: %s · continuando…" % (
+            event.get("detail") or "sesión nueva")
+    if kind == "context.pruned":
+        return "compacting", "🧹", "Podando salidas antiguas: %s" % (event.get("detail") or "")
+    if kind == "tool.call" and str(event.get("detail") or "") == "forge_or_update_skill":
+        return "skills", "🧠", "Nueva skill auto-forjada (con su sha256)"
     if kind == "tool.call":
         target = _tool_target(payload.get("args"))
         return phase, glyph, "Obrero: %s%s terminó" % (event.get("detail") or "tool",

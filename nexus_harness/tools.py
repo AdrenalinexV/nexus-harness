@@ -14,10 +14,13 @@ Two rules are structural, not stylistic:
 """
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass, field
+from pathlib import Path
 
+from .repair_hint import RepairHints
 from .toolbox import (edit, file_ops, patch_v4a, process_manager, repo_search, shell_session,
                       skill_tools, web)
 
+WRITE_TOOLS = frozenset({"write_file", "patch_replace", "apply_blocks", "apply_patch"})
 ROOT_HANDLERS = (repo_search.HANDLERS, file_ops.HANDLERS, edit.HANDLERS, patch_v4a.HANDLERS,
                  shell_session.HANDLERS, process_manager.HANDLERS, web.HANDLERS,
                  skill_tools.HANDLERS)
@@ -137,6 +140,7 @@ class Registry:
         for module_handlers in (handlers if handlers is not None else ROOT_HANDLERS):
             table.update(module_handlers)
         self.handlers = table
+        self.hints = RepairHints(Path(root))
         self.delegate = delegate
         if delegate is not None:
             self.schemas_list.append(delegate.schema())
@@ -171,6 +175,19 @@ class Registry:
         return [schema for schema in self.schemas_list if schema["function"]["name"] in keep]
 
     def call(self, name, arguments):
+        """Una llamada, con la pista de reparacion cuando el mismo fallo se repite."""
+        observation = self._dispatch(name, arguments)
+        arguments = dict(arguments or {})
+        if observation.ok:
+            if name in WRITE_TOOLS:
+                self.hints.reset(name, arguments)
+            return observation
+        hint = self.hints.note(name, arguments, observation.text)
+        if hint:
+            observation.meta["hint"] = hint
+        return observation
+
+    def _dispatch(self, name, arguments):
         arguments = dict(arguments or {})
         try:
             if self.mcp is not None and self.mcp.handles(name):

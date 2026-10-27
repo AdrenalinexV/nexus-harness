@@ -120,6 +120,6 @@ class Reply:
 
 def as_text(observation):
     """A tool result as the model reads it: the text, or a declared failure. Never an empty string."""
-    if observation.ok:
-        return observation.text
-    return "ERROR: %s" % observation.text
+    text = observation.text if observation.ok else "ERROR: %s" % observation.text
+    hint = (getattr(observation, "meta", None) or {}).get("hint")
+    return ("%s\n\n%s" % (text, hint)) if hint and not observation.ok else text
