@@ -218,6 +218,15 @@
    "proof": "python tools/proofs.py savings",
    "contains": "failures=0",
    "priority": 1
+  },
+  {
+   "id": "repair-cycle",
+   "area": "gobernanza",
+   "title": "Un turno que empieza en rojo se repara en el worktree y termina en verde",
+   "why": "Es la diferencia entre bloqueado para siempre y un arnes que arregla y demuestra.",
+   "proof": "python tools/prove_repair_cycle.py --fake",
+   "contains": "\"cycle\": true",
+   "priority": 1
   }
  ]
 }

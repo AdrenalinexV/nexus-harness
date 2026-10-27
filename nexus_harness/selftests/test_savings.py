@@ -58,6 +58,27 @@ def test_the_same_run_is_not_counted_twice(failures):
           ledger.aggregate(ledger.dedupe([row, twin]))["tokens"], 48930, failures)
 
 
+def test_the_bars_and_the_card_read_the_same_number(failures):
+    """La barra de enviados y la tarjeta salen del MISMO agregado: `sent` y `tokens_sent` no se mezclan.
+
+    Medido en el panel: con el alias viejo, la barra de Nexus-Harness dibujaba 0 enviados al lado de
+    4.859 evitados. Un grafico asi no miente: se contradice.
+    """
+    from .. import stats_savings
+    row = ledger.from_turn({"tokens": {"prompt": 1000, "completion": 5}, "steps": 2,
+                            "savings": {"requests": 2, "sent": 1000, "baseline": 5000, "saved": 4000,
+                                        "savings_pct": 80.0, "context_multiplier": 5.0}},
+                           "Nexus-Harness", "s", "run")
+    aggregate = ledger.aggregate(ledger.dedupe([row]))
+    bucket = aggregate["by_project"]["Nexus-Harness"]
+    check("el bucket usa los nombres de la fila", bucket.get("tokens_sent"), 1000, failures)
+    check("y guarda el ahorro", bucket.get("tokens_saved"), 4000, failures)
+    check("la tarjeta", stats_savings.cards(aggregate)["sent"], 1000, failures)
+    values = [part["value"] for part in stats_savings.rows_for(
+        aggregate, ["Nexus-Harness"])[0]["parts"]]
+    check("la barra de enviados no se queda a cero", values, [1000, 4000], failures)
+
+
 def test_a_real_run_prunes_and_reports_it(failures):
     with TempProject({"calc.py": "def add(a, b):\n    return a + b\n", "big.txt": BIG}) as root:
         config = HarnessConfig(default_root=root, test_command=TEST_COMMAND, max_steps=6,
@@ -107,5 +128,6 @@ def run():
     test_module_selftests(failures)
     test_the_ledger_records_the_savings(failures)
     test_the_same_run_is_not_counted_twice(failures)
+    test_the_bars_and_the_card_read_the_same_number(failures)
     test_a_real_run_prunes_and_reports_it(failures)
     return failures

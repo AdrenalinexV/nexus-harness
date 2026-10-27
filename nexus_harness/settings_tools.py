@@ -201,24 +201,34 @@ def _minutes_per_block(money):
     return float(hours) / float(blocked) * 60.0
 
 
-def _health_charts(cockpit, state):
-    """Las tres barras horizontales del grafico 3: criterios, runs verdes y horas por proyecto."""
+def _health_charts(cockpit, state, aggregate=None):
+    """Las tres barras horizontales del grafico 3: criterios, runs verdes y horas por proyecto.
+
+    Los "runs verdes" salen del LIBRO DEL ARNES cuando ese proyecto tiene turnos medidos, y si no del
+    registro del gobernador. Antes leian siempre los `impact panels`, asi que un turno verde medido hoy
+    en el arnes no aparecia: dos fuentes otra vez, con el mismo defecto que la tarjeta de tokens.
+    """
     queue = projects.queue(cockpit.config)[:8]
     panels = _gate_panels(state)
+    buckets = (aggregate or {}).get("by_project") or {}
     minutes = _minutes_per_block(state.get("money") or {})
     criteria, green, hours = [], [], []
     for row in queue:
         name = row["name"]
         panel = panels.get(name) or {}
+        bucket = buckets.get(name) or {}
         criteria.append({"label": name, "value": (row.get("spec") or {}).get("criteria") or 0,
                          "tone": "accent", "show_zero": True})
-        green.append({"label": name, "value": (panel.get("by_exit") or {}).get("0") or 0,
+        measured_green = bucket.get("green")
+        green.append({"label": name,
+                      "value": (measured_green if measured_green is not None
+                                else (panel.get("by_exit") or {}).get("0") or 0),
                       "tone": "ok", "show_zero": True})
         blocked = int(panel.get("blocked") or 0)
         hours.append({"label": name, "value": round(blocked * minutes / 60.0, 1),
                       "tone": "violet", "show_zero": True})
     blocks = (("Criterios de Spec congelados", criteria, ""),
-              ("Runs verdes del gate", green, ""),
+              ("Runs verdes (libro del arnés · registro del gobernador)", green, ""),
               ("Horas ahorradas (bloqueos × minutos)", hours, " h"))
     return '<div class="chartgrid">%s</div>' % "".join(
         '<div class="chartcard"><h4>%s</h4>%s</div>'
@@ -260,7 +270,7 @@ def _charts(cockpit, state, aggregate):
             '<p class="dim">%s</p></div></div>'
             '<h3 class="ssub">Gráfico 3 · Actividad y salud por proyecto gobernado</h3>%s'
             % (tokens, caption, donut, charts.legend(triad_rows), kit.esc(source),
-               _health_charts(cockpit, state)))
+               _health_charts(cockpit, state, aggregate)))
 
 
 def stats(cockpit):

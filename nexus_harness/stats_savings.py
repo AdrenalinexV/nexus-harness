@@ -36,13 +36,21 @@ def _sent_of(aggregate):
 
 
 def token_rows(cockpit, aggregate):
-    """Una fila por proyecto: consumidos del motor y evitados por el motor. Misma fuente para los dos."""
+    """Una fila por proyecto de la cola, con la medida del motor. Misma fuente para las dos barras."""
+    return rows_for(aggregate, _queue_names(cockpit)[:6])
+
+
+def rows_for(aggregate, names):
+    """Las barras de una lista de proyectos. Puro: se puede probar sin cockpit ni cola."""
     rows, by_project = [], ((aggregate or {}).get("by_project") or {})
-    for name in _queue_names(cockpit)[:6]:
+    for name in names:
         bucket = by_project.get(name) or {}
+        sent = int(bucket.get("tokens_sent") or 0)
         rows.append({"label": name, "parts": [
-            {"value": int(bucket.get("tokens_sent") or 0), "tone": "accent"},
-            {"value": int(bucket.get("saved") or 0), "tone": "ok"}]})
+            {"value": sent, "tone": "accent"},
+            # El ahorro del proyecto sale de la resta de la misma fuente: si no hay enviados medidos,
+            # no se dibuja una barra verde de la nada (un 489 y un 0 al lado no significan nada).
+            {"value": int(bucket.get("tokens_saved") or 0) if sent else 0, "tone": "ok"}]})
     return rows
 
 
@@ -85,18 +93,11 @@ def cost_table(aggregate):
 def block(cockpit, aggregate, money=None):
     """El bloque de ahorro: grafico de motor, componentes y tabla de extrapolacion."""
     values = cards(aggregate)
-    rows = token_rows(cockpit, aggregate)
     measured = values["measured"]
-    chart = charts.columns(rows, width=600, height=220,
-                           why="el libro de turnos del arnes todavia no tiene requests medidas")
     components = ((aggregate or {}).get("savings") or {})
     parts = [
         '<h3 class="ssub">Ahorro del motor · por request</h3>',
-        '<div class="chartcard">%s<div class="vlegends">'
-        '<span class="vlegend"><i style="background:#3b82f6"></i>enviados (real)</span>'
-        '<span class="vlegend"><i style="background:#22c55e"></i>evitados (baseline - enviado)</span>'
-        "</div><p class=\"dim\">%s</p></div>"
-        % (chart, kit.esc(_caption(values))),
+        '<p class="dim">%s</p>' % kit.esc(_caption(values)),
     ]
     if measured:
         parts.append('<div class="kpigrid four">%s%s%s%s</div>' % (

@@ -146,17 +146,19 @@ def aggregate(rows):
         requests += _int(row.get("requests"))
         name = row.get("project") or "(sin proyecto)"
         bucket = by_project.setdefault(name, {"turns": 0, "tokens": 0, "first_pass": 0,
-                                              "repaired": 0, "blocked": 0})
+                                              "repaired": 0, "blocked": 0, "green": 0})
         bucket["turns"] += 1
         bucket["tokens"] += _int(row.get("tokens"))
-        bucket["sent"] = bucket.get("sent", 0) + _int(row.get("tokens_sent"))
-        bucket["baseline"] = bucket.get("baseline", 0) + _int(row.get("tokens_baseline"))
-        bucket["saved"] = bucket.get("saved", 0) + _int(row.get("tokens_saved"))
-        bucket["requests"] = bucket.get("requests", 0) + _int(row.get("requests"))
+        # Los nombres del bucket son los MISMOS que los de la fila: un alias (`sent` vs
+        # `tokens_sent`) hacia que la barra de enviados del grafico leyera 0 con 4.859 evitados.
+        for field in ("tokens_sent", "tokens_baseline", "tokens_saved", "requests"):
+            bucket[field] = bucket.get(field, 0) + _int(row.get(field))
         if exit_code in (0, None) and not repairs:
             bucket["first_pass"] += 1
+            bucket["green"] += 1
         elif exit_code in (0, None):
             bucket["repaired"] += 1
+            bucket["green"] += 1
         else:
             bucket["blocked"] += 1
     rows_count = len(rows or [])
