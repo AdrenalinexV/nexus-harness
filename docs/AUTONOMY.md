@@ -6,7 +6,10 @@ de aquí no pasa su comando, no existe.
 | pieza | módulo | comando |
 |---|---|---|
 | relevo de contexto (55 % poda · 70 % handover) | `relay_state.py`, `session_relay.py`, `compaction.py` | `python -m nexus_harness selftest` |
-| skills: techo de 10 + dormidas + forja | `skill_router.py`, `skill_forge.py`, `toolbox/skill_tools.py` | `python tools/proofs.py skills` |
+| contexto compilado: prefijo estable + tokenizer calibrado | `context_compiler.py`, `turn_context.py`, `tokenizer.py` | `python tools/proofs.py context` |
+| skills: catálogo único, techo de 10 y resultados | `skill_router.py`, `outcomes.py` | `python tools/proofs.py skills` |
+| aprendizaje: fallo repetido forja, verde tras reparar enseña | `reflection.py` | `python tools/proofs.py learning` |
+| oráculo: runner descubierto y humo de importación | `oracle.py`, `gate.py` | `python tools/proofs.py oracle` |
 | reparación en `git worktree` | `worktree_sandbox.py`, `repair_guard.py` | `python tools/proofs.py worktree` |
 | deploy al VPS (SSH + Compose) | `vps_deployer.py`, `settings_vps.py` | `python tools/proofs.py deploy` |
 | juez con contexto + pista de líneas reales | `judge.py`, `repair_hint.py` | `python tools/proofs.py judge` |
@@ -21,14 +24,21 @@ determinista condensa lo que ya nadie lee. En el 70 % (`relay_threshold`) se esc
 `.nexus/NEXT_SESSION_PROMPT.md` desde ese estado y la sesión sigue en una nueva, numerada y enlazada.
 La píldora superior lo dice: `🔄 Relevo automático de contexto`.
 
-## 2. Skills
+## 2. Skills — un solo catálogo, y un libro de resultados
 
-`skill_router` puntúa el catálogo contra la tarea y las extensiones de los ficheros tocados, y aplica
-un techo duro de 10. Lo que no viaja se indexa en `.nexus/skills-dormant/` (nombre, descripción, ruta,
-sha256): bytes en disco, cero tokens en la ventana. `skill_forge` escribe
-`.nexus/skills/<slug>/SKILL.md`, valida su frontmatter y lo registra con `origin=forged` + sha256 en el
-libro de procedencia del protocolo (o en `.nexus/skills-provenance.jsonl` si no está). El Director
-tiene la herramienta `forge_or_update_skill`, y no pisa una skill existente sin `overwrite`.
+El enrutado **se hace en un solo sitio**: `skill_router.library(root)` escanea el protocolo, las skills
+forjadas y el catálogo de Hermes (173 skills medidas en esta máquina) y aplica un techo duro de 10. Lo
+que no viaja se indexa en `.nexus/skills-dormant/` con su sha256: bytes en disco, cero tokens en la
+ventana.
+
+El cuerpo entero **nunca** viaja: el brief son una línea por skill (nombre + descripción recortada), y
+el `SKILL.md` se lee con `read_file` cuando hace falta. Medido: 173 cuerpos ≈ 446.714 tokens; el brief
+de un turno real, 137.
+
+Cada turno cerrado apunta `(skill, proyecto, exit, juez)` en `.nexus/harness/skill_outcomes.jsonl`. De
+ahí sale un multiplicador suavizado y acotado (`0,7 .. 1,3`) que ajusta el score léxico: una skill que
+resuelve turnos sube, una que los pierde baja, y ninguna sustituye a la evidencia. Sin muestras el
+factor es 1,0 — no se inventa corrección.
 
 ## 3. Worktree del Obrero
 

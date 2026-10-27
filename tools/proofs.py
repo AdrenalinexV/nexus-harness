@@ -1,6 +1,7 @@
 """Una prueba por criterio, sin frases: corre la suite pedida e imprime `failures=N`.
 
-    python tools/proofs.py relay | skills | worktree | deploy | judge | priority
+    python tools/proofs.py relay | skills | worktree | deploy | judge | savings
+                          | context | learning | oracle | tokenizer | priority
 
 Existe para que la rubrica del turno de noche pueda exigir un criterio con un comando corto y un
 `contains: failures=0`, en vez de meter una linea de Python con comillas dentro de un JSON. La suite
@@ -20,6 +21,10 @@ SUITES = {
     "deploy": "test_deploy",
     "judge": "test_judge_repair",
     "savings": "test_savings",
+    "context": "test_context",
+    "learning": "test_learning",
+    "oracle": "test_oracle",
+    "tokenizer": "test_tokenizer",
 }
 
 

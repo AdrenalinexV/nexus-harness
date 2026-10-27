@@ -24,6 +24,7 @@ import time
 from pathlib import Path
 
 from . import backup, ledger, projects
+from .reflection import lessons_block
 from .repo_map import RepoMap
 
 AUTONOMY_LOG = Path(".nexus") / "harness" / "autonomy.jsonl"
@@ -73,13 +74,14 @@ def model_planner(router, config):
             sketch = RepoMap(root, max_tokens=800).brief()
         except Exception:  # noqa: BLE001 -- sin mapa se planifica igual, solo mas a ciegas
             sketch = "(mapa AST no disponible)"
+        taught = lessons_block(root)
         prompt = ("PROYECTO: %s\nOBJETIVO: %s\nSPEC: %s (%d criterios)\nPASOS HECHOS:\n%s\n"
-                  "PASOS FALLIDOS: %s\n\nMAPA AST (1.500 tokens max):\n%s"
+                  "PASOS FALLIDOS: %s\n\nMAPA AST (1.500 tokens max):\n%s\n\n%s"
                   % (Path(root).name, goal or spec.get("goal") or "(sin objetivo)",
                      spec.get("id") or spec.get("format") or "(sin spec)", spec.get("criteria", 0),
                      "\n".join("- " + step for step in done[-12:]) or "(ninguno)",
                      len([one for one in (progress or {}).get("steps") or [] if not one.get("ok")]),
-                     sketch))
+                     sketch, taught))
         try:
             reply = router.role("director").chat(
                 [Message(role="system", content=PLANNER_PROMPT),

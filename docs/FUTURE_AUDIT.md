@@ -1,5 +1,12 @@
 # Auditoría profunda y arquitectura objetivo (v2)
 
+> **Estado (2026-10-27, tras `P0`)**: los cuatro trabajos de P0 están implementados y medidos. Suites
+> 34 → 37, `verify.py` GREEN, 0 hallazgos de lint, 136 ficheros, ninguno por encima de 400 líneas.
+> Pruebas nuevas: `python tools/proofs.py context|learning|oracle|tokenizer` (`failures=0`).
+> Medido en un turno real de 9 pasos: **2.372 de 4.247 tokens de prompt (55,8 %) son prefijo idéntico
+> al paso anterior**, es decir, cobrables a precio de caché; antes el `system` se reescribía en cada
+> paso y ese prefijo se rompía en el byte 0. Lo que sigue es el análisis que originó el plan.
+
 Fecha: 2026-10-27 · Base medida: `6a4c5d7` · Nada de este documento viene de memoria: cada cifra tiene
 su comando detrás y está reproducida abajo.
 

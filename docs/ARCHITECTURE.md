@@ -58,8 +58,14 @@ doing two jobs.
 | `panels.py` | The four product surfaces as thin, testable seams over those modules. | 160 |
 | `web/panels.js` | Attachments, the onboarding modal, the skills editor and the connectors list. | 290 |
 | `toolbox/web.py` | Fetch a page as text without a browser or an API key. | 130 |
-| `context_router.py` | Which specialists does this turn touch, and what text travels with it? | 140 |
-| `gate.py` | Is the tree actually green: lint, tests, line law. | 170 |
+| `context_compiler.py` | ¿Qué es estable en el turno (prefijo) y qué cambia (delta append-only)? | 199 |
+| `turn_context.py` | Una sola definición de prefijo/delta/presupuesto para el Chat y la Triada. | 130 |
+| `tokenizer.py` | ¿Cuánto cuesta este texto, y cuánto se desvía este modelo de la estimación? | 188 |
+| `oracle.py` | ¿Con qué se prueba este proyecto, y hay algo ejecutado antes de decir verde? | 180 |
+| `skill_router.py` | ¿Qué skills viajan (≤10), con qué brief y qué tasa de éxito medida? | 400 |
+| `outcomes.py` | ¿Qué skill ganó turnos y cuál los perdió? Un libro append-only. | 130 |
+| `reflection.py` | ¿Qué regla deja este turno, con qué exit detrás? | 210 |
+| `gate.py` | Is the tree actually green: lint, behavior, line law. | 200 |
 | `judge.py` | Does the change answer the goal? Fail-closed when unparsable. | 130 |
 | `triad_loop.py` | One turn: plan, act, verify, repair, close. | 300 |
 | `events.py` | How does the cockpit watch a turn without a websocket? | 90 |

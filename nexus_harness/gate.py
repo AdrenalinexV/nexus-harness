@@ -22,6 +22,8 @@ import time
 from dataclasses import dataclass, field
 from pathlib import Path
 
+from . import oracle
+
 EXIT_GREEN = 0
 EXIT_RED = 10
 EXIT_UNAVAILABLE = 20
@@ -105,11 +107,40 @@ class Gate:
         return Check("line_law", not over, "; ".join(over) or "every touched file is under the limit",
                      exit=EXIT_GREEN if not over else EXIT_RED)
 
-    def tests(self):
+    def tests(self, touched=None):
+        """Comportamiento: el comando declarado, el runner que el repo ya tiene, o importar lo tocado.
+
+        Un proyecto que no declara comando ya no sale "verde" por omision: si hay runner, se usa; si
+        no, se importa lo que el turno toco (humo real en subproceso); y si ni eso es posible, el gate
+        devuelve 20 (*no verificable*). Un verde sin prueba es el fallo mas caro de un arnes.
+        """
         command = getattr(self.config, "test_command", None)
-        if not command:
-            return Check("tests", True, "no test_command configured for this project", None,
+        if command:
+            return self._run("tests", command, "declarado")
+        found = oracle.detect(self.root)
+        if found:
+            return self._run("tests", found["command"], found["source"])
+        if not touched:
+            return Check("tests", True, "sin ficheros tocados: nada que probar", None,
                          blocking=False)
+        # Un cambio de documentacion no se prueba con tests: seria ruido, no rigor. Un `.py` que el
+        # turno dice haber tocado y ya no existe si es un problema: no hay nada que medir.
+        python_touched = oracle.python_files(self.root, touched)
+        expects_code = any(str(name).endswith(".py") for name in touched or ())
+        if not python_touched:
+            if expects_code:
+                return Check("behavior", False, "no verificable: los .py tocados no existen",
+                             exit=EXIT_UNAVAILABLE)
+            return Check("tests", True, "sin ficheros ejecutables: nada que probar", None,
+                         blocking=False)
+        ok, detail = oracle.smoke(self.root, touched)
+        if ok is None:
+            return Check("behavior", False, "no verificable: %s" % detail, exit=EXIT_UNAVAILABLE)
+        return Check("behavior", ok, "humo de importacion: %s" % detail,
+                     exit=EXIT_GREEN if ok else EXIT_RED)
+
+    def _run(self, name, command, source):
+        """Ejecuta un comando de verificacion con cache de bytecode fresca y lo reporta."""
         # A patch that keeps the file's size and lands in the same second as the previous run leaves
         # Python's bytecode cache "valid": the test then exercises the OLD module and the gate reports
         # red on code that is already fixed. A fresh cache prefix per run makes the compiler read the
@@ -121,20 +152,20 @@ class Gate:
                                        text=True, errors="replace", timeout=self.timeout,
                                        env=environment)
         except subprocess.TimeoutExpired:
-            return Check("tests", False, "%r timed out after %ss" % (command, self.timeout),
+            return Check(name, False, "%r timed out after %ss (%s)" % (command, self.timeout, source),
                          exit=EXIT_RED)
         except OSError as exc:
-            return Check("tests", False, "could not run %r: %s" % (command, exc), exit=EXIT_RED)
+            return Check(name, False, "could not run %r: %s" % (command, exc), exit=EXIT_RED)
         finally:
             shutil.rmtree(cache, ignore_errors=True)
         output = ((completed.stdout or "") + (completed.stderr or "")).strip()
         tail = output[-MAX_FAILURE_TEXT:]
-        return Check("tests", completed.returncode == 0,
-                     "exit %d: %s" % (completed.returncode, tail or "(no output)"),
+        return Check(name, completed.returncode == 0,
+                     "exit %d (%s): %s" % (completed.returncode, source, tail or "(no output)"),
                      exit=EXIT_GREEN if completed.returncode == 0 else EXIT_RED)
 
     def run(self, touched=None):
-        checks = [self.lint(), self.line_law(touched), self.tests()]
+        checks = [self.lint(), self.line_law(touched), self.tests(touched)]
         blocking = [check for check in checks if check.blocking and not check.ok]
         unavailable = any(check.exit == EXIT_UNAVAILABLE for check in blocking)
         failures = "\n".join("%s: %s" % (check.name, check.detail)
@@ -144,4 +175,5 @@ class Gate:
                                                                     else EXIT_RED),
                           checks=checks, failures=failures[:MAX_FAILURE_TEXT],
                           at=time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()))
+        oracle.write_report(self.root, {"touched": list(touched or ()), "verdict": verdict.as_dict()})
         return verdict

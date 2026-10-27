@@ -26,7 +26,7 @@ from .turn_context import apply_budget, build_turn_prefix, inject_skills
 from .gate import EXIT_GREEN, EXIT_UNAVAILABLE, Gate
 from .judge import Judge
 from .message import Message, as_text
-from .outcomes import record_skills
+from .reflection import learn
 from .repair_guard import isolated_repair
 from .savings import CACHE_REL as SKILLS_CACHE, SavingsLedger
 from .subagents import Delegate
@@ -293,8 +293,7 @@ class Triad:
     def run(self, goal, phases=None, max_steps=None, max_repairs=None):
         self.touched = set()
         self.injections = []
-        self._prefix_cache = None
-        self._delta_sent = ""
+        self._prefix_cache, self._delta_sent = None, ""
         steps_total, repairs = 0, 0
         max_steps = int(max_steps or self.config.max_steps)
         max_repairs = int(max_repairs if max_repairs is not None else self.config.max_repairs)
@@ -369,8 +368,7 @@ class Triad:
             self.relay.finish(result.exit)
             result.budget = self.relay.meter.state()
             result.sessions = self.relay.store.ids()
-        record_skills(self.skills, self.config.default_root, result.exit,
-                      (result.judgement or {}).get("verdict", ""), "run")
+        learn(self.config, result.as_dict(), "run", self.skills)
         self._record(result)
         self._emit("run.end", "exit %s" % result.exit, ok=result.ok, summary=result.summary[:600])
         return result
