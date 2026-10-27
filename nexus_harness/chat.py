@@ -150,6 +150,14 @@ class Chat:
     def _system(self, files):
         parts = [CHAT_SYSTEM]
         self._injected_tokens = 0
+        if not getattr(self.config, "nexus_engines", True):
+            # Modo tradicional (benchmark A): TODAS las skills instaladas en el prompt de cada llamada.
+            from .savings import full_index_brief
+            brief = full_index_brief()
+            if brief:
+                parts.append(brief)
+                self._injected_tokens = len(brief) // 4
+            return "\n\n".join(parts)
         if self.memory is not None:
             block = self.memory.block()
             if block:
@@ -178,6 +186,8 @@ class Chat:
         La poda corre en CADA paso (es lo que corta el crecimiento cuadratico de tokens de entrada) y
         la compactacion es la rampa previa al relevo del 70 %.
         """
+        if not getattr(self.config, "nexus_engines", True):
+            return False
         report = prune(messages)
         if report.pruned:
             self.savings.observe_pruned(report)

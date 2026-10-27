@@ -112,6 +112,13 @@ class Triad:
         """El system prompt: reglas + skills activas + mapa AST. Todo lo que se inyecta, contado."""
         parts = [base]
         self._injected_tokens = 0
+        if not getattr(self.config, "nexus_engines", True):
+            from .savings import full_index_brief
+            brief = full_index_brief()
+            if brief:
+                parts.append(brief)
+                self._injected_tokens = len(brief) // 4
+            return "\n\n".join(parts)
         if self.skills is not None:
             injection = self.skills.select(sorted(files))
             self.injections.append(injection.as_dict())
@@ -133,6 +140,8 @@ class Triad:
         de un turno largo acumula lecturas enteras que ya no aportan nada, y cada una cuesta tokens en
         la siguiente llamada. Se emite lo podado, porque un ahorro invisible no se puede auditar.
         """
+        if not getattr(self.config, "nexus_engines", True):
+            return False
         report = prune(messages)
         if report.pruned:
             self.savings.observe_pruned(report)
@@ -304,7 +313,8 @@ class Triad:
             messages = [Message(role="system", content=self._system(WORKER_PROMPT, self.touched)),
                         Message(role="user", content="%s\n\nPLAN DEL DIRECTOR:\n%s" % (hint, plan))]
             for attempt in range(max_repairs + 1):
-                sandbox = attempt and getattr(self.config, "worktree_repairs", False)
+                sandbox = (attempt and getattr(self.config, "worktree_repairs", False)
+                           and getattr(self.config, "nexus_engines", True))
                 text, steps = (isolated_repair(self, messages, max_steps) if sandbox else
                                self._work(messages, max_steps))
                 steps_total += steps

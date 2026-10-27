@@ -47,6 +47,17 @@ def test_the_ledger_records_the_savings(failures):
     check("y el multiplicador", total["context_multiplier"], 5.0, failures)
 
 
+def test_the_same_run_is_not_counted_twice(failures):
+    """El ejecutor y el bucle autonomo escribian la misma corrida: el consumo salia al doble."""
+    row = {"at": "2026-10-27T01:22:07Z", "project": "Nexus-Harness", "tokens": 48930,
+           "prompt_tokens": 47484, "steps": 9, "touched": 9, "exit": 10, "session": "session_10"}
+    twin = dict(row, session="autonomy", source="autonomy")
+    check("la misma corrida se colapsa", len(ledger.dedupe([row, twin])), 1, failures)
+    check("y dos corridas distintas no", len(ledger.dedupe([row, dict(row, at="otra")])), 2, failures)
+    check("el consumo medido no se duplica",
+          ledger.aggregate(ledger.dedupe([row, twin]))["tokens"], 48930, failures)
+
+
 def test_a_real_run_prunes_and_reports_it(failures):
     with TempProject({"calc.py": "def add(a, b):\n    return a + b\n", "big.txt": BIG}) as root:
         config = HarnessConfig(default_root=root, test_command=TEST_COMMAND, max_steps=6,
@@ -95,5 +106,6 @@ def run():
     failures = []
     test_module_selftests(failures)
     test_the_ledger_records_the_savings(failures)
+    test_the_same_run_is_not_counted_twice(failures)
     test_a_real_run_prunes_and_reports_it(failures)
     return failures

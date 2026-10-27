@@ -38,6 +38,9 @@ DEFAULTS = {
     # El Obrero repara dentro de un `git worktree` y solo vuelve si el gate sale verde alli. En una
     # raiz que no es git se degrada al comportamiento de siempre, declarandolo.
     "worktree_repairs": True,
+    # Los cuatro motores de ahorro (skills dormidas, poda, mapa AST, reparacion aislada). Se puede
+    # apagar para medir el modo tradicional en el mismo codigo: es lo que hace el benchmark A/B.
+    "nexus_engines": True,
     # Techo de coste en USD para el run. 0.0 = sin tope declarado (no un tope de cero): un turno
     # autonomo con un modelo de nube gasta dinero, y esto es lo unico que lo corta.
     "cost_limit": 0.0,
@@ -109,6 +112,7 @@ class HarnessConfig:
     relay_threshold: float = 0.70
     compact_threshold: float = 0.55
     worktree_repairs: bool = True
+    nexus_engines: bool = True
     cost_limit: float = 0.0
     max_steps: int = 14
     max_repairs: int = 3
@@ -181,7 +185,7 @@ class HarnessConfig:
         return {"roles": dict(self.roles), "workspace": str(self.workspace),
                 "port": self.port, "host": self.host, "budget_limit": self.budget_limit,
                 "relay_threshold": self.relay_threshold, "compact_threshold": self.compact_threshold,
-                "worktree_repairs": self.worktree_repairs,
+                "worktree_repairs": self.worktree_repairs, "nexus_engines": self.nexus_engines,
                 "cost_limit": self.cost_limit, "max_steps": self.max_steps,
                 "max_repairs": self.max_repairs, "test_command": self.test_command,
                 "project_tests": dict(self.project_tests or {}),

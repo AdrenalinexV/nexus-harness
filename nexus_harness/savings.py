@@ -82,6 +82,27 @@ def skill_index(roots=None, cache_path=None, force=False):
     return data
 
 
+def full_index_brief(roots=None, limit_chars=200000):
+    """El indice COMPLETO de skills instaladas, en texto: lo que manda un harness tradicional.
+
+    Existe para el modo A del benchmark y para que el baseline no sea una suposicion: el mismo catalogo
+    que se cuenta en `index_tokens` se puede construir de verdad y meter en el prompt.
+    """
+    paths = [Path(item) for item in (roots or DEFAULT_ROOTS)]
+    seen, lines = set(), []
+    for root in paths:
+        if not root.is_dir():
+            continue
+        for path in sorted(root.rglob("SKILL.md"))[:MAX_SKILLS]:
+            entry = skill_entry(path, root)
+            if entry is None or entry["name"] in seen:
+                continue
+            seen.add(entry["name"])
+            lines.append("- %s: %s" % (entry["name"], entry["description"]))
+    text = "## Skills disponibles\n%s" % "\n".join(lines)
+    return text[:limit_chars]
+
+
 @dataclass
 class SavingsLedger:
     """Por turno o por run: cada request suma, y el ahorro sale de la resta, no de una estimacion."""
@@ -165,8 +186,18 @@ class SavingsLedger:
             return None
         return round(self.baseline / float(self.sent), 2)
 
+    @property
+    def peak_sent(self):
+        """El prompt mas grande que se llego a enviar: la ventana que de verdad hizo falta."""
+        return max([row.get("sent", 0) for row in self.per_request] or [0])
+
+    @property
+    def last_sent(self):
+        return (self.per_request[-1].get("sent", 0) if self.per_request else 0)
+
     def as_dict(self):
         return {"requests": self.requests, "sent": self.sent, "baseline": self.baseline,
+                "peak_sent": self.peak_sent, "last_sent": self.last_sent,
                 "saved": self.saved, "savings_pct": self.savings_pct,
                 "context_multiplier": self.context_multiplier,
                 "skills_installed": self.skills_installed, "index_tokens": self.index_tokens,
@@ -240,6 +271,9 @@ def selftest():
         check("mide el indice", fresh["index_tokens"] > 0, True)
         again = skill_index(roots=[root], cache_path=cache)
         check("la segunda vez sale de cache", again["cached"], True)
+        brief = full_index_brief(roots=[root])
+        check("el indice completo se puede construir", "sk0:" in brief, True)
+        check("y cuenta todas", brief.count("\n- "), 3)
     return problems
 
 

@@ -170,6 +170,25 @@ def aggregate(rows):
             "context_multiplier": (round(baseline / float(sent), 2) if sent else None)}
 
 
+def dedupe(rows):
+    """Colapsa la MISMA corrida escrita dos veces (paso: el ejecutor y el bucle autonomo la anotaban).
+
+    La clave es la medida entera del turno, no su etiqueta de sesion: dos filas con el mismo instante,
+    proyecto, tokens, pasos y ficheros tocados son la misma corrida contada dos veces, y sumarlas
+    inflaba el consumo medido al doble (medido: 411.886 en vez de 205.943). Se conserva la primera, que
+    es la que trae la sesion real del chat o de la triada.
+    """
+    seen, out = set(), []
+    for row in rows or []:
+        key = (row.get("at"), row.get("project"), row.get("tokens"), row.get("prompt_tokens"),
+               row.get("steps"), row.get("touched"), row.get("exit"))
+        if key in seen:
+            continue
+        seen.add(key)
+        out.append(row)
+    return out
+
+
 def history(workspace, names=(), extra=()):
     """Las filas de todos los proyectos mirados, con proyecto unico y de mas viejo a mas nuevo."""
     roots = [Path(workspace) / name for name in names or []]
@@ -184,4 +203,4 @@ def history(workspace, names=(), extra=()):
             seen.add(key)
             rows.append(row)
     rows.sort(key=lambda row: str(row.get("at") or ""))
-    return rows
+    return dedupe(rows)
