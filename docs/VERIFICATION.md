@@ -8,7 +8,7 @@ the numbers.
 
 ```
 $ python tools/verify.py --frozen
-lint      exit 0   files=126 findings=0 max_lines=400 ignored_runtime=0
+lint      exit 0   files=128 findings=0 max_lines=400 ignored_runtime=0
 selftest  exit 0   suites=34 failures=0
 frozen    exit 0   suites=34 failures=0 (same as the source)
 verify: GREEN
@@ -19,52 +19,52 @@ verify: GREEN
 ```
 providers        OK    0.00s
 retry            OK    0.00s
-repair           OK    0.33s
-tools            OK    0.13s
-edit_v4a         OK    0.04s
-shell_session    OK    1.33s
-shell_policy     OK    0.14s
-checkpoint       OK    0.24s
+repair           OK    0.32s
+tools            OK    0.12s
+edit_v4a         OK    0.03s
+shell_session    OK    1.32s
+shell_policy     OK    0.12s
+checkpoint       OK    0.23s
 subagents        OK    0.01s
 warning: The `fitz` API is deprecated and will be removed in future. Use `import pymupdf` instead.
-attachments      OK    0.15s
-onboarding       OK    0.10s
-mcp_client       OK    0.31s
-sidecar          OK    5.12s
+attachments      OK    0.13s
+onboarding       OK    0.09s
+mcp_client       OK    0.29s
+sidecar          OK    5.10s
 estado listo: 2 criterios (2 pendientes)
 a -> exit 0 (VERDE)
 findings=0
 b -> exit 10 (ROJO)
 b marcado blocked
 criterio desconocido: zzz
-cerrojo ocupado: el turno de noche ya esta en marcha: pid 29340 desde 2026-10-27T21:32:35+00:00 (suite)
-no se toca nada. Si esa sesion ya no corre, el cerrojo se hereda solo; para forzarlo a mano, borra C:\Users\Vexus\AppData\Local\Temp\nightshift-4jpxs08r\.nexus\harness\nightshift.lock
+cerrojo ocupado: el turno de noche ya esta en marcha: pid 33528 desde 2026-10-27T22:04:49+00:00 (suite)
+no se toca nada. Si esa sesion ya no corre, el cerrojo se hereda solo; para forzarlo a mano, borra C:\Users\Vexus\AppData\Local\Temp\nightshift-y0nusmd6\.nexus\harness\nightshift.lock
 TOCA: b — falla
   prueba: python -c "raise SystemExit(10)"
   estado: blocked (intentos 1)
 a -> exit 0 (VERDE)
 findings=0
-nightshift       OK    0.31s
-context_router   OK    0.08s
-triad_loop       OK    2.16s
-session_relay    OK    1.11s
-relay_state      OK    0.25s
+nightshift       OK    0.28s
+context_router   OK    0.07s
+triad_loop       OK    2.05s
+session_relay    OK    1.06s
+relay_state      OK    0.23s
 savings          OK    0.65s
 skills           OK    0.08s
-worktree         OK    2.45s
-deploy           OK    0.02s
+worktree         OK    2.40s
+deploy           OK    0.01s
 judge_repair     OK    0.01s
 compaction       OK    0.18s
-chat             OK    0.59s
-memory           OK    0.31s
-ui               OK    0.89s
+chat             OK    0.56s
+memory           OK    0.29s
+ui               OK    0.93s
 bridge           OK    0.06s
-budget           OK    0.35s
+budget           OK    0.36s
 charts           OK    0.00s
 activity         OK    0.00s
-projects         OK    0.54s
-autonomy         OK    0.26s
-ux               OK    1.67s
+projects         OK    0.51s
+autonomy         OK    0.25s
+ux               OK    1.68s
 suites=34 failures=0
 ```
 

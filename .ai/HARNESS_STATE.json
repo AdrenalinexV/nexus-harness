@@ -1,25 +1,25 @@
 {
   "criteria": {
     "adapter-aider": {
-      "attempts": 7,
+      "attempts": 8,
       "last": {
-        "at": "2026-10-27T21:35:31Z",
+        "at": "2026-10-27T22:07:37Z",
         "command": "python -m nexus.harness.adapters --check aider --root .",
         "exit": 0,
-        "head": "6302cb0",
+        "head": "8c338fe",
         "ok": true,
-        "tail": "ok: aider -- lint-cmd and test-cmd written to .aider.conf.yml, and the lint entry point answered: files=126 findings=0"
+        "tail": "ok: aider -- lint-cmd and test-cmd written to .aider.conf.yml, and the lint entry point answered: files=128 findings=0"
       },
       "note": "",
       "status": "met"
     },
     "adapter-claude": {
-      "attempts": 7,
+      "attempts": 8,
       "last": {
-        "at": "2026-10-27T21:35:31Z",
+        "at": "2026-10-27T22:07:37Z",
         "command": "python -m nexus.harness.adapters --check claude --root .",
         "exit": 0,
-        "head": "6302cb0",
+        "head": "8c338fe",
         "ok": true,
         "tail": "ok: claude -- .claude/settings.json carries a Stop handler that ran twice: it lets an inert turn close and it blocks a frozen one with the gate's own message"
       },
@@ -27,77 +27,77 @@
       "status": "met"
     },
     "context-compaction": {
-      "attempts": 7,
+      "attempts": 8,
       "last": {
-        "at": "2026-10-27T21:35:33Z",
+        "at": "2026-10-27T22:07:39Z",
         "command": "python -m nexus_harness selftest compaction",
         "exit": 0,
-        "head": "6302cb0",
+        "head": "8c338fe",
         "ok": true,
-        "tail": "compaction       OK    0.23s\nsuites=1 failures=0"
+        "tail": "compaction       OK    0.19s\nsuites=1 failures=0"
       },
       "note": "",
       "status": "met"
     },
     "cost-budget": {
-      "attempts": 4,
+      "attempts": 5,
       "last": {
-        "at": "2026-10-27T21:35:35Z",
+        "at": "2026-10-27T22:07:40Z",
         "command": "python -m nexus_harness selftest budget",
         "exit": 0,
-        "head": "6302cb0",
+        "head": "8c338fe",
         "ok": true,
-        "tail": "budget           OK    0.36s\nsuites=1 failures=0"
+        "tail": "budget           OK    0.35s\nsuites=1 failures=0"
       },
       "note": "",
       "status": "met"
     },
     "evidence-export": {
-      "attempts": 8,
+      "attempts": 9,
       "last": {
-        "at": "2026-10-27T21:35:35Z",
+        "at": "2026-10-27T22:07:40Z",
         "command": "python tools/nightshift.py report --check",
         "exit": 0,
-        "head": "6302cb0",
+        "head": "8c338fe",
         "ok": true,
-        "tail": "escrito docs\\NIGHT_REPORT.md (24/24 en verde)\nok: el informe cubre los 24 criterios"
+        "tail": "escrito docs\\NIGHT_REPORT.md (25/25 en verde)\nok: el informe cubre los 25 criterios"
       },
       "note": "",
       "status": "met"
     },
     "frozen-engine": {
-      "attempts": 10,
+      "attempts": 11,
       "last": {
-        "at": "2026-10-27T21:33:07Z",
+        "at": "2026-10-27T22:05:20Z",
         "command": "python tools/verify.py --frozen",
         "exit": 0,
-        "head": "6302cb0",
+        "head": "8c338fe",
         "ok": true,
-        "tail": "lint      exit 0   files=126 findings=0 max_lines=400 ignored_runtime=0\nselftest  exit 0   suites=34 failures=0\nfrozen    exit 0   suites=34 failures=0 (same as the source)\nverify: GREEN\nactualizado docs\\VERIFICATION.md"
+        "tail": "lint      exit 0   files=128 findings=0 max_lines=400 ignored_runtime=0\nselftest  exit 0   suites=34 failures=0\nfrozen    exit 0   suites=34 failures=0 (same as the source)\nverify: GREEN\nactualizado docs\\VERIFICATION.md"
       },
       "note": "",
       "status": "met"
     },
     "gate-lint": {
-      "attempts": 7,
+      "attempts": 8,
       "last": {
-        "at": "2026-10-27T21:32:05Z",
+        "at": "2026-10-27T22:04:20Z",
         "command": "python tools/lint_harness.py",
         "exit": 0,
-        "head": "6302cb0",
+        "head": "8c338fe",
         "ok": true,
-        "tail": "files=126 findings=0 max_lines=400 ignored_runtime=0"
+        "tail": "files=128 findings=0 max_lines=400 ignored_runtime=0"
       },
       "note": "",
       "status": "met"
     },
     "hook-contract": {
-      "attempts": 7,
+      "attempts": 8,
       "last": {
-        "at": "2026-10-27T21:35:31Z",
+        "at": "2026-10-27T22:07:36Z",
         "command": "python C:/Proyectos/NexusProtocol/nexus/cli.py gate --hook --selftest --json",
         "exit": 0,
-        "head": "6302cb0",
+        "head": "8c338fe",
         "ok": true,
         "tail": "{\n  \"action\": \"selftest\",\n  \"failures\": [],\n  \"ok\": true\n}"
       },
@@ -105,25 +105,25 @@
       "status": "met"
     },
     "installer": {
-      "attempts": 19,
+      "attempts": 20,
       "last": {
-        "at": "2026-10-27T21:35:43Z",
+        "at": "2026-10-27T22:07:48Z",
         "command": "python tools/nightshift.py install --check",
         "exit": 0,
-        "head": "6302cb0",
+        "head": "8c338fe",
         "ok": true,
-        "tail": "sala       : C:\\Users\\Vexus\\AppData\\Local\\NexusHarnessVerify (no existia)\ninstalador : NexusHarness-Setup-1.0.0.exe -> exit 0\nventana    : nexus-harness-desktop.exe subsystem=2 (2 = interfaz)\nmotor      : repo     sha256=29fa25d9e612\n           : instalado sha256=29fa25d9e612\ndesinstalar: exit 0\nsala       : eliminada, sin fichero bloqueado\nregistro   : devuelto como estaba\nok: el instalador deja el motor del repositorio y una ventana de interfaz, y se desinstala limpio"
+        "tail": "sala       : C:\\Users\\Vexus\\AppData\\Local\\NexusHarnessVerify (no existia)\ninstalador : NexusHarness-Setup-1.0.0.exe -> exit 0\nventana    : nexus-harness-desktop.exe subsystem=2 (2 = interfaz)\nmotor      : repo     sha256=1f481dd839a6\n           : instalado sha256=1f481dd839a6\ndesinstalar: exit 0\nsala       : eliminada, sin fichero bloqueado\nregistro   : devuelto como estaba\nok: el instalador deja el motor del repositorio y una ventana de interfaz, y se desinstala limpio"
       },
       "note": "",
       "status": "met"
     },
     "judge-context": {
-      "attempts": 3,
+      "attempts": 4,
       "last": {
-        "at": "2026-10-27T21:35:47Z",
+        "at": "2026-10-27T22:07:52Z",
         "command": "python tools/proofs.py judge",
         "exit": 0,
-        "head": "6302cb0",
+        "head": "8c338fe",
         "ok": true,
         "tail": "failures=0"
       },
@@ -131,25 +131,25 @@
       "status": "met"
     },
     "no-orphans": {
-      "attempts": 7,
+      "attempts": 8,
       "last": {
-        "at": "2026-10-27T21:35:40Z",
+        "at": "2026-10-27T22:07:46Z",
         "command": "python -m nexus_harness selftest sidecar",
         "exit": 0,
-        "head": "6302cb0",
+        "head": "8c338fe",
         "ok": true,
-        "tail": "sidecar          OK    5.15s\nsuites=1 failures=0"
+        "tail": "sidecar          OK    5.11s\nsuites=1 failures=0"
       },
       "note": "",
       "status": "met"
     },
     "protocol-doctor": {
-      "attempts": 9,
+      "attempts": 10,
       "last": {
-        "at": "2026-10-27T21:35:30Z",
+        "at": "2026-10-27T22:07:36Z",
         "command": "python C:/Proyectos/NexusProtocol/nexus/cli.py doctor",
         "exit": 0,
-        "head": "6302cb0",
+        "head": "8c338fe",
         "ok": true,
         "tail": "t read the same number, and a smaller file on disk cannot move it \n  ok   the desktop launcher: console-less target, a dry run that writes nothing, and an instance file that is reused instead of a second server \n  ok   applying init in batch, and the baseline only the installer can testify about \n  ok   the judge chain: a local SystemOne judge, a declared order, and no silent substitution \n  ok   the judge's two routes: three measured endpoints, and two refusals with no panel behind them \n  ok   the skills already on this disk: marked by origin, folded, and never offered a mode \n  ok   the local judge's models: a catalogue, a measured recommendation, a download that does not block \n  ok   the judge calibration: the metrics that compare backends, on arithmetic that cannot drift \n  ok   the MCP surface: three read-only tools, no verb to close a turn, and a stream that survives a rotten line \n  ok   the judge declares itself only when the machine can prove one, once, and never over the operator's own decision \n  ok   the audit log travels as OTLP spans: every row from a real line, and the ones it cannot read are counted instead of invented \n\n  everything a self-test can prove is green"
       },
@@ -157,12 +157,12 @@
       "status": "met"
     },
     "protocol-lint": {
-      "attempts": 8,
+      "attempts": 9,
       "last": {
-        "at": "2026-10-27T21:33:08Z",
+        "at": "2026-10-27T22:05:21Z",
         "command": "python -c \"import sys; sys.path.insert(0, r'C:/Proyectos/NexusProtocol'); from nexus.checks import rules_lint; r=rules_lint.lint_repo(r'C:/Proyectos/NexusProtocol'); print('findings=%d' % len(r['findings'])); raise SystemExit(0 if not r['findings'] else 1)\"",
         "exit": 0,
-        "head": "6302cb0",
+        "head": "8c338fe",
         "ok": true,
         "tail": "findings=0"
       },
@@ -170,12 +170,12 @@
       "status": "met"
     },
     "providers-retry": {
-      "attempts": 7,
+      "attempts": 8,
       "last": {
-        "at": "2026-10-27T21:35:32Z",
+        "at": "2026-10-27T22:07:37Z",
         "command": "python -m nexus_harness selftest retry",
         "exit": 0,
-        "head": "6302cb0",
+        "head": "8c338fe",
         "ok": true,
         "tail": "retry            OK    0.00s\nsuites=1 failures=0"
       },
@@ -183,12 +183,12 @@
       "status": "met"
     },
     "relay-auto": {
-      "attempts": 3,
+      "attempts": 4,
       "last": {
-        "at": "2026-10-27T21:35:44Z",
+        "at": "2026-10-27T22:07:49Z",
         "command": "python tools/proofs.py relay",
         "exit": 0,
-        "head": "6302cb0",
+        "head": "8c338fe",
         "ok": true,
         "tail": "failures=0"
       },
@@ -196,12 +196,12 @@
       "status": "met"
     },
     "repair-cycle": {
-      "attempts": 1,
+      "attempts": 2,
       "last": {
-        "at": "2026-10-27T21:44:21Z",
+        "at": "2026-10-27T22:07:55Z",
         "command": "python tools/prove_repair_cycle.py --fake",
         "exit": 0,
-        "head": "9c8409a",
+        "head": "8c338fe",
         "ok": true,
         "tail": "{\"model\": \"guionizado\", \"exit\": 0, \"ok\": true, \"steps\": 4, \"repairs\": 1, \"gate_verdicts\": [\"exit 10\", \"exit 0\"], \"sandbox_used\": true, \"promoted\": 1, \"isolated_tokens\": 58, \"savings\": {\"requests\": 5, \"sent\": 50, \"baseline\": 14425, \"peak_sent\": 10, \"last_sent\": 10, \"saved\": 14375, \"savings_pct\": 99.7, \"context_multiplier\": 288.5, \"skills_installed\": 173, \"index_tokens\": 3369, \"dormant_tokens\": 14385, \"pruned_tokens\": 0, \"isolated_tokens\": 58, \"repomap_tokens\": 21, \"unmeasured_requests\": 0}, \"calc_final\": \"def add(a, b):\\n    return a + b\\n\\n\\ndef mul(a, b):\\n    return a * b\\n\", \"cycle\": true, \"note\": \"modelos guionizados: el usage es inventado, asi que estas cifras de ahorro NO se usan para afirmar nada; el ciclo si\"}"
       },
@@ -209,12 +209,12 @@
       "status": "met"
     },
     "savings-engines": {
-      "attempts": 2,
+      "attempts": 3,
       "last": {
-        "at": "2026-10-27T21:35:49Z",
+        "at": "2026-10-27T22:07:54Z",
         "command": "python tools/proofs.py savings",
         "exit": 0,
-        "head": "6302cb0",
+        "head": "8c338fe",
         "ok": true,
         "tail": "failures=0"
       },
@@ -222,12 +222,12 @@
       "status": "met"
     },
     "shell-policy": {
-      "attempts": 6,
+      "attempts": 7,
       "last": {
-        "at": "2026-10-27T21:35:33Z",
+        "at": "2026-10-27T22:07:38Z",
         "command": "python -m nexus_harness selftest shell_policy",
         "exit": 0,
-        "head": "6302cb0",
+        "head": "8c338fe",
         "ok": true,
         "tail": "shell_policy     OK    0.13s\nsuites=1 failures=0"
       },
@@ -235,12 +235,12 @@
       "status": "met"
     },
     "skills-autonomous": {
-      "attempts": 3,
+      "attempts": 4,
       "last": {
-        "at": "2026-10-27T21:35:44Z",
+        "at": "2026-10-27T22:07:49Z",
         "command": "python tools/proofs.py skills",
         "exit": 0,
-        "head": "6302cb0",
+        "head": "8c338fe",
         "ok": true,
         "tail": "failures=0"
       },
@@ -248,12 +248,12 @@
       "status": "met"
     },
     "spec-priority": {
-      "attempts": 3,
+      "attempts": 4,
       "last": {
-        "at": "2026-10-27T21:35:48Z",
+        "at": "2026-10-27T22:07:53Z",
         "command": "python tools/proofs.py priority",
         "exit": 0,
-        "head": "6302cb0",
+        "head": "8c338fe",
         "ok": true,
         "tail": "failures=0"
       },
@@ -261,51 +261,51 @@
       "status": "met"
     },
     "suites-source": {
-      "attempts": 7,
+      "attempts": 8,
       "last": {
-        "at": "2026-10-27T21:32:26Z",
+        "at": "2026-10-27T22:04:40Z",
         "command": "python -m nexus_harness selftest",
         "exit": 0,
-        "head": "6302cb0",
+        "head": "8c338fe",
         "ok": true,
-        "tail": "car          OK    5.13s\nestado listo: 2 criterios (2 pendientes)\na -> exit 0 (VERDE)\nfindings=0\nb -> exit 10 (ROJO)\n\nb marcado blocked\ncriterio desconocido: zzz\ncerrojo ocupado: el turno de noche ya esta en marcha: pid 18872 desde 2026-10-27T21:32:14+00:00 (suite)\nno se toca nada. Si esa sesion ya no corre, el cerrojo se hereda solo; para forzarlo a mano, borra C:\\Users\\Vexus\\AppData\\Local\\Temp\\nightshift-058diydj\\.nexus\\harness\\nightshift.lock\nTOCA: b \u2014 falla\n  prueba: python -c \"raise SystemExit(10)\"\n  estado: blocked (intentos 1)\na -> exit 0 (VERDE)\nfindings=0\nnightshift       OK    0.31s\ncontext_router   OK    0.07s\ntriad_loop       OK    2.15s\nsession_relay    OK    1.16s\nrelay_state      OK    0.24s\nsavings          OK    0.65s\nskills           OK    0.09s\nworktree         OK    2.44s\ndeploy           OK    0.03s\njudge_repair     OK    0.01s\ncompaction       OK    0.18s\nchat             OK    0.60s\nmemory           OK    0.36s\nui               OK    0.96s\nbridge           OK    0.06s\nbudget           OK    0.35s\ncharts           OK    0.00s\nactivity         OK    0.00s\nprojects         OK    0.56s\nautonomy         OK    0.25s\nux               OK    1.85s\nsuites=34 failures=0"
+        "tail": "car          OK    5.11s\nestado listo: 2 criterios (2 pendientes)\na -> exit 0 (VERDE)\nfindings=0\nb -> exit 10 (ROJO)\n\nb marcado blocked\ncriterio desconocido: zzz\ncerrojo ocupado: el turno de noche ya esta en marcha: pid 33660 desde 2026-10-27T22:04:29+00:00 (suite)\nno se toca nada. Si esa sesion ya no corre, el cerrojo se hereda solo; para forzarlo a mano, borra C:\\Users\\Vexus\\AppData\\Local\\Temp\\nightshift-p45ig2t1\\.nexus\\harness\\nightshift.lock\nTOCA: b \u2014 falla\n  prueba: python -c \"raise SystemExit(10)\"\n  estado: blocked (intentos 1)\na -> exit 0 (VERDE)\nfindings=0\nnightshift       OK    0.31s\ncontext_router   OK    0.07s\ntriad_loop       OK    2.07s\nsession_relay    OK    1.04s\nrelay_state      OK    0.24s\nsavings          OK    0.62s\nskills           OK    0.08s\nworktree         OK    2.28s\ndeploy           OK    0.03s\njudge_repair     OK    0.01s\ncompaction       OK    0.19s\nchat             OK    0.54s\nmemory           OK    0.38s\nui               OK    0.99s\nbridge           OK    0.06s\nbudget           OK    0.33s\ncharts           OK    0.00s\nactivity         OK    0.00s\nprojects         OK    0.52s\nautonomy         OK    0.25s\nux               OK    1.62s\nsuites=34 failures=0"
       },
       "note": "",
       "status": "met"
     },
     "tool-arg-repair": {
-      "attempts": 7,
+      "attempts": 8,
       "last": {
-        "at": "2026-10-27T21:35:32Z",
+        "at": "2026-10-27T22:07:38Z",
         "command": "python -m nexus_harness selftest repair",
         "exit": 0,
-        "head": "6302cb0",
+        "head": "8c338fe",
         "ok": true,
-        "tail": "repair           OK    0.33s\nsuites=1 failures=0"
+        "tail": "repair           OK    0.32s\nsuites=1 failures=0"
       },
       "note": "",
       "status": "met"
     },
     "turn-checkpoint": {
-      "attempts": 6,
+      "attempts": 7,
       "last": {
-        "at": "2026-10-27T21:35:34Z",
+        "at": "2026-10-27T22:07:39Z",
         "command": "python -m nexus_harness selftest checkpoint",
         "exit": 0,
-        "head": "6302cb0",
+        "head": "8c338fe",
         "ok": true,
-        "tail": "checkpoint       OK    0.36s\nsuites=1 failures=0"
+        "tail": "checkpoint       OK    0.25s\nsuites=1 failures=0"
       },
       "note": "",
       "status": "met"
     },
     "vps-deploy": {
-      "attempts": 3,
+      "attempts": 4,
       "last": {
-        "at": "2026-10-27T21:35:47Z",
+        "at": "2026-10-27T22:07:52Z",
         "command": "python tools/proofs.py deploy",
         "exit": 0,
-        "head": "6302cb0",
+        "head": "8c338fe",
         "ok": true,
         "tail": "failures=0"
       },
@@ -313,12 +313,12 @@
       "status": "met"
     },
     "worktree-isolation": {
-      "attempts": 3,
+      "attempts": 4,
       "last": {
-        "at": "2026-10-27T21:35:47Z",
+        "at": "2026-10-27T22:07:52Z",
         "command": "python tools/proofs.py worktree",
         "exit": 0,
-        "head": "6302cb0",
+        "head": "8c338fe",
         "ok": true,
         "tail": "failures=0"
       },
@@ -1404,9 +1404,184 @@
       "head": "9c8409a",
       "id": "repair-cycle",
       "ok": true
+    },
+    {
+      "at": "2026-10-27T22:04:20Z",
+      "exit": 0,
+      "head": "8c338fe",
+      "id": "gate-lint",
+      "ok": true
+    },
+    {
+      "at": "2026-10-27T22:04:40Z",
+      "exit": 0,
+      "head": "8c338fe",
+      "id": "suites-source",
+      "ok": true
+    },
+    {
+      "at": "2026-10-27T22:05:20Z",
+      "exit": 0,
+      "head": "8c338fe",
+      "id": "frozen-engine",
+      "ok": true
+    },
+    {
+      "at": "2026-10-27T22:05:21Z",
+      "exit": 0,
+      "head": "8c338fe",
+      "id": "protocol-lint",
+      "ok": true
+    },
+    {
+      "at": "2026-10-27T22:07:36Z",
+      "exit": 0,
+      "head": "8c338fe",
+      "id": "protocol-doctor",
+      "ok": true
+    },
+    {
+      "at": "2026-10-27T22:07:36Z",
+      "exit": 0,
+      "head": "8c338fe",
+      "id": "hook-contract",
+      "ok": true
+    },
+    {
+      "at": "2026-10-27T22:07:37Z",
+      "exit": 0,
+      "head": "8c338fe",
+      "id": "adapter-aider",
+      "ok": true
+    },
+    {
+      "at": "2026-10-27T22:07:37Z",
+      "exit": 0,
+      "head": "8c338fe",
+      "id": "adapter-claude",
+      "ok": true
+    },
+    {
+      "at": "2026-10-27T22:07:37Z",
+      "exit": 0,
+      "head": "8c338fe",
+      "id": "providers-retry",
+      "ok": true
+    },
+    {
+      "at": "2026-10-27T22:07:38Z",
+      "exit": 0,
+      "head": "8c338fe",
+      "id": "tool-arg-repair",
+      "ok": true
+    },
+    {
+      "at": "2026-10-27T22:07:38Z",
+      "exit": 0,
+      "head": "8c338fe",
+      "id": "shell-policy",
+      "ok": true
+    },
+    {
+      "at": "2026-10-27T22:07:39Z",
+      "exit": 0,
+      "head": "8c338fe",
+      "id": "context-compaction",
+      "ok": true
+    },
+    {
+      "at": "2026-10-27T22:07:39Z",
+      "exit": 0,
+      "head": "8c338fe",
+      "id": "turn-checkpoint",
+      "ok": true
+    },
+    {
+      "at": "2026-10-27T22:07:40Z",
+      "exit": 0,
+      "head": "8c338fe",
+      "id": "cost-budget",
+      "ok": true
+    },
+    {
+      "at": "2026-10-27T22:07:40Z",
+      "exit": 0,
+      "head": "8c338fe",
+      "id": "evidence-export",
+      "ok": true
+    },
+    {
+      "at": "2026-10-27T22:07:46Z",
+      "exit": 0,
+      "head": "8c338fe",
+      "id": "no-orphans",
+      "ok": true
+    },
+    {
+      "at": "2026-10-27T22:07:48Z",
+      "exit": 0,
+      "head": "8c338fe",
+      "id": "installer",
+      "ok": true
+    },
+    {
+      "at": "2026-10-27T22:07:49Z",
+      "exit": 0,
+      "head": "8c338fe",
+      "id": "relay-auto",
+      "ok": true
+    },
+    {
+      "at": "2026-10-27T22:07:49Z",
+      "exit": 0,
+      "head": "8c338fe",
+      "id": "skills-autonomous",
+      "ok": true
+    },
+    {
+      "at": "2026-10-27T22:07:52Z",
+      "exit": 0,
+      "head": "8c338fe",
+      "id": "worktree-isolation",
+      "ok": true
+    },
+    {
+      "at": "2026-10-27T22:07:52Z",
+      "exit": 0,
+      "head": "8c338fe",
+      "id": "vps-deploy",
+      "ok": true
+    },
+    {
+      "at": "2026-10-27T22:07:52Z",
+      "exit": 0,
+      "head": "8c338fe",
+      "id": "judge-context",
+      "ok": true
+    },
+    {
+      "at": "2026-10-27T22:07:53Z",
+      "exit": 0,
+      "head": "8c338fe",
+      "id": "spec-priority",
+      "ok": true
+    },
+    {
+      "at": "2026-10-27T22:07:54Z",
+      "exit": 0,
+      "head": "8c338fe",
+      "id": "savings-engines",
+      "ok": true
+    },
+    {
+      "at": "2026-10-27T22:07:55Z",
+      "exit": 0,
+      "head": "8c338fe",
+      "id": "repair-cycle",
+      "ok": true
     }
   ],
-  "iteration": 154,
+  "iteration": 179,
   "rubric_version": 1,
   "started": "2026-10-25T00:00:50Z",
   "version": 1
