@@ -25,6 +25,7 @@ SUITES = {
     "learning": "test_learning",
     "oracle": "test_oracle",
     "tokenizer": "test_tokenizer",
+    "spec": "test_spec",
 }
 
 

@@ -10,6 +10,7 @@ de aquí no pasa su comando, no existe.
 | skills: catálogo único, techo de 10 y resultados | `skill_router.py`, `outcomes.py` | `python tools/proofs.py skills` |
 | aprendizaje: fallo repetido forja, verde tras reparar enseña | `reflection.py` | `python tools/proofs.py learning` |
 | oráculo: runner descubierto y humo de importación | `oracle.py`, `gate.py` | `python tools/proofs.py oracle` |
+| spec sintetizada: objetivo → criterios ejecutables validados | `spec_synth.py`, `nexus_harness spec` | `python tools/proofs.py spec` |
 | reparación en `git worktree` | `worktree_sandbox.py`, `repair_guard.py` | `python tools/proofs.py worktree` |
 | deploy al VPS (SSH + Compose) | `vps_deployer.py`, `settings_vps.py` | `python tools/proofs.py deploy` |
 | juez con contexto + pista de líneas reales | `judge.py`, `repair_hint.py` | `python tools/proofs.py judge` |
@@ -40,7 +41,24 @@ ahí sale un multiplicador suavizado y acotado (`0,7 .. 1,3`) que ajusta el scor
 resuelve turnos sube, una que los pierde baja, y ninguna sustituye a la evidencia. Sin muestras el
 factor es 1,0 — no se inventa corrección.
 
-## 3. Worktree del Obrero
+## 3. Spec sintetizada — el bucle ya no obedece una spec escrita a mano
+
+`python -m nexus_harness spec "<objetivo>" [--write] [--model]` convierte un objetivo en criterios
+**ejecutables** (`command` + `expect_exit`), los **valida en el acto** y solo entonces los congela en
+`.ai/CURRENT_SPEC.json`:
+
+- un criterio sin comando no entra; uno que no se puede lanzar (comando inexistente, política de shell)
+  se descarta y se dice por qué;
+- cada criterio guarda su `evidence.exit` de hoy: la spec nace con hechos, no con promesas;
+- si **todos** los criterios ya pasan, la spec no se congela (`actionable=false`): no hay nada que
+  construir y un plan sin hueco es una firma;
+- al fusionar, lo ya congelado **no se pierde** y solo se añaden criterios nuevos; `cas_sha256` cubre el
+  conjunto.
+
+Medido de punta a punta en un proyecto de prueba (`pytest.ini` + test rojo): el comando descubrió
+`python -m pytest -q`, lo ejecutó (`exit 1`), y congeló `CA1` con esa evidencia.
+
+## 4. Worktree del Obrero
 
 `config.worktree_repairs` (por defecto `True`) hace que la reparación corra en
 `.nexus/harness/worktrees/<id>` sobre una rama `nexus/sandbox/*`. Allí se ejecuta el MISMO gate del
@@ -48,7 +66,7 @@ proyecto. Verde: los ficheros cambiados se copian al árbol principal y se vuelv
 Obrero lanza): el worktree se descarta y el árbol principal no se tocó. En una raíz que no es git se
 degrada al comportamiento anterior, y lo dice.
 
-## 4. Deploy 24/7
+## 5. Deploy 24/7
 
 `vps_deployer` lee `VPS_HOST`, `VPS_USER`, `VPS_PORT`, `VPS_SSH_KEY` de la bóveda, empaqueta el kit de
 `NexusProtocol/deploy` + secretos, lo sube por `scp`/`ssh` (BatchMode) y levanta
@@ -56,7 +74,7 @@ degrada al comportamiento anterior, y lo dice.
 (`plan()`, `dry_run=True`) y en `/settings` nada se ejecuta de verdad sin marcar `confirm`; el
 resultado se pinta redactado (`***`).
 
-## 5. Juez y reparación de llamadas
+## 6. Juez y reparación de llamadas
 
 `mode_for()` decide por hechos: sin ficheros ni gate es **conversación** (se juzga utilidad, no diff);
 con ficheros o gate es **código** (se exige la evidencia). `RepairHints` cuenta fallos por

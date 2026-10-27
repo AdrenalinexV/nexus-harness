@@ -182,6 +182,33 @@ def cmd_gate(args):
     return verdict.exit
 
 
+def cmd_spec(args):
+    """Objetivo -> criterios ejecutables, validados hoy. Sin `--write` es un plan en seco."""
+    from .providers import Router
+    from .spec_synth import synthesize
+
+    config = _config(args)
+    router = Router(config) if getattr(args, "model", False) else None
+    result = synthesize(config.default_root, args.goal, config=config, router=router,
+                       write=bool(args.write), force=bool(args.force))
+    if args.json:
+        print(json.dumps(result, indent=2, sort_keys=True, ensure_ascii=False))
+    else:
+        for row in result["rows"]:
+            print("%-4s %-9s %s" % ("ok" if row["ok"] else "GAP",
+                                    "exit %s" % (row["exit"] if row["exit"] is not None else "?"),
+                                    row["title"]))
+            print("     $ %s" % row["command"])
+        for row in result["dropped"]:
+            print("descartado: %s (%s)" % (row["title"], row["detail"]))
+        print("spec: %s%s%s" % ("accionable" if result["actionable"] else "ya cumplida",
+                                " · escrita en %s" % result.get("path") if result["written"] else "",
+                                (" · " + result["reason"]) if result["reason"] else ""))
+    if not result["ok"]:
+        return 20
+    return 0 if result["actionable"] or result["written"] else 10
+
+
 def cmd_relay(args):
     config = _config(args)
     root = config.default_root
@@ -281,6 +308,15 @@ def build_parser():
     relay.add_argument("--handover", action="store_true")
     relay.add_argument("--goal", default="")
     relay.set_defaults(func=cmd_relay)
+
+    spec = sub.add_parser("spec", help="objetivo -> criterios ejecutables (plan en seco)")
+    spec.add_argument("goal")
+    spec.add_argument("--project", default=None)
+    spec.add_argument("--write", action="store_true", help="congela la spec en .ai/CURRENT_SPEC.json")
+    spec.add_argument("--force", action="store_true", help="congela aunque todo pase ya")
+    spec.add_argument("--model", action="store_true", help="el Director propone criterios")
+    spec.add_argument("--json", action="store_true")
+    spec.set_defaults(func=cmd_spec)
 
     bridge = sub.add_parser("bridge", help="the mobile queue (.nexus/hive/queue.json)")
     bridge.add_argument("--tick", action="store_true", help="claim and run one item")
