@@ -117,6 +117,19 @@
       "note": "",
       "status": "met"
     },
+    "judge-context": {
+      "attempts": 1,
+      "last": {
+        "at": "2026-10-27T01:04:10Z",
+        "command": "python tools/proofs.py judge",
+        "exit": 0,
+        "head": "0cac22d",
+        "ok": true,
+        "tail": "failures=0"
+      },
+      "note": "",
+      "status": "met"
+    },
     "no-orphans": {
       "attempts": 5,
       "last": {
@@ -169,6 +182,19 @@
       "note": "",
       "status": "met"
     },
+    "relay-auto": {
+      "attempts": 1,
+      "last": {
+        "at": "2026-10-27T01:04:07Z",
+        "command": "python tools/proofs.py relay",
+        "exit": 0,
+        "head": "0cac22d",
+        "ok": true,
+        "tail": "failures=0"
+      },
+      "note": "",
+      "status": "met"
+    },
     "shell-policy": {
       "attempts": 4,
       "last": {
@@ -178,6 +204,32 @@
         "head": "b40a3cc",
         "ok": true,
         "tail": "shell_policy     OK    0.15s\nsuites=1 failures=0"
+      },
+      "note": "",
+      "status": "met"
+    },
+    "skills-autonomous": {
+      "attempts": 1,
+      "last": {
+        "at": "2026-10-27T01:04:08Z",
+        "command": "python tools/proofs.py skills",
+        "exit": 0,
+        "head": "0cac22d",
+        "ok": true,
+        "tail": "failures=0"
+      },
+      "note": "",
+      "status": "met"
+    },
+    "spec-priority": {
+      "attempts": 1,
+      "last": {
+        "at": "2026-10-27T01:04:11Z",
+        "command": "python tools/proofs.py priority",
+        "exit": 0,
+        "head": "0cac22d",
+        "ok": true,
+        "tail": "failures=0"
       },
       "note": "",
       "status": "met"
@@ -217,6 +269,32 @@
         "head": "b40a3cc",
         "ok": true,
         "tail": "checkpoint       OK    0.24s\nsuites=1 failures=0"
+      },
+      "note": "",
+      "status": "met"
+    },
+    "vps-deploy": {
+      "attempts": 1,
+      "last": {
+        "at": "2026-10-27T01:04:10Z",
+        "command": "python tools/proofs.py deploy",
+        "exit": 0,
+        "head": "0cac22d",
+        "ok": true,
+        "tail": "failures=0"
+      },
+      "note": "",
+      "status": "met"
+    },
+    "worktree-isolation": {
+      "attempts": 1,
+      "last": {
+        "at": "2026-10-27T01:04:10Z",
+        "command": "python tools/proofs.py worktree",
+        "exit": 0,
+        "head": "0cac22d",
+        "ok": true,
+        "tail": "failures=0"
       },
       "note": "",
       "status": "met"
@@ -915,9 +993,51 @@
       "head": "ec6be3a",
       "id": "installer",
       "ok": true
+    },
+    {
+      "at": "2026-10-27T01:04:07Z",
+      "exit": 0,
+      "head": "0cac22d",
+      "id": "relay-auto",
+      "ok": true
+    },
+    {
+      "at": "2026-10-27T01:04:08Z",
+      "exit": 0,
+      "head": "0cac22d",
+      "id": "skills-autonomous",
+      "ok": true
+    },
+    {
+      "at": "2026-10-27T01:04:10Z",
+      "exit": 0,
+      "head": "0cac22d",
+      "id": "worktree-isolation",
+      "ok": true
+    },
+    {
+      "at": "2026-10-27T01:04:10Z",
+      "exit": 0,
+      "head": "0cac22d",
+      "id": "vps-deploy",
+      "ok": true
+    },
+    {
+      "at": "2026-10-27T01:04:10Z",
+      "exit": 0,
+      "head": "0cac22d",
+      "id": "judge-context",
+      "ok": true
+    },
+    {
+      "at": "2026-10-27T01:04:11Z",
+      "exit": 0,
+      "head": "0cac22d",
+      "id": "spec-priority",
+      "ok": true
     }
   ],
-  "iteration": 99,
+  "iteration": 105,
   "rubric_version": 1,
   "started": "2026-10-25T00:00:50Z",
   "version": 1

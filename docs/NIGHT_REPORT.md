@@ -2,10 +2,10 @@
 
 Generado por `tools/nightshift.py report` (no se escribe a mano).
 
-- fecha: 2026-10-25T13:37:34Z
-- HEAD: `e5e8764`
-- iteracion: 98
-- criterios: **17/17**
+- fecha: 2026-10-27T01:04:13Z
+- HEAD: `0cac22d`
+- iteracion: 105
+- criterios: **23/23**
 
 ## Rubrica
 
@@ -13,7 +13,13 @@ Generado por `tools/nightshift.py report` (no se escribe a mano).
 |---|---|---|---|---|
 | `gate-lint` | gobernanza | La ley de 400 lineas pasa en el propio repositorio | OK | 0 |
 | `hook-contract` | multi-harness | Contrato generico `nexus gate --hook` (JSON por stdin, exit 0/10/20/30) | OK | 0 |
+| `judge-context` | motor | Juez sensible al contexto y pista con lineas reales al segundo fallo | OK | 0 |
+| `relay-auto` | contexto | Relevo automatico: poda al 55% (path/lineas/sha256) y estado verificado al 70% | OK | 0 |
+| `skills-autonomous` | skills | Skills: techo de 10 en RAM, catalogo dormido y forja con procedencia sha256 | OK | 0 |
+| `spec-priority` | gobernanza | Nexus-Harness es el #1 de la cola y su spec congelada esta activa | OK | 0 |
 | `suites-source` | gobernanza | Toda la suite determinista pasa desde el codigo fuente | OK | 0 |
+| `vps-deploy` | operacion | Deploy VPS por SSH+Compose desde la boveda, secrets.env 0600 y plan en seco | OK | 0 |
+| `worktree-isolation` | gobernanza | El Obrero repara en un git worktree y solo promueve con el gate verde | OK | 0 |
 | `adapter-aider` | multi-harness | Adaptador Aider: lint/test del gate escritos en su config, verificable | OK | 0 |
 | `cost-budget` | operacion | Presupuesto de coste en USD con parada dura antes de cada llamada | OK | 0 |
 | `evidence-export` | evidencia | El informe de evidencia se genera desde el estado y cubre los 17 criterios | OK | 0 |
@@ -49,6 +55,34 @@ $ python C:/Proyectos/NexusProtocol/nexus/cli.py gate --hook --selftest --json
 }
 ```
 
+### judge-context (exit 0, 2026-10-27T01:04:10Z)
+
+```
+$ python tools/proofs.py judge
+failures=0
+```
+
+### relay-auto (exit 0, 2026-10-27T01:04:07Z)
+
+```
+$ python tools/proofs.py relay
+failures=0
+```
+
+### skills-autonomous (exit 0, 2026-10-27T01:04:08Z)
+
+```
+$ python tools/proofs.py skills
+failures=0
+```
+
+### spec-priority (exit 0, 2026-10-27T01:04:11Z)
+
+```
+$ python tools/proofs.py priority
+failures=0
+```
+
 ### suites-source (exit 0, 2026-10-25T08:58:18Z)
 
 ```
@@ -81,6 +115,20 @@ ui               OK    0.86s
 bridge           OK    0.05s
 budget           OK    0.02s
 suites=23 failures=0
+```
+
+### vps-deploy (exit 0, 2026-10-27T01:04:10Z)
+
+```
+$ python tools/proofs.py deploy
+failures=0
+```
+
+### worktree-isolation (exit 0, 2026-10-27T01:04:10Z)
+
+```
+$ python tools/proofs.py worktree
+failures=0
 ```
 
 ### adapter-aider (exit 0, 2026-10-25T09:00:54Z)
@@ -193,15 +241,15 @@ repair           OK    0.15s
 suites=1 failures=0
 ```
 
-### installer (exit 0, 2026-10-25T13:36:52Z)
+### installer (exit 0, 2026-10-25T18:20:03Z)
 
 ```
 $ python tools/nightshift.py install --check
 sala       : C:\Users\Vexus\AppData\Local\NexusHarnessVerify (no existia)
-instalador : NexusHarness-Setup-0.3.0.exe -> exit 0
+instalador : NexusHarness-Setup-0.4.0.exe -> exit 0
 ventana    : nexus-harness-desktop.exe subsystem=2 (2 = interfaz)
-motor      : repo     sha256=df2bfd40c1bf
-           : instalado sha256=df2bfd40c1bf
+motor      : repo     sha256=a991d5eaaa02
+           : instalado sha256=a991d5eaaa02
 desinstalar: exit 0
 sala       : eliminada, sin fichero bloqueado
 registro   : devuelto como estaba

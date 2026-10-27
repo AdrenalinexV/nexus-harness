@@ -1,0 +1,38 @@
+{
+  "protocol": "nexus",
+  "format": "nexus.spec/1",
+  "id": "harness-v1",
+  "goal": "Nexus-Harness v1.0.0: relevo automatico de sesion, skills forjadas, aislamiento por worktree, deploy VPS y evidencia verde (verify + frozen).",
+  "frozen_at": "2026-10-27T00:00:00+00:00",
+  "cas": [
+    {
+      "id": "CA1",
+      "title": "toda la suite determinista pasa",
+      "command": [
+        "python",
+        "-m",
+        "nexus_harness",
+        "selftest"
+      ],
+      "expect_exit": 0
+    },
+    {
+      "id": "CA2",
+      "title": "la ley de 400 lineas pasa en el propio arnes",
+      "command": [
+        "python",
+        "tools/lint_harness.py"
+      ],
+      "expect_exit": 0
+    },
+    {
+      "id": "CA3",
+      "title": "verify (lint + suites) en verde",
+      "command": [
+        "python",
+        "tools/verify.py"
+      ],
+      "expect_exit": 0
+    }
+  ]
+}
