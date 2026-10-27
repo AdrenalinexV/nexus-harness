@@ -23,6 +23,9 @@ La tabla de precios es una **foto**, no una verdad eterna: se escribe aqui, se p
 from dataclasses import dataclass, field
 
 USD_PER_MILLION = 1_000_000.0
+# Un token de entrada servido de cache se cobra a una fraccion declarada del precio de entrada. Es la
+# horquilla que publican los proveedores (10 %); no se aplica a la salida, que nunca se cachea.
+CACHE_DISCOUNT = 0.1
 
 # (USD por 1M tokens de entrada, USD por 1M de salida). Emparejamiento por subcadena, gana la mas larga.
 PRICES = {
@@ -68,7 +71,10 @@ def cost_of(model, usage):
     completion = int(getattr(usage, "completion", 0) or 0)
     if prompt <= 0 and completion <= 0:
         return 0.0, False
-    return (prompt * price[0] + completion * price[1]) / USD_PER_MILLION, True
+    cached = min(prompt, max(0, int(getattr(usage, "cached", 0) or 0)))
+    billable = prompt - cached
+    usd = (billable * price[0] + cached * price[0] * CACHE_DISCOUNT + completion * price[1])
+    return usd / USD_PER_MILLION, True
 
 
 @dataclass
@@ -80,6 +86,8 @@ class CostBudget:
     calls: int = 0
     priced_calls: int = 0
     unpriced_calls: int = 0
+    cached_tokens: int = 0
+    prompt_tokens: int = 0
     reason: str = ""
     history: list = field(default_factory=list)
 
@@ -100,12 +108,15 @@ class CostBudget:
         """Anota una respuesta. Devuelve el estado, como el medidor de tokens."""
         usd, priced = cost_of(model, usage)
         self.calls += 1
+        self.cached_tokens += max(0, int(getattr(usage, "cached", 0) or 0))
+        self.prompt_tokens += max(0, int(getattr(usage, "prompt", 0) or 0))
         if priced:
             self.spent += usd
             self.priced_calls += 1
         else:
             self.unpriced_calls += 1
-        self.history.append({"model": str(model or ""), "usd": round(usd, 9), "priced": priced})
+        self.history.append({"model": str(model or ""), "usd": round(usd, 9), "priced": priced,
+                             "cached": max(0, int(getattr(usage, "cached", 0) or 0))})
         return self.state()
 
     def stop(self, where=""):
@@ -121,6 +132,9 @@ class CostBudget:
     def state(self):
         return {"spent": round(self.spent, 9), "limit": float(self.limit_usd or 0.0),
                 "ratio": self.ratio, "calls": self.calls, "priced_calls": self.priced_calls,
-                "unpriced_calls": self.unpriced_calls, "exceeded": self.exceeded,
+                "unpriced_calls": self.unpriced_calls, "cached_tokens": self.cached_tokens,
+                "cache_ratio": (round(self.cached_tokens / float(self.prompt_tokens), 3)
+                                if self.prompt_tokens else None),
+                "exceeded": self.exceeded,
                 "state": "unbounded" if not self.bounded else "bounded",
                 "reason": self.reason}

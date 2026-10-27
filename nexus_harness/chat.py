@@ -25,6 +25,7 @@ from .compaction import Compactor
 from .context_compiler import TurnWindow, build_prefix
 from .context_pruner import prune
 from .message import Message, as_text
+from .portfolio import maybe_escalate
 from .reflection import learn
 from .tokenizer import calibration, count_messages
 from .turn_context import (apply_budget, build_turn_prefix, inject_skills, is_delta,
@@ -253,8 +254,8 @@ class Chat:
             calibration().observe(model, count_messages(messages, model), sent)
         first_map = 0 if self.savings.repomap_tokens else self._map_tokens
         row = self.savings.request(sent, injected_skill_tokens=self._injected_tokens,
-                                   repomap_tokens=first_map,
-                                   measured=measured)
+                                   repomap_tokens=first_map, measured=measured,
+                                   cached_tokens=int(getattr(reply.usage, "cached", 0) or 0))
         self._emit("context.savings", self.savings.note(), row=row, totals=self.savings.as_dict())
         return row
 
@@ -327,11 +328,13 @@ class Chat:
         if self.touched:
             verdict = self.gate.run(sorted(self.touched))
             self._emit("gate.verdict", "exit %s" % verdict.exit, verdict=verdict.as_dict())
-        attempts = 0
+        attempts, reds = 0, 0
         while verdict is not None and not verdict.ok and attempts < int(self.config.max_repairs):
             if self._stop.is_set():
                 break
             attempts += 1
+            reds += 1
+            maybe_escalate(self.router, getattr(self, "portfolio", None), self.cost, reds, self._emit)
             self._emit("chat.repair", "intento %d" % attempts, failures=verdict.failures[:800])
             self.history.append(Message(role="user", content=REPAIR % verdict.failures))
             more, steps = self._turn(tools=True)

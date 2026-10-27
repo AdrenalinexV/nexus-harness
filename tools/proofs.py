@@ -27,6 +27,7 @@ SUITES = {
     "tokenizer": "test_tokenizer",
     "spec": "test_spec",
     "plan": "test_plan_graph",
+    "portfolio": "test_portfolio",
 }
 
 

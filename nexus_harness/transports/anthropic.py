@@ -108,8 +108,7 @@ class Anthropic:
         usage = data.get("usage") or {}
         return Reply(text="\n".join(part for part in text if part).strip(), tool_calls=calls,
                      reasoning="\n".join(part for part in reasoning if part).strip(),
-                     usage=Usage(prompt=int(usage.get("input_tokens") or 0),
-                                 completion=int(usage.get("output_tokens") or 0)),
+                     usage=Usage.from_anthropic(usage),
                      model=str(data.get("model") or self.model), raw=data)
 
     def models(self, timeout=10):

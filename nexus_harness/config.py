@@ -61,6 +61,9 @@ DEFAULTS = {
     # La cola de importancia, en orden: el nombre tal como se llama la carpeta del workspace. La escribe
     # el tablero de arrastrar y soltar (`projects.save_order`) y la obedece el bucle autonomo.
     "project_order": [],
+    # La escalera de modelos por rol: `{"worker": ["lmstudio:x", "deepseek:y"]}`. El primer peldano es
+    # el spec del rol; los siguientes se prueban si el transporte cae o si el gate se pone rojo dos veces.
+    "role_ladders": {},
     "lang": "es",
     "temperature": 0.2,
     "max_tokens": 4096,
@@ -125,6 +128,7 @@ class HarnessConfig:
     test_command: object = None
     project_tests: dict = field(default_factory=dict)
     project_order: list = field(default_factory=list)
+    role_ladders: dict = field(default_factory=dict)
     lang: str = "es"
     temperature: float = 0.2
     max_tokens: int = 4096
@@ -190,6 +194,8 @@ class HarnessConfig:
                 "max_repairs": self.max_repairs, "test_command": self.test_command,
                 "project_tests": dict(self.project_tests or {}),
                 "project_order": list(self.project_order or []),
+                "role_ladders": {role: list(specs) for role, specs in (self.role_ladders or {}).items()
+                                 if isinstance(specs, list)},
                 "max_children": self.max_children, "subagent_steps": self.subagent_steps,
                 "tool_workers": self.tool_workers, "shell_policy": self.shell_policy,
                 "lang": self.lang, "source": self.source,

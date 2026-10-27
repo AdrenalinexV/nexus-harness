@@ -62,7 +62,7 @@ class TurnLedger:
         return out
 
 
-SAVINGS_FIELDS = ("tokens_sent", "tokens_baseline", "tokens_saved", "dormant_tokens", "pruned_tokens",
+SAVINGS_FIELDS = ("tokens_sent", "tokens_baseline", "tokens_saved", "cached_tokens", "dormant_tokens", "pruned_tokens",
                   "isolated_tokens", "repomap_tokens", "requests")
 
 

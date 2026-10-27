@@ -26,6 +26,7 @@ from .turn_context import apply_budget, build_turn_prefix, inject_skills
 from .gate import EXIT_GREEN, EXIT_UNAVAILABLE, Gate
 from .judge import Judge
 from .message import Message, as_text
+from .portfolio import maybe_escalate
 from .reflection import learn
 from .repair_guard import isolated_repair
 from .savings import CACHE_REL as SKILLS_CACHE, SavingsLedger
@@ -81,6 +82,7 @@ class Triad:
         self.bus = bus
         self.relay = relay
         self.cost = CostBudget(limit_usd=float(getattr(config, "cost_limit", 0.0) or 0.0))
+        self.portfolio = getattr(router, "portfolio", None)
         self.compactor = compactor if compactor is not None else Compactor(
             limit=getattr(config, "budget_limit", 60000),
             threshold=getattr(config, "compact_threshold", 0.55))
@@ -172,7 +174,8 @@ class Triad:
         first = 0 if self.savings.repomap_tokens else map_tokens
         row = self.savings.request(sent, injected_skill_tokens=self._injected_tokens,
                                    repomap_tokens=first,
-                                   measured=bool(getattr(reply.usage, "measured", False)))
+                                   measured=bool(getattr(reply.usage, "measured", False)),
+                                   cached_tokens=int(getattr(reply.usage, "cached", 0) or 0))
         self._emit("context.savings", self.savings.note(), row=row, totals=self.savings.as_dict())
         return row
 
@@ -231,12 +234,8 @@ class Triad:
         return text, steps
 
     def _closing_summary(self, messages, fallback):
-        """One last call without tools.
-
-        A run that ends on a tool call leaves the judge an empty summary, and an empty summary is a
-        legitimate rejection: there is nothing to approve. Asking for two sentences costs one cheap
-        call and turns "14 steps and no word" into a verdict someone can read.
-        """
+        """One last call without tools: a run that ends on a tool call leaves the judge nothing to
+        approve, and an empty summary is a legitimate rejection. Two sentences cost one cheap call."""
         try:
             reply = self._ask("worker", list(messages) + [Message(role="user", content=CLOSE_PROMPT)],
                               tools=None, max_tokens=400)
@@ -294,7 +293,7 @@ class Triad:
         self.touched = set()
         self.injections = []
         self._prefix_cache, self._delta_sent = None, ""
-        steps_total, repairs = 0, 0
+        steps_total, repairs, reds = 0, 0, 0
         max_steps = int(max_steps or self.config.max_steps)
         max_repairs = int(max_repairs if max_repairs is not None else self.config.max_repairs)
         result = RunResult(goal=goal, root=str(self.config.default_root), started=_now())
@@ -325,6 +324,8 @@ class Triad:
                 if attempt >= max_repairs:
                     break
                 repairs += 1
+                reds += 1
+                maybe_escalate(self.router, self.portfolio, self.cost, reds, self._emit)
                 messages.append(Message(role="user", content=REPAIR_PROMPT % verdict.failures))
                 self._emit("repair", "attempt %d" % repairs, failures=verdict.failures[:800])
             if not verdict.ok:

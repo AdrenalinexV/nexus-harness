@@ -115,6 +115,7 @@ class SavingsLedger:
     dormant_tokens: int = 0
     pruned_tokens: int = 0
     isolated_tokens: int = 0
+    cached_tokens: int = 0
     repomap_tokens: int = 0
     unmeasured_requests: int = 0
     _pending_pruned_chars: int = 0
@@ -141,7 +142,8 @@ class SavingsLedger:
             self.isolated_tokens += value
         return value
 
-    def request(self, sent_tokens, injected_skill_tokens=0, repomap_tokens=0, measured=True):
+    def request(self, sent_tokens, injected_skill_tokens=0, repomap_tokens=0, measured=True,
+                cached_tokens=0):
         """Cierra una llamada al modelo con sus numeros. Devuelve la fila que se guardo."""
         sent = max(0, int(sent_tokens or 0))
         injected = max(0, int(injected_skill_tokens or 0))
@@ -149,8 +151,9 @@ class SavingsLedger:
         pruned = self._pending_pruned_chars // CHARS_PER_TOKEN
         map_cost = max(0, int(repomap_tokens or 0))
         self._pending_pruned_chars = 0
+        cached = max(0, min(sent, int(cached_tokens or 0)))
         row = {"sent": sent, "dormant": dormant, "pruned": pruned, "isolated": self.isolated_tokens,
-               "repomap": map_cost, "measured": bool(measured)}
+               "repomap": map_cost, "measured": bool(measured), "cached": cached}
         self.isolated_tokens = 0
         base = max(0, sent - map_cost) + dormant + pruned + row["isolated"]
         row["baseline"] = base
@@ -162,6 +165,7 @@ class SavingsLedger:
         self.pruned_tokens += pruned
         self.isolated_tokens = 0
         self.repomap_tokens += map_cost
+        self.cached_tokens += cached
         if not measured:
             self.unmeasured_requests += 1
         self.per_request.append(row)
@@ -202,17 +206,20 @@ class SavingsLedger:
                 "context_multiplier": self.context_multiplier,
                 "skills_installed": self.skills_installed, "index_tokens": self.index_tokens,
                 "dormant_tokens": self.dormant_tokens, "pruned_tokens": self.pruned_tokens,
-                "isolated_tokens": self.isolated_tokens, "repomap_tokens": self.repomap_tokens,
+                "isolated_tokens": self.isolated_tokens, "cached_tokens": self.cached_tokens,
+                "repomap_tokens": self.repomap_tokens,
                 "unmeasured_requests": self.unmeasured_requests}
 
     def note(self):
         """Una linea para el hilo y para la pildora: lo medido, sin adjetivos."""
         if not self.requests:
             return "sin requests medidas"
-        return ("%d requests · enviados %s · baseline %s · ahorro %s%% · contexto x%s"
+        cached = (" · cache %s" % _fmt(self.cached_tokens)) if self.cached_tokens else ""
+        return ("%d requests · enviados %s · baseline %s · ahorro %s%% · contexto x%s%s"
                 % (self.requests, _fmt(self.sent), _fmt(self.baseline),
                    self.savings_pct if self.savings_pct is not None else "sin medir",
-                   self.context_multiplier if self.context_multiplier is not None else "sin medir"))
+                   self.context_multiplier if self.context_multiplier is not None else "sin medir",
+                   cached))
 
 
 def _fmt(value):

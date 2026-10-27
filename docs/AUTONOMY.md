@@ -12,6 +12,7 @@ de aquí no pasa su comando, no existe.
 | oráculo: runner descubierto y humo de importación | `oracle.py`, `gate.py` | `python tools/proofs.py oracle` |
 | spec sintetizada: objetivo → criterios ejecutables validados | `spec_synth.py`, `nexus_harness spec` | `python tools/proofs.py spec` |
 | plan en grafo, olas y parada por criterios | `plan_graph.py`, `autonomy.py` | `python tools/proofs.py plan` |
+| cartera de modelos: escalado, failover y caché contada | `portfolio.py`, `providers.py` | `python tools/proofs.py portfolio` |
 | reparación en `git worktree` | `worktree_sandbox.py`, `repair_guard.py` | `python tools/proofs.py worktree` |
 | deploy al VPS (SSH + Compose) | `vps_deployer.py`, `settings_vps.py` | `python tools/proofs.py deploy` |
 | juez con contexto + pista de líneas reales | `judge.py`, `repair_hint.py` | `python tools/proofs.py judge` |
@@ -80,7 +81,33 @@ opina y el bucle sigue planificando.
 `new_criterion`; `spec_synth.add_criterion` lo **ejecuta**, y solo si no se cumple ya y su comando
 funciona lo añade (`origin: director`, `grown_by`, sha recalculado). Nunca quita un criterio congelado.
 
-## 5. Worktree del Obrero
+## 5. Cartera de modelos — una caída no termina el turno
+
+Cada rol puede declarar una **escalera** en `~/.nexus/harness.json`:
+
+```json
+{"roles": {"worker": "lmstudio:kat-coder"},
+ "role_ladders": {"worker": ["lmstudio:kat-coder", "deepseek:deepseek-chat"],
+                  "judge": ["lmstudio:qwen3.8-27b", "openai:gpt-4o-mini"]}}
+```
+
+Dos comportamientos, y los dos se declaran:
+
+- **Failover.** `Router.role()` devuelve un `FailoverTransport`: prueba los peldaños en orden y
+  devuelve el primero que contesta. El bucle no sabe que existe (misma cara que un transporte), y si
+  **todos** caen el error agrega el motivo de cada uno. Un peldaño sin clave se declara `not ready` y
+  se pasa al siguiente; nunca se salta en silencio.
+- **Escalado.** Al **segundo** gate rojo del turno, `maybe_escalate` sube un peldaño y el router cambia
+  de modelo para el resto del run (evento `router.escalated`). Si no hay siguiente, o el presupuesto en
+  USD ya se cruzó, **no se escala** y se dice por qué (`router.escalate_refused`). Escalar a un modelo
+  más caro con el techo agotado es empeorar el problema.
+
+**Caché de proveedor, medida y no supuesta.** `Usage.cached` se lee de cada proveedor
+(`prompt_tokens_details.cached_tokens`, `prompt_cache_hit_tokens`, `cache_read_input_tokens`), viaja al
+libro de turnos (`cached_tokens`) y abarata el coste con un descuento **declarado** del 10 % sobre la
+entrada (`budget.CACHE_DISCOUNT`). No se cuenta como «tokens ahorrados»: es dinero, no contexto.
+
+## 6. Worktree del Obrero
 
 `config.worktree_repairs` (por defecto `True`) hace que la reparación corra en
 `.nexus/harness/worktrees/<id>` sobre una rama `nexus/sandbox/*`. Allí se ejecuta el MISMO gate del
@@ -88,7 +115,7 @@ proyecto. Verde: los ficheros cambiados se copian al árbol principal y se vuelv
 Obrero lanza): el worktree se descarta y el árbol principal no se tocó. En una raíz que no es git se
 degrada al comportamiento anterior, y lo dice.
 
-## 6. Deploy 24/7
+## 7. Deploy 24/7
 
 `vps_deployer` lee `VPS_HOST`, `VPS_USER`, `VPS_PORT`, `VPS_SSH_KEY` de la bóveda, empaqueta el kit de
 `NexusProtocol/deploy` + secretos, lo sube por `scp`/`ssh` (BatchMode) y levanta
@@ -96,7 +123,7 @@ degrada al comportamiento anterior, y lo dice.
 (`plan()`, `dry_run=True`) y en `/settings` nada se ejecuta de verdad sin marcar `confirm`; el
 resultado se pinta redactado (`***`).
 
-## 7. Juez y reparación de llamadas
+## 8. Juez y reparación de llamadas
 
 `mode_for()` decide por hechos: sin ficheros ni gate es **conversación** (se juzga utilidad, no diff);
 con ficheros o gate es **código** (se exige la evidencia). `RepairHints` cuenta fallos por

@@ -10,6 +10,7 @@ makes a deterministic test lie.
 import os
 from dataclasses import dataclass
 
+from .portfolio import FailoverTransport, Portfolio
 from .transports.anthropic import Anthropic
 from .transports.ollama import Ollama
 from .transports.openai_compat import OpenAICompatible
@@ -72,6 +73,9 @@ class Router:
         self.config = config
         self._transports = dict(transports or {})
         self._cache = {}
+        self._by_spec = {}
+        # La cartera de cada rol: la escalera declarada en `role_ladders`, o el spec unico de siempre.
+        self.portfolio = Portfolio(config)
 
     def build(self, spec):
         vendor, model = parse_spec(spec)
@@ -91,14 +95,25 @@ class Router:
                                 extra_headers=table.get("headers"),
                                 requires_key=not table["local"])
 
+    def for_spec(self, spec):
+        """El transporte de un spec concreto, cacheado: es lo que la cartera usa por peldano."""
+        text = str(spec or "").strip()
+        cached = self._by_spec.get(text) or self._transports.get(text)
+        if cached is None:
+            cached = self.build(text)
+            self._by_spec[text] = cached
+        return cached
+
     def role(self, role):
-        """The transport for a role; a role swapped at runtime is picked up on the next call."""
+        """Transporte del rol con su cartera detras: primario y peldanos siguientes, en orden."""
         spec = self.config.role_spec(role)
+        ladder = self.portfolio.after(role, spec)
+        key = (spec, tuple(ladder))
         cached = self._cache.get(role)
-        if cached is not None and cached[0] == spec:
+        if cached is not None and cached[0] == key:
             return cached[1]
-        transport = self._transports.get(spec) or self.build(spec)
-        self._cache[role] = (spec, transport)
+        transport = FailoverTransport(self, role, ladder)
+        self._cache[role] = (key, transport)
         return transport
 
     def swap(self, role, spec):
@@ -107,6 +122,17 @@ class Router:
         self.config.roles[role] = str(spec).strip()
         self._cache.pop(role, None)
         return self.info(role)
+
+    def escalate(self, role, budget=None, reason=""):
+        """Sube un peldano de la cartera si hay adonde y presupuesto. Devuelve el `Move`."""
+        move = self.portfolio.escalate(role, budget=budget, reason=reason)
+        if move.ok:
+            self.config.roles[role] = move.spec
+            self._cache.pop(role, None)
+        return move
+
+    def ladder(self, role):
+        return self.portfolio.ladder(role)
 
     def info(self, role):
         spec = self.config.role_spec(role)

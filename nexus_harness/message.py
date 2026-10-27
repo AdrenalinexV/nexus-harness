@@ -44,10 +44,35 @@ class Usage:
 
     prompt: int = 0
     completion: int = 0
+    # Tokens de entrada que el proveedor sirvio de su cache: se cobran mas baratos, no son gratis.
+    cached: int = 0
 
     @property
     def total(self):
         return self.prompt + self.completion
+
+    @property
+    def cache_ratio(self):
+        """Que parte de la entrada vino de cache. `None` sin medida: no es 0 %."""
+        return round(self.cached / float(self.prompt), 3) if self.prompt > 0 else None
+
+    @classmethod
+    def from_openai(cls, payload):
+        """OpenAI (`prompt_tokens_details.cached_tokens`) y DeepSeek (`prompt_cache_hit_tokens`)."""
+        payload = payload or {}
+        details = payload.get("prompt_tokens_details") or {}
+        cached = details.get("cached_tokens") or payload.get("prompt_cache_hit_tokens") or 0
+        return cls(prompt=int(payload.get("prompt_tokens") or 0),
+                   completion=int(payload.get("completion_tokens") or 0),
+                   cached=int(cached or 0))
+
+    @classmethod
+    def from_anthropic(cls, payload):
+        """Anthropic informa la lectura de cache aparte (`cache_read_input_tokens`)."""
+        payload = payload or {}
+        return cls(prompt=int(payload.get("input_tokens") or 0),
+                   completion=int(payload.get("output_tokens") or 0),
+                   cached=int(payload.get("cache_read_input_tokens") or 0))
 
     @property
     def measured(self):

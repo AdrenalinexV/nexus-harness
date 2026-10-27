@@ -75,8 +75,7 @@ class OpenAICompatible:
                      tool_calls=calls,
                      reasoning=str(message.get("reasoning_content")
                                    or message.get("reasoning") or "").strip(),
-                     usage=Usage(prompt=int(usage.get("prompt_tokens") or 0),
-                                 completion=int(usage.get("completion_tokens") or 0)),
+                     usage=Usage.from_openai(usage),
                      model=str(data.get("model") or self.model), raw=data)
 
     def models(self, timeout=8):
