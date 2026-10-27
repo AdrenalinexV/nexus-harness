@@ -20,7 +20,9 @@ from pathlib import Path
 from . import ledger, triad_brief
 from .budget import CostBudget
 from .compaction import Compactor
-from .context_pruner import prune
+from .context_compiler import build_prefix
+from .tokenizer import calibration, count_messages
+from .turn_context import apply_budget, build_turn_prefix, inject_skills
 from .gate import EXIT_GREEN, EXIT_UNAVAILABLE, Gate
 from .judge import Judge
 from .message import Message, as_text
@@ -108,53 +110,42 @@ class Triad:
         if self.bus is not None:
             self.bus.emit(kind, detail, **payload)
 
-    def _system(self, base, files):
-        """El system prompt: reglas + skills activas + mapa AST. Todo lo que se inyecta, contado."""
-        parts = [base]
-        self._injected_tokens = 0
-        if not getattr(self.config, "nexus_engines", True):
-            from .savings import full_index_brief
-            brief = full_index_brief()
-            if brief:
-                parts.append(brief)
+    def _prefix(self):
+        """El prefijo estable del Obrero: reglas, mapa AST y el comando que le mide.
+
+        Se construye una vez por run: reescribirlo en cada paso invalidaria la cache del proveedor.
+        """
+        if getattr(self, "_prefix_cache", None) is None:
+            if not getattr(self.config, "nexus_engines", True):
+                from .savings import full_index_brief
+                brief = full_index_brief()
                 self._injected_tokens = len(brief) // 4
-            return "\n\n".join(parts)
-        if self.skills is not None:
-            injection = self.skills.select(sorted(files))
-            self.injections.append(injection.as_dict())
-            self._emit("skills.injected", ", ".join(injection.names) or "(none)",
-                       names=injection.names, tokens=injection.tokens,
-                       available=injection.available, note=injection.note)
-            if injection.brief:
-                parts.append(injection.brief)
-            self._injected_tokens = int(injection.tokens or 0)
-        block, _tokens = triad_brief.map_block(self.config)
-        if block:
-            parts.append("## Mapa de simbolos (usa read_file con offset/limit)\n%s" % block)
-        proof = triad_brief.proof_block(self.config)
-        if proof:
-            parts.append(proof)
-        return "\n\n".join(parts)
+                self._prefix_cache = build_prefix([("rules", WORKER_PROMPT), ("skills", brief)])
+            else:
+                self._prefix_cache = build_turn_prefix(self.config, WORKER_PROMPT, self.router,
+                                                       "worker")
+        return self._prefix_cache
+
+    def _system(self, base, files):
+        """Prefijo estable + delta en un texto: solo al abrir sesion (run y relevo), no por paso."""
+        block, _tokens = inject_skills(self.skills, files, self._emit)
+        self._delta_sent = block
+        return "\n\n".join(part for part in (self._prefix().text, block) if part)
+
+    def _note_delta(self, messages):
+        """Anade el contexto que cambio (skills nuevas) al final, sin tocar el prefijo."""
+        block, tokens = inject_skills(self.skills, self.touched, self._emit)
+        self._injected_tokens = tokens
+        if not block or block == getattr(self, "_delta_sent", ""):
+            return False
+        if any(str(getattr(one, "content", "")) == block for one in messages[-4:]):
+            return False
+        messages.append(Message(role="user", content=block))
+        return True
 
     def _maybe_compact(self, messages):
-        """Nivel 1 del presupuesto: condensar y podar salidas de herramientas antes del relevo.
-
-        La poda corre SIEMPRE (es barata y determinista), no solo cuando toca compactar: el transcript
-        de un turno largo acumula lecturas enteras que ya no aportan nada, y cada una cuesta tokens en
-        la siguiente llamada. Se emite lo podado, porque un ahorro invisible no se puede auditar.
-        """
-        if not getattr(self.config, "nexus_engines", True):
-            return False
-        report = prune(messages)
-        if report.pruned:
-            self.savings.observe_pruned(report)
-            self._emit("context.pruned", "%d salidas podadas (%d tokens menos)"
-                       % (report.pruned, report.tokens_saved), count=report.pruned,
-                       tokens_saved=report.tokens_saved, references=report.receipts[:8])
-        result = self.compactor.maybe(messages)
-        if result.applied:
-            self._emit("context.compacted", result.reason, compaction=result.as_dict())
-        return bool(result.applied or report.pruned)
+        """Nivel 1 del presupuesto: poda deslizante + compactacion, con lo podado medido."""
+        return apply_budget(messages, self.config, self.savings, self.compactor, self._emit)
 
     def _ask(self, role, messages, tools=None, max_tokens=None):
         info = self.router.info(role)
@@ -171,7 +162,11 @@ class Triad:
     def _count_savings(self, reply, messages):
         """Cierra la request en el libro de ahorro: lo enviado, el baseline y por que difieren."""
         from .compaction import estimate
+        model = getattr(reply, "model", "") or ""
+        measured = bool(getattr(reply.usage, "measured", False))
         sent = int(getattr(reply.usage, "prompt", 0) or 0) or estimate(messages)[1]
+        if measured and sent > 0:
+            calibration().observe(model, count_messages(messages, model), sent)
         _block, map_tokens = triad_brief.map_block(self.config)
         first = 0 if self.savings.repomap_tokens else map_tokens
         row = self.savings.request(sent, injected_skill_tokens=self._injected_tokens,
@@ -192,7 +187,8 @@ class Triad:
                 # Parada dura: ni una llamada mas, y tampoco el resumen de cierre (que costaria otra).
                 self._emit("budget.stop", self.cost.reason, budget=self.cost.state())
                 break
-            messages[0] = Message(role="system", content=self._system(WORKER_PROMPT, self.touched))
+            messages[0] = Message(role="system", content=self._prefix().text)
+            self._note_delta(messages)
             self._maybe_compact(messages)
             try:
                 reply = self._ask("worker", messages, tools=self.registry.schemas())
@@ -297,6 +293,8 @@ class Triad:
     def run(self, goal, phases=None, max_steps=None, max_repairs=None):
         self.touched = set()
         self.injections = []
+        self._prefix_cache = None
+        self._delta_sent = ""
         steps_total, repairs = 0, 0
         max_steps = int(max_steps or self.config.max_steps)
         max_repairs = int(max_repairs if max_repairs is not None else self.config.max_repairs)

@@ -22,8 +22,12 @@ from . import checkpoint, ledger
 from .budget import CostBudget
 from . import triad_brief
 from .compaction import Compactor
+from .context_compiler import TurnWindow, build_prefix
 from .context_pruner import prune
 from .message import Message, as_text
+from .tokenizer import calibration, count_messages
+from .turn_context import (apply_budget, build_turn_prefix, inject_skills, is_delta,
+                           model_of, split_history)
 from .savings import CACHE_REL as SKILLS_CACHE, SavingsLedger
 from .subagents import Delegate
 from .toolbox import process_manager
@@ -147,61 +151,53 @@ class Chat:
         return self._stop.is_set()
 
     # -- prompt ------------------------------------------------------------------------------
-    def _system(self, files):
-        parts = [CHAT_SYSTEM]
-        self._injected_tokens = 0
+    def _legacy_prefix(self):
+        """Modo tradicional (benchmark A): TODAS las skills instaladas en cada llamada."""
+        from .savings import full_index_brief
+        brief = full_index_brief()
+        self._injected_tokens = len(brief) // 4
+        parts = [("rules", CHAT_SYSTEM)]
+        if brief:
+            parts.append(("skills", brief))
+        return build_prefix(parts)
+
+    def _prefix(self):
+        """El `Prefix` estable de este turno: reglas, memoria, mapa y hechos del proyecto."""
         if not getattr(self.config, "nexus_engines", True):
-            # Modo tradicional (benchmark A): TODAS las skills instaladas en el prompt de cada llamada.
-            from .savings import full_index_brief
-            brief = full_index_brief()
-            if brief:
-                parts.append(brief)
-                self._injected_tokens = len(brief) // 4
-            return "\n\n".join(parts)
-        if self.memory is not None:
-            block = self.memory.block()
-            if block:
-                parts.append(block)
-        if self.skills is not None:
-            injection = self.skills.select(sorted(files))
-            self._emit("skills.injected", ", ".join(injection.names) or "(none)",
-                       names=injection.names, tokens=injection.tokens,
-                       available=injection.available, note=injection.note)
-            if injection.brief:
-                parts.append(injection.brief)
-            self._injected_tokens = int(injection.tokens or 0)
-        block, self._map_tokens = triad_brief.map_block(self.config)
-        if block:
-            parts.append("## Mapa de simbolos (pide rangos con read_file offset/limit)\n%s" % block)
-        facts = "## Proyecto\n\nraíz: %s" % getattr(self.config, "default_root", ".")
+            return self._legacy_prefix()
         test = getattr(self.config, "test_command", None)
-        facts += "\ntests: %s" % (test or "no configurado")
-        parts.append(facts)
-        return "\n\n".join(parts)
+        facts = "## Proyecto\n\nraíz: %s\ntests: %s" % (
+            getattr(self.config, "default_root", "."), test or "no configurado")
+        return build_turn_prefix(self.config, CHAT_SYSTEM, self.router, "worker",
+                                 memory_block=self.memory.block() if self.memory is not None else "",
+                                 project_facts=facts)
+
+    def _delta(self, files):
+        """Lo que cambia con los ficheros tocados: las skills que entran al turno."""
+        if not getattr(self.config, "nexus_engines", True):
+            return "", 0
+        text, tokens = inject_skills(self.skills, files, self._emit)
+        self._injected_tokens = tokens
+        return text, tokens
+
+    def _system(self, files):
+        """Compatibilidad (pruebas y paneles): prefijo + delta en un solo texto."""
+        return "\n\n".join(part for part in (self._prefix().text, self._delta(files)[0]) if part)
 
     # -- the loop ----------------------------------------------------------------------------
     def _maybe_compact(self, messages):
-        """Poda deslizante + compactacion: los dos niveles del presupuesto, medidos.
-
-        La poda corre en CADA paso (es lo que corta el crecimiento cuadratico de tokens de entrada) y
-        la compactacion es la rampa previa al relevo del 70 %.
-        """
-        if not getattr(self.config, "nexus_engines", True):
-            return False
-        report = prune(messages)
-        if report.pruned:
-            self.savings.observe_pruned(report)
-            self._emit("context.pruned", "%d salidas podadas (%d tokens menos)"
-                       % (report.pruned, report.tokens_saved), count=report.pruned,
-                       tokens_saved=report.tokens_saved, references=report.receipts[:8])
-        result = self.compactor.maybe(messages)
-        if result.applied:
-            self._emit("context.compacted", result.reason, compaction=result.as_dict())
-        return bool(result.applied or report.pruned)
+        """Poda deslizante + compactacion: los dos niveles del presupuesto, medidos."""
+        return apply_budget(messages, self.config, self.savings, self.compactor, self._emit)
 
     def _turn(self, tools=True, max_steps=None):
-        """Model calls until it stops asking for tools. Returns (text, steps)."""
+        """Model calls until it stops asking for tools. Returns (text, steps).
+
+        El prefijo se construye UNA vez por turno (`TurnWindow`) y las skills que aparecen al tocar
+        ficheros nuevos entran como delta append-only. Antes se reconstruia el `system` en cada paso,
+        lo que invalidaba la cache de prefijo del proveedor en cada llamada.
+        """
         text, steps = "", 0
+        window = TurnWindow(self._prefix(), model=self._model_of("worker"))
         for step in range(int(max_steps or self.config.max_steps)):
             if self._stop.is_set():
                 return text, steps
@@ -209,10 +205,12 @@ class Chat:
                 # La parada dura va ANTES de la llamada: cruzar el techo no pide una llamada mas.
                 self._emit("budget.stop", self.cost.reason, budget=self.cost.state())
                 break
-            messages = [Message(role="system", content=self._system(self.touched))] + self.history
+            window.note("skills", self._delta(self.touched)[0])
+            messages = window.messages(self.history)
             if self._maybe_compact(messages):
-                # The system message was just rebuilt; the compacted remainder is the new history.
-                self.history = messages[1:]
+                # El compactador trabaja sobre la lista completa; se vuelve a separar historia de
+                # deltas por su marca, para no persistir el contexto de turno en el transcript.
+                self.history, window.deltas = split_history(messages, bool(window.prefix.text))
             reply = self.router.role("worker").chat(
                 messages, tools=self.registry.schemas() if tools else None,
                 temperature=self.config.temperature, max_tokens=self.config.max_tokens)
@@ -240,15 +238,31 @@ class Chat:
         return text, steps
 
     def _count_savings(self, reply, messages):
-        """Cierra la request en el libro de ahorro del turno (baseline, ahorro y multiplicador)."""
+        """Cierra la request en el libro de ahorro del turno (baseline, ahorro y multiplicador).
+
+        Ademas calibra el contador: compara la estimacion propia con el `prompt_tokens` que el
+        proveedor devolvio, para que el proximo presupuesto (55/70 %) mida con el sesgo de ESTE modelo
+        y no con un `chars / 4` que se desvia un 20-30 %.
+        """
         from .compaction import estimate
+        model = self._model_of("worker") or str(getattr(reply, "model", "") or "")
+        measured = bool(getattr(reply.usage, "measured", False))
         sent = int(getattr(reply.usage, "prompt", 0) or 0) or estimate(messages)[1]
+        if measured and sent > 0:
+            calibration().observe(model, count_messages(messages, model), sent)
         first_map = 0 if self.savings.repomap_tokens else self._map_tokens
         row = self.savings.request(sent, injected_skill_tokens=self._injected_tokens,
                                    repomap_tokens=first_map,
-                                   measured=bool(getattr(reply.usage, "measured", False)))
+                                   measured=measured)
         self._emit("context.savings", self.savings.note(), row=row, totals=self.savings.as_dict())
         return row
+
+    def _model_of(self, role):
+        """El id del modelo de un rol, sin romper el turno si el router no puede decirlo."""
+        try:
+            return str(self.router.info(role).model or "")
+        except Exception:  # noqa: BLE001 -- la calibracion es una mejora, no un requisito
+            return ""
 
     def _count(self, usage):
         """Suma los tokens del turno. Sin esto, el libro de turnos no puede decir cuanto costo."""
