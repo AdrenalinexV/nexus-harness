@@ -116,7 +116,11 @@ def load_secrets(path=None):
         if isinstance(data, dict):
             secrets = {str(key): str(value) for key, value in data.items()
                        if isinstance(value, (str, int, float))}
+    # El token de lanzamiento del propio motor acaba en `_TOKEN` y no es una clave de nadie: colarlo
+    # aqui hacia que la cabina listara un "secreto" que no abre ninguna puerta.
     for key, value in os.environ.items():
+        if key == "NEXUS_HARNESS_TOKEN":
+            continue
         if key.endswith("_API_KEY") or key.endswith("_TOKEN"):
             secrets[key] = value
     return secrets

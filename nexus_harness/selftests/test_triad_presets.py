@@ -199,18 +199,25 @@ def test_the_save_path_honours_the_free_id(failures):
 
     cfg = config()
     cockpit = Cockpit(cfg)
-    applied = {}
+    applied, saved_numbers = {}, {}
     original = settings.onboarding.apply
+    original_save = settings.onboarding.save_settings
     settings.onboarding.apply = lambda config_, payload: (
         applied.update(payload.get("roles") or {}) or {"ok": True, "notes": [],
                                                        "saved": {"roles": payload.get("roles")}})
+    # `save_settings` escribe en `~/.nexus/harness.json`: una suite que no lo intercepta le cambia la
+    # configuracion al operador (paso, y se vio como un `judge_mode: adversary` que nadie eligio).
+    settings.onboarding.save_settings = lambda changes: (
+        saved_numbers.update(changes or {}) or (dict(changes or {}), []))
     try:
         settings.save(cockpit, {"section": "modelos", "role": "worker", "vendor": "lmstudio",
                                 "model": "del-select", "model_free": "escrito-a-mano",
                                 "judge_mode": "adversary"})
     finally:
         settings.onboarding.apply = original
+        settings.onboarding.save_settings = original_save
     check("el id libre gana", applied.get("worker"), "lmstudio:escrito-a-mano")
+    check("y el modo del juez se guarda", saved_numbers.get("judge_mode"), "adversary")
 
 
 def test_the_worker_can_be_pinned_to_the_resident(failures):

@@ -158,6 +158,11 @@ model:
   provider: orca
 """
     from .. import provider_discovery
+    # El entorno de quien lanza la suite puede tener la clave real de orca (Hermes se la pasa a sus
+    # hijos). Esta prueba mide el caso "endpoint sí, clave no", asi que lo fija explicitamente; si no,
+    # el resultado depende de la maquina y la suite miente en la mitad de las ejecuciones.
+    import os
+    saved_env = os.environ.pop("HERMES_CUSTOM_ORCA_API_KEY", None)
     with tempfile.TemporaryDirectory(prefix="orca-") as room:
         path = Path(room) / "config.yaml"
         path.write_text(sample, encoding="utf-8")
@@ -170,16 +175,18 @@ model:
             found = candidates(cfg)
             check("orca se descubre con su endpoint", found[0]["base_url"],
                   "https://api.orcarouter.ai/v1")
-            check("y sabe que la clave no es visible", found[0]["secret"], "")
+            check("y sabe que la clave no es visible", bool(found[0]["secret"]), False)
             check("y se lista como pendiente", pending_key(cfg), ["orca"])
             added = enrich(cfg)
             check("entra como proveedor de primera clase", added, ["orca"])
             check("con cable openai", cfg.providers["orca"]["wire"], "openai")
             check("sin pisar el ollama nativo", "ollama" in cfg.providers, False)
-            cfg.secrets["HERMES_CUSTOM_ORCA_API_KEY"] = "sk-test"
+            cfg.secrets["HERMES_CUSTOM_ORCA_API_KEY"] = "sk-de-prueba"
             check("con la clave en la boveda ya no esta pendiente", pending_key(cfg), [])
         finally:
             provider_discovery.hermes_homes = original
+            if saved_env is not None:
+                os.environ["HERMES_CUSTOM_ORCA_API_KEY"] = saved_env
 
 
 def test_the_panel_renders_the_balancer(failures):
@@ -202,7 +209,9 @@ def test_the_auto_adapt_fires_on_a_class_change(failures):
     cockpit = Cockpit(cfg)
     applied = {}
     original_apply = settings.onboarding.apply
+    original_save = settings.onboarding.save_settings
     original_adapt = settings.triad_balance.apply
+    settings.onboarding.save_settings = lambda changes: (dict(changes or {}), [])
 
     def fake_apply(config_, payload):
         applied.update(payload.get("roles") or {})
@@ -216,6 +225,7 @@ def test_the_auto_adapt_fires_on_a_class_change(failures):
                                 "vendor": "lmstudio", "model": "medio-14b-instruct"})
     finally:
         settings.onboarding.apply = original_apply
+        settings.onboarding.save_settings = original_save
         settings.triad_balance.apply = original_adapt
     check("el rol se guarda", applied.get("director"), "lmstudio:medio-14b-instruct")
     check("y la clase cambio: se reequilibra", len(calls), 1)
@@ -230,6 +240,7 @@ def test_the_auto_adapt_fires_on_a_class_change(failures):
                                     "vendor": "lmstudio", "model": "medio-14b-instruct"})
     finally:
         settings.onboarding.apply = original_apply
+        settings.onboarding.save_settings = original_save
         settings.triad_balance.apply = original_adapt
     check("apagado, no se toca nada", calls, [])
 
@@ -240,15 +251,19 @@ def test_the_same_class_does_not_trigger_it(failures):
     cockpit = Cockpit(cfg)
     calls = []
     original_apply = settings.onboarding.apply
+    original_save = settings.onboarding.save_settings
     original_adapt = settings.triad_balance.apply
+    settings.onboarding.save_settings = lambda changes: (dict(changes or {}), [])
     settings.onboarding.apply = lambda config_, payload: {
         "ok": True, "notes": [], "saved": {"roles": dict(payload.get("roles") or {})}}
+    settings.onboarding.save_settings = lambda changes: (dict(changes or {}), [])
     settings.triad_balance.apply = lambda c, ready=None: (calls.append(1) or ("x", True))
     try:
         settings.save(cockpit, {"section": "modelos", "role": "director",
                                 "vendor": "orca", "model": "otro-modelo"})
     finally:
         settings.onboarding.apply = original_apply
+        settings.onboarding.save_settings = original_save
         settings.triad_balance.apply = original_adapt
     check("nube -> nube no reequilibra", calls, [])
 
