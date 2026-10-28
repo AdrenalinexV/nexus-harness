@@ -189,10 +189,12 @@ def render_markdown(payload):
              "| tarea | resultado | exit | pasos | reparaciones | tokens |",
              "|---|---|---|---|---|---|"]
     for row in payload["rows"]:
-        lines.append("| `%s` | %s | %s/%s | %d | %d | %s |"
-                     % (row["id"], "OK" if row["ok"] else "FAIL", row["exit"],
-                        row["expect_exit"], row["steps"], row["repairs"],
-                        "{:,}".format(row["tokens"]).replace(",", ".")))
+        skipped = bool(row.get("skipped"))
+        label = "SKIP" if skipped else ("OK" if row["ok"] else "FAIL")
+        exit_text = "—" if skipped else "%s/%s" % (row["exit"], row["expect_exit"])
+        tokens = "—" if skipped else "{:,}".format(row["tokens"]).replace(",", ".")
+        lines.append("| `%s` | %s | %s | %d | %d | %s |"
+                     % (row["id"], label, exit_text, row["steps"], row["repairs"], tokens))
     lines.append("")
     extra = ""
     if payload.get("repeat", 1) > 1:
@@ -203,4 +205,6 @@ def render_markdown(payload):
     failed = [row for row in payload["rows"] if not row["ok"]]
     for row in failed:
         lines.append("- `%s`: %s" % (row["id"], "; ".join(row["reasons"])))
+    for row in [one for one in payload["rows"] if one.get("skipped")]:
+        lines.append("- `%s` (omitida): %s" % (row["id"], "; ".join(row["reasons"])))
     return "\n".join(lines)
