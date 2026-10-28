@@ -4,6 +4,7 @@ Lo que se mide, sin red: una pagina local servida por `file://` es suficiente pa
 (extraccion, enlaces, recorte, deteccion de bloqueo y cierre). Si no hay motor de navegador en la
 maquina, la suite lo dice: un navegador que no existe no puede pasar como verde.
 """
+import sys
 import tempfile
 from pathlib import Path
 
@@ -99,7 +100,25 @@ def test_the_tool_is_in_the_arsenal(failures):
         check("y una accion inocua no falla", observation.ok, True, failures)
 
 
+def _frozen_without_engine():
+    """El .exe no empaqueta Playwright (pesa cientos de MB): se exige que lo DIGA, no que navegue."""
+    if not getattr(sys, "frozen", False) or browser.available():
+        return []
+    try:
+        browser.run(".", {"action": "goto", "url": "about:blank"})
+    except browser.BrowserError as exc:
+        if "playwright" in str(exc) or "motor" in str(exc):
+            return []
+        return ["sin motor, el mensaje no dice como arreglarlo: %s" % exc]
+    return ["sin motor de navegador, la herramienta no declaro la ausencia"]
+
+
 def run():
+    declared = _frozen_without_engine()
+    if declared:
+        return list(declared)
+    if getattr(sys, "frozen", False) and not browser.available():
+        return []
     failures = []
     test_the_module_selftest(failures)
     test_a_real_page_becomes_text(failures)
