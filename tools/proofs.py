@@ -29,6 +29,8 @@ SUITES = {
     "plan": "test_plan_graph",
     "portfolio": "test_portfolio",
     "eval": "test_eval",
+    "daemon": "test_daemon",
+    "notify": "test_notify",
 }
 
 

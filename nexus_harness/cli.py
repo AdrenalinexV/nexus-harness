@@ -23,6 +23,7 @@ from .judge import Judge
 from .providers import Router, SpecError
 from .session_relay import SessionRelay
 from .tools import default_registry
+from .cli_ops import cmd_daemon, cmd_notify, cmd_task
 from .triad_loop import Triad
 
 
@@ -317,6 +318,30 @@ def build_parser():
     spec.add_argument("--model", action="store_true", help="el Director propone criterios")
     spec.add_argument("--json", action="store_true")
     spec.set_defaults(func=cmd_spec)
+
+    daemon = sub.add_parser("daemon", help="trabajo autonomo en bucle")
+    daemon.add_argument("--once", action="store_true", help="un solo tick (para cron)")
+    daemon.add_argument("--interval", type=int, default=None)
+    daemon.add_argument("--iterations", type=int, default=None)
+    daemon.add_argument("--rounds", type=int, default=None)
+    daemon.add_argument("--project", default=None)
+    daemon.add_argument("--json", action="store_true")
+    daemon.set_defaults(func=cmd_daemon)
+
+    task = sub.add_parser("task", help="bandeja de tareas del daemon")
+    task.add_argument("action", choices=["add", "list", "done", "release"])
+    task.add_argument("goal", nargs="?", default="")
+    task.add_argument("--project", default=None)
+    task.add_argument("--id", default=None)
+    task.add_argument("--exit", type=int, default=0, dest="exit_code")
+    task.add_argument("--note", default="")
+    task.add_argument("--json", action="store_true")
+    task.set_defaults(func=cmd_task)
+
+    notify = sub.add_parser("notify", help="manda un aviso de prueba a los canales")
+    notify.add_argument("text")
+    notify.add_argument("--json", action="store_true")
+    notify.set_defaults(func=cmd_notify)
 
     bridge = sub.add_parser("bridge", help="the mobile queue (.nexus/hive/queue.json)")
     bridge.add_argument("--tick", action="store_true", help="claim and run one item")

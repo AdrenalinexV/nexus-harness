@@ -132,6 +132,21 @@ class Autopilot:
             self._state.update(values)
             return dict(self._state, queue=list(self._state.get("queue") or []))
 
+    def run_project(self, name, goal="", iterations=2):
+        """Un proyecto, sincrono, hasta `iterations`. Es lo que usa el daemon (nada de hilos).
+
+        `_project` devuelve un bool (lo que necesita el bucle en hilo); aqui se devuelve la fila con su
+        motivo, porque el daemon tiene que poder contarlo.
+        """
+        finished = self._project(name, goal, max(1, int(iterations)))
+        return {"ok": bool(finished), "done": bool(finished),
+                "why": str(self.state().get("last") or "")}
+
+    def run_goal(self, root, goal, iterations=1):
+        """Una corrida suelta sobre una raiz arbitraria: el trabajo de una tarea de la bandeja."""
+        root = Path(root)
+        return self._cycle(root.name, root, str(goal or ""), 1, max(1, int(iterations)))
+
     def state(self):
         with self._lock:
             return dict(self._state, queue=list(self._state.get("queue") or []))

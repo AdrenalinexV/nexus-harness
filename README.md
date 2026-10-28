@@ -16,6 +16,9 @@ python -m nexus_harness gate --project .  # lint + line law + tests, exit 0/10/2
 python -m nexus_harness bridge --tick     # run one /task queued from the phone
 python tools/verify.py                    # lint + selftest, one exit code
 python tools/adversary_audit.py           # kat-coder reviews the modules, read-only
+python -m nexus_harness daemon --once     # un tick autonomo (bandeja -> spec -> criterios -> trabajo)
+python -m nexus_harness task add "arregla X" --project MiProyecto   # deja trabajo al daemon
+python -m nexus_harness notify "prueba"   # comprueba Discord/Telegram/ntfy
 ```
 
 `Nexus-Harness.bat` is the desktop launcher: no arguments starts the cockpit and opens it; arguments

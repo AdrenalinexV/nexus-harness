@@ -14,6 +14,7 @@ de aquí no pasa su comando, no existe.
 | plan en grafo, olas y parada por criterios | `plan_graph.py`, `autonomy.py` | `python tools/proofs.py plan` |
 | cartera de modelos: escalado, failover y caché contada | `portfolio.py`, `providers.py` | `python tools/proofs.py portfolio` |
 | eval de capacidad: 7 tareas golden con verdad ejecutable | `eval_tasks.py`, `evalgym.py`, `tools/eval.py` | `python tools/eval.py --fake` |
+| daemon autonomo: bandeja, triggers, reanudacion y avisos | `daemon.py`, `tasks.py`, `notify.py`, `improve.py` | `python tools/proofs.py daemon` |
 | reparación en `git worktree` | `worktree_sandbox.py`, `repair_guard.py` | `python tools/proofs.py worktree` |
 | deploy al VPS (SSH + Compose) | `vps_deployer.py`, `settings_vps.py` | `python tools/proofs.py deploy` |
 | juez con contexto + pista de líneas reales | `judge.py`, `repair_hint.py` | `python tools/proofs.py judge` |
@@ -164,6 +165,24 @@ Dos cosas que el eval declara en vez de fingir:
 - **`--repeat N`** separa pass@k de fiabilidad: `passed` cuenta tareas con algún intento bueno y
   `stable` las que pasaron en **todos**. Con un 27B local las dos cifras difieren, y esa diferencia es
   el dato (un modelo que acierta a la segunda no es un modelo que acierta).
+
+## 10. Daemon — trabajo autonomo sin ventana abierta
+
+`python -m nexus_harness daemon` cierra el circulo: nadie tiene que abrir la cabina para que el trabajo
+avance. Un tick hace, en este orden (y el orden es la propiedad de seguridad):
+
+1. **Bandeja** — lo que pidio una persona o un bot (`task add`, o una linea en `inbox.jsonl`).
+2. **Spec** — si el proyecto no tiene criterios, intenta congelar los que el repo ya sabe probar. Sin
+   runner no se inventa trabajo: se encola «declara como se prueba esto».
+3. **Criterios** — si ya pasan, el proyecto no se toca y se encolan mejoras medidas (`improve.py`).
+4. **Trabajo** — un ciclo de `Autopilot` (backup, plan, gate, juez, commit) y el progreso a disco.
+
+Un daemon en reposo **no gasta tokens**: sin tarea y sin criterio rojo no hay llamada al modelo. Un
+segundo daemon se niega a arrancar (cerrojo con pid). El estado vive en `NEXUS_HOME/harness/daemon.json`
+y la bandeja en `<workspace>/.nexus/harness/inbox.jsonl`.
+
+Avisos a Discord/Telegram/ntfy con `notify` en `~/.nexus/harness.json` (valores `$SECRETO` se resuelven
+de la boveda). Detalle operativo, contrato para bots y unidad de systemd para el VPS: `docs/DAEMON.md`.
 
 ## Dogfooding
 
