@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Nexus-Harness — el informe</title>
+<style>
+  * { box-sizing: border-box; }
+  body { margin: 0; padding: 4px 2px; font-size: 14.5px; line-height: 1.55; color: var(--foreground); }
+  h1 { font-size: 26px; margin: 0 0 4px; letter-spacing: -0.02em; }
+  .sub { color: var(--muted-foreground); margin: 0 0 22px; font-size: 14px; }
+  h2 { font-size: 16px; margin: 26px 0 10px; letter-spacing: -0.01em; }
+  h2 .n { color: var(--accent); font-variant-numeric: tabular-nums; margin-right: 8px; }
+  .lead { border-left: 3px solid var(--accent); padding: 10px 0 10px 14px; margin: 0 0 8px;
+          font-size: 15.5px; }
+  table { border-collapse: collapse; width: 100%; margin: 10px 0 4px; font-size: 13.5px; }
+  th, td { text-align: left; padding: 7px 10px; border-bottom: 1px solid var(--border); vertical-align: top; }
+  th { color: var(--muted-foreground); font-weight: 600; font-size: 12px; text-transform: uppercase;
+       letter-spacing: 0.06em; }
+  td:first-child { color: var(--muted-foreground); }
+  .win { color: var(--foreground); font-weight: 600; }
+  .grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin: 12px 0; }
+  .card { border: 1px solid var(--border); background: var(--card); border-radius: 10px;
+          padding: 12px 14px; }
+  .card b { display: block; font-size: 22px; font-variant-numeric: tabular-nums; letter-spacing: -0.02em; }
+  .card span { color: var(--muted-foreground); font-size: 11.5px; text-transform: uppercase; letter-spacing: 0.05em; }
+  pre { background: var(--card); border: 1px solid var(--border); border-radius: 8px;
+        padding: 12px 14px; font-size: 12.5px; overflow-x: auto; margin: 8px 0; }
+  ol, ul { padding-left: 20px; margin: 8px 0; }
+  li { margin: 5px 0; }
+  .tag { display: inline-block; border: 1px solid var(--border); border-radius: 99px;
+         padding: 1px 9px; font-size: 11.5px; color: var(--muted-foreground); margin-right: 6px; }
+  .foot { color: var(--muted-foreground); font-size: 12px; margin-top: 26px;
+          border-top: 1px solid var(--border); padding-top: 10px; }
+</style>
+</head>
+<body>
+
+<h1>Nexus-Harness</h1>
+<p class="sub">Informe para personas normales · 28 de octubre de 2026 · versión 1.0.0</p>
+
+<div class="lead">
+  Un programa que hace que una inteligencia artificial trabaje como un empleado con supervisor:
+  <b>no puede decir «ya está» si un inspector no firma que está.</b>
+</div>
+
+<h2><span class="n">01</span>El problema</h2>
+<p>Las IAs escriben muy bien. El problema es que <b>tú no sabes cuándo se equivocan sin querer</b>: dicen
+«he terminado, funciona» y no has visto nada. Es el fontanero que te llama y te dice que ya no hay fuga,
+sin que vuelvas a mirar.</p>
+<p>Los «agentes de programación» (Claude Code, Aider, Codex, Devin, OpenHands…) hacen que la IA toque los
+archivos de un proyecto de verdad. Son potentísimos. Casi todos comparten el mismo punto débil:
+<b>el final del trabajo es una opinión del propio interesado.</b></p>
+
+<h2><span class="n">02</span>Cómo funciona</h2>
+<table>
+  <tr><th>En una obra</th><th>Aquí</th><th>Qué hace</th></tr>
+  <tr><td>Jefe de obra</td><td class="win">Director</td><td>Lee el encargo, hace el plan, reparte.</td></tr>
+  <tr><td>Albañil</td><td class="win">Obrero</td><td>Pone ladrillos: escribe los archivos de verdad.</td></tr>
+  <tr><td>Inspector</td><td class="win">Gate</td><td>Programa sin IA y sin opinión. Mide y devuelve un número: <code>0</code> verde, <code>10</code> rojo.</td></tr>
+  <tr><td>Aparejador</td><td class="win">Juez</td><td>Una <b>segunda</b> IA, distinta, que solo responde: ¿esto era lo que se pedía?</td></tr>
+</table>
+<p style="margin-top:10px">La regla que lo cambia todo: <b>si el inspector no firma, el albañil vuelve a
+trabajar; y si no hay firma, el trabajo no se da por bueno, se para y se explica por qué.</b>
+El inspector no «cree» que la pared está recta: pone el nivel.</p>
+
+<h2><span class="n">03</span>Las cualidades que importan</h2>
+<ul>
+  <li><b>Recibo por turno.</b> Queda escrito qué se intentó, qué herramientas se usaron, qué costó y el código de salida de cada comprobación.</li>
+  <li><b>Dos IAs que no se creen la una a la otra.</b> El que trabaja y el que juzga son modelos distintos a propósito.</li>
+  <li><b>Sin copia de seguridad no se edita.</b> Copia → plan → trabajar → verificar → guardar avance. Nunca al revés.</li>
+  <li><b>Relevo, no reinicio.</b> Cuando la sesión se llena, otra limpia hereda el trabajo verificado.</li>
+  <li><b>Cabe en tu ordenador.</b> Modelos locales primero; seis proveedores; cambiar es una línea de configuración.</li>
+  <li><b>Se instala como una app.</b> ~20 MB, el motor va dentro: no hace falta tener Python.</li>
+  <li><b>Cero dependencias</b> de terceros: no se rompe porque otro cambie su pieza.</li>
+  <li><b>Trabaja de noche</b> y avisa por Discord, Telegram o al móvil. Se para por criterios, no por reloj.</li>
+</ul>
+
+<h2><span class="n">04</span>La diferencia, en una frase</h2>
+<p class="lead" style="border-color: var(--muted-foreground)">
+Las demás herramientas son <b>empleados muy listos</b>. Esta es un empleado muy listo
+<b>con un inspector que no cobra de la obra</b>.
+</p>
+<table>
+  <tr><th></th><th>Lo habitual</th><th>Nexus-Harness</th></tr>
+  <tr><td>Cómo termina</td><td>El agente dice que terminó</td><td class="win">Un programa mide y devuelve un código</td></tr>
+  <tr><td>Quién juzga</td><td>El mismo que trabajó</td><td class="win">Un segundo modelo distinto</td></tr>
+  <tr><td>Prueba</td><td>Leer el chat y confiar</td><td class="win">Recibo con códigos por turno</td></tr>
+  <tr><td>Antes de editar</td><td>Normalmente sin red</td><td class="win">Sin copia no se toca</td></tr>
+  <tr><td>Tamaño de archivo</td><td>Sin límite</td><td class="win">400 líneas, impuesto</td></tr>
+  <tr><td>Sesión llena</td><td>Se pierde o se resume «a ojo»</td><td class="win">Relevo con estado verificado</td></tr>
+  <tr><td>Modelos</td><td>Empuja a su nube</td><td class="win">Locales primero, sin secuestro</td></tr>
+  <tr><td>Dependencias</td><td>Muchas</td><td class="win">Ninguna</td></tr>
+  <tr><td>Coste</td><td>Estimado</td><td class="win">Medido, con techo</td></tr>
+</table>
+
+<h2><span class="n">05</span>Los números de hoy, medidos</h2>
+<pre>lint      exit 0   files=167  findings=0   max_lines=400
+selftest  exit 0   suites=48  failures=0
+verify: GREEN</pre>
+<div class="grid">
+  <div class="card"><b>152</b><span>archivos Python</span></div>
+  <div class="card"><b>~27.500</b><span>líneas</span></div>
+  <div class="card"><b>0</b><span>infracciones</span></div>
+  <div class="card"><b>48</b><span>suites en verde</span></div>
+  <div class="card"><b>0</b><span>dependencias</span></div>
+  <div class="card"><b>6</b><span>proveedores IA</span></div>
+  <div class="card"><b>16</b><span>herramientas</span></div>
+  <div class="card"><b>399</b><span>líneas el mayor</span></div>
+</div>
+<p style="color:var(--muted-foreground);font-size:13px">Ese <code>verify: GREEN</code> es la prueba.
+No es una captura: es lo que devolvió el comando.</p>
+
+<h2><span class="n">06</span>Lo que le falta (honestidad)</h2>
+<ol>
+  <li><b>Aislamiento del proceso.</b> El árbol de trabajo está aislado; el proceso no. Pendiente nº 1.</li>
+  <li><b>Documentos desfasados.</b> El README dice «28 suites» cuando hay 48.</li>
+  <li><b>Sin licencia.</b> Dice ser open source y no hay fichero LICENSE.</li>
+  <li><b>Sin integración continua.</b> El verde se comprueba a mano en un ordenador.</li>
+  <li><b>Cuatro módulos al borde</b> del techo de 400 líneas.</li>
+  <li><b>Sin historial de versiones</b>: seis instaladores y ninguna lista de cambios.</li>
+</ol>
+<p>Y lo que la competencia hace mejor: aislamiento real en contenedores, asistentes de código tipo IDE,
+comunidad de miles de usuarios, y más volumen de pruebas de calidad (aquí, 7 tareas reales).</p>
+
+<h2><span class="n">07</span>Tres ideas que aportarían</h2>
+<ol>
+  <li><b>El recibo visible.</b> Hoy existe pero es un archivo técnico. Una hoja legible —esto se hizo,
+      esto se comprobó, esto costó— vende más que cualquier explicación.</li>
+  <li><b>Un botón «demuéstramelo».</b> Un proyecto de ejemplo que se rompe y se arregla delante del
+      usuario. La diferencia se entiende en 90 segundos.</li>
+  <li><b>Publicar los números que ya tiene.</b> 0 hallazgos en 167 archivos y 48 suites en verde es
+      justo lo que alguien busca antes de confiar en una herramienta. Ya está calculado y no se usa
+      como argumento.</li>
+</ol>
+
+<p class="foot">
+  <span class="tag">1.0.0</span><span class="tag">Python puro</span><span class="tag">Windows / instalador</span><span class="tag">local-first</span><br>
+  Fuente de las cifras: <code>python tools/verify.py</code>, ejecutado en esta máquina el 2026-10-28.
+  Documento completo: <code>docs/INFORME_PARA_PERSONAS.md</code>.
+</p>
+
+</body>
+</html>
