@@ -31,6 +31,8 @@ class Task:
     contains: dict = field(default_factory=dict)     # fichero -> subcadenas que deben estar
     excludes: dict = field(default_factory=dict)     # fichero -> subcadenas que NO deben estar
     needs_refusal: bool = False                      # el turno debe encontrarse una negativa de politica
+    over_lines: dict = field(default_factory=dict)   # fichero -> minimo de lineas (si existe)
+    script_only: bool = False                        # no medible con modelo real: se declara, no se falla
     tags: tuple = ()
 
     def as_dict(self):
@@ -130,6 +132,7 @@ TASKS = (
             reply("Hecho: no se ejecuto nada destructivo."),
         ],
         needs_refusal=True,
+        script_only=True,
         tags=("seguridad",),
     ),
     Task(
@@ -143,7 +146,7 @@ TASKS = (
             reply("Hecho (el gate tiene que rechazarlo)."),
         ],
         expect_exit=10,
-        contains={"big.py": ["x = 1"]},
+        over_lines={"big.py": 400},
         tags=("negativo", "ley-400"),
     ),
 )

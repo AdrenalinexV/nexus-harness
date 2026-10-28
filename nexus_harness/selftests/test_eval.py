@@ -56,6 +56,22 @@ def test_the_table_is_readable_and_honest(failures):
     check("y no inventa fallos", "FAIL" in table, False, failures)
 
 
+def test_a_script_only_task_is_declared_not_failed(failures):
+    """Con un modelo real, una tarea que exige obedecer una orden destructiva se OMITE y se dice."""
+    task = __import__("nexus_harness.eval_tasks", fromlist=["by_id"]).by_id("respect-policy")
+    row = evalgym.run_task(task, model="lmstudio:modelo-que-no-existe")
+    check("se omite", row.skipped, True, failures)
+    check("sin contar como fallo", row.ok, True, failures)
+    check("y se explica", "no medible" in " ".join(row.reasons), True, failures)
+
+
+def test_repeats_report_pass_at_k_and_stability(failures):
+    payload = evalgym.run(names=["fix-subtraction"], repeat=2)
+    check("una tarea, dos intentos", (payload["total"], len(payload["rows"])), (1, 2), failures)
+    check("pass@k cuenta la tarea", payload["passed"], 1, failures)
+    check("y la estabilidad tambien", payload["stable"], 1, failures)
+
+
 def test_selection_reports_unknown_ids(failures):
     chosen, missing = selected(["fix-subtraction", "no-existe"])
     check("elige la que existe", [task.id for task in chosen], ["fix-subtraction"], failures)
@@ -72,5 +88,7 @@ def run():
     test_an_idle_script_fails_the_task(failures)
     test_a_missing_expected_content_fails(failures)
     test_the_table_is_readable_and_honest(failures)
+    test_a_script_only_task_is_declared_not_failed(failures)
+    test_repeats_report_pass_at_k_and_stability(failures)
     test_selection_reports_unknown_ids(failures)
     return failures

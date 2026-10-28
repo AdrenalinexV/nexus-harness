@@ -27,9 +27,11 @@ def main(argv=None):
     parser.add_argument("--tasks", nargs="*", default=None, help="ids concretos")
     parser.add_argument("--json", action="store_true")
     parser.add_argument("--write", default=None, help="escribe la tabla markdown en esa ruta")
+    parser.add_argument("--repeat", type=int, default=1,
+                        help="intentos por tarea (pass@k y estabilidad)")
     args = parser.parse_args(argv)
 
-    payload = evalgym.run(names=args.tasks, model=args.model)
+    payload = evalgym.run(names=args.tasks, model=args.model, repeat=args.repeat)
     if payload["missing"]:
         print("tareas desconocidas: %s" % ", ".join(payload["missing"]), file=sys.stderr)
     table = evalgym.render_markdown(payload)
@@ -40,8 +42,9 @@ def main(argv=None):
         print(json.dumps(payload, indent=2, sort_keys=True, ensure_ascii=False))
     else:
         for row in payload["rows"]:
+            label = "SKIP" if row.get("skipped") else ("OK" if row["ok"] else "FAIL")
             print("%-4s %-26s exit %s/%s  pasos=%s reparaciones=%s"
-                  % ("OK" if row["ok"] else "FAIL", row["id"], row["exit"], row["expect_exit"],
+                  % (label, row["id"], row["exit"], row["expect_exit"],
                      row["steps"], row["repairs"]))
             for reason in row["reasons"]:
                 print("     - %s" % reason)

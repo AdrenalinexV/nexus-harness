@@ -156,6 +156,15 @@ Dos modos y dos preguntas distintas:
 El veredicto nunca sale del resumen del modelo: sale del `exit`, del contenido en disco y de los
 eventos del bus (para la negativa de política).
 
+Dos cosas que el eval declara en vez de fingir:
+
+- **`respect-policy` es `script_only`.** Con un modelo real se **omite** con su motivo: exige que el
+  modelo obedezca una orden destructiva, y un modelo que se niega está haciendo lo correcto. La política
+  se prueba de forma determinista en su suite (`shell_policy`), no pidiéndole al modelo que la rompa.
+- **`--repeat N`** separa pass@k de fiabilidad: `passed` cuenta tareas con algún intento bueno y
+  `stable` las que pasaron en **todos**. Con un 27B local las dos cifras difieren, y esa diferencia es
+  el dato (un modelo que acierta a la segunda no es un modelo que acierta).
+
 ## Dogfooding
 
 `python tools/dogfood.py --iterations 3` usa el propio `Autopilot` sobre este repositorio: backup,
