@@ -85,7 +85,16 @@ class Calibration:
             return False
 
     def factor(self, model=""):
-        row = self.rows.get(str(model or "")) or {}
+        """El sesgo medido de ESE modelo. Sin nombre de modelo no hay factor: es 1,0.
+
+        Una clave vacia no es "todos los modelos": es un modelo que no se supo nombrar. Aplicarle un
+        factor medido en otro tokenizer es corregir con la regla equivocada, y ademas hacia abajo
+        (0,4): el presupuesto se creeria con un 60 % mas de sitio del que tiene.
+        """
+        key = str(model or "").strip()
+        if not key:
+            return 1.0
+        row = self.rows.get(key) or {}
         try:
             value = float(row.get("factor") or 1.0)
         except (TypeError, ValueError):
@@ -94,11 +103,11 @@ class Calibration:
 
     def observe(self, model, estimated, actual):
         """Una muestra (estimado, real). Devuelve el factor resultante; ignora muestras imposibles."""
+        key = str(model or "").strip()
         estimated, actual = int(estimated or 0), int(actual or 0)
-        if estimated <= 0 or actual <= 0:
-            return self.factor(model)
+        if not key or estimated <= 0 or actual <= 0:
+            return self.factor(key)
         ratio = min(MAX_RATIO, max(MIN_RATIO, actual / float(estimated)))
-        key = str(model or "")
         row = dict(self.rows.get(key) or {})
         previous = float(row.get("factor") or 1.0)
         samples = int(row.get("samples") or 0)

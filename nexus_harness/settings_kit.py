@@ -60,17 +60,28 @@ def note_from(query):
     return '<p class="snote %s">%s</p>' % (tone, esc(text))
 
 
-def context_fields(config):
+def context_fields(config, window=0, role=""):
     """Los numeros que gobiernan un turno: presupuesto, relevo y compactacion.
 
     Se usan en dos paneles (Modelos y Memoria) a proposito: son los MISMOS campos del mismo fichero,
     asi que dos puertas dan a la misma habitacion y no hay dos verdades. Un ajuste duplicado en dos
     sitios solo es un problema cuando los dos sitios guardan en sitios distintos.
+
+    `window` es la ventana que el motor declaro en vivo. Si hay dato, se dice en el propio campo
+    cuanto se va a usar de verdad: prometer 60.000 tokens con un motor de 12.544 es como se llega a
+    un 400 que el operador no puede explicar.
     """
+    from .context_window import fit
+    used = fit(config.budget_limit, window, config.max_tokens)
+    budget_hint = "el presupuesto de la conversación; al acercarse, el motor compacta y luego releva"
+    if int(window or 0) > 0:
+        budget_hint = "%s · el motor%s declara %s tokens: se usará %s" % (
+            budget_hint, (" de " + role) if role else "",
+            "{:,}".format(int(window)).replace(",", "."),
+            "{:,}".format(int(used)).replace(",", "."))
     rows = [
         field("Límite de contexto (tokens)", *number_input(
-            "budget_limit", config.budget_limit,
-            "el presupuesto de la conversación; al acercarse, el motor compacta y luego releva")),
+            "budget_limit", config.budget_limit, budget_hint)),
         field("Relevo automático (%)", *number_input(
             "relay_threshold", round(float(config.relay_threshold) * 100),
             "a qué porcentaje del presupuesto se pasa el testigo a una sesión nueva")),

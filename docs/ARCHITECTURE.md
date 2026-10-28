@@ -24,7 +24,7 @@ one inherits.
 
 ## Module map and line budget
 
-Measured on 2026-10-24 (v0.2.0): 55 Python files, 7 291 lines, the longest module 344 lines
+Measured on 2026-10-28 (v1.0.0): 161 Python files under the line law, the longest module 400 lines
 (`triad_loop.py`). `python tools/lint_harness.py` reports 0 findings.
 
 Every module answers one question. The budget column is the ceiling enforced by
@@ -40,6 +40,8 @@ doing two jobs.
 | `transports/ollama.py` | The native `/api/chat`: `thinking`, native tools | 140 |
 | `transports/anthropic.py` | Messages API: `tool_use` / `tool_result` blocks | 140 |
 | `message.py` | What is a message, a tool call, a reply, a usage count? | 110 |
+| `context_window.py` | Cuantos tokens caben DE VERDAD en ese motor, y como se recorta sin romper el turno. | 300 |
+| `turn_engine.py` | Quien llama al worker, con que presupuesto, y que pasa si el motor dice que no cabe. | 200 |
 | `tools.py` | What tools exist, what are their JSON schemas, how are they dispatched? | 150 |
 | `toolbox/file_ops.py` | Bytes in, bytes out: atomic write, SHA-256 check, syntax gate, BOM/CRLF. | 230 |
 | `toolbox/fuzzy_match.py` | Locate the block the model meant: eight rungs, each still deterministic. | 300 |
@@ -102,7 +104,7 @@ The order inside an autonomy cycle is the safety property, not a detail: **backu
 → commit → progress**. If the snapshot cannot be taken, nothing is edited. If the gate is red after the
 worker's repairs, that project stops and the queue moves on. Progress is written only after `exit 0`.
 
-## The four contracts
+## The five contracts
 
 ### 1. Provider (`providers.py`)
 
@@ -119,7 +121,29 @@ prints it as an event instead of feeding it back as content.
 The model never sees a transport. That is what makes `ScriptedProvider` a legitimate stand-in in
 tests: the loop cannot tell the difference, so the test measures the loop.
 
-### 2. Tools (`tools.py`)
+### 2. Context window (`context_window.py`, `turn_engine.py`)
+
+El presupuesto de un turno no es un numero de la configuracion: es `min(budget_limit, ventana del
+motor - max_tokens - 5 %)`, y la ventana se le pregunta al servidor en cada turno
+(`/api/v0/models` en LM Studio, `/api/ps` en Ollama). Un motor que no la publica deja el presupuesto
+como estaba y se declara "sin dato"; nunca se inventa un recorte.
+
+`TurnEngine.ask()` es la ultima red: si el motor contesta `400 ... exceeds the available context size
+(N tokens)`, el numero N **es** la ventana, asi que se aprende, se poda el historial de verdad
+(`Compactor.hard`, umbral 0) y se repite una vez. Si el segundo intento tampoco cabe, el error dice
+que subir la ventana del modelo en el servidor. Un 400 que no sea de tamano sube intacto: el arnes no
+disfraza un fallo de respuesta.
+
+Dos consecuencias que se midieron en produccion:
+
+* el contador del compactor es el **calibrado** (`tokenizer.count_messages`) y no `chars/4`: con
+  `chars/4` el mismo texto que el motor cuenta como 66.889 tokens se leia como 42.000, y la poda
+  llegaba un 60 % tarde;
+* la cartera de relevo no borra el tipo del fallo: si todos los peldanos fallan con un
+  `TransportError`, se relanza ese error (con su `status` y su cuerpo) en vez de un `RuntimeError`
+  resumen, porque el tipo es justo lo que decide si el turno se puede salvar.
+
+### 3. Tools (`tools.py`)
 
 A tool is `(name, description, JSON schema, callable(args, root) -> Observation)`. The registry
 returns the OpenAI-shaped schema list, so the same tool dict serves all three transports.
@@ -127,7 +151,7 @@ returns the OpenAI-shaped schema list, so the same tool dict serves all three tr
 `Observation` carries `ok`, `text`, `meta`. Failures are observations with `ok=False`, never
 exceptions escaping the loop: a model that cannot see the error cannot fix it.
 
-### 3. Gate (`gate.py`)
+### 4. Gate (`gate.py`)
 
 Exit `0` green, `10` red — the protocol's number, so a red gate is not a new vocabulary.
 
@@ -138,7 +162,7 @@ green), and the line law on files the turn touched.
 `Judge` is only consulted when the gate is green. A judge that approves broken code is worse than no
 judge, which is why it never runs first and why an unparsable verdict is a `reject`.
 
-### 4. Session relay (`session_relay.py`)
+### 5. Session relay (`session_relay.py`)
 
 `BudgetMeter` counts prompt+completion tokens from every `Reply.usage`. When `used/limit >= 0.70`
 (or a phase checkpoint lands), `SessionRelay.hand_over()`:

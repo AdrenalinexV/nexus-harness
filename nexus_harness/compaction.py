@@ -122,9 +122,15 @@ class Compaction:
                 "digest_chars": len(self.digest)}
 
 
-def compact(messages, limit=60000, threshold=0.55, keep_head=2, keep_tail=8):
-    """Condense `messages` in place-safe fashion when they approach `limit`. Never raises."""
-    before_chars, before = estimate(messages)
+def compact(messages, limit=60000, threshold=0.55, keep_head=2, keep_tail=8, counter=None):
+    """Condense `messages` in place-safe fashion when they approach `limit`. Never raises.
+
+    `counter` mide el transcript. Por defecto `estimate()[1]` (chars/4), que es la unidad historica;
+    el `Compactor` pasa el contador **calibrado por modelo**, porque con `chars/4` el mismo texto que
+    el motor cuenta como 66.889 tokens se lee como 42.000 y la poda llega un 60 % tarde.
+    """
+    counter = counter or (lambda rows: estimate(rows)[1])
+    before = int(counter(messages or []))
     messages = list(messages)
     if limit <= 0:
         return Compaction(messages=messages, before=before, after=before, ratio=None,
@@ -141,7 +147,7 @@ def compact(messages, limit=60000, threshold=0.55, keep_head=2, keep_tail=8):
     dropped = messages[head:start]
     digest = _digest(dropped)
     kept = list(messages[:head]) + [Message(role="user", content=digest)] + list(messages[start:])
-    after = estimate(kept)[1]
+    after = int(counter(kept))
     if after >= before:
         return Compaction(messages=messages, before=before, after=after, ratio=ratio,
                           reason="the digest would not shrink the transcript")
@@ -153,28 +159,62 @@ def compact(messages, limit=60000, threshold=0.55, keep_head=2, keep_tail=8):
 class Compactor:
     """Owns the threshold and applies `compact` to the live transcript, keeping a record for the bus."""
 
-    def __init__(self, limit=60000, threshold=0.55, keep_head=2, keep_tail=8, enabled=True):
+    def __init__(self, limit=60000, threshold=0.55, keep_head=2, keep_tail=8, enabled=True,
+                 model=""):
         self.limit = int(limit or 0)
         self.threshold = float(threshold or 0.0)
         self.keep_head = int(keep_head)
         self.keep_tail = int(keep_tail)
         self.enabled = bool(enabled)
+        # El modelo del que se mide: su factor de calibracion es lo que hace que el porcentaje del
+        # presupuesto signifique lo mismo en qwen3 (1,89x) y en un modelo que cuenta como chars/4.
+        self.model = str(model or "")
         self.count = 0
         self.history = []
         self.last = None
 
-    def maybe(self, messages):
+    def counter(self, model=None):
+        """El contador calibrado de `model` (o del de este compactor)."""
+        from .tokenizer import count_messages
+        name = str(model if model is not None else self.model or "")
+        return lambda rows: count_messages(rows, name)
+
+    def maybe(self, messages, model=None):
         """Compact the list in place when it is time; return the `Compaction` that says whether it was."""
+        counter = self.counter(model)
         if not self.enabled:
-            before = estimate(messages)[1]
+            before = counter(messages)
             self.last = Compaction(messages=list(messages), before=before, after=before,
                                    reason="compaction disabled")
             return self.last
         result = compact(messages, limit=self.limit, threshold=self.threshold,
-                         keep_head=self.keep_head, keep_tail=self.keep_tail)
+                         keep_head=self.keep_head, keep_tail=self.keep_tail, counter=counter)
         if result.applied:
             messages[:] = result.messages
             self.count += 1
             self.history.append(result.as_dict())
         self.last = result
         return result
+
+    def hard(self, messages, limit=None, model=None):
+        """Compacta AHORA, sin esperar al porcentaje: el motor ya dijo que no cabe.
+
+        Se poda todo lo que se puede podar (umbral 0) y, si aun asi no baja, se recorta el cuerpo de
+        los mensajes mas grandes con `context_window.shrink`. Devuelve `(messages, informe)`.
+        """
+        from .context_window import shrink
+        target = int(limit if limit is not None else self.limit or 0)
+        counter = self.counter(model)
+        before = counter(messages)
+        result = compact(messages, limit=max(1, target), threshold=0.0,
+                         keep_head=self.keep_head, keep_tail=self.keep_tail, counter=counter)
+        body = list(result.messages) if result.applied else list(messages)
+        if result.applied:
+            self.count += 1
+            self.history.append(result.as_dict())
+        body = shrink(body, target, str(model if model is not None else self.model or ""))
+        after = counter(body)
+        self.last = result
+        return body, {"before": before, "after": after, "limit": target,
+                      "compacted": bool(result.applied), "dropped": result.dropped,
+                      "reason": result.reason}

@@ -98,6 +98,43 @@ def test_when_every_rung_falls_the_error_names_them(failures):
         check("el error agrega los dos", str(exc).count("connection reset"), 2, failures)
 
 
+def test_a_transport_failure_keeps_its_type(failures):
+    """El 400 de tamaño tiene que llegar como `TransportError`, no como un resumen sin cuerpo.
+
+    El arnes decide si puede arreglar el fallo mirando el tipo y el cuerpo: un 400 de ventana se
+    arregla podando, un 401 no. Un `RuntimeError` agregado convierte un fallo reparable en un turno
+    perdido, y eso era parte del fallo original: el chat recibia "ningun modelo respondio" y moria.
+    """
+    from ..transports.http import TransportError
+
+    class Gordo:
+        model = "fake:gordo"
+        ready = True
+        why_not_ready = ""
+
+        def chat(self, messages, tools=None, temperature=0.2, max_tokens=2048):
+            raise TransportError("400", status=400, body='{"error":"exceeds the available context size '
+                                                        '(12544 tokens)"}')
+
+        def models(self, timeout=8):
+            return []
+
+    config = HarnessConfig(roles={"worker": "fake:gordo"},
+                           role_ladders={"worker": ["fake:gordo"]})
+    router = Router(config, transports={"fake:gordo": Gordo()})
+    caught = None
+    try:
+        router.role("worker").chat([])
+    except TransportError as exc:
+        caught = exc
+    except RuntimeError as exc:
+        failures.append("el tipo se perdio en la cartera: %s" % exc)
+    check("el fallo de transporte conserva su tipo", caught is not None, True, failures)
+    check("y su status", getattr(caught, "status", None), 400, failures)
+    check("y el cuerpo que dice la ventana", "12544" in str(getattr(caught, "body", "")), True,
+          failures)
+
+
 def test_the_second_red_escalates(failures):
     config = HarnessConfig(roles={"worker": "fake:w"},
                            role_ladders={"worker": ["fake:w", "fake:big"]})
@@ -180,6 +217,7 @@ def run():
     test_escalation_respects_the_end_and_the_budget(failures)
     test_a_dead_transport_does_not_end_the_turn(failures)
     test_when_every_rung_falls_the_error_names_them(failures)
+    test_a_transport_failure_keeps_its_type(failures)
     test_the_second_red_escalates(failures)
     test_the_triad_escalates_after_two_red_gates(failures)
     test_cached_tokens_are_measured_and_cheaper(failures)

@@ -106,6 +106,7 @@ class Router:
         self._transports = dict(transports or {})
         self._cache = {}
         self._by_spec = {}
+        self._windows = {}
         # La tabla de proveedores: los de serie + los que declare el operador en `providers`.
         self.vendors, self.vendor_problems = merged_vendors(config)
         # La cartera de cada rol: la escalera declarada en `role_ladders`, o el spec unico de siempre.
@@ -167,6 +168,27 @@ class Router:
 
     def ladder(self, role):
         return self.portfolio.ladder(role)
+
+    def window(self, role, timeout=4):
+        """La ventana REAL del motor de ese rol, cacheada por spec.
+
+        La cache importa: sin ella cada paso del turno preguntaria al servidor, y un modelo que se
+        acaba de cargar no cambiaria de ventana a mitad de turno. Un cambio de modelo invalida la
+        entrada porque la clave es el spec.
+        """
+        try:
+            spec = self.config.role_spec(role)
+        except Exception:  # noqa: BLE001 -- sin spec no hay ventana, y eso no es un fallo del turno
+            return 0
+        cached = self._windows.get(role)
+        if cached is not None and cached[0] == spec:
+            return cached[1]
+        try:
+            found = int(self.role(role).window(timeout=timeout) or 0)
+        except Exception:  # noqa: BLE001
+            found = 0
+        self._windows[role] = (spec, found)
+        return found
 
     def info(self, role):
         spec = self.config.role_spec(role)

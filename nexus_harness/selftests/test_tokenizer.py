@@ -48,10 +48,30 @@ def test_an_uncalibrated_model_is_not_corrected(failures):
               tokenizer.count("x " * 100, "m", cal) < tokenizer.estimate("x " * 100), True, failures)
 
 
+def test_a_model_without_a_name_gets_no_correction(failures):
+    """Una clave vacia no es "todos los modelos": es un modelo sin nombre, y no se corrige.
+
+    El fichero de calibracion de esta maquina tenia una fila `""` con factor 0,4 (sesgo medido en otro
+    tokenizer). Aplicada al compactor, el presupuesto se creia con un 60 % mas de sitio del real: justo
+    el fallo por el que el prompt acababa en un 400.
+    """
+    import tempfile
+    from pathlib import Path
+    with tempfile.TemporaryDirectory(prefix="tok-sin-nombre-") as workspace:
+        path = Path(workspace) / "c.json"
+        path.write_text('{"": {"factor": 0.4, "samples": 9}}', encoding="utf-8")
+        cal = tokenizer.Calibration(path)
+        check("sin nombre no hay factor", cal.factor(""), 1.0, failures)
+        check("y no se escribe una muestra sin nombre", cal.observe("", 100, 300), 1.0, failures)
+        check("el conteo de un modelo sin nombre es la estimacion",
+              tokenizer.count("abc def", "", cal), tokenizer.estimate("abc def"), failures)
+
+
 def run():
     failures = []
     test_module_selftest(failures)
     test_the_estimate_grows_with_the_text(failures)
     test_a_message_costs_more_than_its_text(failures)
     test_an_uncalibrated_model_is_not_corrected(failures)
+    test_a_model_without_a_name_gets_no_correction(failures)
     return failures

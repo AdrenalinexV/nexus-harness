@@ -21,6 +21,8 @@ La cartera no llama a nadie por su cuenta: es politica (que spec toca) y transpo
 """
 from dataclasses import dataclass, field
 
+from .transports.http import TransportError
+
 
 @dataclass
 class Move:
@@ -144,6 +146,22 @@ class FailoverTransport:
                 return found
         return []
 
+    def window(self, timeout=4):
+        """La ventana del primer peldano listo: es el motor que va a recibir el prompt.
+
+        Un peldano que no publica su ventana se salta; si ninguno la publica, 0 -- y 0 significa "no
+        hay dato", no "cero tokens".
+        """
+        from .context_window import of
+        for spec in self.specs:
+            transport = self._transport(spec)
+            if transport is None or not transport.ready:
+                continue
+            found = of(transport, timeout=timeout)
+            if found:
+                return found
+        return 0
+
     # -- la llamada ------------------------------------------------------------------------------
     def _transport(self, spec):
         try:
@@ -152,8 +170,14 @@ class FailoverTransport:
             return None
 
     def chat(self, messages, tools=None, temperature=0.2, max_tokens=2048):
-        """Prueba los peldanos en orden. Devuelve la primera respuesta; si no hay, lanza con el detalle."""
-        self.errors = []
+        """Prueba los peldanos en orden. Devuelve la primera respuesta; si no hay, lanza.
+
+        Si TODOS los peldanos fallan con el mismo tipo de error, se relanza ese error y no un
+        `RuntimeError` resumen: quien llama necesita el tipo para decidir (un 400 de tamano se
+        arregla podando; un modelo ausente no). Un resumen que borra el tipo convierte un fallo
+        reparable en un turno perdido, y eso es exactamente lo que pasaba.
+        """
+        self.errors, kinds, first = [], [], None
         for spec in self.specs:
             transport = self._transport(spec)
             if transport is None or not transport.ready:
@@ -165,9 +189,17 @@ class FailoverTransport:
                                        max_tokens=max_tokens)
             except Exception as exc:  # noqa: BLE001 -- se prueba el siguiente; el error se declara
                 self.errors.append("%s: %s: %s" % (spec, type(exc).__name__, exc))
+                kinds.append(type(exc))
+                first = first or exc
                 continue
             self.used = spec
             return reply
+        if first is not None and isinstance(first, TransportError) and len(set(kinds)) == 1:
+            # Un fallo de transporte trae status y cuerpo: quien llama puede actuar sobre el (podar el
+            # prompt, reintentar). Se relanza tal cual, con los peldanos anotados al lado para no
+            # perder el diagnostico.
+            first.ladder = list(self.errors)
+            raise first
         raise RuntimeError("ningun modelo de la cartera de %s respondio: %s"
                            % (self.role, " | ".join(self.errors)[:700] or "sin peldanos"))
 

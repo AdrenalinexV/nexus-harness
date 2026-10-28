@@ -23,6 +23,7 @@ from .compaction import Compactor
 from .context_compiler import build_prefix
 from .tokenizer import calibration, count_messages
 from .turn_context import apply_budget, build_turn_prefix, inject_skills
+from .turn_engine import TurnEngine
 from .gate import EXIT_GREEN, EXIT_UNAVAILABLE, Gate
 from .judge import Judge
 from .message import Message, as_text
@@ -86,6 +87,7 @@ class Triad:
         self.compactor = compactor if compactor is not None else Compactor(
             limit=getattr(config, "budget_limit", 60000),
             threshold=getattr(config, "compact_threshold", 0.55))
+        self.engine = TurnEngine(router, config, self.compactor, self.registry, emit=self._emit, relay=relay)
         self.touched = set()
         self.injections = []
         self.tokens = {"prompt": 0, "completion": 0}
@@ -146,17 +148,12 @@ class Triad:
         messages.append(Message(role="user", content=block))
         return True
 
-    def _maybe_compact(self, messages):
-        """Nivel 1 del presupuesto: poda deslizante + compactacion, con lo podado medido."""
-        return apply_budget(messages, self.config, self.savings, self.compactor, self._emit)
-
     def _ask(self, role, messages, tools=None, max_tokens=None):
         info = self.router.info(role)
         if not info.ready:
             raise RuntimeError("%s is not ready: %s" % (role, info.why_not_ready))
-        reply = self.router.role(role).chat(
-            messages, tools=tools, temperature=self.config.temperature,
-            max_tokens=max_tokens or self.config.max_tokens)
+        # La misma red de seguridad que el Chat: si el motor dice que no cabe, se poda y se repite.
+        reply = self.engine.ask(messages, tools, role=role, max_tokens=max_tokens)
         self._count_savings(reply, messages)
         if reply.reasoning:
             self._emit("%s.reasoning" % role, reply.reasoning[:1200], model=reply.model)
@@ -193,7 +190,8 @@ class Triad:
                 break
             messages[0] = Message(role="system", content=self._prefix().text)
             self._note_delta(messages)
-            self._maybe_compact(messages)
+            # Nivel 1 del presupuesto: poda deslizante + compactacion, con lo podado medido.
+            apply_budget(messages, self.config, self.savings, self.compactor, self._emit)
             try:
                 reply = self._ask("worker", messages, tools=self.registry.schemas())
             except RuntimeError as exc:
@@ -299,6 +297,8 @@ class Triad:
         max_repairs = int(max_repairs if max_repairs is not None else self.config.max_repairs)
         result = RunResult(goal=goal, root=str(self.config.default_root), started=_now())
         self._emit("run.start", goal, root=str(self.config.default_root))
+        # El presupuesto se resuelve contra la ventana del motor ANTES de la primera llamada.
+        self.engine.fit()
         self._emit("router.ready", self.router.info("worker").model,
                    roles={role: self.router.info(role).__dict__ for role in ("director", "worker", "judge")})
         plan = triad_brief.plan_for(self, goal)

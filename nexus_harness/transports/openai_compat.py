@@ -87,6 +87,11 @@ class OpenAICompatible:
             return []
         return sorted(str(item.get("id")) for item in data.get("data") or [] if item.get("id"))
 
+    def window(self, timeout=4):
+        """La ventana cargada del motor, o 0 si este servidor no la publica."""
+        from ..context_window import of
+        return of(self, timeout=timeout)
+
 
 def conversation(messages):
     """Public alias so a transport does not have to import `Message` to be typed."""

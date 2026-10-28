@@ -20,16 +20,14 @@ from dataclasses import dataclass, field
 from . import attachments as attachment_tools
 from . import checkpoint, ledger
 from .budget import CostBudget
-from . import triad_brief
 from .compaction import Compactor
 from .context_compiler import TurnWindow
-from .context_pruner import prune
 from .message import Message, as_text
 from .portfolio import maybe_escalate
-from .recall import Recall
 from .reflection import learn
 from .tokenizer import calibration, count_messages
-from .turn_context import (apply_budget, chat_prefix, inject_skills, is_delta, split_history)
+from .turn_context import apply_budget, chat_prefix, inject_skills, split_history
+from .turn_engine import TurnEngine
 from .savings import CACHE_REL as SKILLS_CACHE, SavingsLedger
 from .subagents import Delegate
 from .toolbox import process_manager
@@ -103,7 +101,10 @@ class Chat:
         self.used = 0
         self.cost = CostBudget(limit_usd=float(getattr(config, "cost_limit", 0.0) or 0.0))
         self.compactor = Compactor(limit=int(getattr(config, "budget_limit", 60000) or 0),
-                                   threshold=float(getattr(config, "compact_threshold", 0.55) or 0.0))
+                                   threshold=float(getattr(config, "compact_threshold", 0.55) or 0.0),
+                                   model=self._model_of("worker"))
+        # La llamada al worker y su red de seguridad de ventana viven en `TurnEngine`.
+        self.engine = TurnEngine(router, config, self.compactor, registry, emit=self._emit)
         self.children = []
         # Los cuatro motores miden aqui: skills dormidas, poda, mapa AST y reparacion aislada.
         self.savings = SavingsLedger.for_root(cache_path=Path(config.default_root) / SKILLS_CACHE)
@@ -186,6 +187,7 @@ class Chat:
         """
         text, steps = "", 0
         window = TurnWindow(self._prefix(), model=self._model_of("worker"))
+        self.engine.fit()
         for step in range(int(max_steps or self.config.max_steps)):
             if self._stop.is_set():
                 return text, steps
@@ -199,9 +201,8 @@ class Chat:
                 # El compactador trabaja sobre la lista completa; se vuelve a separar historia de
                 # deltas por su marca, para no persistir el contexto de turno en el transcript.
                 self.history, window.deltas = split_history(messages, bool(window.prefix.text))
-            reply = self.router.role("worker").chat(
-                messages, tools=self.registry.schemas() if tools else None,
-                temperature=self.config.temperature, max_tokens=self.config.max_tokens)
+            reply = self.engine.ask(messages, tools,
+                                    resync=lambda rows: self._resync(rows, window))
             steps += 1
             self.used += int(getattr(reply.usage, "total", 0) or 0)
             self._count(reply.usage)
@@ -251,6 +252,16 @@ class Chat:
             return str(self.router.info(role).model or "")
         except Exception:  # noqa: BLE001 -- la calibracion es una mejora, no un requisito
             return ""
+
+    # -- ventana del motor ---------------------------------------------------------------------
+    @property
+    def window_tokens(self):
+        """La ventana que el motor declaro en este turno. 0 = no la publica, y entonces no hay recorte."""
+        return int(getattr(self.engine, "window", 0) or 0)
+
+    def _resync(self, messages, window):
+        """Tras reescribir el prompt, la historia y los deltas vuelven a separarse por su marca."""
+        self.history, window.deltas = split_history(messages, bool(window.prefix.text))
 
     def _count(self, usage):
         """Suma los tokens del turno. Sin esto, el libro de turnos no puede decir cuanto costo."""

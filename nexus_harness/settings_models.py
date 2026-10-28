@@ -94,6 +94,14 @@ def _subagent_card(cockpit):
               '</form></div>' % fields)
 
 
+def _worker_window(cockpit):
+    """La ventana que el motor del obrero declara ahora mismo. 0 si no la publica o no esta."""
+    try:
+        return int(cockpit.router.window("worker") or 0)
+    except Exception:  # noqa: BLE001 -- un panel de ajustes no puede caerse por un motor apagado
+        return 0
+
+
 def panel(cockpit, sub=""):
     """La vista completa de modelos: los cuatro papeles y los numeros del turno."""
     state = panels.onboarding_status(cockpit)
@@ -108,7 +116,8 @@ def panel(cockpit, sub=""):
             '<h3 class="ssub">Números del turno</h3>%s'
             % (_live_badge(state), _datalist(state), cards,
                kit.form("/api/settings", "modelos", '<div class="sgrid">%s</div>'
-                        % kit.context_fields(cockpit.config), submit="Guardar números")))
+                        % kit.context_fields(cockpit.config, _worker_window(cockpit), "obrero"),
+                        submit="Guardar números")))
     return (TITLE.get(focused, "Modelos (Tríada IA)"),
             "Quién escribe, quién juzga, y con qué presupuesto. Se sondea en vivo al abrir la vista.",
             body)
