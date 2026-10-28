@@ -32,6 +32,7 @@ SUITES = {
     "daemon": "test_daemon",
     "notify": "test_notify",
     "browser": "test_browser",
+    "recall": "test_recall",
 }
 
 

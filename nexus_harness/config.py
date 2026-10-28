@@ -79,6 +79,8 @@ DEFAULTS = {
     "notify": {},
     # El navegador nativo: sin cabeza por defecto (no abre ventanas mientras el daemon trabaja).
     "browser_headless": True,
+    # Memoria por capas (SQLite+FTS5): el core viaja siempre con techo; el resto se consulta.
+    "recall_enabled": True,
     "lang": "es",
     "temperature": 0.2,
     "max_tokens": 4096,
@@ -150,6 +152,7 @@ class HarnessConfig:
     daemon_scan: int = 3
     notify: dict = field(default_factory=dict)
     browser_headless: bool = True
+    recall_enabled: bool = True
     lang: str = "es"
     temperature: float = 0.2
     max_tokens: int = 4096
@@ -223,6 +226,7 @@ class HarnessConfig:
                 "daemon_scan": self.daemon_scan,
                 "notify_channels": sorted((self.notify or {}).keys()),
                 "browser_headless": self.browser_headless,
+                "recall_enabled": self.recall_enabled,
                 "max_children": self.max_children, "subagent_steps": self.subagent_steps,
                 "tool_workers": self.tool_workers, "shell_policy": self.shell_policy,
                 "lang": self.lang, "source": self.source,

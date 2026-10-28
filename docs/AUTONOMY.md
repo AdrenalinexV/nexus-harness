@@ -16,6 +16,7 @@ de aquí no pasa su comando, no existe.
 | eval de capacidad: 7 tareas golden con verdad ejecutable | `eval_tasks.py`, `evalgym.py`, `tools/eval.py` | `python tools/eval.py --fake` |
 | daemon autonomo: bandeja, triggers, reanudacion y avisos | `daemon.py`, `tasks.py`, `notify.py`, `improve.py` | `python tools/proofs.py daemon` |
 | navegador nativo: DOM→texto, perfil con cookies, muros declarados | `toolbox/browser.py` | `python tools/proofs.py browser` |
+| memoria por capas: core acotado, historia por consulta (FTS5) | `recall.py`, `toolbox/memory_tools.py` | `python tools/proofs.py recall` |
 | reparación en `git worktree` | `worktree_sandbox.py`, `repair_guard.py` | `python tools/proofs.py worktree` |
 | deploy al VPS (SSH + Compose) | `vps_deployer.py`, `settings_vps.py` | `python tools/proofs.py deploy` |
 | juez con contexto + pista de líneas reales | `judge.py`, `repair_hint.py` | `python tools/proofs.py judge` |
@@ -200,6 +201,28 @@ para las páginas que un `curl` no puede leer: JavaScript, login, cookies, muros
 
 Acciones: `goto`, `extract` (busca líneas), `click`, `fill`, `press`, `links`, `screenshot`, `close`,
 `restart`. Si no hay motor instalado, la herramienta **lo dice** y sugiere `fetch_url`.
+
+## 12. Memoria por capas — historia sin pagarla en cada turno
+
+`recall.py` es una base SQLite (stdlib, FTS5) por proyecto, con cuatro capas y **cuatro costes distintos**:
+
+| capa | qué guarda | cuándo viaja |
+|---|---|---|
+| `core` | hechos estables del operador | **siempre**, con techo de ~700 caracteres |
+| `episode` | un turno cerrado: objetivo, exit, ficheros, reparaciones | solo si la consulta lo pide |
+| `fact` | regla o preferencia aprendida, **con evidencia** | solo si la consulta lo pide |
+| `procedure` | puntero a una skill (nombre, ruta, sha256) | solo si la consulta lo pide |
+
+- **Se recupera por consulta**, no por inyección: `recall(query)` devuelve las filas que responden, con
+  su capa y su fecha, cortadas a un presupuesto de caracteres. Sin coincidencia no se trae nada.
+- **El chat inyecta solo lo relevante al objetivo del turno** (top-4, ~500 caracteres) y el `core`.
+- **Un `fact` sin evidencia no se escribe**: una preferencia inventada envenena todos los turnos.
+- **`prune` olvida episodios viejos** por edad; no los resume con un modelo (un resumen alucinado en la
+  memoria es peor que un episodio que falta).
+
+Cada turno cerrado deja su episodio automáticamente (`reflection.learn`), así que la memoria se llena
+sola con hechos verificados por el gate. El modelo tiene dos herramientas: `recall` (leer) y `remember`
+(escribir, con evidencia obligatoria).
 
 ## Dogfooding
 

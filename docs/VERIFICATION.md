@@ -8,27 +8,27 @@ the numbers.
 
 ```
 $ python tools/verify.py
-lint      exit 0   files=155 findings=0 max_lines=400 ignored_runtime=0
-selftest  exit 0   suites=44 failures=0
+lint      exit 0   files=158 findings=0 max_lines=400 ignored_runtime=0
+selftest  exit 0   suites=45 failures=0
 verify: GREEN
 ```
 
 ## The suites, individually
 
 ```
-providers        OK    0.07s
+providers        OK    0.08s
 retry            OK    0.00s
-repair           OK    0.40s
-tools            OK    0.12s
+repair           OK    0.32s
+tools            OK    0.11s
 edit_v4a         OK    0.04s
 shell_session    OK    1.30s
-shell_policy     OK    0.12s
-checkpoint       OK    0.29s
+shell_policy     OK    0.13s
+checkpoint       OK    0.22s
 subagents        OK    0.01s
 warning: The `fitz` API is deprecated and will be removed in future. Use `import pymupdf` instead.
 attachments      OK    0.13s
-onboarding       OK    0.12s
-mcp_client       OK    0.28s
+onboarding       OK    0.10s
+mcp_client       OK    0.29s
 sidecar          OK    5.09s
 estado listo: 2 criterios (2 pendientes)
 a -> exit 0 (VERDE)
@@ -36,45 +36,46 @@ findings=0
 b -> exit 10 (ROJO)
 b marcado blocked
 criterio desconocido: zzz
-cerrojo ocupado: el turno de noche ya esta en marcha: pid 22724 desde 2026-10-28T02:09:39+00:00 (suite)
-no se toca nada. Si esa sesion ya no corre, el cerrojo se hereda solo; para forzarlo a mano, borra C:\Users\Vexus\AppData\Local\Temp\nightshift-wr2xxanm\.nexus\harness\nightshift.lock
+cerrojo ocupado: el turno de noche ya esta en marcha: pid 35616 desde 2026-10-28T02:14:50+00:00 (suite)
+no se toca nada. Si esa sesion ya no corre, el cerrojo se hereda solo; para forzarlo a mano, borra C:\Users\Vexus\AppData\Local\Temp\nightshift-zhx8o2ib\.nexus\harness\nightshift.lock
 TOCA: b — falla
   prueba: python -c "raise SystemExit(10)"
   estado: blocked (intentos 1)
 a -> exit 0 (VERDE)
 findings=0
-nightshift       OK    0.29s
-context          OK    0.10s
-triad_loop       OK    2.02s
-session_relay    OK    1.03s
-relay_state      OK    0.24s
-savings          OK    0.68s
-skills           OK    0.16s
-worktree         OK    2.29s
+nightshift       OK    0.28s
+context          OK    0.23s
+triad_loop       OK    2.06s
+session_relay    OK    1.07s
+relay_state      OK    0.26s
+savings          OK    0.94s
+skills           OK    0.18s
+worktree         OK    2.55s
 deploy           OK    0.01s
 judge_repair     OK    0.02s
-compaction       OK    0.17s
-chat             OK    0.58s
-memory           OK    0.31s
-ui               OK    0.98s
-bridge           OK    0.05s
-budget           OK    0.33s
+compaction       OK    0.20s
+chat             OK    0.65s
+memory           OK    0.30s
+ui               OK    1.19s
+bridge           OK    0.14s
+budget           OK    0.36s
 charts           OK    0.00s
 activity         OK    0.00s
-projects         OK    0.54s
-autonomy         OK    0.57s
-ux               OK    1.74s
-learning         OK    0.06s
-oracle           OK    0.26s
+projects         OK    0.51s
+autonomy         OK    0.84s
+ux               OK    1.70s
+learning         OK    0.14s
+oracle           OK    0.41s
 tokenizer        OK    0.01s
-spec             OK    0.26s
+spec             OK    0.27s
 plan_graph       OK    0.00s
-portfolio        OK    0.12s
-eval             OK    3.91s
-daemon           OK    0.26s
+portfolio        OK    0.23s
+eval             OK    4.57s
+daemon           OK    0.27s
 notify           OK    0.00s
-browser          OK    3.58s
-suites=44 failures=0
+browser          OK    4.15s
+recall           OK    0.31s
+suites=45 failures=0
 ```
 
 What each one actually proves:

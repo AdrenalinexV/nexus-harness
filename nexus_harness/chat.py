@@ -22,14 +22,14 @@ from . import checkpoint, ledger
 from .budget import CostBudget
 from . import triad_brief
 from .compaction import Compactor
-from .context_compiler import TurnWindow, build_prefix
+from .context_compiler import TurnWindow
 from .context_pruner import prune
 from .message import Message, as_text
 from .portfolio import maybe_escalate
+from .recall import Recall
 from .reflection import learn
 from .tokenizer import calibration, count_messages
-from .turn_context import (apply_budget, build_turn_prefix, inject_skills, is_delta,
-                           model_of, split_history)
+from .turn_context import (apply_budget, chat_prefix, inject_skills, is_delta, split_history)
 from .savings import CACHE_REL as SKILLS_CACHE, SavingsLedger
 from .subagents import Delegate
 from .toolbox import process_manager
@@ -153,26 +153,12 @@ class Chat:
         return self._stop.is_set()
 
     # -- prompt ------------------------------------------------------------------------------
-    def _legacy_prefix(self):
-        """Modo tradicional (benchmark A): TODAS las skills instaladas en cada llamada."""
-        from .savings import full_index_brief
-        brief = full_index_brief()
-        self._injected_tokens = len(brief) // 4
-        parts = [("rules", CHAT_SYSTEM)]
-        if brief:
-            parts.append(("skills", brief))
-        return build_prefix(parts)
-
     def _prefix(self):
-        """El `Prefix` estable de este turno: reglas, memoria, mapa y hechos del proyecto."""
-        if not getattr(self.config, "nexus_engines", True):
-            return self._legacy_prefix()
-        test = getattr(self.config, "test_command", None)
-        facts = "## Proyecto\n\nraíz: %s\ntests: %s" % (
-            getattr(self.config, "default_root", "."), test or "no configurado")
-        return build_turn_prefix(self.config, CHAT_SYSTEM, self.router, "worker",
-                                 memory_block=self.memory.block() if self.memory is not None else "",
-                                 project_facts=facts)
+        """El `Prefix` estable del turno (reglas, memoria, mapa y hechos), medido por secciones."""
+        prefix, injected = chat_prefix(self.config, self.router, CHAT_SYSTEM, self.memory,
+                                       getattr(self, "_goal", ""))
+        self._injected_tokens = injected
+        return prefix
 
     def _delta(self, files):
         """Lo que cambia con los ficheros tocados: las skills que entran al turno."""
@@ -310,6 +296,7 @@ class Chat:
         if self.session is None:
             self.new(text[:60] or (blocks[0].get("name") if blocks else "adjuntos"))
         self._stop.clear()
+        self._goal = text
         content = attachment_tools.as_content(blocks, text) if blocks else text
         self._emit("chat.user", text[:1500] or attachment_tools.summary(blocks),
                    attachments=attachment_tools.chips(blocks), notes=rejected)
@@ -359,7 +346,7 @@ class Chat:
         entries = getattr(self.skills, "last", None) or []
         turn.skills = [entry.get("name") for entry in entries if isinstance(entry, dict)]
         self.last_turn = turn
-        learned = learn(self.config, turn.as_dict(), "chat", self.skills)
+        learned = learn(self.config, turn.as_dict(), "chat", self.skills, goal=text)
         self._emit("learning.turn", "reflejo del turno", learned=learned)
         self._persist(turn)
         self._emit("chat.turn", "exit %s" % turn.exit, turn=turn.as_dict())

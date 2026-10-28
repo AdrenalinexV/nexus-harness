@@ -191,7 +191,7 @@ def lessons_block(root, limit=5):
     return "\n".join(lines)
 
 
-def learn(config, payload, tag="", skills=None):
+def learn(config, payload, tag="", skills=None, goal=""):
     """El reflejo de un turno ya cerrado, con la forma que devuelven Chat y Triad.
 
     `payload` es el diccionario del turno: `exit`, `verdict.checks`, `touched`, `repairs` y
@@ -200,7 +200,14 @@ def learn(config, payload, tag="", skills=None):
     root = Path(getattr(config, "default_root", ".") or ".")
     verdict = payload.get("verdict") or {}
     judgement = payload.get("judgement") or {}
-    record_skills(skills, root, payload.get("exit"), judgement.get("verdict", ""), tag)
+    from .recall import remember_turn
+
+    exit_code = payload.get("exit")
+    if exit_code is not None:
+        remember_turn(root, goal or payload.get("goal") or "", exit_code,
+                      payload.get("touched") or (), payload.get("repairs") or 0,
+                      project=root.name)
+    record_skills(skills, root, exit_code, judgement.get("verdict", ""), tag)
     return Reflection(root).after_turn(
         payload.get("exit"), checks=verdict.get("checks") or (),
         files=payload.get("touched") or (), repairs=payload.get("repairs") or 0,

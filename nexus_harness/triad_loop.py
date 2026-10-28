@@ -370,7 +370,7 @@ class Triad:
             self.relay.finish(result.exit)
             result.budget = self.relay.meter.state()
             result.sessions = self.relay.store.ids()
-        learn(self.config, result.as_dict(), "run", self.skills)
+        learn(self.config, result.as_dict(), "run", self.skills, goal=result.goal)
         self._record(result)
         self._emit("run.end", "exit %s" % result.exit, ok=result.ok, summary=result.summary[:600])
         return result

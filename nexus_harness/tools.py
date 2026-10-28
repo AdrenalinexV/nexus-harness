@@ -17,13 +17,13 @@ from dataclasses import dataclass, field
 from pathlib import Path
 
 from .repair_hint import RepairHints
-from .toolbox import (browser, edit, file_ops, patch_v4a, process_manager, repo_search,
-                      shell_session, skill_tools, web)
+from .toolbox import (browser, edit, file_ops, memory_tools, patch_v4a, process_manager,
+                      repo_search, shell_session, skill_tools, web)
 
 WRITE_TOOLS = frozenset({"write_file", "patch_replace", "apply_blocks", "apply_patch"})
 ROOT_HANDLERS = (repo_search.HANDLERS, file_ops.HANDLERS, edit.HANDLERS, patch_v4a.HANDLERS,
                  shell_session.HANDLERS, process_manager.HANDLERS, web.HANDLERS,
-                 skill_tools.HANDLERS, browser.HANDLERS)
+                 skill_tools.HANDLERS, browser.HANDLERS, memory_tools.HANDLERS)
 READ_ONLY = frozenset({"read_file", "search_files", "list_dir"})
 MAX_PARALLEL = 4
 
@@ -92,6 +92,18 @@ SCHEMAS = [
              "selector": {"type": "string"},
              "max_chars": {"type": "integer", "description": "Recorte del texto (500-40000)"}},
             ["action"]),
+    _schema("recall",
+            "Recall from long-term memory (episodes, learned facts, procedures) only what matches the "
+            "query. Nothing is loaded unless you ask; returns the matching rows with their layer and "
+            "date.",
+            {"query": {"type": "string", "description": "Qué quieres recordar, en palabras"},
+             "limit": {"type": "integer"}}, ["query"]),
+    _schema("remember",
+            "Store one durable fact or preference. `evidence` is mandatory: what did you observe that "
+            "proves it (a command and its exit, a file, a user statement).",
+            {"text": {"type": "string"}, "evidence": {"type": "string"},
+             "kind": {"type": "string", "enum": ["core", "fact", "procedure", "episode"]},
+             "confidence": {"type": "number"}}, ["text", "evidence"]),
     _schema("web_search", "Search the web and return titles with links.",
             {"query": {"type": "string"}, "limit": {"type": "integer"}}, ["query"]),
     _schema("forge_or_update_skill",

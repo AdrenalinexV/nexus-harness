@@ -37,7 +37,8 @@ def map_text(config):
     return "## Mapa de simbolos (pide rangos con read_file offset/limit)\n%s" % block, int(tokens)
 
 
-def prefix_sections(config, base, memory_block="", project_facts="", with_map=True):
+def prefix_sections(config, base, memory_block="", project_facts="", with_map=True,
+                    recall_block=""):
     """`[(nombre, texto)]` estables del turno: reglas, memoria, mapa y hechos.
 
     El orden importa y es fijo: reglas primero, porque es lo unico que no cambia nunca; hechos al
@@ -46,6 +47,8 @@ def prefix_sections(config, base, memory_block="", project_facts="", with_map=Tr
     parts = [("rules", base)]
     if memory_block:
         parts.append(("memory", memory_block))
+    if recall_block:
+        parts.append(("recall", recall_block))
     if with_map:
         block, _tokens = map_text(config)
         if block:
@@ -59,10 +62,11 @@ def prefix_sections(config, base, memory_block="", project_facts="", with_map=Tr
 
 
 def build_turn_prefix(config, base, router=None, role="worker", memory_block="", project_facts="",
-                      with_map=True):
+                      with_map=True, recall_block=""):
     """El `Prefix` medido y con digest de este turno."""
     model = model_of(router, role) if router is not None else ""
-    return build_prefix(prefix_sections(config, base, memory_block, project_facts, with_map), model)
+    return build_prefix(prefix_sections(config, base, memory_block, project_facts, with_map,
+                                        recall_block), model)
 
 
 def inject_skills(skills, files, emit=None, kind="skills"):
@@ -129,3 +133,27 @@ def window_for(prefix, delta, files, model="", max_deltas=8):
     if delta:
         window.note("skills", delta)
     return window
+
+
+def chat_prefix(config, router, base, memory=None, goal=""):
+    """El prefijo del Chat: reglas, memoria manual, memoria por capas, mapa y hechos.
+
+    Devuelve `(Prefix, tokens_inyectados)`. En modo tradicional (benchmark A) inyecta el indice
+    completo de skills y lo declara; en modo Nexus, las skills viajan como delta del turno.
+    """
+    if not getattr(config, "nexus_engines", True):
+        from .savings import full_index_brief
+        brief = full_index_brief()
+        parts = [("rules", base)]
+        if brief:
+            parts.append(("skills", brief))
+        return build_prefix(parts), len(brief) // 4
+    from .recall import Recall
+    remembered = (Recall(config.default_root).block(goal)
+                  if getattr(config, "recall_enabled", True) else "")
+    facts = ("## Proyecto" + chr(10) * 2 + "raíz: %s" + chr(10) + "tests: %s") % (
+        getattr(config, "default_root", "."),
+        getattr(config, "test_command", None) or "no configurado")
+    return build_turn_prefix(config, base, router, "worker",
+                             memory_block=memory.block() if memory is not None else "",
+                             project_facts=facts, recall_block=remembered), 0
