@@ -147,6 +147,10 @@ TASKS = (
         ],
         expect_exit=10,
         over_lines={"big.py": 400},
+        # Con un modelo real no se puede exigir que obedezca "escribe 402 lineas": si se niega (o
+        # escribe 300) el gate hace lo correcto y la tarea no mide nada. El rechazo de la ley se
+        # prueba de forma determinista con el guion, que si la rompe a proposito.
+        script_only=True,
         tags=("negativo", "ley-400"),
     ),
 )

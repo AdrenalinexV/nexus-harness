@@ -9,7 +9,7 @@ Cuatro cosas que un harness serio tiene que demostrar y que hasta ahora no estab
 * la pildora de actividad cuenta el relevo, la poda y la skill forjada (lo que el operador ve).
 """
 from .. import activity, repair_hint
-from ..judge import CONVERSATION, SYSTEM, Judge, mode_for
+from ..judge import CONVERSATION, SYSTEM, Judge, mode_for, parse_verdict
 from ..message import Message, as_text
 from ..tools import default_registry
 from .fakes import FakeRouter, ScriptedProvider, TempProject, reply
@@ -102,6 +102,58 @@ def test_the_pill_reports_the_new_events(failures):
     check("y lo dice", "auto-forjada" in text, True, failures)
 
 
+def test_the_judge_sees_the_change_not_just_the_names(failures):
+    """Un renombrado correcto fue rechazado porque el juez solo veia nombres: ahora ve el contenido."""
+    import tempfile
+    from pathlib import Path
+    from ..judge import Judge
+    from .fakes import FakeRouter
+
+    with tempfile.TemporaryDirectory(prefix="judge-evidence-") as workspace:
+        root = Path(workspace)
+        (root / "calc.py").write_text("def suma(a, b):" + chr(10) + "    return a + b" + chr(10),
+                                      encoding="utf-8")
+        (root / "big.py").write_text(("x = 1" + chr(10)) * 5000, encoding="utf-8")
+        judge = Judge(FakeRouter(), "es")
+        prompt = judge._prompt("renombra add a suma", "hecho", ["calc.py"], "tests: exit 0",
+                               judge._evidence(root, ["calc.py"]))
+        check("el contenido viaja", "def suma" in prompt, True, failures)
+        check("y se declara que es el estado actual", "Contenido actual" in prompt, True, failures)
+        huge = judge._evidence(root, ["big.py"], chars=200)
+        check("el contenido se recorta", len(huge) < 400, True, failures)
+        check("sin raiz no hay evidencia", judge._evidence(None, ["calc.py"]), "", failures)
+
+
+def test_a_bare_word_is_a_verdict_and_format_gets_one_retry(failures):
+    """`Approved.` es un veredicto; y un formato roto tiene UN reintento antes de condenar."""
+    from .fakes import FakeRouter, ScriptedProvider, reply
+
+    check("aprobado a secas", parse_verdict("Approved.")[0], "approve", failures)
+    check("rechazo a secas", parse_verdict("Reject")[0], "reject", failures)
+    check("una frase suelta no es veredicto", parse_verdict("looks fine to me")[0], "reject",
+          failures)
+
+    import tempfile
+    with tempfile.TemporaryDirectory(prefix="judge-retry-") as workspace:
+        from pathlib import Path
+        root = Path(workspace)
+        (root / "calc.py").write_text("x = 1", encoding="utf-8")
+        router = FakeRouter(judge=ScriptedProvider([
+            reply("Looks good to me, job done."),
+            reply('{"verdict": "approve", "reason": "el contenido lo demuestra"}')]))
+        judgement = Judge(router, "es").review("arregla", "hecho", ["calc.py"], "tests: exit 0",
+                                               root=root)
+        check("el reintento aprueba", judgement.verdict, "approve", failures)
+        check("y dice por que", "contenido" in judgement.reason, True, failures)
+
+        broken = FakeRouter(judge=ScriptedProvider([reply("prosa"), reply("mas prosa")],
+                                                   default=reply("prosa")))
+        second = Judge(broken, "es").review("arregla", "hecho", ["calc.py"], "tests: exit 0",
+                                            root=root)
+        check("dos fallos de formato si rechazan", second.verdict, "reject", failures)
+        check("y se declara", "segundo intento" in second.reason, True, failures)
+
+
 def run():
     failures = []
     test_modes(failures)
@@ -109,4 +161,6 @@ def run():
     test_judge_uses_the_right_system_prompt(failures)
     test_second_failure_gets_the_real_lines(failures)
     test_the_pill_reports_the_new_events(failures)
+    test_the_judge_sees_the_change_not_just_the_names(failures)
+    test_a_bare_word_is_a_verdict_and_format_gets_one_retry(failures)
     return failures

@@ -45,13 +45,16 @@ class Row:
     detail: str = ""
     skipped: bool = False
     attempt: int = 1
+    judge: str = ""
+    judge_reason: str = ""
 
     def as_dict(self):
         return {"id": self.id, "ok": self.ok, "exit": self.exit, "expect_exit": self.expect_exit,
                 "reasons": list(self.reasons), "steps": self.steps, "repairs": self.repairs,
                 "tokens": self.tokens, "seconds": round(self.seconds, 2),
                 "touched": list(self.touched), "detail": self.detail,
-                "skipped": self.skipped, "attempt": self.attempt}
+                "skipped": self.skipped, "attempt": self.attempt,
+                "judge": self.judge, "judge_reason": self.judge_reason}
 
 
 def _config(root, task, real=False):
@@ -79,13 +82,25 @@ def _router(config, task, model=None):
                       judge=ScriptedProvider([reply(APPROVE)], default=reply(APPROVE)))
 
 
+def row_judge(result):
+    return str((result.judgement or {}).get("verdict") or "")
+
+
+def row_reason(result):
+    return str((result.judgement or {}).get("reason") or "")
+
+
 def _grade(task, result, events, root):
     """Lo que la tarea exige, comprobado en disco y en el bus. Nunca por el resumen del modelo."""
     reasons = []
     if result.exit != task.expect_exit:
         detail = str((result.verdict or {}).get("failures") or "").strip()
-        reasons.append("exit %s, esperaba %s%s" % (result.exit, task.expect_exit,
-                                                   (": " + detail[:300]) if detail else ""))
+        line = "exit %s, esperaba %s" % (result.exit, task.expect_exit)
+        if detail:
+            line += ": " + detail[:300]
+        elif row_judge(result) == "reject":
+            line += ": el Juez lo rechazo (%s)" % (row_reason(result) or "sin motivo")
+        reasons.append(line)
     for name, needles in (task.contains or {}).items():
         path = Path(root) / name
         text = path.read_text(encoding="utf-8", errors="replace") if path.is_file() else ""
@@ -135,6 +150,8 @@ def run_task(task, model=None, attempt=1):
             row.tokens = int((result.tokens or {}).get("total", 0) or 0)
             row.touched = list(result.touched or [])
             row.detail = str((result.verdict or {}).get("failures") or "")[:600]
+            row.judge = str((result.judgement or {}).get("verdict") or "")
+            row.judge_reason = str((result.judgement or {}).get("reason") or "")[:300]
             row.reasons = _grade(task, result, bus.all(), root)
     except Exception as exc:  # noqa: BLE001 -- el eval mide el arnes, tambien sus caidas
         row.reasons = ["el arnes lanzo %s: %s" % (type(exc).__name__, exc)]

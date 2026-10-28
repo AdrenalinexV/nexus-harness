@@ -15,6 +15,7 @@ the reasoning model, not the coder, so the same weights do not grade their own e
 import json
 import re
 from dataclasses import dataclass
+from pathlib import Path
 
 from .message import Message
 
@@ -126,6 +127,13 @@ def _word(data):
 def parse_verdict(text):
     """`(verdict, reason)` from a model answer, or `("reject", why_it_could_not_be_read)`."""
     raw = str(text or "")
+    # Una respuesta que es SOLO la palabra (`Approved.`) es un veredicto, no prosa: el modelo lo dijo
+    # entero. Extraerla de una frase larga seria adivinar; aqui no hay nada mas que la palabra.
+    bare = raw.strip().strip(".!\"'`*_ ").lower()
+    if bare in ("approve", "approved", "ok", "lgtm", "pass"):
+        return "approve", "veredicto explicito sin JSON"
+    if bare in ("reject", "rejected", "fail", "no"):
+        return "reject", "rechazo explicito sin JSON"
     candidates = sorted(_objects(raw), key=len, reverse=True)
     for candidate in candidates:
         data = _load(candidate)
@@ -155,14 +163,14 @@ class Judge:
         self.lang = lang if lang in SYSTEM else "en"
         self.max_tokens = max_tokens
 
-    def review(self, goal, summary, files, gate_summary, mode=None, gate_ran=False):
+    def review(self, goal, summary, files, gate_summary, mode=None, gate_ran=False, root=None):
         info = self.router.info("judge")
         mode = mode or mode_for(files, gate_summary, gate_ran)
         if not info.ready:
             return Judgement(verdict="skipped", ok=True, mode=mode,
                              reason="judge unavailable: %s" % (info.why_not_ready or "not configured"))
         system = (CONVERSATION if mode == "conversation" else SYSTEM)[self.lang]
-        prompt = self._prompt(goal, summary, files, gate_summary)
+        prompt = self._prompt(goal, summary, files, gate_summary, self._evidence(root, files))
         try:
             reply = self.router.role("judge").chat(
                 [Message(role="system", content=system),
@@ -172,12 +180,51 @@ class Judge:
             return Judgement(verdict="skipped", ok=True, mode=mode,
                              reason="judge call failed: %s: %s" % (type(exc).__name__, exc))
         verdict, reason = parse_verdict(reply.text or reply.reasoning)
+        if reason == "the judge did not answer with JSON":
+            # Un unico reintento con la instruccion pegada: un modelo pequeno a veces contesta prosa
+            # correcta ("Approved") y no es justo condenar trabajo verde por formato. Dos fallos de
+            # formato si son un rechazo, y se dice cual fue el motivo.
+            verdict, reason = self._retry(system, prompt, verdict, reason)
         return Judgement(verdict=verdict, ok=(verdict != "reject"), reason=reason,
                          model=reply.model or info.model, mode=mode)
 
-    def _prompt(self, goal, summary, files, gate_summary):
+    def _retry(self, system, prompt, verdict, reason):
+        """Segundo intento, solo para el fallo de formato. Devuelve `(verdict, reason)`."""
+        try:
+            again = self.router.role("judge").chat(
+                [Message(role="system", content=system + " Responde SOLO el objeto JSON, sin nada mas."),
+                 Message(role="user", content=prompt)],
+                temperature=0.0, max_tokens=self.max_tokens)
+        except Exception as exc:  # noqa: BLE001 -- sin reintento queda el rechazo original, declarado
+            return verdict, "%s (reintento fallido: %s)" % (reason, type(exc).__name__)
+        second, why = parse_verdict(again.text or again.reasoning)
+        if second != "reject" or why != "the judge did not answer with JSON":
+            return second, why
+        return "reject", "el Juez no contesto JSON ni al segundo intento"
+
+    def _evidence(self, root, files, limit_files=4, chars=700):
+        """El contenido ACTUAL de lo tocado, recortado. Sin esto el juez opina sobre nombres.
+
+        El fallo que arregla: un renombrado correcto fue rechazado porque el juez solo veia
+        `Files touched: calc.py, main.py` y el resumen del Obrero. El gate estaba verde y el fichero
+        era correcto; el juez no tenia con que comprobarlo.
+        """
+        if root is None or not files:
+            return ""
+        blocks = []
+        for name in sorted(set(files or []))[:limit_files]:
+            try:
+                body = (Path(root) / str(name)).read_text(encoding="utf-8", errors="replace")
+            except OSError:
+                continue
+            blocks.append("--- %s ---\n%s" % (name, body[:chars]))
+        return "\n".join(blocks)
+
+    def _prompt(self, goal, summary, files, gate_summary, evidence=""):
         listed = ", ".join(sorted(set(files or []))[:20]) or "(no file touched)"
         head = "Objetivo" if self.lang == "es" else "Goal"
-        return ("%s:\n%s\n\nFiles touched: %s\n\nGate evidence:\n%s\n\nWork summary:\n%s"
-                % (head, goal, listed, gate_summary[:1500],
-                   str(summary or "")[:MAX_SUMMARY]))
+        seen = ("Contenido actual de lo tocado (recortado):" if self.lang == "es"
+                else "Current content of touched files (truncated):")
+        body = ("%s:\n%s\n\nFiles touched: %s\n\nGate evidence:\n%s\n\nWork summary:\n%s"
+                % (head, goal, listed, gate_summary[:1500], str(summary or "")[:MAX_SUMMARY]))
+        return body + ("\n\n%s\n%s" % (seen, evidence) if evidence else "")

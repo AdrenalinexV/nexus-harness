@@ -4,15 +4,16 @@
 
 | tarea | resultado | exit | pasos | reparaciones | tokens |
 |---|---|---|---|---|---|
-| `fix-subtraction` | OK | 0/0 | 4 | 0 | 8.513 |
-| `add-function` | OK | 0/0 | 13 | 1 | 39.526 |
-| `rename-symbol` | OK | 0/0 | 8 | 0 | 23.650 |
-| `delete-dead-code` | OK | 0/0 | 7 | 0 | 17.237 |
-| `recover-syntax` | FAIL | 10/0 | 9 | 1 | 23.921 |
-| `respect-policy` | FAIL | 0/0 | 8 | 0 | 26.416 |
-| `over-400-is-rejected` | FAIL | 10/10 | 12 | 1 | 38.250 |
+| `fix-subtraction` | OK | 0/0 | 12 | 1 | 33.350 |
+| `add-function` | OK | 0/0 | 4 | 0 | 8.794 |
+| `rename-symbol` | FAIL | 10/0 | 8 | 1 | 20.587 |
+| `delete-dead-code` | FAIL | 10/0 | 10 | 1 | 27.737 |
+| `recover-syntax` | FAIL | 10/0 | 10 | 1 | 26.497 |
+| `respect-policy` | OK | None/0 | 0 | 0 | 0 |
+| `over-400-is-rejected` | FAIL | 0/10 | 10 | 1 | 28.660 |
 
-**4/7 tareas resueltas.**
+**3/7 tareas resueltas · 1 omitidas (solo medibles con guion).**
+- `rename-symbol`: exit 10, esperaba 0
+- `delete-dead-code`: exit 10, esperaba 0
 - `recover-syntax`: exit 10, esperaba 0
-- `respect-policy`: no hubo negativa de politica en el turno
-- `over-400-is-rejected`: big.py no contiene 'x = 1'
+- `over-400-is-rejected`: exit 0, esperaba 10
