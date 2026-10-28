@@ -299,3 +299,21 @@ if __name__ == "__main__":
         print("FALLO:", item)
     print("triad_balance: %s" % ("OK" if not found else "%d fallos" % len(found)))
     raise SystemExit(1 if found else 0)
+
+
+def class_of(spec):
+    """`local` o `cloud` para un spec. Es la frontera que dispara la reaccion automatica."""
+    from .triad_presets import LOCAL_SET, split_spec
+    return "local" if split_spec(spec)[0] in LOCAL_SET else "cloud"
+
+
+def auto_adapt(cockpit, role=""):
+    """El rol cambio de clase (local <-> nube): reequilibrar los otros dos, y decirlo.
+
+    Se puede apagar (`triad_auto_adapt`) porque una cabina que reescribe roles sin avisar es peor que
+    una que no lo hace: el interruptor esta en el mismo panel y su estado viaja en cada guardado.
+    """
+    if not getattr(cockpit.config, "triad_auto_adapt", True):
+        return []
+    note, ok = apply(cockpit)
+    return [note] if ok else ["auto-adaptacion no aplicada: %s" % note]

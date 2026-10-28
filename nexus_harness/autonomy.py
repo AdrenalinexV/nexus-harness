@@ -24,6 +24,7 @@ import time
 from pathlib import Path
 
 from . import backup, ledger, plan_graph, projects, spec_synth
+from . import autonomy_ask
 from .reflection import lessons_block
 from .repo_map import RepoMap
 
@@ -244,10 +245,21 @@ class Autopilot:
             if outcome.get("done") or outcome.get("finished"):
                 return True
             if not outcome.get("ok"):
-                self._update(last="%s: %s" % (name, outcome.get("why") or "rojo"))
-                self._emit("autonomy.red", str(outcome.get("why") or "rojo"), project=name,
-                           iteration=index)
-                return False
+                why = str(outcome.get("why") or "rojo")
+                self._update(last="%s: %s" % (name, why))
+                self._emit("autonomy.red", why, project=name, iteration=index)
+                # Rojo no arreglado: o se para, o lo decide el operador. Un bucle que se inventa la
+                # decision cuando nadie contesta es justo lo que este arnes no hace.
+                asked = autonomy_ask.ask_about_red(root, name, why, self.config, index)
+                self._emit("autonomy.ask", str(asked.get("decision") or "?"), project=name,
+                           source=asked.get("source"), state=asked.get("state"),
+                           question=asked.get("question"))
+                sigue, nota = autonomy_ask.act(root, asked["decision"])
+                # El motivo NO se pierde al preguntar: la nota del operador se suma, no sustituye.
+                self._update(last="%s: %s · %s" % (name, why, nota))
+                if not sigue:
+                    return False
+
         return True
 
     def _cycle(self, name, root, goal, index, limit):

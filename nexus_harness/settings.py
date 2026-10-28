@@ -27,6 +27,8 @@ SECTIONS = (
     ("skills", "\u26a1 Skills & Skill Architect", ()),
     ("mcp", "\U0001f50c Conectores MCP", ()),
     ("puente", "\U0001f4f1 Puente M\u00f3vil (Bots)", ()),
+    ("autonomia", "\U0001f916 Autonom\u00eda & Preguntas", ()),
+    ("vps", "\U0001f5a5 VPS 24/7 (Deploy)", ()),
     ("stats", "\U0001f4ca Estad\u00edsticas & Auditor\u00eda", ()),
 )
 NAMES = tuple(name for name, _label, _subs in SECTIONS)
@@ -58,6 +60,14 @@ def _render(name, cockpit, sub, item, query):
         return settings_tools.mcp(cockpit)
     if name == "puente":
         return settings_tools.puente(cockpit)
+    if name == "autonomia":
+        from . import settings_autonomy
+        return (settings_autonomy.TITLE,
+                "Qu\u00e9 decidi\u00f3 el bucle solo, qu\u00e9 te est\u00e1 preguntando y por d\u00f3nde puede o\u00edrte.",
+                settings_autonomy.block(cockpit))
+    if name == "vps":
+        from . import settings_vps
+        return settings_vps.page(cockpit)
     return settings_tools.stats(cockpit)
 
 
@@ -178,14 +188,14 @@ def save(cockpit, body):
         # El id libre manda sobre el `<select>`: un catalogo propone, no encierra.
         model = (str(body.get("model_free") or "").strip() or str(body.get("model") or "").strip())
         if role in ("director", "worker", "judge") and vendor and model:
-            before = _class_of(cockpit.config.role_spec(role))
+            before = triad_balance.class_of(cockpit.config.role_spec(role))
             result = onboarding.apply(cockpit.config, {"roles": {role: "%s:%s" % (vendor, model)}})
             notes += result.get("notes") or []
             if result.get("saved", {}).get("roles"):
                 notes.append("%s → %s:%s" % (role, vendor, model))
             cockpit.reload_config()
-            if before != _class_of("%s:%s" % (vendor, model)):
-                notes += _auto_adapt(cockpit, role)
+            if before != triad_balance.class_of("%s:%s" % (vendor, model)):
+                notes += triad_balance.auto_adapt(cockpit, role)
         # Los numeros del turno viajan en el MISMO panel (son parte de la triada: con que presupuesto
         # y con cuanta temperatura). Se guardaban en la vista de memoria y aqui se perdian en silencio.
         numbers = _numbers(body)
@@ -219,6 +229,10 @@ def save(cockpit, body):
         if "shell_policy" in saved:
             notes.append("política de comandos → %s" % saved["shell_policy"])
         cockpit.reload_config()
+    elif section == "autonomia":
+        from . import settings_autonomy
+        note, ok = settings_autonomy.save(cockpit, body)
+        return (note, ok)
     elif section == "memoria":
         saved, problems = onboarding.save_settings(_numbers(body))
         notes += problems
@@ -229,24 +243,6 @@ def save(cockpit, body):
         ok = False
         notes.append("esa sección no guarda nada por formulario")
     return (" · ".join(note for note in notes if note) or "sin cambios", ok)
-
-
-def _class_of(spec):
-    """`local` o `cloud` para un spec. Es la frontera que dispara la reacción automática."""
-    from .triad_presets import LOCAL_SET, split_spec
-    return "local" if split_spec(spec)[0] in LOCAL_SET else "cloud"
-
-
-def _auto_adapt(cockpit, role=""):
-    """El rol cambio de clase (local <-> nube): reequilibrar los otros dos, y decirlo.
-
-    Se puede apagar (`triad_auto_adapt`) porque una cabina que reescribe roles sin avisar es peor que
-    una que no lo hace: el interruptor esta en el mismo panel y su estado viaja en cada guardado.
-    """
-    if not getattr(cockpit.config, "triad_auto_adapt", True):
-        return []
-    note, ok = triad_balance.apply(cockpit)
-    return [note] if ok else ["auto-adaptación no aplicada: %s" % note]
 
 
 def _pin_worker(cockpit):
@@ -277,6 +273,9 @@ def action(cockpit, body):
     section = str(body.get("section") or "modelos")
     if what.startswith("vps_"):
         return settings_vps.action(cockpit, body)
+    if what.startswith("consult_"):
+        from . import settings_autonomy
+        return settings_autonomy.action(cockpit, body)
     if what in ("auto_spec", "project_new", "project_move", "autonomy_start", "autonomy_stop"):
         # Las acciones del panel de proyectos las ejecuta su dueno, con su propia validacion.
         return settings_projects.action(cockpit, body)

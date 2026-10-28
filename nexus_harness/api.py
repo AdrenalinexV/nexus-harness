@@ -36,6 +36,9 @@ def activity_payload(cockpit):
 
 def get(cockpit, path, query=None):
     query = query or {}
+    if path == "/api/consult":
+        from . import consult_api
+        return consult_api.get(cockpit)
     if path == "/api/health":
         return 200, {"ok": True, "seq": cockpit.bus.seq, "version": __version__, "api": API_VERSION}
     if path == "/api/state":
@@ -95,6 +98,9 @@ def autonomy_payload(cockpit):
 # -- escrituras ----------------------------------------------------------------------------------
 def post(cockpit, path, body=None, query=None):
     body = body if isinstance(body, dict) else {}
+    if path == "/api/consult":
+        from . import consult_api
+        return consult_api.post(cockpit, body)
     if path == "/api/chat":
         ok, payload = cockpit.send(body.get("text"), body.get("attachments") or [])
         if ok:

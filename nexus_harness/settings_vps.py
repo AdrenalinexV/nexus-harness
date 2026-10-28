@@ -87,7 +87,7 @@ def action(cockpit, body):
     if config.missing:
         note = "faltan credenciales en la bóveda: %s" % ", ".join(config.missing)
         LAST["vps"] = note
-        return (" · ".join(notes + [note]), False, "puente")
+        return (" · ".join(notes + [note]), False, "vps")
     dry = not confirmed
     try:
         if what == "vps_probe":
@@ -103,11 +103,11 @@ def action(cockpit, body):
         elif what == "vps_sync":
             result = deployer.sync_queue(dry_run=dry)
         else:
-            return ("acción VPS desconocida: %s" % what, False, "puente")
+            return ("acción VPS desconocida: %s" % what, False, "vps")
     except Exception as exc:  # noqa: BLE001 -- el panel informa, no se cae
         note = "%s: %s" % (type(exc).__name__, exc)
         LAST["vps"] = note
-        return (" · ".join(notes + [note]), False, "puente")
+        return (" · ".join(notes + [note]), False, "vps")
     detail = result.get("reason") or result.get("tail") or result.get("state") or ""
     if dry:
         detail = "plan en seco (marca la casilla para ejecutar): %s" % ", ".join(
@@ -115,4 +115,41 @@ def action(cockpit, body):
     note = "%s%s · %s" % (what.replace("vps_", "vps "), "" if not dry else " [SECO]",
                           redact(detail, (config.secrets or {}).values()))
     LAST["vps"] = note
-    return (" · ".join(notes + [note]), bool(result.get("ok")), "puente")
+    return (" · ".join(notes + [note]), bool(result.get("ok")), "vps")
+
+
+TITLE = "VPS 24/7 (Deploy)"
+
+
+REQUISITOS = (
+    ("La IP o el dominio del VPS", "VPS_HOST · es lo primero que pide el panel"),
+    ("Un usuario con sudo (normalmente root)", "VPS_USER"),
+    ("Una clave SSH en este PC (o ssh-agent ya cargado)", "VPS_SSH_KEY — la ruta al fichero .pem/.id"),
+    ("Docker y Docker Compose en el VPS", "se comprueba en el primer paso, no se supone"),
+)
+
+
+def page(cockpit=None):
+    """La seccion propia del VPS: que necesitas, en que orden, y el estado real de cada paso."""
+    config, _deployer_instance = _deployer()
+    missing = config.missing
+    steps = "".join('<li><strong>%s</strong> <span class="dim">%s</span></li>'
+                    % (kit.esc(title), kit.esc(hint)) for title, hint in REQUISITOS)
+    ready = ('<p><span class="chip ok">listo para desplegar</span> '
+             '<span class="dim">destino %s</span></p>' % kit.esc(config.target or "-")
+             if not missing else
+             '<p><span class="chip warn">faltan %s</span> <span class="dim">rellena el bloque de '
+             'abajo y pulsa Guardar: las credenciales van a la bóveda, no a este documento.</span></p>'
+             % kit.esc(", ".join(missing)))
+    body = ('<p class="dim">El PC se apaga; el nodo no. Este panel levanta el mismo motor en tu VPS '
+            'por SSH + Docker Compose, en cuatro pasos y sin escribir un comando a mano.</p>'
+            '<h4 class="ssub">Lo que necesitas</h4><ol class="plain">%s</ol>'
+            '<h4 class="ssub">Orden correcto</h4>'
+            '<ol class="plain"><li><strong>1.</strong> Guarda host, usuario y clave (abajo).</li>'
+            '<li><strong>2.</strong> <em>Probar conexión SSH</em> — si falla, no sigas: el motivo '
+            'está en el recuadro.</li>'
+            '<li><strong>3.</strong> <em>Desplegar</em> (sin la casilla solo se muestra el plan).</li>'
+            '<li><strong>4.</strong> <em>Ver estado</em> y <em>Ver logs</em> para confirmar que el '
+            'latido corre.</li></ol>%s%s'
+            % (steps, ready, block(cockpit)))
+    return (TITLE, "El nodo que sigue trabajando cuando este PC está apagado.", body)

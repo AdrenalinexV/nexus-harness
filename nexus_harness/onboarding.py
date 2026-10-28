@@ -179,7 +179,7 @@ def save_settings(changes):
              "shell_timeout": int, "request_timeout": int, "max_tokens": int,
              "temperature": float, "lang": str, "workspace": str,
              "worker_resident": bool, "hardware_ceiling": int, "triad_auto_adapt": bool,
-             "triad_bias": str}
+             "triad_bias": str, "ask_deadline": int, "consult_enabled": bool}
     out, saved, notes = {}, {}, []
     for name, value in (changes or {}).items():
         if name == "judge_mode":
@@ -205,7 +205,7 @@ def save_settings(changes):
                 notes.append("hardware_ceiling: %r no es 0, 50 ni 75" % (value,))
                 continue
             out[name] = saved[name] = share
-        elif name == "worker_resident":
+        elif name in ("worker_resident", "consult_enabled", "triad_auto_adapt"):
             out[name] = saved[name] = str(value).strip().lower() in ("1", "true", "yes", "on")
         elif name == "shell_policy":
             mode = str(value or "").strip().lower()

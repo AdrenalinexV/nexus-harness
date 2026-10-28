@@ -35,7 +35,7 @@ def test_actions_are_dry_without_confirm(failures):
     note, ok, section = settings_vps.action(None, {"what": "vps_status"})
     check("sin confirmar no ejecuta", ok, False, failures)
     check("y lo dice", "SECO" in note or "faltan credenciales" in note, True, failures)
-    check("la seccion es la del puente", section, "puente", failures)
+    check("la seccion es la del VPS", section, "vps", failures)
 
 
 def test_no_secret_leaks(failures):

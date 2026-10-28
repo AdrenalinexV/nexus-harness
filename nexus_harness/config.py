@@ -86,6 +86,9 @@ DEFAULTS = {
     # `adversary` (el mismo contrato con la instruccion de buscar el fallo). Un juez puede ser el mismo
     # modelo que el director, pero entonces no audita: el panel lo avisa y `gate` es la opcion honesta.
     "judge_mode": "fast",
+    # La autonomia pregunta antes de decidir lo que no le toca: canal, plazo y si se permite.
+    "consult_enabled": True,
+    "ask_deadline": 900,
     # El techo de hardware que el arnes puede usar: 75 % de la VRAM por defecto (el 25 % queda para
     # Windows, el juego o el coach en tiempo real), 50 % en modo ligero y 0 % = todo en nube.
     "hardware_ceiling": 75,
@@ -173,6 +176,8 @@ class HarnessConfig:
     recall_enabled: bool = True
     lang: str = "es"
     judge_mode: str = "fast"
+    consult_enabled: bool = True
+    ask_deadline: int = 900
     hardware_ceiling: int = 75
     triad_bias: str = "ahorro"
     triad_auto_adapt: bool = True
@@ -257,6 +262,7 @@ class HarnessConfig:
                 "max_children": self.max_children, "subagent_steps": self.subagent_steps,
                 "tool_workers": self.tool_workers, "shell_policy": self.shell_policy,
                 "lang": self.lang, "judge_mode": self.judge_mode,
+                "consult_enabled": self.consult_enabled, "ask_deadline": self.ask_deadline,
                 "hardware_ceiling": self.hardware_ceiling, "triad_bias": self.triad_bias,
                 "triad_auto_adapt": self.triad_auto_adapt,
                 "worker_resident": self.worker_resident, "source": self.source,

@@ -102,10 +102,10 @@ def puente(cockpit):
                 "off" if running else "on", "Detener el puente" if running else "Arrancar el puente"))
     body += ('<p class="dim">Log: <code>%s</code></p><pre class="sout">%s</pre>'
              % (kit.esc(state.get("log") or "-"), kit.esc(tail)))
-    from . import settings_vps
-    body += settings_vps.block(cockpit)
-    return ("Puente Móvil & Deploy VPS (Hive 24/7)",
-            "Los dos modos de tener la colmena encendida: el demonio de este PC o el nodo 24/7 en el VPS.",
+    body += ('<p class="dim">El nodo 24/7 en tu VPS tiene su propia sección: '
+             '<a href="/settings?section=vps">VPS 24/7 (Deploy)</a>.</p>')
+    return ("Puente Móvil (Bots)",
+            "Lo que deja trabajo al motor desde el móvil: la bandeja y el daemon de este PC.",
             body)
 
 

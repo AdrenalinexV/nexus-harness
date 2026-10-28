@@ -24,6 +24,7 @@ from .providers import Router, SpecError
 from .session_relay import SessionRelay
 from .tools import default_registry
 from .cli_ops import cmd_daemon, cmd_notify, cmd_task
+from .cli_consult import cmd_consult
 from .triad_loop import Triad
 
 
@@ -347,6 +348,18 @@ def build_parser():
     bridge.add_argument("--tick", action="store_true", help="claim and run one item")
     bridge.add_argument("--project", default=None)
     bridge.set_defaults(func=cmd_bridge)
+
+    consult_cmd = sub.add_parser("consult", help="pregunta al operador y sigue con su respuesta")
+    consult_cmd.add_argument("text", nargs="?", default="")
+    consult_cmd.add_argument("--options", default="", help="opciones separadas por comas")
+    consult_cmd.add_argument("--default", default="parar", help="que hacer si nadie contesta")
+    consult_cmd.add_argument("--wait", type=int, default=0, help="segundos de plazo")
+    consult_cmd.add_argument("--status", action="store_true", help="lo que sigue abierto")
+    consult_cmd.add_argument("--answer", default=None, metavar="ID")
+    consult_cmd.add_argument("--check", action="store_true", help="que canales escuchan")
+    consult_cmd.add_argument("--project", default=None)
+    consult_cmd.add_argument("--json", action="store_true")
+    consult_cmd.set_defaults(func=cmd_consult)
     return parser
 
 
