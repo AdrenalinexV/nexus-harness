@@ -153,6 +153,14 @@ def vendors_ready(config, state):
     return ready
 
 
+def pick_other(role, vendor, avoid):
+    """Otro modelo del MISMO proveedor, distinto de `avoid`. Para separar poderes sin segunda clave."""
+    for name, model in LADDERS.get(role, ()):
+        if name == vendor and model != avoid:
+            return name, model
+    return "", ""
+
+
 def pick(role, ready):
     """El primer escalon del rol cuyo proveedor esta disponible. `("", "")` si no hay ninguno."""
     for vendor, model in LADDERS.get(role, ()):
@@ -213,6 +221,10 @@ def plan(name, config, state, hardware):
                 notes.append("sin modelo local cargado: el obrero va a nube")
         if director:
             roles["director"] = "%s:%s" % (director, model)
+        if not judge and director:
+            # Con una sola clave de nube, el juez tiene que ser OTRO MODELO del mismo proveedor: el
+            # mismo spec que el director no audita nada, y el panel no puede proponer eso.
+            judge, judge_model = pick_other("judge", director, model)
         if judge:
             roles["judge"] = "%s:%s" % (judge, judge_model)
         elif roles.get("director"):

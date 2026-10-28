@@ -71,6 +71,9 @@ def cloud_roles(ready):
     ready = {name for name in ready if name not in LOCAL}
     worker = triad_presets.pick("worker", ready)
     judge = triad_presets.pick("judge", ready - {worker[0]} if worker[0] else ready)
+    if not judge[0] and worker[0]:
+        # Una sola clave: el juez sera otro MODELO del mismo router, nunca el mismo spec que el obrero.
+        judge = triad_presets.pick_other("judge", worker[0], worker[1])
     return worker, judge
 
 
@@ -98,7 +101,10 @@ def optimize(config, state, hardware, ready=None):
     judge_mode = "fast"
 
     heavy = pick_heavy(rows, room["heavy_gb"])
-    light = pick_light(rows, room["light_gb"], exclude={director_model} if director_local else set())
+    # El juez tampoco puede ser el modelo del obrero: dos roles con el mismo peso no se auditan, se
+    # repiten. Se excluyen los dos (director y pesado) y se busca otro.
+    taken = {heavy[1]} | ({director_model} if director_local else set())
+    light = pick_light(rows, room["light_gb"], exclude=taken)
     worker_cloud, judge_cloud = cloud_roles(ready)
     wants_cloud = room["harness_gb"] <= 0 or bias == "velocidad"
 

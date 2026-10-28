@@ -99,6 +99,22 @@ def test_director_in_cloud_uses_the_free_gpu(failures):
     check("el plan esta completo", plan["ok"], True)
 
 
+def test_the_judge_is_never_the_worker(failures):
+    """Dos roles con el mismo peso no se auditan: se repiten.
+
+    Con solo dos modelos instalados y el director en nube, el pesado que cabe es el micro; si el juez
+    pudiera repetirlo, el plan saldria «completo» sin ninguna auditoria cruzada.
+    """
+    thin = {"local": {"lmstudio": {"ready": True, "models": ["grande-35b@q4_k_m", "micro-4b"],
+                                   "loaded": []}}}
+    plan = triad_balance.optimize(config(), thin, HW, ready={"lmstudio", "orca"})
+    check("juez y obrero no comparten peso", plan["roles"].get("worker") != plan["roles"].get("judge"),
+          True)
+    thick = triad_balance.optimize(config(), STATE, HW, ready={"lmstudio", "ollama"})
+    check("con catalogo amplio tambien se separan",
+          thick["roles"]["worker"] != thick["roles"]["judge"], True)
+
+
 def test_director_in_local_pins_the_worker_and_moves_the_judge(failures):
     cfg = config(roles={"director": "lmstudio:medio-14b-instruct",
                         "worker": "lmstudio:grande-35b@q4_k_m",
@@ -295,7 +311,7 @@ def run():
     CURRENT = failures
     for test in (test_module_selftests, test_the_ceiling_becomes_a_budget,
                  test_the_heavy_and_the_micro_are_chosen_by_size,
-                 test_director_in_cloud_uses_the_free_gpu,
+                 test_director_in_cloud_uses_the_free_gpu, test_the_judge_is_never_the_worker,
                  test_director_in_local_pins_the_worker_and_moves_the_judge,
                  test_speed_bias_and_zero_ceiling_go_to_cloud,
                  test_the_bar_shows_three_segments_that_add_up,
