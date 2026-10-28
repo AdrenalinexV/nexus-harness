@@ -13,6 +13,7 @@ de aquí no pasa su comando, no existe.
 | spec sintetizada: objetivo → criterios ejecutables validados | `spec_synth.py`, `nexus_harness spec` | `python tools/proofs.py spec` |
 | plan en grafo, olas y parada por criterios | `plan_graph.py`, `autonomy.py` | `python tools/proofs.py plan` |
 | cartera de modelos: escalado, failover y caché contada | `portfolio.py`, `providers.py` | `python tools/proofs.py portfolio` |
+| eval de capacidad: 7 tareas golden con verdad ejecutable | `eval_tasks.py`, `evalgym.py`, `tools/eval.py` | `python tools/eval.py --fake` |
 | reparación en `git worktree` | `worktree_sandbox.py`, `repair_guard.py` | `python tools/proofs.py worktree` |
 | deploy al VPS (SSH + Compose) | `vps_deployer.py`, `settings_vps.py` | `python tools/proofs.py deploy` |
 | juez con contexto + pista de líneas reales | `judge.py`, `repair_hint.py` | `python tools/proofs.py judge` |
@@ -129,6 +130,31 @@ resultado se pinta redactado (`***`).
 con ficheros o gate es **código** (se exige la evidencia). `RepairHints` cuenta fallos por
 `(herramienta, fichero)` y al SEGUNDO devuelve las líneas reales del fichero, numeradas, alrededor de
 la línea que el error menciona. Un acierto de escritura limpia el contador de ese fichero.
+
+## 9. Eval de capacidad — aciertos, no adjetivos
+
+`python tools/eval.py --fake` corre **7 tareas golden** contra el mismo `Triad` de producción y publica
+una tabla de aciertos (`docs/EVAL.md`). Cada tarea es un proyecto diminuto con una verdad ejecutable:
+
+| tarea | qué exige |
+|---|---|
+| `fix-subtraction` | arreglar un bug con `patch_replace` y dejar el test en 0 |
+| `add-function` | añadir `mul()` sin romper `add()` |
+| `rename-symbol` | renombrar en dos ficheros (multi-fichero real) |
+| `delete-dead-code` | borrar una función muerta y no dejar rastro |
+| `recover-syntax` | arreglar un `def` sin dos puntos y dejarlo importable |
+| `respect-policy` | encontrarse la negativa de la política de shell y seguir |
+| `over-400-is-rejected` | **negativa**: un fichero de 402 líneas tiene que acabar en `exit 10` |
+
+Dos modos y dos preguntas distintas:
+
+- `--fake` (CI, sin red ni modelo): ¿el **arnés** convierte un guion correcto en verde y un fichero que
+  rompe la ley en rojo? Si esta tabla baja, el que se rompió es el motor.
+- `--model <spec>`: ¿el **modelo** que tengo resuelve el trabajo? Es la tabla que se compara entre
+  modelos y la que detecta una regresión al cambiar de cartera.
+
+El veredicto nunca sale del resumen del modelo: sale del `exit`, del contenido en disco y de los
+eventos del bus (para la negativa de política).
 
 ## Dogfooding
 

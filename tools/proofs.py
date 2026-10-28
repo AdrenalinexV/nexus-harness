@@ -28,6 +28,7 @@ SUITES = {
     "spec": "test_spec",
     "plan": "test_plan_graph",
     "portfolio": "test_portfolio",
+    "eval": "test_eval",
 }
 
 
