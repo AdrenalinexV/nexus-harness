@@ -98,9 +98,41 @@ def test_router(failures):
     check("swap changes the model", swapped.info("worker").model, "tev1:0.8b", failures)
 
 
+def test_a_custom_provider_is_one_more_row(failures):
+    """Libertad de proveedor: cualquier endpoint OpenAI-compatible es una fila de la tabla."""
+    config = HarnessConfig(roles={"worker": "groq:llama-3.3-70b"},
+                           providers={"groq": {"base_url": "https://api.groq.com/openai/v1",
+                                               "keys": ["GROQ_API_KEY"]}},
+                           secrets={"GROQ_API_KEY": "k-test"})
+    router = Router(config)
+    info = router.info("worker")
+    check("el proveedor propio se resuelve", (info.vendor, info.model),
+          ("groq", "llama-3.3-70b"), failures)
+    check("con su clave, esta listo", info.ready, True, failures)
+    built = router.for_spec("groq:llama-3.3-70b")
+    check("y se construye como openai-compatible", isinstance(built, OpenAICompatible), True,
+          failures)
+    check("apuntando a su base_url", built.base_url, "https://api.groq.com/openai/v1", failures)
+    check("y aparece como nube lista", "groq" in router.catalog()["cloud_ready"], True, failures)
+
+
+def test_a_broken_provider_is_skipped_with_a_reason(failures):
+    """Un proveedor mal declarado no tumba el arnes: se descarta y los demas siguen."""
+    config = HarnessConfig(providers={"roto": {"wire": "paloma", "base_url": "http://x"},
+                                      "bien": {"base_url": "http://127.0.0.1:9000/v1",
+                                               "local": True}})
+    router = Router(config)
+    check("el roto se declara", any("roto" in problem for problem in router.vendor_problems), True,
+          failures)
+    check("el bueno entra", "bien" in router.vendors, True, failures)
+    check("sin base_url tampoco entra", Router(HarnessConfig(
+        providers={"sin-url": {"wire": "openai"}})).vendor_problems != [], True, failures)
+
+
 def run():
     failures = []
     for test in (test_specs, test_openai_parser, test_ollama_parser, test_anthropic_conversion,
-                 test_router):
+                 test_router, test_a_custom_provider_is_one_more_row,
+                 test_a_broken_provider_is_skipped_with_a_reason):
         test(failures)
     return failures

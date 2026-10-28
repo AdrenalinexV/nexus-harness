@@ -31,6 +31,7 @@ SUITES = {
     "eval": "test_eval",
     "daemon": "test_daemon",
     "notify": "test_notify",
+    "browser": "test_browser",
 }
 
 

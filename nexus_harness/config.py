@@ -64,6 +64,11 @@ DEFAULTS = {
     # La escalera de modelos por rol: `{"worker": ["lmstudio:x", "deepseek:y"]}`. El primer peldano es
     # el spec del rol; los siguientes se prueban si el transporte cae o si el gate se pone rojo dos veces.
     "role_ladders": {},
+    # Proveedores propios, mismo contrato que los de serie:
+    # {"groq": {"wire": "openai", "base_url": "https://api.groq.com/openai/v1",
+    #           "keys": ["GROQ_API_KEY"]}, "mi-vllm": {"wire": "openai",
+    #           "base_url": "http://10.0.0.5:8000/v1", "local": true}}
+    "providers": {},
     # El daemon autonomo: cada cuanto mira, cuantos ciclos por proyecto y cuantos proyectos por tick.
     "daemon_interval": 300,
     "daemon_iterations": 2,
@@ -72,6 +77,8 @@ DEFAULTS = {
     #          "telegram": {"token": "$TELEGRAM_TOKEN", "chat_id": "$TELEGRAM_CHAT"},
     #          "ntfy": "nexus-miusuario"}. Un valor con `$` se resuelve de la boveda.
     "notify": {},
+    # El navegador nativo: sin cabeza por defecto (no abre ventanas mientras el daemon trabaja).
+    "browser_headless": True,
     "lang": "es",
     "temperature": 0.2,
     "max_tokens": 4096,
@@ -137,10 +144,12 @@ class HarnessConfig:
     project_tests: dict = field(default_factory=dict)
     project_order: list = field(default_factory=list)
     role_ladders: dict = field(default_factory=dict)
+    providers: dict = field(default_factory=dict)
     daemon_interval: int = 300
     daemon_iterations: int = 2
     daemon_scan: int = 3
     notify: dict = field(default_factory=dict)
+    browser_headless: bool = True
     lang: str = "es"
     temperature: float = 0.2
     max_tokens: int = 4096
@@ -208,10 +217,12 @@ class HarnessConfig:
                 "project_order": list(self.project_order or []),
                 "role_ladders": {role: list(specs) for role, specs in (self.role_ladders or {}).items()
                                  if isinstance(specs, list)},
+                "providers": sorted((self.providers or {}).keys()),
                 "daemon_interval": self.daemon_interval,
                 "daemon_iterations": self.daemon_iterations,
                 "daemon_scan": self.daemon_scan,
                 "notify_channels": sorted((self.notify or {}).keys()),
+                "browser_headless": self.browser_headless,
                 "max_children": self.max_children, "subagent_steps": self.subagent_steps,
                 "tool_workers": self.tool_workers, "shell_policy": self.shell_policy,
                 "lang": self.lang, "source": self.source,

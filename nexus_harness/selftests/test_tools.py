@@ -7,7 +7,7 @@ notice until a model has already written outside the project.
 from .fakes import TempProject
 from ..tools import default_registry
 
-EXPECTED_TOOLS = 12
+EXPECTED_TOOLS = 13
 
 
 def check(name, got, expected, failures):
@@ -17,7 +17,8 @@ def check(name, got, expected, failures):
 
 def test_registry(failures, root):
     registry = default_registry(root)
-    check("twelve tools", len(registry.names()), EXPECTED_TOOLS, failures)
+    check("el arsenal entero", len(registry.names()), EXPECTED_TOOLS, failures)
+    check("y browser esta entre ellas", "browser" in registry.names(), True, failures)
     check("schemas match handlers", len(registry.schemas()), len(registry.names()), failures)
     unknown = registry.call("rm_rf", {})
     check("an unknown tool is an observation", unknown.ok, False, failures)

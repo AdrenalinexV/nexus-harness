@@ -17,13 +17,13 @@ from dataclasses import dataclass, field
 from pathlib import Path
 
 from .repair_hint import RepairHints
-from .toolbox import (edit, file_ops, patch_v4a, process_manager, repo_search, shell_session,
-                      skill_tools, web)
+from .toolbox import (browser, edit, file_ops, patch_v4a, process_manager, repo_search,
+                      shell_session, skill_tools, web)
 
 WRITE_TOOLS = frozenset({"write_file", "patch_replace", "apply_blocks", "apply_patch"})
 ROOT_HANDLERS = (repo_search.HANDLERS, file_ops.HANDLERS, edit.HANDLERS, patch_v4a.HANDLERS,
                  shell_session.HANDLERS, process_manager.HANDLERS, web.HANDLERS,
-                 skill_tools.HANDLERS)
+                 skill_tools.HANDLERS, browser.HANDLERS)
 READ_ONLY = frozenset({"read_file", "search_files", "list_dir"})
 MAX_PARALLEL = 4
 
@@ -79,6 +79,19 @@ SCHEMAS = [
              "session_id": {"type": "string"}, "data": {"type": "string"}}, ["action"]),
     _schema("fetch_url", "Fetch a URL and return its readable text (no browser, no API key).",
             {"url": {"type": "string"}}, ["url"]),
+    _schema("browser",
+            "Drive a real browser (Edge/Chrome) for pages fetch_url cannot read: JavaScript, login, "
+            "cookies, anti-bot walls. Actions: goto (url), extract (text=needle), click (selector), "
+            "fill (selector+text), press (text=key), links, screenshot, close, restart. Returns the "
+            "visible text as markdown-ish, truncated with a receipt; a blocked page is an error, "
+            "not a fake answer. The profile persists in .nexus/browser/profile.",
+            {"action": {"type": "string",
+                        "enum": ["goto", "extract", "click", "fill", "press", "links",
+                                 "screenshot", "close", "restart"]},
+             "url": {"type": "string"}, "text": {"type": "string"},
+             "selector": {"type": "string"},
+             "max_chars": {"type": "integer", "description": "Recorte del texto (500-40000)"}},
+            ["action"]),
     _schema("web_search", "Search the web and return titles with links.",
             {"query": {"type": "string"}, "limit": {"type": "integer"}}, ["query"]),
     _schema("forge_or_update_skill",

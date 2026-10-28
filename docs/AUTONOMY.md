@@ -15,6 +15,7 @@ de aquí no pasa su comando, no existe.
 | cartera de modelos: escalado, failover y caché contada | `portfolio.py`, `providers.py` | `python tools/proofs.py portfolio` |
 | eval de capacidad: 7 tareas golden con verdad ejecutable | `eval_tasks.py`, `evalgym.py`, `tools/eval.py` | `python tools/eval.py --fake` |
 | daemon autonomo: bandeja, triggers, reanudacion y avisos | `daemon.py`, `tasks.py`, `notify.py`, `improve.py` | `python tools/proofs.py daemon` |
+| navegador nativo: DOM→texto, perfil con cookies, muros declarados | `toolbox/browser.py` | `python tools/proofs.py browser` |
 | reparación en `git worktree` | `worktree_sandbox.py`, `repair_guard.py` | `python tools/proofs.py worktree` |
 | deploy al VPS (SSH + Compose) | `vps_deployer.py`, `settings_vps.py` | `python tools/proofs.py deploy` |
 | juez con contexto + pista de líneas reales | `judge.py`, `repair_hint.py` | `python tools/proofs.py judge` |
@@ -183,6 +184,22 @@ y la bandeja en `<workspace>/.nexus/harness/inbox.jsonl`.
 
 Avisos a Discord/Telegram/ntfy con `notify` en `~/.nexus/harness.json` (valores `$SECRETO` se resuelven
 de la boveda). Detalle operativo, contrato para bots y unidad de systemd para el VPS: `docs/DAEMON.md`.
+
+## 11. Navegador nativo — donde `fetch_url` no llega
+
+La herramienta `browser` conduce un navegador real (Edge/Chrome del sistema, o Chromium de Playwright)
+para las páginas que un `curl` no puede leer: JavaScript, login, cookies, muros anti-bot.
+
+- **DOM → texto**, no capturas: se devuelve el texto visible y los enlaces, recortado con recibo. Una
+  captura cuesta ~0,8 s de codificación y solo muestra lo que cabe en pantalla.
+- **Perfil persistente** en `.nexus/browser/profile`: una web con login se abre una vez.
+- **Un muro se declara**: 403/429 o «Just a moment» devuelve error con el motivo, no un texto de 12
+  caracteres que parece una respuesta.
+- **Vive en su propio hilo**: Playwright síncrono se niega a arrancar dentro de un bucle de asyncio, y el
+  arnés corre dentro de uno; el worker resuelve las dos cosas y la sesión persiste entre llamadas.
+
+Acciones: `goto`, `extract` (busca líneas), `click`, `fill`, `press`, `links`, `screenshot`, `close`,
+`restart`. Si no hay motor instalado, la herramienta **lo dice** y sugiere `fetch_url`.
 
 ## Dogfooding
 

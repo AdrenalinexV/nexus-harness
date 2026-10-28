@@ -15,7 +15,7 @@ no entra.
 | **Ciclo de reparación acotado** (máx. 5) con veredicto mecánico | Harness patterns | `max_repairs` + gate real | adoptado; el juez ya no rechaza sin evidencia |
 | **DAG por tarea** (no pipeline fijo de N agentes) | Harness patterns | `plan_graph.py` (≤7 nodos, olas, ciclos rechazados) | **adoptado**; ejecución en ola aún secuencial |
 | Memoria por **capas** (core / recall / archival) | [MemGPT/Letta](https://www.letta.com/blog/agent-memory/), [Atlan](https://atlan.com/know/agent-memory-architectures/) | `memory.md` plano + skills | **pendiente** (P2, SQLite+FTS5) |
-| Navegador **DOM-first**: extrae texto/markdown, screenshot solo si hace falta | [browser-use](https://browser-use.com/posts/speed-matters) | `fetch_url` (sin navegador) | **pendiente** (P2) |
+| Navegador **DOM-first**: extrae texto/markdown, screenshot solo si hace falta | [browser-use](https://browser-use.com/posts/speed-matters) | `toolbox/browser.py` (Edge/Chrome en worker) | **adoptado**; falta proxy/CAPTCHA de pago |
 | **Sandbox de proceso** por ejecución (contenedor/microVM) | Codex, Devin, OpenHands | worktree (árbol) + política de comandos | **pendiente**: aislamiento del árbol ≠ del proceso |
 | **LSP** para definición/referencias/diagnósticos | Claude Code, OpenCode | mapa AST + rg | pendiente (P1.4) |
 | Multi-modelo por **workflow** con router | [OPENDEV](https://arxiv.org/pdf/2603.05344v2) | `role_ladders` + cartera + failover | adoptado; falta medir y elegir cartera |

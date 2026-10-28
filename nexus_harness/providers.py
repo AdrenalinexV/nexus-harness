@@ -33,14 +33,46 @@ VENDORS = {
 }
 
 ROLES = ("director", "worker", "judge")
+WIRES = ("openai", "anthropic", "ollama")
 
 
 class SpecError(ValueError):
     """A role spec that cannot become a provider, named precisely enough to fix."""
 
 
-def parse_spec(spec):
-    """`provider:model` -> `(vendor, model)`. A bare model means the configured local default."""
+def merged_vendors(config):
+    """Los proveedores de serie MAS los que declare el operador. Devuelve `(tabla, problemas)`.
+
+    Un proveedor propio mal declarado no puede tumbar el arnes entero: se descarta, se apunta el motivo
+    y los demas siguen funcionando. La libertad de proveedor es una tabla, no un `if` por marca.
+    """
+    table = {name: dict(row) for name, row in VENDORS.items()}
+    problems = []
+    custom = getattr(config, "providers", None) or {}
+    if not isinstance(custom, dict):
+        return table, ["`providers` no es un objeto"]
+    for name, row in custom.items():
+        label = str(name or "").strip().lower()
+        try:
+            if not label:
+                raise SpecError("proveedor sin nombre")
+            if not isinstance(row, dict) or not str(row.get("base_url") or "").strip():
+                raise SpecError("falta base_url")
+            wire = str(row.get("wire") or "openai").strip().lower()
+            if wire not in WIRES:
+                raise SpecError("wire %r no es uno de %s" % (wire, ", ".join(WIRES)))
+            keys = row.get("keys") or ["%s_API_KEY" % label.upper().replace("-", "_")]
+            table[label] = {"wire": wire, "base_url": str(row["base_url"]).strip(),
+                            "keys": tuple(str(key) for key in keys),
+                            "local": bool(row.get("local")), "headers": row.get("headers") or {}}
+        except SpecError as exc:
+            problems.append("%s: %s" % (label or "?", exc))
+    return table, problems
+
+
+def parse_spec(spec, vendors=None):
+    """`provider:modelo` -> `(vendor, model)`. Un modelo suelto usa el local por defecto."""
+    table = vendors or VENDORS
     text = str(spec or "").strip()
     if not text:
         raise SpecError("empty model spec")
@@ -49,8 +81,8 @@ def parse_spec(spec):
         vendor, model = vendor.strip().lower(), model.strip()
     else:
         vendor, model = "lmstudio", text
-    if vendor not in VENDORS:
-        raise SpecError("unknown provider %r (known: %s)" % (vendor, ", ".join(sorted(VENDORS))))
+    if vendor not in table:
+        raise SpecError("unknown provider %r (known: %s)" % (vendor, ", ".join(sorted(table))))
     if not model:
         raise SpecError("spec %r names a provider but no model" % text)
     return vendor, model
@@ -74,12 +106,14 @@ class Router:
         self._transports = dict(transports or {})
         self._cache = {}
         self._by_spec = {}
+        # La tabla de proveedores: los de serie + los que declare el operador en `providers`.
+        self.vendors, self.vendor_problems = merged_vendors(config)
         # La cartera de cada rol: la escalera declarada en `role_ladders`, o el spec unico de siempre.
         self.portfolio = Portfolio(config)
 
     def build(self, spec):
-        vendor, model = parse_spec(spec)
-        table = VENDORS[vendor]
+        vendor, model = parse_spec(spec, self.vendors)
+        table = self.vendors[vendor]
         api_key = self.config.secret(table["keys"]) or ""
 
         if table["wire"] == "ollama":
@@ -118,7 +152,7 @@ class Router:
 
     def swap(self, role, spec):
         """Point a role at another model. Returns the new `RoleInfo`; raises `SpecError` if invalid."""
-        parse_spec(spec)
+        parse_spec(spec, self.vendors)
         self.config.roles[role] = str(spec).strip()
         self._cache.pop(role, None)
         return self.info(role)
@@ -137,7 +171,7 @@ class Router:
     def info(self, role):
         spec = self.config.role_spec(role)
         try:
-            vendor, model = parse_spec(spec)
+            vendor, model = parse_spec(spec, self.vendors)
             transport = self.role(role)
             return RoleInfo(role, spec, vendor, model, transport.ready, transport.why_not_ready)
         except SpecError as exc:
@@ -166,7 +200,7 @@ class Router:
             spec = self.config.role_spec(role)
             if spec and spec not in options:
                 options.append(spec)
-        cloud = [vendor for vendor, table in VENDORS.items()
+        cloud = [vendor for vendor, table in self.vendors.items()
                  if not table["local"] and self.config.secret(table["keys"])]
         return {"options": options, "local": local, "cloud_ready": sorted(cloud),
                 "roles": self.describe()}
