@@ -10,7 +10,7 @@ frozen inside (no Python on the target machine). See [docs/DESKTOP.md](docs/DESK
 ```
 python -m nexus_harness run "make the login endpoint reject empty passwords" --project C:/Proyectos/x
 python -m nexus_harness serve            # cockpit on http://127.0.0.1:8765
-python -m nexus_harness selftest         # 28 deterministic suites, no network
+python -m nexus_harness selftest         # 49 deterministic suites, no network
 python -m nexus_harness models           # what LM Studio / Ollama actually offer
 python -m nexus_harness gate --project .  # lint + line law + tests, exit 0/10/20
 python -m nexus_harness bridge --tick     # run one /task queued from the phone
@@ -19,10 +19,30 @@ python tools/adversary_audit.py           # kat-coder reviews the modules, read-
 python -m nexus_harness daemon --once     # un tick autonomo (bandeja -> spec -> criterios -> trabajo)
 python -m nexus_harness task add "arregla X" --project MiProyecto   # deja trabajo al daemon
 python -m nexus_harness notify "prueba"   # comprueba Discord/Telegram/ntfy
+python -m nexus_harness consult --check   # ¿por dónde puede PREGUNTARTE la autonomía?
+python -m nexus_harness consult "¿sigo?" --options "si,no" --default no   # pregunta y obedece
 ```
 
 `Nexus-Harness.bat` is the desktop launcher: no arguments starts the cockpit and opens it; arguments
 go straight to the CLI (`Nexus-Harness.bat run "..."`).
+
+## What 1.1.0 adds (autonomy that asks)
+
+The loop no longer has to choose between stopping at the first doubt and inventing a decision:
+
+- **`consult`** (`consult.py` + `consult_channels.py`) writes the question to an append-only journal,
+  sends it to the operator's channels, waits with a deadline, and applies the **declared default** on
+  silence. Telegram is polled for real (`getUpdates` with a persisted offset); Discord is polled when
+  there is a bot token, and a webhook is declared *write-only* instead of pretending otherwise;
+  WhatsApp/n8n answer through `POST /api/consult/answer`.
+- **Three exits, each with its effect**: `seguir` (another cycle, with the red reason in front),
+  `revertir` (checkpoint restores the previous bytes) and `parar` (the queue moves on). `parar` is the
+  default, because an unattended loop must not invent consent.
+- **The Detener button interrupts the wait**, and the question stays open in the cockpit.
+- **Two new settings sections**: *Autonomía & Preguntas* (what is pending, who can hear you, last
+  decisions) and *VPS 24/7* (its own page, with what you need and the order to do it in).
+
+Details and the exact contract: [docs/CONSULT.md](docs/CONSULT.md).
 
 ## What 0.2.0 adds (the industrial core)
 

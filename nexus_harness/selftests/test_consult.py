@@ -290,6 +290,17 @@ def test_the_cockpit_can_answer_without_a_console(failures):
         shutil.rmtree(root, ignore_errors=True)
 
 
+def test_the_stop_button_interrupts_the_wait(failures):
+    """Un turno esperando una respuesta no puede ignorar a quien pulsa Detener."""
+    root = _root()
+    row = consult.ask(root, "¿Sigo?", ["si", "no"], "no", now=1000.0, deadline_s=3600)
+    outcome = consult.wait(root, row["id"], sleep=lambda _s: None, clock=lambda: 1001.0,
+                           max_polls=500, should_stop=lambda: True)
+    check("se detiene", outcome["state"], "stopped", failures)
+    check("sin inventarse una respuesta", outcome["answer"], "", failures)
+    check("y la pregunta sigue abierta", len(consult.pending(root)), 1, failures)
+
+
 def run():
     failures = []
     for test in (test_ask_records_and_describes, test_first_answer_wins,
@@ -298,7 +309,8 @@ def run():
                  test_telegram_answers_reach_their_question, test_replies_have_a_shape,
                  test_secrets_never_travel, test_purge_keeps_what_is_open,
                  test_the_loop_asks_before_giving_up, test_revert_undoes_the_turn,
-                 test_the_cockpit_can_answer_without_a_console):
+                 test_the_cockpit_can_answer_without_a_console,
+                 test_the_stop_button_interrupts_the_wait):
         try:
             test(failures)
         except Exception as exc:  # noqa: BLE001 -- una suite que revienta es un fallo con nombre

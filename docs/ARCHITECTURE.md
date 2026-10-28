@@ -24,8 +24,8 @@ one inherits.
 
 ## Module map and line budget
 
-Measured on 2026-10-28 (v1.0.0): 161 Python files under the line law, the longest module 400 lines
-(`triad_loop.py`). `python tools/lint_harness.py` reports 0 findings.
+Measured on 2026-10-28 (`python tools/verify.py`): **174 graded files, 0 findings, longest module 400
+lines**, 49 deterministic suites in green.
 
 Every module answers one question. The budget column is the ceiling enforced by
 `tools/lint_harness.py` (R2, 400 lines) reduced on purpose: a file that reaches 250 here is already
@@ -78,6 +78,12 @@ doing two jobs.
 | `session_store.py` | What is on disk for a session, and how is it archived? | 130 |
 | `session_relay.py` | When does this session hand over, and what does the next one inherit? | 250 |
 | `bridge.py` | How does a `/task` from a phone become a run? | 150 |
+| `consult.py` | Cuando el bucle no debe decidir solo: pregunta, espera y aplica el defecto declarado. | 290 |
+| `consult_channels.py` | ¿Por dónde te habla y por dónde te ESCUCHA de verdad? (Telegram, Discord, puentes HTTP) | 260 |
+| `autonomy_ask.py` | Rojo no arreglado: seguir, revertir o parar, y qué hace cada salida. | 90 |
+| `consult_api.py` | `/api/consult`: contestar desde un puente sin abrir la cabina. | 70 |
+| `cli_consult.py` | `consult --check / --status / --answer` desde una terminal o un cron. | 80 |
+| `settings_autonomy.py` | El panel de lo que el bucle decidió solo y lo que te está preguntando. | 140 |
 | `ui.py` | The local server: static front-end, JSON API, cross-site and token guards. | 260 |
 | `cli.py` | The clients' front door: `chat`, `run`, `serve`, `selftest`, `lint`, `models`. | 260 |
 | `chat.py` | A conversation with tools: gate only when a turn touched files, repair in-turn, stop. | 280 |

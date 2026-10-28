@@ -250,7 +250,8 @@ class Autopilot:
                 self._emit("autonomy.red", why, project=name, iteration=index)
                 # Rojo no arreglado: o se para, o lo decide el operador. Un bucle que se inventa la
                 # decision cuando nadie contesta es justo lo que este arnes no hace.
-                asked = autonomy_ask.ask_about_red(root, name, why, self.config, index)
+                asked = autonomy_ask.ask_about_red(root, name, why, self.config, index,
+                                                   should_stop=self._stop.is_set)
                 self._emit("autonomy.ask", str(asked.get("decision") or "?"), project=name,
                            source=asked.get("source"), state=asked.get("state"),
                            question=asked.get("question"))

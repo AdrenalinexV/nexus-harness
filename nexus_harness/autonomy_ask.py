@@ -26,7 +26,8 @@ def question_text(name, why, iteration=0):
     return "\n".join(lines)
 
 
-def ask_about_red(root, name, why, config, iteration=0, asker=None, deadline_s=None):
+def ask_about_red(root, name, why, config, iteration=0, asker=None, deadline_s=None,
+                  should_stop=None):
     """Devuelve `{decision, asked, answer, source}`. Nunca lanza: un canal roto es `parar`."""
     if not getattr(config, "consult_enabled", True):
         return {"decision": "parar", "asked": False, "answer": "", "source": "disabled",
@@ -37,7 +38,7 @@ def ask_about_red(root, name, why, config, iteration=0, asker=None, deadline_s=N
         outcome = asker(root, config, text, OPTIONS, "parar", name, deadline)
     else:
         outcome = consult_channels.ask_operator(root, config, text, OPTIONS, "parar", name,
-                                                deadline_s=deadline)
+                                                deadline_s=deadline, should_stop=should_stop)
     raw = str(outcome.get("answer") or "")
     decision = consult.match(list(OPTIONS), raw)
     if decision not in OPTIONS:

@@ -199,7 +199,7 @@ def default_on_silence(question):
 
 def ask_operator(root, config, text, options=(), default="parar", project="",
                  deadline_s=consult.DEFAULT_DEADLINE, max_polls=None, post=None, get=None,
-                 sleep=None, clock=None):
+                 sleep=None, clock=None, should_stop=None):
     """Preguntar y esperar, en una llamada. Es lo que usan el daemon, el CLI y la herramienta.
 
     Cuatro finales posibles, y todos se nombran:
@@ -230,7 +230,8 @@ def ask_operator(root, config, text, options=(), default="parar", project="",
         return poll(root, targets, None, get)
 
     outcome = consult.wait(root, question["id"], poll=poller, sleep=sleep, clock=clock,
-                           max_polls=max_polls or max(1, int(deadline_s // 2) + 5))
+                           max_polls=max_polls or max(1, int(deadline_s // 2) + 5),
+                           should_stop=should_stop)
     return {"state": outcome.get("state"), "answer": outcome.get("answer"),
             "source": outcome.get("source"), "id": question["id"],
             "delivered": bool(delivery.get("ok"))}

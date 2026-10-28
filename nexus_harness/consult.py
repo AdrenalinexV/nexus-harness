@@ -170,7 +170,8 @@ def resolve(root, wanted, option_values=(), now=None):
 
 
 
-def wait(root, qid, poll=None, sleep=None, now=None, clock=None, max_polls=450):
+def wait(root, qid, poll=None, sleep=None, now=None, clock=None, max_polls=450,
+         should_stop=None):
     """Espera a que haya respuesta. `poll()` devuelve las respuestas nuevas o `[]`.
 
     Devuelve `{state, answer, source}`. Un `poll` que revienta cuenta como "sin novedad": un canal
@@ -181,6 +182,8 @@ def wait(root, qid, poll=None, sleep=None, now=None, clock=None, max_polls=450):
     tick = clock or time.time
     polls = 0
     while True:
+        if should_stop and should_stop():
+            return {"state": "stopped", "answer": "", "source": "stop"}
         row = get(root, qid)
         if not row:
             return {"state": "missing", "answer": "", "source": "missing"}
