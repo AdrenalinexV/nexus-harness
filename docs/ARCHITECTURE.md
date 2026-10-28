@@ -40,6 +40,8 @@ doing two jobs.
 | `transports/ollama.py` | The native `/api/chat`: `thinking`, native tools | 140 |
 | `transports/anthropic.py` | Messages API: `tool_use` / `tool_result` blocks | 140 |
 | `message.py` | What is a message, a tool call, a reply, a usage count? | 110 |
+| `hardware_probe.py` | Qué GPU/VRAM/RAM hay AHORA en esta máquina, medido y no supuesto. | 220 |
+| `triad_presets.py` | Qué pesos caben, cuáles se pelean por la VRAM y qué tríada toca en 1 clic. | 340 |
 | `context_window.py` | Cuantos tokens caben DE VERDAD en ese motor, y como se recorta sin romper el turno. | 300 |
 | `turn_engine.py` | Quien llama al worker, con que presupuesto, y que pasa si el motor dice que no cabe. | 200 |
 | `tools.py` | What tools exist, what are their JSON schemas, how are they dispatched? | 150 |
@@ -103,6 +105,23 @@ one answers a question and owns its state:
 The order inside an autonomy cycle is the safety property, not a detail: **backup → plan → run → gate
 → commit → progress**. If the snapshot cannot be taken, nothing is edited. If the gate is red after the
 worker's repairs, that project stops and the queue moves on. Progress is written only after `exit 0`.
+
+## Elegir la tríada: hardware, no gusto
+
+El panel `Modelos (Tríada IA)` empieza midiendo, porque un 27B y un 35B en una GPU de 16 GB no caben a
+la vez y hasta ahora eso se descubría a base de turnos lentos:
+
+* **`hardware_probe`** pregunta a `nvidia-smi` (GPU, VRAM total y libre), a `GlobalMemoryStatusEx`
+  (RAM) y a `platform` (CPU). Sin NVIDIA no inventa una tarjeta: lo dice.
+* **`triad_presets.collision`** estima el peso de cada modelo local desde su id (`35b` + `q4_k_m` →
+  ~19,7 GB), suma los pesos DISTINTOS de los roles y, si pasan de la VRAM, avisa con el coste estimado
+  por fase. Dos botones de un clic: unificar el peso residente o mandar obrero y juez a la nube.
+* **Los tres presets** (`cloud`, `hybrid`, `local`) se resuelven contra lo que la máquina tiene de
+  verdad —servidores locales vivos, claves de la bóveda— y dicen en voz alta lo que no pueden cumplir.
+  Un preset que necesita una clave que no existe no guarda nada: lo nombra.
+* **El juez tiene modo**: `gate` (solo gate determinista, $0 y 0 ms), `fast` (una llamada) o
+  `adversary` (el contrato estricto, busca el fallo). Con el mismo modelo que el director el panel
+  avisa de que no hay auditoría cruzada, y `gate` es la respuesta honesta.
 
 ## The five contracts
 

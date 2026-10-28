@@ -82,6 +82,13 @@ DEFAULTS = {
     # Memoria por capas (SQLite+FTS5): el core viaja siempre con techo; el resto se consulta.
     "recall_enabled": True,
     "lang": "es",
+    # El juez de la triada: `gate` (solo gate determinista, $0 y 0 ms), `fast` (una llamada corta) o
+    # `adversary` (el mismo contrato con la instruccion de buscar el fallo). Un juez puede ser el mismo
+    # modelo que el director, pero entonces no audita: el panel lo avisa y `gate` es la opcion honesta.
+    "judge_mode": "fast",
+    # El obrero usa el MISMO modelo que el director cuando es local: un solo peso en VRAM = cero
+    # recargas entre fases. Se guarda como intencion, y el panel aplica el spec al guardar.
+    "worker_resident": False,
     "temperature": 0.2,
     "max_tokens": 4096,
     "request_timeout": 300,
@@ -154,6 +161,8 @@ class HarnessConfig:
     browser_headless: bool = True
     recall_enabled: bool = True
     lang: str = "es"
+    judge_mode: str = "fast"
+    worker_resident: bool = False
     temperature: float = 0.2
     max_tokens: int = 4096
     request_timeout: int = 300
@@ -229,5 +238,6 @@ class HarnessConfig:
                 "recall_enabled": self.recall_enabled,
                 "max_children": self.max_children, "subagent_steps": self.subagent_steps,
                 "tool_workers": self.tool_workers, "shell_policy": self.shell_policy,
-                "lang": self.lang, "source": self.source,
+                "lang": self.lang, "judge_mode": self.judge_mode,
+                "worker_resident": self.worker_resident, "source": self.source,
                 "secret_names": sorted(self.secrets)}

@@ -25,7 +25,7 @@ from .tokenizer import calibration, count_messages
 from .turn_context import apply_budget, build_turn_prefix, inject_skills
 from .turn_engine import TurnEngine
 from .gate import EXIT_GREEN, EXIT_UNAVAILABLE, Gate
-from .judge import Judge
+from .judge import judge_for
 from .message import Message, as_text
 from .portfolio import maybe_escalate
 from .reflection import learn
@@ -78,7 +78,7 @@ class Triad:
         self.config = config
         self.registry = registry or default_registry(config.default_root, config)
         self.gate = gate or Gate(config.default_root, config)
-        self.judge = judge if judge is not None else Judge(router, getattr(config, "lang", "es"))
+        self.judge = judge if judge is not None else judge_for(router, config)
         self.skills = skills
         self.bus = bus
         self.relay = relay

@@ -50,6 +50,35 @@ CONVERSATION = {
 }
 
 
+def judge_for(router, config, lang=""):
+    """El juez que la configuracion pide. `gate` = sin juez de IA: solo el gate determinista, $0 y 0 ms.
+
+    Se construye en un solo sitio para que chat, triada y CLI no puedan discrepar: un modo que solo
+    respeta uno de los tres bucles es un ajuste que miente en los otros dos.
+    """
+    mode = str(getattr(config, "judge_mode", "fast") or "fast")
+    if mode == "gate":
+        return NullJudge(lang or getattr(config, "lang", "es"))
+    return Judge(router, lang or getattr(config, "lang", "es"), mode=mode)
+
+
+class NullJudge:
+    """El juez de `gate`: no llama a nadie y lo deja escrito.
+
+    Devolver `None` obligaria a CADA bucle a recordar comprobarlo, y el que se olvidara reventaria en
+    mitad de un turno verde. Un objeto que contesta `skipped` mantiene el contrato y el coste es cero.
+    """
+
+    mode = "gate"
+
+    def __init__(self, lang="es"):
+        self.lang = lang if lang in SYSTEM else "en"
+
+    def review(self, goal, summary, files, gate_summary, mode=None, gate_ran=False, root=None):
+        return Judgement(verdict="skipped", ok=True, mode=mode or "code",
+                         reason="judge_mode=gate: solo gate determinista ($0, 0 ms)")
+
+
 def mode_for(files, gate_summary="", gate_ran=False):
     """`conversation` o `code`, decidido con hechos: ficheros tocados y gate ejecutado.
 
@@ -157,11 +186,29 @@ def parse_verdict(text):
     return "reject", "the judge's verdict is not approve/reject (%r)" % verdict[:40]
 
 
+ADVERSARY = {
+    "es": ("Eres el Juez ADVERSARIO de un harness de ingeniería. No buscas motivo para aprobar: buscas "
+           "el fallo. Revisa lógica (casos límite, off-by-one, estados imposibles), seguridad "
+           "(inyección, rutas, secretos, eval) y si la evidencia del gate CUBRE lo que el objetivo "
+           "pedía. Un test que pasa pero no toca el caso pedido es un rechazo. Responde SOLO un objeto "
+           'JSON: {"verdict": "approve" | "reject", "reason": "<una frase>"}.'),
+    "en": ("You are the ADVERSARY judge of an engineering harness. You are not looking for a reason to "
+           "approve: you are looking for the defect. Check logic (edge cases, off-by-one, impossible "
+           "states), security (injection, paths, secrets, eval) and whether the gate's evidence COVERS "
+           "what the goal asked. A passing test that does not touch the requested case is a rejection. "
+           'Answer ONLY one JSON object: {"verdict": "approve" | "reject", "reason": "<one sentence>"}.'),
+}
+MODES = ("gate", "fast", "adversary")
+
+
 class Judge:
-    def __init__(self, router, lang="es", max_tokens=400):
+    def __init__(self, router, lang="es", max_tokens=400, mode="fast"):
         self.router = router
         self.lang = lang if lang in SYSTEM else "en"
         self.max_tokens = max_tokens
+        # `fast` = una llamada corta; `adversary` = el mismo contrato con la instruccion de buscar el
+        # fallo. `gate` no llega aqui: no hay juez, y eso lo decide `judge_for` (una llamada menos).
+        self.mode = mode if mode in MODES else "fast"
 
     def review(self, goal, summary, files, gate_summary, mode=None, gate_ran=False, root=None):
         info = self.router.info("judge")
@@ -170,6 +217,8 @@ class Judge:
             return Judgement(verdict="skipped", ok=True, mode=mode,
                              reason="judge unavailable: %s" % (info.why_not_ready or "not configured"))
         system = (CONVERSATION if mode == "conversation" else SYSTEM)[self.lang]
+        if self.mode == "adversary" and mode != "conversation":
+            system = ADVERSARY[self.lang]
         prompt = self._prompt(goal, summary, files, gate_summary, self._evidence(root, files))
         try:
             reply = self.router.role("judge").chat(

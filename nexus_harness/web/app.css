@@ -343,3 +343,19 @@ button.danger { color: var(--bad); border-color: color-mix(in srgb, var(--bad) 4
 .reasoning pre { white-space: pre-wrap; max-height: 14rem; overflow: auto;
   margin: .25rem 0 0; padding: .4rem .5rem; border-left: 2px solid var(--border);
   color: var(--muted-foreground); font-size: .82rem; }
+
+/* --- Diagnostico de hardware, perfiles y selectores de modelo (panel de la triada) --------------- */
+.hwbar { display: flex; flex-wrap: wrap; gap: .5rem; align-items: center; justify-content: space-between;
+  padding: .6rem .8rem; border: 1px solid var(--line); border-radius: var(--radius-sm);
+  background: var(--card); font-size: var(--fs-sm); margin-bottom: .6rem; }
+.presets { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: .8rem;
+  margin-bottom: .8rem; }
+.preset { display: flex; flex-direction: column; gap: .4rem; padding: .8rem .9rem;
+  border: 1px solid var(--line); border-radius: var(--radius-sm); background: var(--card); }
+.preset.off { opacity: .62; }
+.preset .mono { font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: var(--fs-sm); color: var(--muted); }
+.inlineform { display: inline; }
+.rolecard .freeid { margin-top: .35rem; }
+.rolecard .switch { display: flex; gap: .45rem; align-items: center; font-size: var(--fs-sm); }
+.snote.warn { border-color: var(--warn); color: var(--warn); }

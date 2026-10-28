@@ -20,7 +20,7 @@ from pathlib import Path
 from .eval_tasks import TASKS, Task, selected
 from .events import Bus
 from .gate import Gate
-from .judge import Judge
+from .judge import judge_for
 from .providers import Router
 from .selftests.fakes import FakeRouter, ScriptedProvider, ScriptedSkills, TempProject, reply
 from .triad_loop import Triad
@@ -143,7 +143,7 @@ def run_task(task, model=None, attempt=1):
             config = _config(root, task, real=bool(model))
             router = _router(config, task, model)
             bus = Bus()
-            triad = Triad(router, config, gate=Gate(root, config), judge=Judge(router, "es"),
+            triad = Triad(router, config, gate=Gate(root, config), judge=judge_for(router, config, "es"),
                           skills=ScriptedSkills(), bus=bus)
             result = triad.run(task.goal)
             row.exit, row.steps, row.repairs = result.exit, result.steps, result.repairs

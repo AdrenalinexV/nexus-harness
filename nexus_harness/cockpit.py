@@ -25,7 +25,7 @@ from .config import HarnessConfig
 from .skill_router import library
 from .events import Bus
 from .gate import Gate
-from .judge import Judge
+from .judge import judge_for
 from .mcp_client import McpManager
 from .memory import Memory
 from .providers import Router
@@ -124,7 +124,7 @@ class Cockpit:
         registry = default_registry(target, config, mcp=self.mcp())
         self.chat = Chat(self.router, config, registry, Gate(target, config),
                          library(target), bus=self.bus, memory=self.memory,
-                         transcripts=Transcripts(target), judge=Judge(self.router, config.lang))
+                         transcripts=Transcripts(target), judge=judge_for(self.router, config))
         return self.chat
 
     def new_chat(self, title="", project=None):

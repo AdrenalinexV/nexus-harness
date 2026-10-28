@@ -47,15 +47,46 @@ def _models(vendor, payload):
     return sorted(name for name in names if name)
 
 
+LOADED_PROBES = {"lmstudio": "http://127.0.0.1:1234/api/v0/models",
+                 "ollama": "http://127.0.0.1:11434/api/ps"}
+
+
+def _loaded(vendor, timeout=1.5):
+    """Los ids que el servidor tiene CARGADOS ahora mismo (VRAM ocupada), no solo descargados.
+
+    Es lo que separa "tengo 22 modelos" de "tengo 1 en VRAM": elegir un rol para un modelo que hay que
+    cargar antes de responder cuesta decenas de segundos, y el panel tiene que poder decirlo. Se pide al
+    endpoint que publica el estado (`/api/v0/models`, `/api/ps`); `/v1/models` no lo trae.
+    """
+    url = LOADED_PROBES.get(vendor)
+    if not url:
+        return []
+    try:
+        payload = _get(url, timeout)
+    except (urllib.error.URLError, urllib.error.HTTPError, OSError, ValueError):
+        return []
+    rows = payload.get("data") if vendor == "lmstudio" else payload.get("models")
+    found = []
+    for row in rows or ():
+        if not isinstance(row, dict):
+            continue
+        state = str(row.get("state") or "").lower()
+        name = str(row.get("id") or row.get("name") or row.get("model") or "").strip()
+        if name and (state == "loaded" or row.get("size_vram")):
+            found.append(name)
+    return sorted(set(found))
+
+
 def probe_local(timeout=1.5):
     """`{vendor: {url, ready, models, error}}` for every local server this harness knows."""
     found = {}
     for vendor, (url, _wire) in PROBES.items():
         try:
-            models = _models(vendor, _get(url, timeout))
-            found[vendor] = {"url": url, "ready": True, "models": models, "error": ""}
+            payload = _get(url, timeout)
+            found[vendor] = {"url": url, "ready": True, "models": _models(vendor, payload),
+                             "loaded": _loaded(vendor, timeout), "error": ""}
         except (urllib.error.URLError, urllib.error.HTTPError, OSError, ValueError) as exc:
-            found[vendor] = {"url": url, "ready": False, "models": [],
+            found[vendor] = {"url": url, "ready": False, "models": [], "loaded": [],
                              "error": "%s: %s" % (type(exc).__name__, exc)}
     return found
 
@@ -146,10 +177,20 @@ def save_settings(changes):
              "cost_limit": float, "max_steps": int, "max_repairs": int, "max_children": int,
              "subagent_steps": int, "subagent_depth": int, "tool_workers": int,
              "shell_timeout": int, "request_timeout": int, "max_tokens": int,
-             "temperature": float, "lang": str, "workspace": str}
+             "temperature": float, "lang": str, "workspace": str,
+             "worker_resident": bool}
     out, saved, notes = {}, {}, []
     for name, value in (changes or {}).items():
-        if name == "shell_policy":
+        if name == "judge_mode":
+            from .judge import MODES
+            mode = str(value or "").strip().lower()
+            if mode not in MODES:
+                notes.append("judge_mode: %r no es uno de %s" % (value, ", ".join(MODES)))
+                continue
+            out[name] = saved[name] = mode
+        elif name == "worker_resident":
+            out[name] = saved[name] = str(value).strip().lower() in ("1", "true", "yes", "on")
+        elif name == "shell_policy":
             mode = str(value or "").strip().lower()
             if mode not in policy.MODES:
                 notes.append("shell_policy: %r no es uno de %s" % (value, ", ".join(policy.MODES)))

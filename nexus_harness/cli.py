@@ -19,7 +19,7 @@ from .config import HarnessConfig
 from .skill_router import library
 from .events import Bus
 from .gate import Gate
-from .judge import Judge
+from .judge import judge_for
 from .providers import Router, SpecError
 from .session_relay import SessionRelay
 from .tools import default_registry
@@ -39,7 +39,7 @@ def _config(args):
 def _triad(config, bus, relay=None, lang=None):
     router = Router(config)
     return Triad(router, config, registry=default_registry(config.default_root, config),
-                 gate=Gate(config.default_root, config), judge=Judge(router, lang or config.lang),
+                 gate=Gate(config.default_root, config), judge=judge_for(router, config, lang or config.lang),
                  skills=library(config.default_root), bus=bus, relay=relay)
 
 
@@ -93,7 +93,7 @@ def cmd_chat(args):
     chat = Chat(router, config, default_registry(config.default_root, config),
                 Gate(config.default_root, config), library(config.default_root), bus=bus,
                 memory=Memory(), transcripts=Transcripts(config.default_root),
-                judge=Judge(router, config.lang))
+                judge=judge_for(router, config))
     chat.new(args.message[:60])
     turn = chat.send(args.message)
     print(turn["reply"] or "(sin respuesta)")

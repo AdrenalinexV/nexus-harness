@@ -13,7 +13,7 @@ from pathlib import Path
 
 from .skill_router import library
 from .gate import Gate
-from .judge import Judge
+from .judge import judge_for
 from .session_relay import SessionRelay
 from .tools import default_registry
 from .triad_loop import Triad
@@ -32,6 +32,6 @@ def run_triad(config, root, goal, router, bus=None, test_command=None):
     relay = SessionRelay(root, goal=goal, config=local, bus=bus)
     relay.start()
     triad = Triad(router, local, registry=default_registry(root, local), gate=Gate(root, local),
-                  judge=Judge(router, local.lang), skills=library(root), bus=bus,
+                  judge=judge_for(router, local), skills=library(root), bus=bus,
                   relay=relay)
     return triad.run(goal), triad

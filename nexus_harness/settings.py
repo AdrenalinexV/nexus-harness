@@ -175,7 +175,8 @@ def save(cockpit, body):
     if section == "modelos":
         role = str(body.get("role") or "")
         vendor = str(body.get("vendor") or "").strip()
-        model = str(body.get("model") or "").strip()
+        # El id libre manda sobre el `<select>`: un catalogo propone, no encierra.
+        model = (str(body.get("model_free") or "").strip() or str(body.get("model") or "").strip())
         if role in ("director", "worker", "judge") and vendor and model:
             result = onboarding.apply(cockpit.config, {"roles": {role: "%s:%s" % (vendor, model)}})
             notes += result.get("notes") or []
@@ -184,12 +185,18 @@ def save(cockpit, body):
         # Los numeros del turno viajan en el MISMO panel (son parte de la triada: con que presupuesto
         # y con cuanta temperatura). Se guardaban en la vista de memoria y aqui se perdian en silencio.
         numbers = _numbers(body)
+        if "judge_mode" in body:
+            numbers["judge_mode"] = body.get("judge_mode")
+        if "worker_resident" in body:
+            numbers["worker_resident"] = body.get("worker_resident")
         if numbers:
             saved, problems = onboarding.save_settings(numbers)
             notes += problems
             if saved:
-                notes.append("números del turno guardados")
+                names = [name for name in ("judge_mode", "worker_resident") if name in saved]
+                notes.append("guardado: %s" % ", ".join(names or ["números del turno"]))
         cockpit.reload_config()
+        notes += _pin_worker(cockpit)
     elif section == "espacio":
         # La cola, el alta y el workspace los sabe guardar su propio panel: una seccion, un dueno.
         note, ok = settings_projects.save(cockpit, body)
@@ -216,6 +223,27 @@ def save(cockpit, body):
         ok = False
         notes.append("esa sección no guarda nada por formulario")
     return (" · ".join(note for note in notes if note) or "sin cambios", ok)
+
+
+def _pin_worker(cockpit):
+    """`worker_resident`: el obrero usa el MISMO spec que el director cuando ese spec es local.
+
+    Es la unica forma de garantizar cero recargas entre fases: dos modelos locales distintos no caben a
+    la vez en una GPU de 8-16 GB, y el que paga es el turno. Se aplica al guardar y se declara.
+    """
+    if not getattr(cockpit.config, "worker_resident", False):
+        return []
+    from .triad_presets import split_spec
+    director = str(cockpit.config.roles.get("director") or "")
+    vendor, model = split_spec(director)
+    if vendor not in ("lmstudio", "ollama"):
+        return ["worker_resident: el director no es local, no se toca el obrero"]
+    if str(cockpit.config.roles.get("worker") or "") == director:
+        return []
+    result = onboarding.apply(cockpit.config, {"roles": {"worker": director}})
+    cockpit.reload_config()
+    return (result.get("notes") or []) + (["obrero fijado al residente: %s" % model]
+                                          if result.get("saved", {}).get("roles") else [])
 
 
 # -- acciones ------------------------------------------------------------------------------------
@@ -245,6 +273,10 @@ def action(cockpit, body):
                   else panels.daemon_stop(cockpit))
         return ("puente: %s" % ("ON" if answer.get("running") else "OFF"),
                 bool(answer.get("ok", True)), "puente")
+    if what == "preset":
+        from . import triad_presets
+        note, ok = triad_presets.apply(cockpit, str(body.get("preset") or ""))
+        return (note, ok, "modelos")
     if what == "detect_models":
         found = onboarding.probe_local()
         live = {vendor: len(row.get("models") or [])
