@@ -15,7 +15,7 @@ Las tarjetas mantienen el `<select>` real: los locales se listan en vivo y marca
 cargados en VRAM; los de nube, el catálogo curado del rol con su aviso si falta la clave. Un campo de
 texto al lado acepta cualquier id escrito a mano, porque un catálogo no es una jaula.
 """
-from . import hardware_probe, onboarding, panels, triad_presets
+from . import hardware_probe, onboarding, panels, provider_discovery, triad_balance, triad_presets
 from . import settings_kit as kit
 
 # (rol interno, ancla, titulo, que es)
@@ -27,6 +27,11 @@ ROLES = (
 SUBS = (("principal", "Modelo Principal (Director)"), ("obrero", "Obrero (Worktree Repair)"),
         ("juez", "Juez & Auditoría"), ("subagentes", "Subagentes"))
 TITLE = dict(SUBS)
+CEILINGS = ((75, "75 % · por defecto (deja el 25 % al PC, al juego o al coach)"),
+            (50, "50 % · modo ligero (la GPU a medias, el resto para ti)"),
+            (0, "0 % · todo en cloud (ni un MB de VRAM)"))
+BIASES = (("ahorro", "Ahorro: lo local que quepa en el techo ($0 por turno)"),
+          ("velocidad", "Velocidad: nube flash barata, GPU libre"))
 MODE_LABELS = (
     ("gate", "Solo Gate Determinista · $0 · 0 ms (reglas, ley de 400, AST y tests)"),
     ("fast", "Gate + Juez IA Rápido (local $0 o Cloud Flash)"),
@@ -202,6 +207,76 @@ def _worker_window(cockpit):
         return 0
 
 
+def _ceiling_form(cockpit):
+    """El techo de hardware y el sesgo del reparto. Se guarda con los demas numeros del turno."""
+    config = cockpit.config
+    ceiling = ('<select name="hardware_ceiling">%s</select>'
+               % "".join(kit.option(value, label, int(getattr(config, "hardware_ceiling", 75)))
+                         for value, label in CEILINGS))
+    bias = ('<select name="triad_bias">%s</select>'
+            % "".join(kit.option(value, label, str(getattr(config, "triad_bias", "ahorro")))
+                      for value, label in BIASES))
+    auto = ('<label class="switch"><input type="checkbox" name="triad_auto_adapt" value="on"%s> '
+            'reajustar obrero y juez al cambiar el director entre local y nube</label>'
+            % (" checked" if getattr(config, "triad_auto_adapt", True) else ""))
+    fields = (kit.field("Techo máximo de hardware", ceiling,
+                        "cuánta VRAM puede tocar el arnés; lo demás es del PC")
+              + kit.field("Sesgo del reparto", bias,
+                          "ahorro = modelos locales dentro del techo; velocidad = nube barata")
+              + kit.field("Reacción automática", auto, ""))
+    return kit.form("/api/settings", "modelos", '<div class="sgrid">%s</div>' % fields,
+                    submit="Guardar reparto")
+
+
+def _vram_bar(plan):
+    """`[ Director/Obrero X GB | Juez Y GB | Reserva Z GB ]`, en % y en GB."""
+    parts, legend = [], []
+    for seg in plan["segments"]:
+        width = max(0.0, min(100.0, seg["pct"]))
+        parts.append('<span class="vseg %s" style="width:%.1f%%" title="%s: %s GB (%s %%)"></span>'
+                     % (seg["key"], width, kit.esc(seg["label"]), kit.esc(seg["gb"]),
+                        kit.esc(seg["pct"])))
+        legend.append('<span class="vkey"><i class="vseg %s"></i>%s: %s GB (%s %%)</span>'
+                      % (seg["key"], kit.esc(seg["label"]), kit.esc(seg["gb"]), kit.esc(seg["pct"])))
+    room = plan["budget"]
+    return ('<div class="vbar" data-vram="1">%s</div><div class="vlegend">%s</div>'
+            '<p class="dim">Presupuesto del arnés: %s GB de %s GB (techo %s %%) · te quedan %s GB '
+            'para el PC</p>'
+            % ("".join(parts), "".join(legend), kit.esc(room["harness_gb"]), kit.esc(room["vram_gb"]),
+               kit.esc(room["ceiling"]), kit.esc(room["reserve_gb"])))
+
+
+def _plan_card(plan):
+    """El plan auto-adaptativo: lo que el balanceador propone ahora mismo, con su boton."""
+    resolved = ", ".join("%s=%s" % (role, spec) for role, spec in sorted(plan["roles"].items()))
+    notes = " ".join(plan["notes"])
+    return ('<div class="snote%s"><strong>✨ Tríada equilibrada para tu hardware</strong>'
+            '<p class="mono">%s</p><p class="dim">juez: %s%s</p>%s'
+            '<div class="sactions">%s</div></div>'
+            % ("" if plan["ok"] else " bad", kit.esc(resolved or "(sin resolver)"),
+               kit.esc(plan["judge_mode"]), kit.esc(" · " + notes if notes else ""),
+               _vram_bar(plan),
+               _action_form("optimize", "✨ Auto-Optimizar Tríada para mi hardware", primary=plan["ok"])))
+
+
+def _providers_bar(cockpit):
+    """Los proveedores que esta maquina ya usa y los que estan a falta de una clave."""
+    rows = provider_discovery.candidates(cockpit.config)
+    if not rows:
+        return ""
+    chips, pending = [], []
+    for row in rows:
+        ready = bool(row["secret"]) or row.get("builtin")
+        chips.append('<span class="chip %s" data-provider="%s">%s · %s</span>'
+                     % ("ok" if ready else "warn", kit.esc(row["name"]), kit.esc(row["name"]),
+                        kit.esc(row["base_url"])))
+        if not ready:
+            pending.append(row["name"])
+    detail = ("Falta la clave de %s: pégala una vez en Seguridad y los perfiles cloud e híbrido "
+              "funcionan al primer clic." % ", ".join(pending)) if pending else              "Detectados en tu configuración de Hermes; se usan sin copiar la clave a otro sitio."
+    return '<div class="chips">%s</div><p class="dim">%s</p>' % ("".join(chips), kit.esc(detail))
+
+
 def _hardware():
     """El sondeo, con su propia red: la cabina se pinta aunque `nvidia-smi` no exista."""
     try:
@@ -221,18 +296,22 @@ def panel(cockpit, sub="", state=None, hardware=None):
     hardware = hardware if hardware is not None else _hardware()
     loaded = [model for row in (state.get("local") or {}).values() for model in row.get("loaded") or ()]
     info = triad_presets.collision(cockpit.config.roles, hardware, loaded)
+    plan = triad_balance.optimize(cockpit.config, state, hardware)
     focused = sub if sub in TITLE else ""
     anchor = focused or "principal"
     cards = "".join(_role_card(cockpit, role, an, title, what, roles.get(role) or {},
                                anchor == an, state, roles) for role, an, title, what in ROLES)
     cards += _subagent_card(cockpit)
-    body = ('<h3 class="ssub">Diagnóstico de hardware</h3>%s%s'
+    body = ('<h3 class="ssub">Diagnóstico de hardware</h3>%s%s%s'
+            '<h3 class="ssub">Tríada auto-adaptativa</h3>%s'
             '<h3 class="ssub">Perfiles recomendados de la tríada (1 clic)</h3>%s'
-            '<h3 class="ssub">Servidores locales</h3>%s'
+            '<h3 class="ssub">Servidores y proveedores</h3>%s%s'
             '<div class="rolegrid2">%s</div>'
             '<h3 class="ssub">Números del turno</h3>%s'
-            % (_hardware_bar(hardware, info), _swap_alert(info),
-               _preset_bar(triad_presets.presets(cockpit, hardware, state)), _live_badge(state), cards,
+            % (_hardware_bar(hardware, info), _swap_alert(info), _ceiling_form(cockpit),
+               _plan_card(plan),
+               _preset_bar(triad_presets.presets(cockpit, hardware, state)), _live_badge(state),
+               _providers_bar(cockpit), cards,
                kit.form("/api/settings", "modelos", '<div class="sgrid">%s</div>'
                         % kit.context_fields(cockpit.config, _worker_window(cockpit), "obrero"),
                         submit="Guardar números")))

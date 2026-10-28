@@ -86,6 +86,13 @@ DEFAULTS = {
     # `adversary` (el mismo contrato con la instruccion de buscar el fallo). Un juez puede ser el mismo
     # modelo que el director, pero entonces no audita: el panel lo avisa y `gate` es la opcion honesta.
     "judge_mode": "fast",
+    # El techo de hardware que el arnes puede usar: 75 % de la VRAM por defecto (el 25 % queda para
+    # Windows, el juego o el coach en tiempo real), 50 % en modo ligero y 0 % = todo en nube.
+    "hardware_ceiling": 75,
+    # `ahorro` prefiere lo local dentro del techo ($0 por turno); `velocidad` prefiere la nube barata.
+    "triad_bias": "ahorro",
+    # Reaccion automatica: al cambiar el director entre local y nube, el obrero y el juez se reajustan.
+    "triad_auto_adapt": True,
     # El obrero usa el MISMO modelo que el director cuando es local: un solo peso en VRAM = cero
     # recargas entre fases. Se guarda como intencion, y el panel aplica el spec al guardar.
     "worker_resident": False,
@@ -162,6 +169,9 @@ class HarnessConfig:
     recall_enabled: bool = True
     lang: str = "es"
     judge_mode: str = "fast"
+    hardware_ceiling: int = 75
+    triad_bias: str = "ahorro"
+    triad_auto_adapt: bool = True
     worker_resident: bool = False
     temperature: float = 0.2
     max_tokens: int = 4096
@@ -204,6 +214,10 @@ class HarnessConfig:
                      default_root=Path(root) if root else Path.cwd(),
                      secrets=load_secrets(from_file.get("secrets_file")),
                      source=str(location) if from_file else "defaults", **values)
+        # Los proveedores que esta maquina ya usa (Hermes, entorno, boveda) entran sin escribir nada:
+        # `orca` deja de ser invisible y pasa a ser un vendor mas del selector y de los presets.
+        from .provider_discovery import enrich
+        enrich(config)
         return config
 
     def role_spec(self, role):
@@ -239,5 +253,7 @@ class HarnessConfig:
                 "max_children": self.max_children, "subagent_steps": self.subagent_steps,
                 "tool_workers": self.tool_workers, "shell_policy": self.shell_policy,
                 "lang": self.lang, "judge_mode": self.judge_mode,
+                "hardware_ceiling": self.hardware_ceiling, "triad_bias": self.triad_bias,
+                "triad_auto_adapt": self.triad_auto_adapt,
                 "worker_resident": self.worker_resident, "source": self.source,
                 "secret_names": sorted(self.secrets)}

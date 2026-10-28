@@ -40,6 +40,8 @@ doing two jobs.
 | `transports/ollama.py` | The native `/api/chat`: `thinking`, native tools | 140 |
 | `transports/anthropic.py` | Messages API: `tool_use` / `tool_result` blocks | 140 |
 | `message.py` | What is a message, a tool call, a reply, a usage count? | 110 |
+| `triad_balance.py` | Con qué techo de GPU se trabaja, quién se queda qué VRAM y por qué. | 340 |
+| `provider_discovery.py` | Qué proveedores ya usa esta máquina (Hermes, entorno), sin copiar claves. | 240 |
 | `hardware_probe.py` | Qué GPU/VRAM/RAM hay AHORA en esta máquina, medido y no supuesto. | 220 |
 | `triad_presets.py` | Qué pesos caben, cuáles se pelean por la VRAM y qué tríada toca en 1 clic. | 340 |
 | `context_window.py` | Cuantos tokens caben DE VERDAD en ese motor, y como se recorta sin romper el turno. | 300 |
@@ -122,6 +124,33 @@ la vez y hasta ahora eso se descubría a base de turnos lentos:
 * **El juez tiene modo**: `gate` (solo gate determinista, $0 y 0 ms), `fast` (una llamada) o
   `adversary` (el contrato estricto, busca el fallo). Con el mismo modelo que el director el panel
   avisa de que no hay auditoría cruzada, y `gate` es la respuesta honesta.
+
+## El techo de hardware y la tríada que se adapta
+
+El panel no pregunta «¿qué modelo quieres?»: pregunta cuánto de tu GPU puede usar el arnés y reparte.
+
+* **Techo** (`hardware_ceiling`): 75 % por defecto (el 25 % es de Windows, del juego o del coach en
+  tiempo real), 50 % en modo ligero y 0 % = todo en nube. De ese presupuesto `B`:
+  **75 % para el peso pesado** (director y obrero comparten un modelo residente: 0 s de swapping) y
+  **25 % para un juez micro distinto**, que es lo único que hace real la auditoría cruzada con dos pesos
+  en VRAM a la vez.
+* **Si el micro no cabe, el juez baja a `gate`** en vez de fingir. El plan lo dice con la cuenta hecha:
+  «no cabe un juez local junto al director (17,4 GB > 11,9 GB de techo)».
+* **El director es el ancla**: el balanceador reajusta obrero y juez a su alrededor, nunca lo que eligió
+  el operador. Con el director en nube la GPU queda libre para obrero+juez locales ($0 por turno); con
+  el director local pesado, el obrero se pega al residente y el juez se va a nube o a `gate`.
+* **Reacción automática** (`triad_auto_adapt`): si un rol cambia de clase (local ↔ nube) al guardarlo,
+  los otros dos se reequilibran y la nota lo cuenta. Se puede apagar en el mismo panel.
+* **La barra** `[Director/Obrero | Juez | Reserva libre para tu PC]` se calcula por PESO, no por rol: dos
+  roles que comparten modelo ocupan una vez.
+
+### Proveedores que la máquina ya usa
+
+`provider_discovery` lee el bloque `providers:` de `%LOCALAPPDATA%/hermes/config.yaml` (y de sus
+perfiles) y añade lo que falte a `config.providers` **en memoria**: `orca`
+(`https://api.orcarouter.ai/v1`) pasa a ser un vendor de primera clase sin que nadie lo teclee. La clave
+**no se copia**: si vive en el entorno de Hermes, el panel lo dice (`pégala una vez en Seguridad`) y al
+pegarla va a la bóveda DPAPI del arnés.
 
 ## The five contracts
 

@@ -30,11 +30,15 @@ LOCAL = ("lmstudio", "ollama")
 LOCAL_SET = frozenset(LOCAL)
 # (proveedor, modelo) por rol, de mas barato a mas caro. Solo ids que el operador declaro.
 LADDERS = {
-    "director": (("openrouter", "deepseek/deepseek-v4.1-flash"), ("deepseek", "deepseek-chat"),
+    # `orca` primero: es el router que esta maquina ya usa (detectado por `provider_discovery`), y el
+    # juez va a OTRA familia (GLM) que el director (DeepSeek) para que la auditoria cruzada sea real.
+    "director": (("orca", "deepseek/deepseek-v4.1-flash"),
+                 ("openrouter", "deepseek/deepseek-v4.1-flash"), ("deepseek", "deepseek-chat"),
                  ("anthropic", "claude-sonnet-4"), ("openai", "gpt-4o")),
-    "worker": (("deepseek", "deepseek-chat"), ("openrouter", "qwen-2.5-coder-32b"),
+    "worker": (("orca", "deepseek/deepseek-v4.1-flash"), ("deepseek", "deepseek-chat"),
+               ("openrouter", "qwen-2.5-coder-32b"),
                ("anthropic", "claude-sonnet-4"), ("openai", "gpt-4o")),
-    "judge": (("openrouter", "glm-4.5"), ("deepseek", "deepseek-reasoner"),
+    "judge": (("orca", "glm-4.5"), ("openrouter", "glm-4.5"), ("deepseek", "deepseek-reasoner"),
               ("anthropic", "claude-opus-4"), ("openai", "gpt-4o")),
 }
 PRESETS = (
@@ -231,6 +235,14 @@ def plan(name, config, state, hardware):
     missing = [role for role in ("director", "worker", "judge") if role not in roles]
     if missing:
         notes.append("sin resolver: %s" % ", ".join(missing))
+    if missing:
+        # Un proveedor DETECTADO en la maquina pero sin clave visible no es «no hay nube»: es «pega la
+        # clave una vez». La diferencia es la que hace que el panel sea util o decorativo.
+        from .provider_discovery import pending_key
+        pending = pending_key(config)
+        if pending:
+            notes.append("detectado(s) %s en tu configuración: falta la clave (Seguridad, una vez)"
+                         % ", ".join(pending))
     return {"roles": roles, "judge_mode": judge_mode, "notes": notes,
             "ok": not missing, "ready": sorted(ready)}
 

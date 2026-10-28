@@ -178,7 +178,8 @@ def save_settings(changes):
              "subagent_steps": int, "subagent_depth": int, "tool_workers": int,
              "shell_timeout": int, "request_timeout": int, "max_tokens": int,
              "temperature": float, "lang": str, "workspace": str,
-             "worker_resident": bool}
+             "worker_resident": bool, "hardware_ceiling": int, "triad_auto_adapt": bool,
+             "triad_bias": str}
     out, saved, notes = {}, {}, []
     for name, value in (changes or {}).items():
         if name == "judge_mode":
@@ -188,6 +189,22 @@ def save_settings(changes):
                 notes.append("judge_mode: %r no es uno de %s" % (value, ", ".join(MODES)))
                 continue
             out[name] = saved[name] = mode
+        elif name == "triad_bias":
+            mode = str(value or "").strip().lower()
+            if mode not in ("ahorro", "velocidad"):
+                notes.append("triad_bias: %r no es ahorro ni velocidad" % (value,))
+                continue
+            out[name] = saved[name] = mode
+        elif name == "hardware_ceiling":
+            try:
+                share = int(float(str(value).strip()))
+            except (TypeError, ValueError):
+                notes.append("hardware_ceiling: %r no es un porcentaje" % (value,))
+                continue
+            if share not in (0, 50, 75):
+                notes.append("hardware_ceiling: %r no es 0, 50 ni 75" % (value,))
+                continue
+            out[name] = saved[name] = share
         elif name == "worker_resident":
             out[name] = saved[name] = str(value).strip().lower() in ("1", "true", "yes", "on")
         elif name == "shell_policy":

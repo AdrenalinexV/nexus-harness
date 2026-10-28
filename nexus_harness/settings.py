@@ -13,7 +13,7 @@ import subprocess
 import sys
 from html import escape
 
-from . import gov, onboarding, panels, vault
+from . import gov, onboarding, panels, triad_balance, vault
 from . import settings_kit as kit
 from . import (settings_models, settings_projects, settings_skills, settings_tools, settings_vps,
                settings_work)
@@ -162,7 +162,7 @@ def _numbers(body):
     for name in ("budget_limit", "relay_threshold", "compact_threshold", "temperature", "max_tokens",
                  "cost_limit", "max_steps", "max_repairs", "max_children", "subagent_steps",
                  "subagent_depth", "tool_workers", "shell_timeout", "test_command", "workspace",
-                 "shell_policy"):
+                 "shell_policy", "hardware_ceiling", "triad_bias"):
         if name in body and str(body.get(name)).strip() != "":
             changes[name] = body[name]
     return changes
@@ -178,10 +178,14 @@ def save(cockpit, body):
         # El id libre manda sobre el `<select>`: un catalogo propone, no encierra.
         model = (str(body.get("model_free") or "").strip() or str(body.get("model") or "").strip())
         if role in ("director", "worker", "judge") and vendor and model:
+            before = _class_of(cockpit.config.role_spec(role))
             result = onboarding.apply(cockpit.config, {"roles": {role: "%s:%s" % (vendor, model)}})
             notes += result.get("notes") or []
             if result.get("saved", {}).get("roles"):
                 notes.append("%s → %s:%s" % (role, vendor, model))
+            cockpit.reload_config()
+            if before != _class_of("%s:%s" % (vendor, model)):
+                notes += _auto_adapt(cockpit, role)
         # Los numeros del turno viajan en el MISMO panel (son parte de la triada: con que presupuesto
         # y con cuanta temperatura). Se guardaban en la vista de memoria y aqui se perdian en silencio.
         numbers = _numbers(body)
@@ -189,6 +193,8 @@ def save(cockpit, body):
             numbers["judge_mode"] = body.get("judge_mode")
         if "worker_resident" in body:
             numbers["worker_resident"] = body.get("worker_resident")
+        if "triad_auto_adapt" in body:
+            numbers["triad_auto_adapt"] = body.get("triad_auto_adapt")
         if numbers:
             saved, problems = onboarding.save_settings(numbers)
             notes += problems
@@ -223,6 +229,24 @@ def save(cockpit, body):
         ok = False
         notes.append("esa sección no guarda nada por formulario")
     return (" · ".join(note for note in notes if note) or "sin cambios", ok)
+
+
+def _class_of(spec):
+    """`local` o `cloud` para un spec. Es la frontera que dispara la reacción automática."""
+    from .triad_presets import LOCAL_SET, split_spec
+    return "local" if split_spec(spec)[0] in LOCAL_SET else "cloud"
+
+
+def _auto_adapt(cockpit, role=""):
+    """El rol cambio de clase (local <-> nube): reequilibrar los otros dos, y decirlo.
+
+    Se puede apagar (`triad_auto_adapt`) porque una cabina que reescribe roles sin avisar es peor que
+    una que no lo hace: el interruptor esta en el mismo panel y su estado viaja en cada guardado.
+    """
+    if not getattr(cockpit.config, "triad_auto_adapt", True):
+        return []
+    note, ok = triad_balance.apply(cockpit)
+    return [note] if ok else ["auto-adaptación no aplicada: %s" % note]
 
 
 def _pin_worker(cockpit):
@@ -273,6 +297,9 @@ def action(cockpit, body):
                   else panels.daemon_stop(cockpit))
         return ("puente: %s" % ("ON" if answer.get("running") else "OFF"),
                 bool(answer.get("ok", True)), "puente")
+    if what == "optimize":
+        note, ok = triad_balance.apply(cockpit)
+        return (note, ok, "modelos")
     if what == "preset":
         from . import triad_presets
         note, ok = triad_presets.apply(cockpit, str(body.get("preset") or ""))

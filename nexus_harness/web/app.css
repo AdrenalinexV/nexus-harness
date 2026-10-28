@@ -359,3 +359,15 @@ button.danger { color: var(--bad); border-color: color-mix(in srgb, var(--bad) 4
 .rolecard .freeid { margin-top: .35rem; }
 .rolecard .switch { display: flex; gap: .45rem; align-items: center; font-size: var(--fs-sm); }
 .snote.warn { border-color: var(--warn); color: var(--warn); }
+
+/* --- Barra de ocupacion de VRAM por rol --------------------------------------------------------- */
+.vbar { display: flex; height: 14px; border-radius: 999px; overflow: hidden; margin: .5rem 0 .3rem;
+  border: 1px solid var(--line); background: var(--card2); }
+.vseg { display: inline-block; height: 100%; }
+.vseg.heavy, i.vseg.heavy { background: #3b82f6; }
+.vseg.judge, i.vseg.judge { background: #a855f7; }
+.vseg.free, i.vseg.free { background: #22c55e; opacity: .35; }
+.vlegend { display: flex; flex-wrap: wrap; gap: .8rem; font-size: var(--fs-sm); color: var(--muted); }
+.vkey { display: inline-flex; align-items: center; gap: .35rem; }
+.vkey i.vseg { width: 10px; height: 10px; border-radius: 3px; }
+.chip.warn { color: var(--warn); border-color: var(--warn); }
