@@ -1,7 +1,9 @@
 # Auditoría profunda y arquitectura objetivo (v2)
 
-> **Estado (2026-10-27, tras `P0`)**: los cuatro trabajos de P0 están implementados y medidos. Suites
-> 34 → 37, `verify.py` GREEN, 0 hallazgos de lint, 136 ficheros, ninguno por encima de 400 líneas.
+> **Estado (2026-10-27)**: `P0` completo, y de `P1` ya están **P1.1** (spec sintetizada), **P1.2**
+> (plan en grafo + parada por criterios), **P1.3** (cartera de modelos, failover y caché medida) y
+> **P1.5** (eval de 7 tareas golden). Queda **P1.4** (LSP) y todo P2. Suites 34 → 41, `verify.py`
+> GREEN, 0 hallazgos de lint, 146 ficheros, ninguno por encima de 400 líneas.
 > Pruebas nuevas: `python tools/proofs.py context|learning|oracle|tokenizer` (`failures=0`).
 > Medido en un turno real de 9 pasos: **2.372 de 4.247 tokens de prompt (55,8 %) son prefijo idéntico
 > al paso anterior**, es decir, cobrables a precio de caché; antes el `system` se reescribía en cada
