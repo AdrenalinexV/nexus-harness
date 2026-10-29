@@ -115,6 +115,35 @@ def _phase_line(event, config):
     return phase, glyph, str(event.get("detail") or kind or "")[:110]
 
 
+# Un veredicto del gate tiene TRES finales, no dos: verde (exit 0), rojo (exit 10) y **no verificable**
+# (exit 20/30), que es el que dice «no pude medirlo». El tercero no tenia representacion propia y se
+# confundia con «sin registro»: un check que NO corrio no es un check que fallo, pero tampoco es uno
+# que paso, y pintarlo de verde o de gris es mentir en las dos direcciones.
+UNAVAILABLE_EXITS = (20, 30)
+
+
+def verdict_class(verdict):
+    """`ok` | `unavailable` | `bad` | `none`, a partir de lo que el gate midio. Puro."""
+    verdict = verdict or {}
+    if not verdict:
+        return "none"
+    if verdict.get("ok"):
+        return "ok"
+    try:
+        code = int(verdict.get("exit"))
+    except (TypeError, ValueError):
+        code = None
+    return "unavailable" if code in UNAVAILABLE_EXITS else "bad"
+
+
+def verdict_word(verdict):
+    """La frase del veredicto, con su final declarado. El `exit` se lee, no se interpreta."""
+    verdict = verdict or {}
+    code = verdict.get("exit", "?")
+    return {"ok": "Gate OK", "unavailable": "Gate NO VERIFICABLE (exit %s)" % code,
+            "bad": "Gate ROJO (exit %s)" % code}.get(verdict_class(verdict), "")
+
+
 def summary(last, budget=None, criteria=0):
     """Como acabo el ultimo turno, en una linea: gate, juez y contexto. Solo lo medido."""
     last = last or {}
@@ -126,15 +155,17 @@ def summary(last, budget=None, criteria=0):
         return {"text": "", "tone": "idle", "ok": None}
     parts, tone = [], "idle"
     if verdict:
-        ok = bool(verdict.get("ok"))
-        parts.append(("Gate OK" if ok else "Gate ROJO (exit %s)" % verdict.get("exit", "?")))
-        tone = "ok" if ok else "bad"
+        klass = verdict_class(verdict)
+        parts.append(verdict_word(verdict))
+        # «No verificable» es ámbar: no es un verde (nadie decidió) ni un rojo (nadie encontró un fallo),
+        # es «esto lo tiene que mirar una persona», que es exactamente lo que significa el ámbar.
+        tone = {"ok": "ok", "unavailable": "warn", "bad": "bad"}.get(klass, "bad")
     elif last:
         parts.append("sin Gate (no tocó ficheros)")
-    verdict_word = str(judgement.get("verdict") or "")
-    if verdict_word == "approve":
+    judged = str(judgement.get("verdict") or "")
+    if judged == "approve":
         parts.append("Juez VERDE")
-    elif verdict_word == "reject":
+    elif judged == "reject":
         parts.append("Juez RECHAZA")
         # Gate verde con juez que objeta NO es un verde: es un aviso, y se pinta como tal.
         tone = "warn" if tone == "ok" else tone
@@ -219,6 +250,7 @@ def detail(last, budget=None, root=None):
             "files_total": len(last.get("touched") or []),
             "diff": diff_rows, "diff_totals": diff_totals,
             "gate": {"exit": verdict.get("exit"), "ok": verdict.get("ok"), "checks": checks,
+                     "class": verdict_class(verdict), "label": verdict_word(verdict),
                      "failures": str(verdict.get("failures") or "")[:1200]},
             "judge": {key: judgement.get(key) for key in ("verdict", "reason", "model")},
             "tokens": tokens,

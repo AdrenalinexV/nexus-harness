@@ -12,6 +12,7 @@ import json
 import subprocess
 import sys
 from html import escape
+from urllib.parse import quote
 
 from .platform import vault
 from . import gov, onboarding, panels, triad_balance
@@ -72,14 +73,18 @@ def _render(name, cockpit, sub, item, query):
     return settings_tools.stats(cockpit)
 
 
-def _tree(active, sub, needle, state):
+def _tree(active, sub, needle, state, token=""):
     """El árbol de categorías. `needle` filtra por título: es el buscador de arriba, sin script.
+
+    Cada enlace lleva el token: una pantalla de configuración que pierde la credencial al navegar es
+    una pantalla que se muere a mitad de camino (el 303 ya lo arrastraba, los enlaces no).
 
     El pie lleva lo que el operador necesita para saber QUE motor esta mirando: su version, que
     responde, y de que fichero de configuracion salieron los ajustes. Antes leia `version` del bloque
     `config`, donde no vive, y el pie decia literalmente `Motor ? · config ?` -- un marcador de
     plantilla sin sustituir es peor que no poner nada.
     """
+    gt = ("&token=" + quote(str(token), safe="")) if token else ""
     out = []
     for name, label, subs in SECTIONS:
         hit = (not needle or needle in label.lower()
@@ -88,14 +93,14 @@ def _tree(active, sub, needle, state):
         if not hit and needle:
             continue
         opened = " open" if name == active else ""
-        items = "".join('<li class="%s"><a href="/settings?section=%s&sub=%s">%s</a></li>'
+        items = "".join('<li class="%s"><a href="/settings?section=%s&sub=%s%s">%s</a></li>'
                         % ("on" if (name == active and value == sub) else "", escape(name),
-                           escape(value), escape(text)) for value, text in subs)
+                           escape(value), gt, escape(text)) for value, text in subs)
         # Una categoría SIN submenús tiene que ser un enlace: si su etiqueta solo despliega, el panel
         # no se abre con un clic y parece que la pantalla no responde (medido en el navegador: siete de
         # las ocho categorías no llevaban a ningún sitio).
         head = (escape(label) if subs else
-                '<a href="/settings?section=%s">%s</a>' % (escape(name), escape(label)))
+                '<a href="/settings?section=%s%s">%s</a>' % (escape(name), gt, escape(label)))
         out.append('<details class="scat%s"%s><summary class="%s">%s</summary>'
                    '<ul class="ssubs">%s</ul></details>'
                    % (" on" if name == active else "", opened,
@@ -110,7 +115,7 @@ def _tree(active, sub, needle, state):
             % ("".join(out), escape(version), escape(source)))
 
 
-def screen(cockpit, query):
+def screen(cockpit, query, token=""):
     """El HTML de la pantalla entera, con la sección pedida ya pintada."""
     section, sub = resolve((query.get("section") or [""])[0], (query.get("sub") or [""])[0])
     item = str((query.get("item") or [""])[0])
@@ -120,7 +125,8 @@ def screen(cockpit, query):
     state = cockpit.state()
     return LAYOUT % {
         "note": note,
-        "tree": _tree(section, sub, needle, state),
+        "tree": _tree(section, sub, needle, state, token),
+        "token": escape(str(token), quote=True),
         "title": escape(title),
         "subtitle": escape(subtitle),
         "body": body,
@@ -135,6 +141,7 @@ LAYOUT = """<!doctype html>
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="nexus-token" content="%(token)s">
 <title>Nexus Harness · Configuración</title>
 <link rel="stylesheet" href="app.css">
 <link rel="stylesheet" href="settings.css">
@@ -147,9 +154,11 @@ LAYOUT = """<!doctype html>
            placeholder="Buscar en la configuración…  (Ctrl+K)">
     <input type="hidden" name="section" value="%(section)s">
     <input type="hidden" name="sub" value="%(sub)s">
+    <input type="hidden" name="token" value="%(token)s">
     <button class="ghost">Buscar</button>
   </form>
-  <a class="settings-close" id="settings-close" href="/" title="Volver al chat (Esc)">✕</a>
+  <a class="settings-close" id="settings-close" href="/?token=%(token)s"
+     title="Volver al chat (Esc)" aria-label="Volver al chat">✕</a>
 </header>
 %(note)s
 <div class="settings-app">
@@ -160,6 +169,7 @@ LAYOUT = """<!doctype html>
     %(body)s
   </section>
 </div>
+<script src="token.js"></script>
 <script src="settings.js"></script>
 </body>
 </html>
@@ -168,15 +178,27 @@ LAYOUT = """<!doctype html>
 
 # -- guardar -------------------------------------------------------------------------------------
 def _numbers(body):
-    """Los campos de contexto que comparten dos paneles, tal como llegan del formulario."""
-    changes = {}
+    """Los campos de contexto que comparten dos paneles, ya normalizados. Devuelve `(cambios, problemas)`.
+
+    Es el UNICO sitio donde un porcentaje se convierte en fraccion. Un valor imposible (`150`) no se
+    escribe: se devuelve como problema y el panel lo dice en rojo, porque un guardado que corrompe
+    el umbral del relevo y aun asi sale en verde es peor que un guardado que falla.
+    """
+    changes, problems = {}, []
     for name in ("budget_limit", "relay_threshold", "compact_threshold", "temperature", "max_tokens",
                  "cost_limit", "max_steps", "max_repairs", "max_children", "subagent_steps",
                  "subagent_depth", "tool_workers", "shell_timeout", "test_command", "workspace",
                  "shell_policy", "hardware_ceiling", "triad_bias"):
         if name in body and str(body.get(name)).strip() != "":
+            if name in kit.PERCENT_FIELDS:
+                value, problem = kit.percent_to_fraction(name, body[name])
+                if problem:
+                    problems.append(problem)
+                else:
+                    changes[name] = value
+                continue
             changes[name] = body[name]
-    return changes
+    return changes, problems
 
 
 def save(cockpit, body):
@@ -199,7 +221,10 @@ def save(cockpit, body):
                 notes += triad_balance.auto_adapt(cockpit, role)
         # Los numeros del turno viajan en el MISMO panel (son parte de la triada: con que presupuesto
         # y con cuanta temperatura). Se guardaban en la vista de memoria y aqui se perdian en silencio.
-        numbers = _numbers(body)
+        numbers, rejected = _numbers(body)
+        if rejected:
+            ok = False
+            notes += rejected
         if "judge_mode" in body:
             numbers["judge_mode"] = body.get("judge_mode")
         if "worker_resident" in body:
@@ -225,7 +250,10 @@ def save(cockpit, body):
             result = onboarding.apply(cockpit.config, {"keys": keys})
             notes += result.get("notes") or []
             notes.append("guardadas: %s" % ", ".join(result.get("saved", {}).get("keys") or []))
-        saved, problems = onboarding.save_settings(_numbers(body))
+        numbers, rejected = _numbers(body)
+        ok = ok and not rejected
+        notes += rejected
+        saved, problems = onboarding.save_settings(numbers)
         notes += problems
         if "shell_policy" in saved:
             notes.append("política de comandos → %s" % saved["shell_policy"])
@@ -235,7 +263,10 @@ def save(cockpit, body):
         note, ok = settings_autonomy.save(cockpit, body)
         return (note, ok)
     elif section == "memoria":
-        saved, problems = onboarding.save_settings(_numbers(body))
+        numbers, rejected = _numbers(body)
+        ok = ok and not rejected
+        notes += rejected
+        saved, problems = onboarding.save_settings(numbers)
         notes += problems
         if saved:
             notes.append("contexto guardado")
@@ -265,123 +296,7 @@ def _pin_worker(cockpit):
     cockpit.reload_config()
     return (result.get("notes") or []) + (["obrero fijado al residente: %s" % model]
                                           if result.get("saved", {}).get("roles") else [])
-
-
 # -- acciones ------------------------------------------------------------------------------------
-def action(cockpit, body):
-    """Las acciones que no son «guardar». Devuelve `(nota, ok, seccion)`."""
-    what = str(body.get("what") or "")
-    section = str(body.get("section") or "modelos")
-    if what.startswith("vps_"):
-        return settings_vps.action(cockpit, body)
-    if what.startswith("consult_"):
-        from . import settings_autonomy
-        return settings_autonomy.action(cockpit, body)
-    if what in ("auto_spec", "project_new", "project_move", "autonomy_start", "autonomy_stop"):
-        # Las acciones del panel de proyectos las ejecuta su dueno, con su propia validacion.
-        return settings_projects.action(cockpit, body)
-    if what == "memory_add":
-        answer = cockpit.memory_add(body.get("text"))
-        return ("memoria: %s" % ("añadido" if answer.get("ok") else answer.get("reason")),
-                bool(answer.get("ok")), "memoria")
-    if what == "memory_remove":
-        answer = cockpit.memory_remove(body.get("entry"))
-        return ("memoria: %s" % ("quitado" if answer.get("ok") else "no estaba"),
-                bool(answer.get("ok")), "memoria")
-    if what == "mcp_reload":
-        answer = panels.mcp_reload(cockpit)
-        return ("conectores: %s tools" % answer.get("tools"), bool(answer.get("ok")), "mcp")
-    if what == "bridge":
-        provider = str(body.get("provider") or "telegram")
-        answer = (panels.daemon_toggle(cockpit, provider) if str(body.get("on") or "") == "on"
-                  else panels.daemon_stop(cockpit))
-        return ("puente: %s" % ("ON" if answer.get("running") else "OFF"),
-                bool(answer.get("ok", True)), "puente")
-    if what == "optimize":
-        note, ok = triad_balance.apply(cockpit)
-        return (note, ok, "modelos")
-    if what == "recommend":
-        from . import triad_recommend
-        note, ok = triad_recommend.apply_recommended(cockpit)
-        return (note, ok, "modelos")
-    if what == "preset":
-        from . import triad_presets
-        note, ok = triad_presets.apply(cockpit, str(body.get("preset") or ""))
-        return (note, ok, "modelos")
-    if what == "detect_models":
-        found = onboarding.probe_local()
-        live = {vendor: len(row.get("models") or [])
-                for vendor, row in found.items() if row.get("ready")}
-        detail = ", ".join("%s: %d" % (name, count) for name, count in sorted(live.items()))
-        return ("detectados %d modelos (%s)" % (sum(live.values()), detail or "ningún servidor respondió"),
-                bool(live), "modelos")
-    if what == "skill_mode":
-        name = str(body.get("name") or "").strip()
-        mode = str(body.get("mode") or "").strip()
-        if not name or mode not in ("always", "auto", "off"):
-            return ("modo inválido para %r" % name, False, "skills")
-        if name not in settings_skills._routable_names():
-            return ("%s no está en el paquete de routing: no viaja con los turnos" % name,
-                    False, "skills")
-        always, off = settings_skills._modes()
-        always.discard(name)
-        off.discard(name)
-        if mode == "always":
-            always.add(name)
-        elif mode == "off":
-            off.add(name)
-        saved, reason = gov.save_skill_modes(always, off)
-        return ("%s → %s%s" % (name, mode, "" if saved else " (no se pudo: %s)" % reason),
-                saved, "skills")
-    if what in ("mcp_add", "mcp_delete", "mcp_toggle"):
-        ok, note = panels.mcp_write(cockpit, what[4:], body)
-        return (note, ok, "mcp")
-    if what == "key_delete":
-        name = str(body.get("key_name") or "").strip()
-        if not vault.looks_like_key(name):
-            return ("%r no es una clave de la bóveda" % name, False, "seguridad")
-        answer = vault.save({name: ""})
-        left = answer.get("names") or []
-        return ("bóveda: %s borrada (%d claves quedan)" % (name, len(left)),
-                name not in left, "seguridad")
-    if what == "save_skill":
-        answer = panels.skills_save(cockpit, body.get("name"), body.get("text"))
-        return ("SKILL.md de %s: %s" % (body.get("name"),
-                                        "guardado" if answer.get("ok") else answer.get("reason")),
-                bool(answer.get("ok")), "skills")
-    if what == "architect":
-        return _architect(cockpit, body)
-    if what == "doctor":
-        return _doctor()
-    return ("acción desconocida: %s" % what, False, section)
-
-
-def _architect(cockpit, body):
-    message = str(body.get("message") or "").strip()
-    if len(message) < 3:
-        return ("escribe qué skill falta o qué mejorar", False, "skills")
-    ok, answer = gov.action("/api/architect", {"message": message,
-                                               "github": bool(body.get("github"))})
-    text = ""
-    if isinstance(answer, dict):
-        text = str(answer.get("reply") or answer.get("answer") or answer.get("text") or "")
-        if not text:
-            text = json.dumps(answer, indent=2, ensure_ascii=False)[:4000]
-    else:
-        text = str(answer)[:4000]
-    settings_tools.LAST["architect"] = text or "(sin respuesta)"
-    return ("arquitecto: %s" % ("contestó" if ok else "no pudo contestar"), bool(ok), "skills")
-
-
-def _doctor():
-    """Pasa el doctor del protocolo y guarda su cola para el panel. Es lento (~1 min) y se dice."""
-    command = [sys.executable, str(gov.PROTOCOL / "nexus" / "cli.py"), "doctor"]
-    try:
-        done = subprocess.run(command, capture_output=True, text=True, errors="replace",
-                              timeout=300, cwd=str(gov.PROTOCOL))
-    except (OSError, subprocess.SubprocessError) as exc:
-        return ("el doctor no se pudo ejecutar: %s" % exc, False, "stats")
-    tail = ((done.stdout or "") + (done.stderr or "")).strip().splitlines()[-14:]
-    settings_tools.LAST["doctor"] = "\n".join(tail)
-    green = done.returncode == 0 and "green" in (done.stdout or "").lower()
-    return ("doctor: %s" % ("verde" if green else "revisar"), green, "stats")
+# Las que no son «guardar» viven en su modulo: `settings.action` se queda como la puerta, para que
+# `ui.py` no sepa donde esta la implementacion.
+from .settings_actions import action  # noqa: E402,F401  (reapertura deliberada: una sola puerta)

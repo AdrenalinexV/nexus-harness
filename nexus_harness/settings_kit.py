@@ -9,6 +9,12 @@ from html import escape
 
 from .config import HarnessConfig
 
+# Los dos campos que se escriben en PORCENTAJE y se guardan en FRACCION. El motor los consume en
+# fraccion (`session_relay.py`, `triad_loop.py`), asi que la conversion vive aqui y en ningun otro
+# sitio: pintar uno y guardar el otro es como se llega a un relevo al 70,0 (o sea, nunca) sin que
+# nadie lo note, porque la nota de guardado sigue saliendo en verde.
+PERCENT_FIELDS = ("relay_threshold", "compact_threshold")
+
 
 def esc(value):
     return escape(str(value if value is not None else ""))
@@ -51,6 +57,40 @@ def form(action, section, body, submit="Aplicar", hidden_extra=""):
             % (esc(action), hidden("section", section), hidden_extra, body, esc(submit)))
 
 
+def percent_to_fraction(name, raw):
+    """Lo que el formulario manda en % (`70`) a la fraccion que el motor guarda (`0.70`).
+
+    Acepta las dos formas porque un operador puede escribir `70` o `0.7`; lo que NO acepta es un
+    valor fuera del presupuesto: 150 % no es un umbral, es un error, y un error se dice en la nota
+    en vez de escribirse en el fichero. Devuelve `(fraccion, problema)`.
+    """
+    try:
+        value = float(str(raw).replace(",", ".").strip())
+    except (TypeError, ValueError):
+        return None, "%s: %r no es un número" % (name, raw)
+    if value <= 0:
+        return None, "%s: tiene que ser mayor que 0" % name
+    fraction = value / 100.0 if value > 1.0 else value
+    if fraction > 1.0:
+        return None, "%s: %s %% se pasa del presupuesto (máximo 100 %%)" % (name, value)
+    return round(fraction, 4), ""
+
+
+def show_percent(value):
+    """La fraccion guardada, como porcentaje para el formulario. Fuera de rango se dice, no se pinta.
+
+    El `7000 %` de la cabina vieja era esto: un fichero que ya tenia `70.0` multiplicado otra vez por
+    100. Un valor que no es una fraccion no se convierte: se declara `?` y quien lo pinta lo explica.
+    """
+    try:
+        fraction = float(value)
+    except (TypeError, ValueError):
+        return "?"
+    if not 0 < fraction <= 1.0:
+        return "?"
+    return str(int(round(fraction * 100)))
+
+
 def note_from(query):
     """La nota que deja una accion: `?note=guardado&bad=1` viene de un 303, no de una sesion."""
     text = (query.get("note") or [""])[0]
@@ -83,10 +123,10 @@ def context_fields(config, window=0, role=""):
         field("Límite de contexto (tokens)", *number_input(
             "budget_limit", config.budget_limit, budget_hint)),
         field("Relevo automático (%)", *number_input(
-            "relay_threshold", round(float(config.relay_threshold) * 100),
+            "relay_threshold", show_percent(config.relay_threshold),
             "a qué porcentaje del presupuesto se pasa el testigo a una sesión nueva")),
         field("Compactación (%)", *number_input(
-            "compact_threshold", round(float(config.compact_threshold) * 100),
+            "compact_threshold", show_percent(config.compact_threshold),
             "antes del relevo, el hilo se comprime en su sitio")),
         field("Temperatura", *number_input("temperature", config.temperature, step="0.05",
                                           hint="0.2 = obedece; 0.7 = improvisa")),

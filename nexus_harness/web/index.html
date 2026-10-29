@@ -3,10 +3,12 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="nexus-token" content="{{token}}">
 <title>Nexus Harness</title>
 <link rel="stylesheet" href="app.css">
 </head>
 <body>
+<!--NEXUS_SPRITE-->
 
 <!-- El chat, y solo el chat: ancho de lado a lado. La configuracion vive en su propia pantalla
      (`/settings`), que se abre con el boton de la barra lateral. -->
@@ -54,7 +56,7 @@
     <input id="session-search" class="search" type="search" placeholder="buscar conversación…">
     <ul id="sessions" class="sessions"></ul>
     <div class="spacer"></div>
-    <a id="settings" class="settings-btn" href="/settings">⚙ Configuración</a>
+    <a id="settings" class="settings-btn" href="/settings?token={{token}}">⚙ Configuración</a>
     <div id="engine" class="foot"></div>
   </aside>
 
@@ -88,6 +90,7 @@
   </main>
 </div>
 
+<script src="token.js"></script>
 <script src="app.js"></script>
 <script src="panels.js"></script>
 <script src="activity.js"></script>

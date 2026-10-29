@@ -16,7 +16,7 @@ from html import escape
 from pathlib import Path
 
 from .platform import vault
-from . import onboarding
+from . import onboarding, settings_kit
 
 NEXUS_SOURCE = Path(os.environ.get("NEXUS_PROTOCOL") or r"C:\Proyectos\NexusProtocol")
 
@@ -242,13 +242,19 @@ def _triad_card(cockpit):
                         ' <span class="bad">(%s)</span>' % _esc(info.get("why_not_ready") or "no ready")))
     limit = budget.get("limit") or cockpit.config.budget_limit
     used = budget.get("used")
-    relay = int(round(float(getattr(cockpit.config, "relay_threshold", 0.7)) * 100))
+    # La fraccion se pinta con el mismo conversor que el formulario. Aqui vivia el `7000 %`: leer un
+    # `70.0` ya corrompido y multiplicarlo otra vez por 100. Un valor fuera de rango se declara.
+    relay = settings_kit.show_percent(getattr(cockpit.config, "relay_threshold", 0.7))
+    if relay == "?":
+        relay_text = 'relevo automático: <span class="bad">umbral fuera de rango en la config</span>'
+    else:
+        relay_text = "relevo automático al %s%%" % relay
     return ('<section class="hsec"><h3>Tríada de modelos</h3>'
             '<p class="dim">Autodetectados en esta máquina. Los selectores completos, la temperatura y '
             'el juez adversario viven en la vista del protocolo, más abajo.</p>'
             '<div class="row">%s</div>'
-            '<p class="dim">Presupuesto: %s de %s tokens · relevo automático al %d%%</p></section>'
-            % ("".join(cells), _esc(used if used is not None else "sin medir"), _esc(limit), relay))
+            '<p class="dim">Presupuesto: %s de %s tokens · %s</p></section>'
+            % ("".join(cells), _esc(used if used is not None else "sin medir"), _esc(limit), relay_text))
 
 
 def _mcp_card(cockpit):

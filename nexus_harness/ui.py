@@ -117,6 +117,18 @@ class Handler(BaseHTTPRequestHandler):
             return True
         return False
 
+    def _index(self):
+        """El chat: HTML fijo del checkout, con dos cosas que solo existen en marcha.
+
+        El token, para que el enlace a Configuracion y el de Gobernanza lo lleven encima (un enlace
+        sin token es una pantalla que pierde la credencial), y el sprite de iconos SVG, que se sirve
+        inline desde `ui_icons.py`: una pagina que necesita la red para verse bien esta rota.
+        """
+        from . import ui_icons
+        html = (WEB / "index.html").read_text(encoding="utf-8")
+        html = html.replace("{{token}}", quote(self.server.token or "", safe=""))
+        return html.replace("<!--NEXUS_SPRITE-->", ui_icons.sprite()).encode("utf-8")
+
     def _static(self, name):
         target = (WEB / name).resolve()
         root = WEB.resolve()
@@ -134,12 +146,12 @@ class Handler(BaseHTTPRequestHandler):
         query = parse_qs(parsed.query)
         path = parsed.path
         if path in ("/", "/index.html"):
-            return self._page((WEB / "index.html").read_bytes())
+            return self._page(self._index())
         if path == "/gov":
             return self._gov((query.get("tab") or [""])[0])
         if path == "/settings":
             from . import settings
-            return self._page(settings.screen(self.cockpit, query))
+            return self._page(settings.screen(self.cockpit, query, self.server.token))
         if path.startswith("/api/settings/"):
             from . import settings_api
             answer = settings_api.handle(self.cockpit, "GET", path, query, {})
@@ -244,7 +256,17 @@ class Handler(BaseHTTPRequestHandler):
         sub = str(payload.get("sub") or payload.get("back") or "")
         if sub:
             target += "&sub=" + quote(sub)
-        return self._see_other(target)
+        # El token viaja EN EL 303. Sin esto, guardar desde la pantalla de configuracion devolvia a un
+        # panel sin credencial y el script se quedaba sin ella: el guardado funcionaba (la cookie del
+        # formulario) y el resto de la pantalla moria en silencio.
+        return self._see_other(self._with_token(target))
+
+    def _with_token(self, target):
+        """Un destino interno que no pierde la credencial."""
+        token = getattr(self.server, "token", "") or ""
+        if not token or "token=" in target:
+            return target
+        return target + ("&" if "?" in target else "?") + "token=" + quote(token, safe="")
 
     def _gov_action(self, body):
         """Los controles del ARNES dentro de la vista de gobernanza (MCP, puente movil), por formulario.
@@ -264,7 +286,7 @@ class Handler(BaseHTTPRequestHandler):
         target = str(body.get("next") or "/gov?tab=setup")
         if not answer.get("ok", True):
             target += ("&" if "?" in target else "?") + "problem=" + str(answer.get("reason"))[:120]
-        return self._see_other(target)
+        return self._see_other(self._with_token(target))
 
 
 class Server(ThreadingHTTPServer):

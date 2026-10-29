@@ -13,7 +13,7 @@
  */
 (function () {
   const $ = (id) => document.getElementById(id);
-  const TOKEN = new URLSearchParams(location.search).get('token') || '';
+  const TOKEN = window.NexusToken || '';
   // Sondeo adaptativo: rapido mientras hay un turno (para que la herramienta en curso se vea de
   // verdad), lento cuando no pasa nada (que es el 99 % del tiempo). Un sondeo fijo de 900 ms se pierde
   // las fases cortas; uno fijo de 300 ms es una peticion constante por nada.

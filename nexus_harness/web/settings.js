@@ -10,7 +10,7 @@
 
 (function () {
   const $ = (id) => document.getElementById(id);
-  const TOKEN = new URLSearchParams(location.search).get('token') || '';
+  const TOKEN = window.NexusToken || '';
 
   function api(path, options = {}) {
     const headers = Object.assign({'Content-Type': 'application/json'}, options.headers || {});

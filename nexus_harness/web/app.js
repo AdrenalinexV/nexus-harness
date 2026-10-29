@@ -10,7 +10,8 @@
      se dice en una banda: un boton que no responde es la peor forma de enterarse. */
 
 const $ = (id) => document.getElementById(id);
-const TOKEN = new URLSearchParams(location.search).get('token') || '';
+// La credencial la resuelve `token.js` (URL, meta o sessionStorage) y la comparten los tres scripts.
+const TOKEN = window.NexusToken || '';
 const WANTED = new URLSearchParams(location.search).get('project') || '';
 // Contrato con el motor (`api.API_VERSION`). 3 = barra en vivo, cola de proyectos y bucle autonomo.
 const API_VERSION = 3;
@@ -48,9 +49,20 @@ function warn(message) {
 
 /* ---------- el motor que esta en marcha ---------- */
 async function checkEngine() {
-  const {ok, data} = await api('/api/health');
+  const {ok, status, data} = await api('/api/health');
+  // Un 401 NO es un motor caido y no se arregla relanzando nada: es que a esta pagina le falta la
+  // credencial. Antes las dos cosas se pintaban igual, y el consejo ("relanza Nexus-Harness.bat")
+  // mandaba a reiniciar un proceso sano mientras el fallo de verdad seguia ahi.
+  if (status === 401) {
+    warn('El motor está en marcha pero pide token: esta página se abrió sin la credencial. Ábrela desde la ventana de escritorio o añade ?token=… a la dirección.');
+    return;
+  }
+  if (status === 403) {
+    warn('El motor rechazó la petición por venir de otro sitio (cross-site). Abre la cabina desde su propia dirección.');
+    return;
+  }
   if (!ok) {
-    warn('El motor no contesta a /api/health. Si acabas de actualizar el código, cierra esta ventana y vuelve a lanzar Nexus-Harness.bat.');
+    warn('El motor no contesta a /api/health (' + (status || 'sin respuesta') + '). Si acabas de actualizar el código, cierra esta ventana y vuelve a lanzar Nexus-Harness.bat.');
     return;
   }
   if ((data.api || 0) < API_VERSION) {
