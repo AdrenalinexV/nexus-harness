@@ -13,7 +13,7 @@ import time
 
 from .fakes import FakeRouter, ScriptedProvider, TempProject, last_user, reply
 from ..config import HarnessConfig
-from ..subagents import Delegate, SUBAGENT_SYSTEM
+from ..tools.subagents import Delegate, SUBAGENT_SYSTEM
 
 
 def check(name, got, expected, failures):

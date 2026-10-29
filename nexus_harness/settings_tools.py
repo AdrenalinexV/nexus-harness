@@ -28,7 +28,7 @@ def mcp(cockpit):
     no aparecia en ningun sitio, asi que no se podia encender desde la interfaz. La lista sale del
     fichero del operador y el estado en vivo se cruza por nombre.
     """
-    from . import mcp_client
+    from .tools import mcp_client
     config = mcp_client.load_config()
     state = panels.mcp_status(cockpit)
     live = {str(row.get("name")): row for row in state.get("servers") or []}

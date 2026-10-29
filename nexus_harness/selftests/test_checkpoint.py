@@ -15,7 +15,7 @@ import os
 
 from .fakes import TempProject
 from .. import checkpoint
-from ..toolbox import edit, file_ops
+from ..tools.toolbox import edit, file_ops
 
 
 def check(name, got, expected, failures):

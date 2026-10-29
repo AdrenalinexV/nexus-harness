@@ -24,10 +24,12 @@ PKG = Path(__file__).resolve().parents[1]
 # El orden es la ley: cada capa puede importar las de su izquierda, nunca las de su derecha.
 ORDER = ("platform", "core", "llm", "tools", "context", "verify", "autonomy", "spec", "learning")
 DECLARED = {
-    "platform": ("backup", "events", "hardware_probe", "ledger", "policy", "tokenizer",
-                 "transcripts", "vault"),
+    "platform": ("backup", "digest", "events", "hardware_probe", "ledger", "policy", "skillfiles",
+                 "tokenizer", "transcripts", "vault"),
     "core": ("budget", "message", "outcomes", "tasks"),
     "llm": ("context_window", "judge", "portfolio", "provider_discovery", "providers"),
+    "tools": ("attachments", "mcp_client", "recall", "repair_hint", "registry", "sidecar",
+              "skill_forge", "subagents", "toolbox"),
 }
 
 
@@ -37,7 +39,11 @@ def check(name, got, expect, failures):
 
 
 def modules_in(layer):
-    return tuple(sorted(p.stem for p in (PKG / layer).glob("*.py") if p.stem != "__init__"))
+    """Modulos Y subpaquetes: `toolbox` es parte de la capa tools, no un apendice suyo."""
+    return tuple(sorted(p.stem if p.is_file() else p.name
+                        for p in (PKG / layer).iterdir()
+                        if p.name != "__init__.py" and not p.name.startswith("__")
+                        and (p.is_dir() or p.suffix == ".py")))
 
 
 def flat_modules():
@@ -52,7 +58,7 @@ def resolve(node, path):
     """El modulo absoluto que importa `node`, visto desde `path` (`core.tasks`, `tools`, ...)."""
     level = node.level or 0
     package = package_of(path)
-    base = package[:len(package) - (level - 1)] if level > 1 else package
+    base = package[:max(0, len(package) - (level - 1))] if level > 1 else package
     if node.module:
         return ".".join(base + node.module.split("."))
     return ""
@@ -80,11 +86,15 @@ def violations():
     found, flat = [], flat_modules()
     for layer, names in DECLARED.items():
         for name in names:
-            path = PKG / layer / (name + ".py")
-            for node in ast.walk(ast.parse(path.read_text(encoding="utf-8", errors="replace"))):
+            root = PKG / layer / name
+            files = sorted(root.rglob("*.py")) if root.is_dir() else [root.with_suffix(".py")]
+            for path in files:
+              if path.name == "__init__.py":
+                  continue
+              for node in ast.walk(ast.parse(path.read_text(encoding="utf-8", errors="replace"))):
                 for target in targets_of(node, path):
                     other = layer_of(target)
-                    where = "%s/%s.py:%s" % (layer, name, node.lineno)
+                    where = "%s:%s" % (path.relative_to(PKG).as_posix(), node.lineno)
                     if other is None:
                         if target.split(".")[0] in flat:
                             found.append("%s importa %r, que sigue plano (arriba)" % (where, target))

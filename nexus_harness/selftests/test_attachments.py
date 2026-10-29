@@ -10,7 +10,7 @@ import importlib.util
 import io
 
 from .fakes import TempProject
-from .. import attachments
+from ..tools import attachments
 
 # The module, not the class: `PIL.Image.new` is a module-level function.
 Image = importlib.import_module("PIL.Image") if importlib.util.find_spec("PIL") else None

@@ -8,7 +8,8 @@ Cuatro cosas que un harness serio tiene que demostrar y que hasta ahora no estab
 * el mismo parche fallando DOS veces recibe las lineas REALES del fichero, numeradas;
 * la pildora de actividad cuenta el relevo, la poda y la skill forjada (lo que el operador ve).
 """
-from .. import activity, repair_hint
+from ..tools import repair_hint
+from .. import activity
 from ..llm.judge import CONVERSATION, SYSTEM, Judge, mode_for, parse_verdict
 from ..core.message import Message, as_text
 from ..tools import default_registry

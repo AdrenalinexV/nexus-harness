@@ -16,7 +16,7 @@ import os
 from .fakes import TempProject
 from ..platform import policy
 from ..config import HarnessConfig
-from ..toolbox import shell_session
+from ..tools.toolbox import shell_session
 from ..tools import Registry
 
 

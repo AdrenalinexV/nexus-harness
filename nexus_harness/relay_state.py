@@ -26,6 +26,7 @@ import time
 from pathlib import Path
 
 from .context_pruner import MARKER as PRUNED_MARK, prune
+from .platform.digest import sha256_text, utc_now  # noqa: E402
 
 PROTOCOL = "nexus.harness.relay-state/1"
 STATE_REL = Path(".nexus") / "RELAY_STATE.json"
@@ -34,12 +35,6 @@ DEFAULT_KEEP_CHARS = 600
 OWN_KEY = "harness"
 
 
-def utc_now():
-    return time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
-
-
-def sha256_text(text):
-    return hashlib.sha256(str(text or "").encode("utf-8", "replace")).hexdigest()
 
 
 def prune_tool_outputs(messages, keep_chars=DEFAULT_KEEP_CHARS, keep_last=2):

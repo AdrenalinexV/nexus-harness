@@ -17,7 +17,7 @@ import threading
 from pathlib import Path
 from dataclasses import dataclass, field
 
-from . import attachments as attachment_tools
+from .tools import attachments as attachment_tools
 from .platform import ledger
 from . import checkpoint
 from .core.budget import CostBudget
@@ -30,8 +30,8 @@ from .platform.tokenizer import calibration, count_messages
 from .turn_context import apply_budget, chat_prefix, inject_skills, split_history
 from .turn_engine import TurnEngine
 from .savings import CACHE_REL as SKILLS_CACHE, SavingsLedger
-from .subagents import Delegate
-from .toolbox import process_manager
+from .tools.subagents import Delegate
+from .tools.toolbox import process_manager
 from .tools import Observation, parallel_reads
 
 CHAT_SYSTEM = """Eres Nexus-Harness, un agente de ingeniería que trabaja en el proyecto abierto.

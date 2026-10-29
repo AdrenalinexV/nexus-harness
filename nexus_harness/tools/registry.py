@@ -17,8 +17,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 
 from .repair_hint import RepairHints
-from .toolbox import (browser, edit, file_ops, memory_tools, patch_v4a, process_manager,
-                      repo_search, shell_session, skill_tools, web)
+from .toolbox import browser, edit, file_ops, memory_tools, patch_v4a, process_manager, repo_search, shell_session, skill_tools, web
 
 WRITE_TOOLS = frozenset({"write_file", "patch_replace", "apply_blocks", "apply_patch"})
 ROOT_HANDLERS = (repo_search.HANDLERS, file_ops.HANDLERS, edit.HANDLERS, patch_v4a.HANDLERS,

@@ -23,11 +23,11 @@ from pathlib import Path
 
 from .core.outcomes import Outcomes
 from .relay_state import sha256_text
+from .platform.skillfiles import FORGED_REL, parse_frontmatter  # noqa: E402
 
 MAX_ACTIVE = 10
 DORMANT_REL = Path(".nexus") / "skills-dormant"
 INDEX_NAME = "index.json"
-FORGED_REL = Path(".nexus") / "skills"
 NEXUS_SOURCE = Path(r"C:\Proyectos\NexusProtocol")
 # Las raices que de verdad tiene esta maquina: el protocolo, lo forjado y el catalogo que el operador
 # ya usa en Hermes. Se declaran aqui y no se inventan rutas: una que no exista simplemente no aporta.
@@ -36,7 +36,6 @@ HERMES_ROOTS = (Path.home() / "AppData/Local/hermes/profiles/nexus-harness/skill
 MAX_BRIEF_CHARS = 120
 STOPWORDS = {"the", "and", "for", "con", "los", "las", "del", "que", "una", "por", "para", "este",
              "esta", "como", "mas", "pero", "sin", "sus", "sea", "hay", "todo", "cada"}
-FRONTMATTER = re.compile(r"^---\s*\n(.*?)\n---\s*\n?", re.S)
 WORD = re.compile(r"[a-záéíóúñ0-9_+#.-]{3,}")
 EXTENSIONS = {
     ".py": "python", ".js": "javascript", ".ts": "typescript", ".tsx": "react", ".jsx": "react",
@@ -50,23 +49,6 @@ def words(text):
     """Palabras significativas, en minusculas y sin duplicados. Puro y ordenado: mismo texto, mismo set."""
     return sorted({token for token in WORD.findall(str(text or "").lower())
                    if token not in STOPWORDS})
-
-
-def parse_frontmatter(text):
-    """`(campos, cuerpo)` del `SKILL.md`. Sin frontmatter, `({}, texto)`: no se inventa un contrato."""
-    match = FRONTMATTER.match(str(text or ""))
-    if not match:
-        return {}, str(text or "")
-    fields, key = {}, ""
-    for line in match.group(1).splitlines():
-        if re.match(r"^\s+\S", line) and key:            # continuacion de una lista YAML
-            fields[key] = "%s %s" % (fields.get(key, ""), line.strip())
-            continue
-        if ":" not in line:
-            continue
-        key, value = line.split(":", 1)
-        fields[key.strip().lower()] = value.strip().strip("\"'")
-    return fields, str(text or "")[match.end():]
 
 
 def skill_entry(path, root):

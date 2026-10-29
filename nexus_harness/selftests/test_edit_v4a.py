@@ -8,7 +8,7 @@ Four properties, each one a bug that has bitten a real harness:
 * a V4A patch touching several files applies whole, or rolls every file back.
 """
 from .fakes import TempProject
-from ..toolbox import edit, file_ops, patch_v4a
+from ..tools.toolbox import edit, file_ops, patch_v4a
 
 CALC = """def add(a, b):
     result = a - b

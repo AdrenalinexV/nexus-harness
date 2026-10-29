@@ -19,9 +19,9 @@ import re
 import time
 from pathlib import Path
 
-from . import skill_forge
+from .tools import skill_forge
 from .core.outcomes import record_skills
-from .skill_forge import ForgeTrigger
+from .tools.skill_forge import ForgeTrigger
 from .skill_router import EXTENSIONS
 from . import oracle
 
@@ -200,7 +200,7 @@ def learn(config, payload, tag="", skills=None, goal=""):
     root = Path(getattr(config, "default_root", ".") or ".")
     verdict = payload.get("verdict") or {}
     judgement = payload.get("judgement") or {}
-    from .recall import remember_turn
+    from .tools.recall import remember_turn
 
     exit_code = payload.get("exit")
     if exit_code is not None:

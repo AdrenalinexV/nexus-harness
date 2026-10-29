@@ -27,8 +27,8 @@ from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass, field
 from pathlib import Path
 
-from .core.message import Message
-from .tools import SCHEMAS, ROOT_HANDLERS, Registry
+from ..core.message import Message
+from .registry import SCHEMAS, ROOT_HANDLERS, Registry
 
 SUBAGENT_SYSTEM = """Eres un subagente de investigación de Nexus-Harness. Trabajas en una ventana de
 contexto aislada: el Director no verá tus lecturas, solo tu resumen final.
@@ -219,5 +219,5 @@ def _text(observation):
 
 
 def _bad(call):
-    from .tools import Observation
+    from .registry import Observation
     return Observation(ok=False, text="tool arguments are unusable: %s" % call.parse_error)

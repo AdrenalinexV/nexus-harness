@@ -55,7 +55,7 @@ def mcp_write(cockpit, action, payload):
     aqui solo se decide QUE cambia. Despues se recarga en caliente para que el cambio se note sin
     reiniciar el motor: un `Guardar` que exige reiniciar no es un producto, es una tarea pendiente.
     """
-    from . import mcp_client
+    from .tools import mcp_client
     action = str(action or "")
     payload = payload or {}
     config = mcp_client.load_config()

@@ -11,7 +11,7 @@ from pathlib import Path
 from . import Skip
 from .fakes import TempProject
 from ..config import HarnessConfig
-from ..toolbox import browser
+from ..tools.toolbox import browser
 
 
 def check(name, got, expected, failures):

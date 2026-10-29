@@ -21,8 +21,8 @@ import json
 import re
 from pathlib import Path
 
-from .relay_state import sha256_text, utc_now
-from .skill_router import FORGED_REL, parse_frontmatter
+from ..platform.digest import sha256_text, utc_now
+from ..platform.skillfiles import FORGED_REL, parse_frontmatter
 
 NEXUS_SOURCE = Path(r"C:\Proyectos\NexusProtocol")
 THRESHOLD = 3

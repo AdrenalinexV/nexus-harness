@@ -13,7 +13,7 @@ from pathlib import Path
 from .fakes import FakeGate, FakeRouter, ScriptedProvider, TempProject, reply
 from ..chat import Chat
 from ..config import HarnessConfig
-from ..recall import Recall, episode_text, remember_turn
+from ..tools.recall import Recall, episode_text, remember_turn
 from ..tools import default_registry
 
 

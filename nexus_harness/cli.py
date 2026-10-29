@@ -73,7 +73,7 @@ def cmd_run(args):
 
 
 def cmd_serve(args):
-    from . import sidecar
+    from .tools import sidecar
     from .cockpit import Cockpit
     from .ui import serve
     config = _config(args)

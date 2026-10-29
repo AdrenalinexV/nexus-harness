@@ -148,7 +148,7 @@ def chat_prefix(config, router, base, memory=None, goal=""):
         if brief:
             parts.append(("skills", brief))
         return build_prefix(parts), len(brief) // 4
-    from .recall import Recall
+    from .tools.recall import Recall
     remembered = (Recall(config.default_root).block(goal)
                   if getattr(config, "recall_enabled", True) else "")
     facts = ("## Proyecto" + chr(10) * 2 + "raíz: %s" + chr(10) + "tests: %s") % (

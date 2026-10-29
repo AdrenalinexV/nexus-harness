@@ -32,8 +32,8 @@ from .llm.portfolio import maybe_escalate
 from .reflection import learn
 from .repair_guard import isolated_repair
 from .savings import CACHE_REL as SKILLS_CACHE, SavingsLedger
-from .subagents import Delegate
-from .toolbox import process_manager
+from .tools.subagents import Delegate
+from .tools.toolbox import process_manager
 from .tools import default_registry
 from .triad_brief import CLOSE_PROMPT, JUDGE_REJECT, REPAIR_PROMPT, WORKER_PROMPT
 

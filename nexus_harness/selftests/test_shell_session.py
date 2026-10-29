@@ -13,7 +13,7 @@ import os
 import time
 
 from .fakes import TempProject
-from ..toolbox import process_manager, shell_session
+from ..tools.toolbox import process_manager, shell_session
 
 
 def check(name, got, expected, failures):

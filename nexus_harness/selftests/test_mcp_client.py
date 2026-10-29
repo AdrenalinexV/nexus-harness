@@ -9,7 +9,7 @@ import sys
 import time
 
 from .fakes import TempProject
-from ..mcp_client import McpError, McpManager, McpServer
+from ..tools.mcp_client import McpError, McpManager, McpServer
 from ..tools import default_registry
 
 FAKE_SERVER = r'''

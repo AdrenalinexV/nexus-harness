@@ -26,7 +26,7 @@ from .skill_router import library
 from .platform.events import Bus
 from .gate import Gate
 from .llm.judge import judge_for
-from .mcp_client import McpManager
+from .tools.mcp_client import McpManager
 from .memory import Memory
 from .llm.providers import Router
 from .tools import default_registry

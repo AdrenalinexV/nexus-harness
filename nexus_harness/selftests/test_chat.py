@@ -10,7 +10,7 @@ from ..config import HarnessConfig
 from ..platform.events import Bus
 from ..gate import Check, Verdict
 from ..memory import Memory
-from ..toolbox import file_ops as files
+from ..tools.toolbox import file_ops as files
 from ..tools import default_registry
 from ..platform.transcripts import Transcripts
 from ..llm.judge import Judge

@@ -8,82 +8,80 @@ the numbers.
 
 ```
 $ python tools/verify.py
-lint      exit 0   files=181 findings=0 max_lines=400 ignored_runtime=0 linter=builtin(R0,R1,R2)
-selftest  exit 0   suites=51 failures=0 skipped=2
+lint      exit 0   files=184 findings=0 max_lines=400 ignored_runtime=0 linter=protocol(R0,R1,R2,R3)
+selftest  exit 0   suites=51 failures=0 skipped=0
 verify: GREEN
 ```
 
 ## The suites, individually
 
 ```
-providers        OK    0.08s
+providers        OK    0.10s
 retry            OK    0.00s
-repair           OK    0.47s
-tools            OK    0.21s
-linelaw          OK    0.02s
-layers           OK    0.03s
+repair           OK    0.42s
+tools            OK    0.19s
+linelaw          OK    0.03s
+layers           OK    0.06s
 edit_v4a         OK    0.04s
-shell_session    OK    1.59s
-shell_policy     OK    0.26s
-checkpoint       OK    0.26s
+shell_session    OK    1.57s
+shell_policy     OK    0.24s
+checkpoint       OK    0.25s
 subagents        OK    0.01s
 warning: The `fitz` API is deprecated and will be removed in future. Use `import pymupdf` instead.
-attachments      OK    0.15s
-onboarding       OK    0.16s
-mcp_client       OK    0.45s
-sidecar          OK    5.13s
+attachments      OK    0.14s
+onboarding       OK    0.12s
+mcp_client       OK    0.44s
+sidecar          OK    5.12s
 estado listo: 2 criterios (2 pendientes)
 a -> exit 0 (VERDE)
 findings=0
 b -> exit 10 (ROJO)
 b marcado blocked
 criterio desconocido: zzz
-cerrojo ocupado: el turno de noche ya esta en marcha: pid 16800 desde 2026-10-29T19:28:02+00:00 (suite)
-no se toca nada. Si esa sesion ya no corre, el cerrojo se hereda solo; para forzarlo a mano, borra C:\Users\Vexus\AppData\Local\Temp\nightshift-tkpwm48j\.nexus\harness\nightshift.lock
+cerrojo ocupado: el turno de noche ya esta en marcha: pid 32504 desde 2026-10-29T19:32:40+00:00 (suite)
+no se toca nada. Si esa sesion ya no corre, el cerrojo se hereda solo; para forzarlo a mano, borra C:\Users\Vexus\AppData\Local\Temp\nightshift-fid_pnd8\.nexus\harness\nightshift.lock
 TOCA: b — falla
   prueba: python -c "raise SystemExit(10)"
   estado: blocked (intentos 1)
 a -> exit 0 (VERDE)
 findings=0
-nightshift       OK    0.44s
-context          OK    0.13s
-triad_loop       OK    2.73s
-session_relay    SKIP  0.00s
-    - necesita el gobernador (nexus.hive.relay): ModuleNotFoundError: No module named 'nexus.hive' -- apunta NEXUS_PROTOCOL a NexusProtocol
-relay_state      OK    0.34s
+nightshift       OK    0.46s
+context          OK    0.15s
+triad_loop       OK    2.93s
+session_relay    OK    1.57s
+relay_state      OK    0.33s
 savings          OK    0.94s
-skills           OK    0.20s
-worktree         OK    3.98s
+skills           OK    0.23s
+worktree         OK    4.28s
 deploy           OK    0.02s
 judge_repair     OK    0.02s
-compaction       OK    0.24s
-chat             OK    0.78s
-memory           OK    0.35s
-ui               OK    1.03s
-bridge           SKIP  0.00s
-    - necesita el gobernador (nexus.hive.queue): ModuleNotFoundError: No module named 'nexus.hive' -- apunta NEXUS_PROTOCOL a NexusProtocol
-budget           OK    0.44s
+compaction       OK    0.27s
+chat             OK    0.85s
+memory           OK    0.40s
+ui               OK    1.05s
+bridge           OK    0.06s
+budget           OK    0.50s
 charts           OK    0.00s
 activity         OK    0.00s
-projects         OK    0.91s
-autonomy         OK    1.04s
-ux               OK    1.26s
-learning         OK    0.04s
-oracle           OK    0.35s
+projects         OK    1.05s
+autonomy         OK    1.14s
+ux               OK    2.28s
+learning         OK    0.05s
+oracle           OK    0.36s
 tokenizer        OK    0.02s
-spec             OK    0.45s
+spec             OK    0.52s
 plan_graph       OK    0.00s
-portfolio        OK    0.19s
-eval             OK    5.22s
-daemon           OK    0.43s
+portfolio        OK    0.20s
+eval             OK    5.74s
+daemon           OK    0.45s
 notify           OK    0.00s
-browser          OK    5.11s
-recall           OK    0.24s
+browser          OK    5.22s
+recall           OK    0.25s
 context_window   OK    0.48s
-triad_presets    OK    0.06s
-triad_balance    OK    0.05s
+triad_presets    OK    0.07s
+triad_balance    OK    0.04s
 consult          OK    0.16s
-suites=51 failures=0 skipped=2
+suites=51 failures=0 skipped=0
 ```
 
 What each one actually proves:
