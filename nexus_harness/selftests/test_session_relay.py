@@ -10,6 +10,7 @@ of stopping the run:
 
 No human, no restart, same run.
 """
+from . import require_protocol
 from .fakes import FakeRouter, ScriptedProvider, ScriptedSkills, TempProject, reply
 from ..config import HarnessConfig
 from ..events import Bus
@@ -148,6 +149,9 @@ def _closed_phases(root):
 
 
 def run():
+    # La suite entera mide que el PROTOCOLO cierre las fases con los exits observados: sin gobernador
+    # no hay nada que medir, y decirlo es mejor que un rojo que parece un bug del harness.
+    require_protocol("nexus.hive.relay")
     failures = []
     test_meter(failures)
     test_store(failures)

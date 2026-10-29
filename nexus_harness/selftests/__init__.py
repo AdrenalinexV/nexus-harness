@@ -13,7 +13,22 @@ class Skip(Exception):
     """Raised by a suite that cannot run on this machine (missing optional engine, repo-only script)."""
 
 
-SUITES = ("providers", "retry", "repair", "tools", "edit_v4a", "shell_session", "shell_policy", "checkpoint", "subagents", "attachments",
+def require_protocol(module):
+    """Import a governor module, or declare the suite SKIP.
+
+    Some contracts are the governor's, not this package's: the hive queue, the relay state, the auto-spec
+    generator. When `NEXUS_PROTOCOL` is not on the machine those suites cannot measure anything, and the
+    honest answer is a SKIP naming the module and the variable that would fix it -- never a red that
+    reads like a bug in the harness.
+    """
+    try:
+        return importlib.import_module(module)
+    except Exception as exc:  # noqa: BLE001 -- any import failure means "not this machine"
+        raise Skip("necesita el gobernador (%s): %s: %s -- apunta NEXUS_PROTOCOL a NexusProtocol"
+                   % (module, type(exc).__name__, exc))
+
+
+SUITES = ("providers", "retry", "repair", "tools", "linelaw", "edit_v4a", "shell_session", "shell_policy", "checkpoint", "subagents", "attachments",
           "onboarding", "mcp_client", "sidecar", "nightshift", "context", "triad_loop", "session_relay", "relay_state", "savings", "skills", "worktree", "deploy", "judge_repair", "compaction", "chat",
           "memory", "ui", "bridge", "budget", "charts", "activity", "projects", "autonomy", "ux",
           "learning", "oracle", "tokenizer", "spec", "plan_graph", "portfolio", "eval", "daemon", "notify", "browser", "recall",

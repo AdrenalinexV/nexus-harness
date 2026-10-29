@@ -81,6 +81,14 @@ def test_governance_is_real(failures):
         config = onboarding.HarnessConfig.load(path=base / "harness.json", root=root)
         result = onboarding.apply(config, {"project": str(root), "governance": True, "probe": False})
         governance = result["saved"].get("governance") or {}
+        if not governance.get("ok"):
+            # Sin gobernador no hay auto-spec, y lo que se mide aqui es que lo DIGA con su motivo y no
+            # invente una spec vacia: una spec sin criterios es un contrato que no existe.
+            check("without the governor it says why it could not govern",
+                  "NexusProtocol" in str(governance.get("reason")), True, failures)
+            check("and no spec is invented on disk",
+                  (root / ".ai" / "CURRENT_SPEC.json").is_file(), False, failures)
+            return
         check("the auto-spec ran", governance.get("ok"), True)
         check("and wrote the spec", (root / ".ai" / "CURRENT_SPEC.json").is_file(), True)
         check("with its language detected", governance.get("language"), "python")

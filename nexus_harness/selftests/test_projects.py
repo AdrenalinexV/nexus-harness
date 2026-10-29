@@ -8,6 +8,7 @@ Dos cosas se prueban con cuidado, porque son las que muerden:
   `ok: False` con su motivo: es preferible un bucle que se para a uno que borra la tarde.
 """
 import json
+import os
 import shutil
 import subprocess
 import tempfile
@@ -16,7 +17,9 @@ from pathlib import Path
 from .. import backup, onboarding, projects
 from ..config import HarnessConfig
 
-WINDOWS_FLAGS = 0x08000000  # CREATE_NO_WINDOW, para no abrir consolas desde una suite
+# `creationflags` is a Windows-only kwarg: on POSIX, Python raises ValueError even for a plain flag
+# value, so the kwarg itself must be absent -- not zero. (CI measured exactly that on ubuntu.)
+WINDOWS_FLAGS = {"creationflags": 0x08000000} if os.name == "nt" else {}
 
 
 def check(name, got, expect, failures):
@@ -26,7 +29,7 @@ def check(name, got, expect, failures):
 
 def _git(root, *args):
     done = subprocess.run(["git", "-C", str(root), *args], capture_output=True, text=True,
-                          errors="replace", creationflags=WINDOWS_FLAGS)
+                          errors="replace", **WINDOWS_FLAGS)
     return done.returncode, (done.stdout or "") + (done.stderr or "")
 
 
@@ -131,16 +134,25 @@ def test_create(failures):
                   "servidor de ofertas" in (folder / ".ai" / "PROJECT_RULES.md")
                   .read_text(encoding="utf-8"), True, failures)
             governance = result.get("governance") or {}
-            check("the auto-spec ran", governance.get("ok"), True, failures)
-            check("the spec is frozen on disk",
-                  (folder / ".ai" / "CURRENT_SPEC.json").is_file(), True, failures)
+            governed = bool(governance.get("ok"))
+            if governed:
+                check("the auto-spec ran", True, True, failures)
+                check("the spec is frozen on disk",
+                      (folder / ".ai" / "CURRENT_SPEC.json").is_file(), True, failures)
+            else:
+                # Sin gobernador el alta sigue siendo un alta: se exige el motivo, ninguna spec
+                # inventada, y que el proyecto NO ocupe un sitio en la cola gobernada.
+                check("without the governor the result says why",
+                      "NexusProtocol" in str(governance.get("reason")), True, failures)
+                check("and no spec is invented on disk",
+                      (folder / ".ai" / "CURRENT_SPEC.json").is_file(), False, failures)
             if shutil.which("git"):
                 check("git was initialised", (folder / ".git").exists(), True, failures)
                 code, _out = _git(folder, "rev-parse", "HEAD")
                 check("with a first commit, so a snapshot has something to point at", code, 0,
                       failures)
-            check("and it goes to the END of the queue", result.get("order"), ["Alpha", "Beta-Nueva"],
-                  failures)
+            check("and it goes to the END of the queue", result.get("order"),
+                  ["Alpha", "Beta-Nueva"] if governed else ["Alpha"], failures)
             again = projects.create(config, "Beta-Nueva", "")
             check("creating it twice is refused", again.get("ok"), False, failures)
             for bad in ("../../escape", "con/slash", ""):

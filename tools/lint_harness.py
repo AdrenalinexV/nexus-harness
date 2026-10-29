@@ -1,8 +1,13 @@
-"""The line law, applied to this repository by the protocol's own linter.
+"""The line law, applied to this repository. Canonical linter when the governor is here, ours when not.
 
 `nexus/checks/rules_lint.py` fixes its `ROOT` to the Nexus Protocol repository, so running it as a
 script would lint the engine and not the harness. Its `lint_repo(root)` takes a root, which is the
 only seam needed: one definition of R0-R3 on this machine, pointed at a second tree.
+
+That import used to be unconditional, and it made this repository impossible to verify on any machine
+without the governor -- a fresh clone on CI died in `lint` with `No module named 'nexus'`. Now the
+governor wins when it is importable (R0-R3) and the harness's own mechanical law answers when it is
+not (R0-R2), and the summary line always says which one ran.
 
     python tools/lint_harness.py [--json]     exit 0 = clean, 1 = findings
 """
@@ -13,11 +18,22 @@ import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-NEXUS_SOURCE = Path(os.environ.get("NEXUS_PROTOCOL", r"C:\Proyectos\NexusProtocol"))
-if str(NEXUS_SOURCE) not in sys.path:
-    sys.path.insert(0, str(NEXUS_SOURCE))
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
 
-from nexus.checks import rules_lint  # noqa: E402  (path is prepared above, by design)
+from nexus_harness import linelaw  # noqa: E402  (the package is one level up, by design)
+
+
+def canonical():
+    """The governor's linter, or None. Never a module-level import: it is optional by definition."""
+    source = os.environ.get("NEXUS_PROTOCOL") or r"C:\Proyectos\NexusProtocol"
+    if str(source) not in sys.path:
+        sys.path.insert(0, str(source))
+    try:
+        from nexus.checks import rules_lint
+        return rules_lint
+    except ImportError:
+        return None
 
 # No skip list here: build output (`dist/`, `.build/`, `target/`) is the governor's business now, so
 # this wrapper cannot drift from the rules it is applying. Medido antes del cambio: `.build/venv`
@@ -36,7 +52,12 @@ def main(argv=None):
     parser.add_argument("--json", action="store_true")
     parser.add_argument("--root", default=str(ROOT))
     args = parser.parse_args(argv)
-    report = rules_lint.lint_repo(args.root)
+    module = canonical()
+    if module is not None:
+        report = module.lint_repo(args.root)
+        report["linter"], report["rules"] = "protocol", ["R0", "R1", "R2", "R3"]
+    else:
+        report = linelaw.lint_repo(args.root)
     findings = report["findings"]
     ignored = [item for item in findings
                if RUNTIME_PARTS & set(Path(str(item.get("file") or "")).parts)]
@@ -47,9 +68,10 @@ def main(argv=None):
         for finding in report["findings"]:
             print("%s %s:%s %s" % (finding["rule"], finding["file"], finding["line"],
                                    finding["detail"]))
-        print("files=%d findings=%d max_lines=%d ignored_runtime=%d"
+        print("files=%d findings=%d max_lines=%d ignored_runtime=%d linter=%s(%s)"
               % (report["files_scanned"], len(report["findings"]), report["max_lines"],
-                 len(ignored)))
+                 len(ignored), report.get("linter", "builtin"),
+                 ",".join(report.get("rules") or ())))
     return 0 if not report["findings"] else 1
 
 

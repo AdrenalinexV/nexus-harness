@@ -8,13 +8,16 @@ suite writes it with that same module and then holds the harness to four promise
 * an unknown project stays queued and visible instead of vanishing;
 * a runner that crashes closes red instead of staying dispatched forever.
 """
+import os
 import sys
 from pathlib import Path
 
+from . import require_protocol
 from .fakes import TempProject
 from ..bridge import Bridge
 
-NEXUS_SOURCE = Path(r"C:\Proyectos\NexusProtocol")
+# `NEXUS_PROTOCOL` first: a path written into a test file is a test that only runs on one machine.
+NEXUS_SOURCE = Path(os.environ.get("NEXUS_PROTOCOL") or r"C:\Proyectos\NexusProtocol")
 if str(NEXUS_SOURCE) not in sys.path:
     sys.path.insert(0, str(NEXUS_SOURCE))
 
@@ -121,6 +124,7 @@ def _closed_exits(workspace):
 
 
 def run():
+    require_protocol("nexus.hive.queue")
     failures = []
     for test in (test_queue_round_trip, test_cap_and_unknown_project,
                  test_crashing_runner_closes_red, test_red_run_is_not_closed_green):

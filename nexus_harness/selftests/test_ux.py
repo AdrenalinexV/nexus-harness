@@ -133,9 +133,17 @@ def test_queue_and_create(base, root, failures):
     created = json.loads(body)
     check("a project is created", status, 200, failures)
     check("its folder is there", (root / "Gamma").is_dir(), True, failures)
-    check("it is governed", (root / "Gamma" / ".ai" / "CURRENT_SPEC.json").is_file(), True, failures)
-    check("and it goes to the end of the queue", created["order"], ["Beta", "Alpha", "Gamma"],
-          failures)
+    if (root / "Gamma" / ".ai" / "CURRENT_SPEC.json").is_file():
+        check("it is governed", True, True, failures)
+        check("and it goes to the end of the queue", created["order"], ["Beta", "Alpha", "Gamma"],
+              failures)
+    else:
+        # Sin gobernador no hay auto-spec. Lo que se exige entonces es el otro contrato: el proyecto
+        # existe con sus reglas y NO entra en la cola como si estuviera gobernado.
+        check("without the governor the new project is not queued as governed", created["order"],
+              ["Beta", "Alpha"], failures)
+        check("but it exists as a project, with its rules",
+              (root / "Gamma" / ".ai" / "PROJECT_RULES.md").is_file(), True, failures)
     status, _body = _call(base, "/api/projects/new", {"name": "Gamma"})
     check("creating the same one twice is a 400", status, 400, failures)
 
@@ -214,8 +222,13 @@ def test_autonomy_over_http(base, failures):
         time.sleep(0.2)
     check("the loop finished on its own", state.get("running"), False, failures)
     check("having advanced one step", state.get("steps_done"), 1, failures)
-    check("the queue travels with the state", [row["name"] for row in state.get("projects") or []],
-          ["Beta", "Alpha", "Gamma"], failures)
+    # Sin gobernador la cola no lleva a Gamma (no tiene spec), asi que un literal aqui mediria la
+    # maquina y no el contrato. El invariante de verdad es que el estado de autonomia lleve LA MISMA
+    # cola que sirve el endpoint de proyectos.
+    _status, body = _call(base, "/api/projects/queue")
+    on_queue = [row["name"] for row in json.loads(body)["queue"]]
+    check("the queue travels with the state",
+          [row["name"] for row in state.get("projects") or []], on_queue, failures)
     _status, body = _call(base, "/api/events?since=0")
     kinds = [event["kind"] for event in json.loads(body)["events"]]
     for wanted in ("autonomy.start", "autonomy.backup", "autonomy.step"):

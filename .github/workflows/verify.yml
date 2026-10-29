@@ -81,8 +81,13 @@ jobs:
           python -m playwright install --with-deps chromium
       - name: With the engines present, SKIP must become coverage
         run: |
+          # `python ... | tee` sin pipefail devuelve el exit de `tee`: un selftest rojo pasaba por
+          # verde si el resumen traia la palabra buscada. El exit del motor va primero.
+          set -o pipefail
           python -m nexus_harness selftest 2>&1 | tee /tmp/selftest.log
-          grep -q "skipped=0" /tmp/selftest.log || {
-            echo "::error::con Pillow y Playwright instalados no deberia quedar ningun SKIP"
+          # Aqui SI hay Pillow y Playwright, asi que esas dos suites no pueden quedarse en SKIP. Las
+          # que dependen del gobernador (bridge, session_relay) si se saltan: no esta en CI.
+          if grep -qE "^(browser|attachments|nightshift)[[:space:]]+SKIP" /tmp/selftest.log; then
+            echo "::error::con los motores instalados, browser/attachments/nightshift no deben saltarse"
             exit 1
-          }
+          fi

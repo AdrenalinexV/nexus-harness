@@ -3,15 +3,17 @@
 Exit `10` is red and `0` is green -- the protocol's number, so a red gate is not a new vocabulary. Three
 checks, in increasing cost, and all of them deterministic:
 
-1. **The lint** (`nexus/checks/rules_lint.py`, R0-R3). Zero findings or red. It is the same function
-   the Nexus repository runs on itself, imported: there is one definition of the law on this machine.
+1. **The lint**. The governor's linter (`nexus/checks/rules_lint.py`, R0-R3) when this machine has it,
+   because there is then one definition of the law; otherwise the mechanical law this package ships
+   (`linelaw.py`, R0-R2), so `gate` is not a 20 for every user who never installed the governor. The
+   report names which one answered: a weaker law may never pass itself off as the full one.
 2. **The line law** on the files the turn touched, because "no file over 400 lines" is the one rule
    the model can break the moment it writes.
 3. **The project's own tests**, when the project declares a command. A project that declares none is
    reported as *not configured* -- never as green, because an absent check is not a passed check.
 
-A gate that cannot run (no Nexus install) returns exit `20` and says so. Fail-closed means it refuses
-to be green, not that it invents a verdict.
+A gate that cannot run at all returns exit `20` and says so. Fail-closed means it refuses to be green,
+not that it invents a verdict.
 """
 import os
 import shutil
@@ -22,7 +24,7 @@ import time
 from dataclasses import dataclass, field
 from pathlib import Path
 
-from . import oracle
+from . import linelaw, oracle
 
 EXIT_GREEN = 0
 EXIT_RED = 10
@@ -77,18 +79,19 @@ class Gate:
 
     def lint(self):
         module = _linter()
-        if module is None:
-            return Check("lint", False, "nexus lint not importable (NEXUS_PROTOCOL?)",
-                         exit=EXIT_UNAVAILABLE)
+        source = "protocol" if module is not None else "builtin"
         try:
-            report = module.lint_repo(str(self.root))
+            report = (module.lint_repo(str(self.root)) if module is not None
+                      else linelaw.lint_repo(self.root))
         except Exception as exc:
             return Check("lint", False, "lint crashed: %s: %s" % (type(exc).__name__, exc),
                          exit=EXIT_UNAVAILABLE)
         findings = report.get("findings") or []
         lines = ["[%s] %s:%s %s" % (item["rule"], item["file"], item["line"], item["detail"])
                  for item in findings[:60]]
-        detail = "%d findings over %d files" % (len(findings), report.get("files_scanned", 0))
+        detail = "%d findings over %d files (%s lint, %s)" % (
+            len(findings), report.get("files_scanned", 0), source,
+            ",".join(report.get("rules") or ()))
         if lines:
             detail = "%s\n%s" % (detail, "\n".join(lines))
         return Check("lint", not findings, detail,
