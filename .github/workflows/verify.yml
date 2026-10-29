@@ -29,15 +29,16 @@ jobs:
       matrix:
         os: [ubuntu-latest, windows-latest]
         python: ["3.11", "3.13"]
-    env:
-      # Bytecode cacheado hace que un fichero arreglado parezca roto: prefijo fresco por combinacion.
-      PYTHONPYCACHEPREFIX: ${{ runner.temp }}/pycache-${{ matrix.python }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python }}
       - name: Lint (line law) + every deterministic suite
+        env:
+          # Bytecode cacheado hace que un fichero arreglado parezca roto: prefijo fresco por combinacion.
+          # (En el `env:` del job el contexto `runner` no existe; aqui si.)
+          PYTHONPYCACHEPREFIX: ${{ runner.temp }}/pycache-${{ matrix.python }}
         run: python tools/verify.py
 
   wheel:
