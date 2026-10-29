@@ -2,7 +2,8 @@
 
 > Repo `C:\Proyectos\Nexus-Harness` · partida `d9be74a` · entrega `14c4019` · versión `1.1.0`.
 > Commits: `534f9df` (U1/U2/U3/U5 + prueba), `6886bd9` (sistema visual + chat + configuración),
-> `14c4019` (gobernanza). Nada de esto toca el motor, el gate ni la lógica de turno.
+> `14c4019` (gobernanza), `465c1c7` (este documento y sus capturas). Nada de esto toca el motor, el
+> gate ni la lógica de turno.
 >
 > Todo lo que dice este documento se midió. Donde no se pudo medir, se dice **no medido** y con qué
 > comando se cerraría.
@@ -116,7 +117,8 @@ chat **6,4 %**, configuración **15,9 %**, gobernanza **1,6 %**.
   API sin credencial. Cerrarlo del todo: abrir la cabina con el motor reiniciado y token nuevo.
 - **Contraste y accesibilidad.** No hay herramienta de contraste en el repo; «no medido». Cerrarlo:
   `axe-core` sobre las tres pantallas, o un cálculo de luminancia por par token/fondo.
-- **CI.** El run de la entrega es `verify` sobre `master`; ver el estado al final de este documento.
+- **CI.** Verde: `verify` sobre `master`, run `40966603175` (Windows + Linux), 1m35s. Los tres commits
+  anteriores pasaron el mismo workflow (`534f9df` en local, `6886bd9`+`14c4019` en el remoto).
 - **El vacío del chat «antes»**: el hilo no pintaba estado vacío en esa corrida y no se investigó por
   qué (queda como diferencia observada, no como defecto nombrado).
 
