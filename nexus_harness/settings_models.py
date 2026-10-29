@@ -86,6 +86,22 @@ def _swap_alert(info):
                             kit.hidden("preset", "cloud"))))
 
 
+def _recommend_card(cockpit, hardware, state):
+    """La tríada que esta máquina puede sostener, ya decidida: elegir es un clic, no un examen."""
+    from . import triad_recommend
+    info = triad_recommend.recommend(cockpit.config, state, hardware)
+    if not info.get("ok"):
+        return ('<div class="card"><p><span class="chip warn">sin tríada posible</span> '
+                '<span class="dim">%s</span></p></div>' % kit.esc(info.get("reason") or ""))
+    return ('<div class="card"><p><strong>%s</strong> <span class="dim">%s</span></p>'
+            '<p class="dim">%s</p>%s</div>'
+            % (kit.esc(info.get("title") or info.get("id")),
+               kit.esc(info.get("reason") or ""),
+               kit.esc(" · ".join("%s = %s" % (role, spec)
+                                  for role, spec in sorted(info["roles"].items()))),
+               _action_form("recommend", "Aplicar la recomendada", "", primary=True)))
+
+
 def _preset_bar(rows):
     """Los tres perfiles, ya resueltos contra esta maquina."""
     cards = []
@@ -304,12 +320,14 @@ def panel(cockpit, sub="", state=None, hardware=None):
     cards += _subagent_card(cockpit)
     body = ('<h3 class="ssub">Diagnóstico de hardware</h3>%s%s%s'
             '<h3 class="ssub">Tríada auto-adaptativa</h3>%s'
+            '<h3 class="ssub">Recomendación para esta máquina</h3>%s'
             '<h3 class="ssub">Perfiles recomendados de la tríada (1 clic)</h3>%s'
             '<h3 class="ssub">Servidores y proveedores</h3>%s%s'
             '<div class="rolegrid2">%s</div>'
             '<h3 class="ssub">Números del turno</h3>%s'
             % (_hardware_bar(hardware, info), _swap_alert(info), _ceiling_form(cockpit),
                _plan_card(plan),
+               _recommend_card(cockpit, hardware, state),
                _preset_bar(triad_presets.presets(cockpit, hardware, state)), _live_badge(state),
                _providers_bar(cockpit), cards,
                kit.form("/api/settings", "modelos", '<div class="sgrid">%s</div>'

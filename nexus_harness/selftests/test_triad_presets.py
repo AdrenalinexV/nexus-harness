@@ -13,7 +13,7 @@ Lo que esta suite defiende, y por qué cada cosa:
 
 Determinista: sin red, sin GPU y sin LM Studio. El hardware y el sondeo local entran inyectados.
 """
-from .. import hardware_probe, settings_models, triad_presets
+from .. import hardware_probe, settings_models, triad_presets, triad_recommend
 from ..config import HarnessConfig
 from ..judge import ADVERSARY, NullJudge, judge_for
 from ..message import Message
@@ -251,6 +251,33 @@ def test_a_cloud_director_is_left_alone(failures):
           ["worker_resident: el director no es local, no se toca el obrero"])
 
 
+def test_the_recommendation_picks_by_physics_not_by_taste(failures):
+    """Con un peso local que cabe, la recomendacion es local; sin local, hibrida; sin nada, se dice."""
+    cfg = config()
+    local = triad_recommend.recommend(cfg, state_for(cfg), FAKE_HW)
+    check("con local vivo recomienda local", local["id"], "local", failures)
+    check("y resuelve los tres roles", sorted(local["roles"]), ["director", "judge", "worker"],
+          failures)
+    check("el juez queda en gate (mismo peso)", local["judge_mode"], "gate", failures)
+    check("la linea se puede imprimir", "director=" in triad_recommend.recommend_text(local), True,
+          failures)
+
+    dead_local = {"local": {"lmstudio": {"ready": False, "error": "refused", "models": [],
+                                        "loaded": []}},
+                  "roles": {}}
+    cloud_cfg = config(secrets={"OPENROUTER_API_KEY": "sk-test"})
+    cloud = triad_recommend.recommend(cloud_cfg, dead_local, FAKE_HW)
+    check("sin local pero con clave, no se queda en local", cloud["id"] in ("hybrid", "cloud"), True,
+          failures)
+    check("y lo dice en el motivo", bool(cloud["reason"]), True, failures)
+
+    nothing = triad_recommend.recommend(config(), dead_local, FAKE_HW)
+    check("sin nada listo no inventa triada", nothing["ok"], False, failures)
+    check("y nombra lo que falta", "proveedor" in (nothing["reason"] or ""), True, failures)
+    check("el texto lo declara", triad_recommend.recommend_text(nothing).startswith("sin tríada"),
+          True, failures)
+
+
 def run():
     global CURRENT
     failures = []
@@ -261,7 +288,8 @@ def run():
                  test_the_panel_shows_hardware_presets_and_selects, test_the_judge_modes_are_real,
                  test_the_save_path_honours_the_free_id,
                  test_the_worker_can_be_pinned_to_the_resident,
-                 test_a_cloud_director_is_left_alone):
+                 test_a_cloud_director_is_left_alone,
+                 test_the_recommendation_picks_by_physics_not_by_taste):
         test(failures)
     return failures
 

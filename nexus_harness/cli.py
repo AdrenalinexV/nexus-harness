@@ -166,6 +166,12 @@ def cmd_models(args):
         print("  %-9s %-70s %s" % (role, info["spec"],
                                    "ready" if info["ready"] else info["why_not_ready"]))
     print("cloud ready: %s" % (", ".join(catalog["cloud_ready"]) or "none"))
+    from . import triad_recommend
+    info = triad_recommend.recommend(config)
+    print("recommend  : %s" % triad_recommend.recommend_text(info))
+    if getattr(args, "apply_recommend", False) and info.get("ok"):
+        note, ok = triad_recommend.apply_specs(config, info)
+        print("aplicado   : %s" % note)
     for vendor, models in catalog["local"].items():
         print("%s: %d models%s" % (vendor, len(models), (" -- " + ", ".join(models[:4]))
                                    if models else " (unreachable)"))
@@ -296,6 +302,8 @@ def build_parser():
     lint.set_defaults(func=cmd_lint)
 
     models = sub.add_parser("models", help="which local models are reachable")
+    models.add_argument("--apply-recommend", action="store_true", dest="apply_recommend",
+                        help="guarda la triada que recomienda esta maquina")
     models.add_argument("--project", default=None)
     models.set_defaults(func=cmd_models)
 

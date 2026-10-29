@@ -299,6 +299,10 @@ def action(cockpit, body):
     if what == "optimize":
         note, ok = triad_balance.apply(cockpit)
         return (note, ok, "modelos")
+    if what == "recommend":
+        from . import triad_recommend
+        note, ok = triad_recommend.apply_recommended(cockpit)
+        return (note, ok, "modelos")
     if what == "preset":
         from . import triad_presets
         note, ok = triad_presets.apply(cockpit, str(body.get("preset") or ""))
