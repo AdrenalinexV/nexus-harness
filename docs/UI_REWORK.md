@@ -1,6 +1,7 @@
 # Cabina — rework de UI y correcciones U1–U5 (2026-10-29)
 
-> Repo `C:\Proyectos\Nexus-Harness` · partida `d9be74a` · HEAD `174a65f` · versión `1.1.0`.
+> Repo `C:\Proyectos\Nexus-Harness` · partida `d9be74a` · **código de la cabina hasta `174a65f`** ·
+> versión `1.1.0`. Lo que va después son correcciones de este documento y sus capturas.
 > Commits: `534f9df` (U1/U2/U3/U5 + prueba), `6886bd9` (sistema visual + chat + configuración),
 > `14c4019` (gobernanza), `174a65f` (iconos dibujados, estado honesto en reposo) y los de este
 > documento con sus capturas. Nada de esto toca el motor, el gate ni la lógica de turno.
