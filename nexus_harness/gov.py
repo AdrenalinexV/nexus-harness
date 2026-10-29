@@ -29,7 +29,7 @@ import urllib.error
 import urllib.request
 from html import escape
 from pathlib import Path
-from urllib.parse import urlencode
+from urllib.parse import quote, urlencode
 
 PROTOCOL = Path(os.environ.get("NEXUS_PROTOCOL") or r"C:\Proyectos\NexusProtocol")
 WORKSPACE = Path(os.environ.get("NEXUS_WORKSPACE") or r"C:\Proyectos")
@@ -221,18 +221,18 @@ def rewrite(html):
     return rewritten, count
 
 
-def refusal_page(reason):
+def refusal_page(reason, token=""):
     """Cuando la gobernanza no esta, la vista no se queda en blanco: dice que falta y donde se mira."""
-    links = "".join('<a class="hnav-link" href="/gov?tab=%s">%s</a>' % (view, label)
-                    for view, _tab, label in VIEWS)
+    suffix = ("?token=%s" % token) if token else ""
     return ("<!doctype html><html lang=\"es\"><head><meta charset=\"utf-8\">"
             "<meta name=\"viewport\" content=\"width=device-width,initial-scale=1\">"
             "<title>Nexus-Harness &middot; gobernanza</title><style>%s%s</style></head><body>"
-            "<nav class=\"hnav\"><a class=\"hnav-link\" href=\"/\">\U0001f4ac Espacio de trabajo</a>"
-            "%s</nav><main class=\"hfail\"><h1>La gobernanza no esta disponible</h1><p>%s</p>"
+            "<nav class=\"hnav\"><a class=\"hnav-link\" href=\"/%s\">&larr; Volver al chat</a>"
+            "<span class=\"hnav-here\">Gobernanza</span></nav>"
+            "<main class=\"hfail\"><h1>La gobernanza no esta disponible</h1><p>%s</p>"
             "<p>El arnes sirve la GUI de NexusProtocol desde <code>%s</code>. Si el repositorio vive en "
             "otro sitio, define <code>NEXUS_PROTOCOL</code> con su ruta y vuelve a abrir esta vista.</p>"
-            "</main></body></html>" % (NAV_CSS, FAIL_CSS, links, escape(str(reason)), PROTOCOL))
+            "</main></body></html>" % (NAV_CSS, FAIL_CSS, suffix, escape(str(reason)), PROTOCOL))
 
 
 FAIL_CSS = """
@@ -247,16 +247,16 @@ code{background:var(--card2,#151b23);border:1px solid var(--line,#232b35);border
 
 
 def nav(active, token=""):
-    """La barra del arnes dentro de una pagina del protocolo."""
-    suffix = ("?token=%s" % token) if token else ""
-    # El enlace al chat nunca va "activo" aqui: esta pagina ES una vista de gobernanza.
-    links = ['<a class="hnav-link" href="/%s">%s</a>'
-             % (suffix, "\U0001f4ac Espacio de trabajo")]
-    links += ['<a class="hnav-link%s" href="/gov?tab=%s%s">%s</a>'
-              % (" on" if view == resolve(active) else "", view,
-                 ("&token=%s" % token) if token else "", label)
-              for view, _tab, label in VIEWS]
-    return ('<style>%s</style><nav class="hnav" id="hnav">%s</nav>' % (NAV_CSS, "".join(links)))
+    """La puerta de vuelta al chat, con la credencial puesta.
+
+    Aqui vivia una barra de CUATRO pestañas (01-04) que repetia -peor- las pestañas que la propia GUI del
+    protocolo ya trae (`<nav class="tabs" role="tablist">`): el mismo menu dos veces, y una tercera
+    superficie con su propio idioma de navegacion. Una entrada, la de volver, y el nombre de donde estas.
+    """
+    suffix = ("?token=%s" % quote(str(token), safe="")) if token else ""
+    return ('<style>%s</style><nav class="hnav" id="hnav">'
+            '<a class="hnav-link" href="/%s">&larr; Volver al chat</a>'
+            '<span class="hnav-here">Gobernanza</span></nav>' % (NAV_CSS, suffix))
 
 
 NAV_CSS = """
@@ -266,7 +266,8 @@ NAV_CSS = """
 .hnav-link{padding:.45rem .7rem;border-radius:9px;text-decoration:none;color:var(--muted,#8b97a6);
   border:1px solid transparent;white-space:nowrap}
 .hnav-link:hover{color:var(--fg,#e7eef6);background:var(--card2,#151b23);border-color:var(--line,#232b35)}
-.hnav-link.on{color:#fff;background:var(--accent,#3b82f6);border-color:var(--accent,#3b82f6)}
+.hnav-here{color:var(--muted,#8b97a6);font:500 .8rem/1.2 ui-monospace,monospace;
+  letter-spacing:.08em;text-transform:uppercase;margin-left:auto}
 """
 
 

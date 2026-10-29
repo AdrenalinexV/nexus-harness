@@ -179,7 +179,7 @@ class Handler(BaseHTTPRequestHandler):
         token = (parse_qs(urlparse(self.path).query).get("token") or [""])[0]
         extra = panels.harness_sections(self.cockpit) if gov.resolve(tab) == "setup" else ""
         html, reason = gov.page(tab, token, extra)
-        return self._page(html if html else gov.refusal_page(reason))
+        return self._page(html if html else gov.refusal_page(reason, token))
 
     def _forward(self, path, query, body):
         """Reenvia una accion del navegador a la GUI del protocolo: una implementacion, dos consumidores."""
