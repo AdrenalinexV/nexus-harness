@@ -30,7 +30,10 @@ include = ["nexus_harness*"]
 [tool.setuptools.package-data]
 # Sin esto el wheel se instala SIN la cabina: `ui.py` revienta en `do_GET` al leer index.html y el
 # cockpit queda muerto en un `pip install .` que decia haber ido bien.
-nexus_harness = ["web/*"]
+# Las skills del producto viajan con el paquete: `ui.py` sirve la cabina y `skill_router` enruta
+# `nexus_harness/skills/<name>/SKILL.md`. Sin esto, el wheel se instala sin ellas y la suite
+# `packaged_skills` (que corre sobre el wheel en CI) dice la verdad: no estan.
+nexus_harness = ["web/*", "skills/*/SKILL.md", "skills/*/references/*"]
 
 [project.optional-dependencies]
 # Nada de esto hace falta para el motor: son las capacidades que las suites declaran como SKIP si faltan.
