@@ -1,8 +1,9 @@
 # Nexus-Harness — project rules
 
-This repository is governed by Nexus Protocol from its first commit. The rules below are the ones
-a machine checks (`nexus/checks/rules_lint.py` via `tools/lint_harness.py`); the rest are the ones a
-reviewer checks.
+This repository is governed by Nexus Protocol from its first commit. The rules below are the ones a
+machine checks (`tools/lint_harness.py`: the governor's `rules_lint.py` when it is importable, else the
+mechanical law shipped in `nexus_harness/linelaw.py`, R0-R2 — the summary line always says which one
+answered); the rest are the ones a reviewer checks.
 
 ## Laws
 

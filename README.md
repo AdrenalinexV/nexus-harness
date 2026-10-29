@@ -1,8 +1,24 @@
 # Nexus-Harness
 
+[![verify](https://github.com/AdrenalinexV/nexus-harness/actions/workflows/verify.yml/badge.svg)](https://github.com/AdrenalinexV/nexus-harness/actions/workflows/verify.yml)
+
 An autonomous engineering harness in pure Python, where the Nexus Protocol is not a hook bolted on
 from outside but the turn loop itself: skills routing runs before every model call, the deterministic
 lint is the gate, and a session that fills its budget hands itself over to a clean one without asking.
+
+Zero runtime dependencies. `pip install .` gives the `nexus-harness` command and the cockpit; the
+optional engines (`pillow`, `playwright`) are extras, and the suites that need them say `SKIP` out loud
+with the command that would install them instead of failing:
+
+```
+pip install .                        # engine + cockpit, standard library only
+pip install ".[media,browser]"       # + attachments/vision and the native browser tool
+nexus-harness selftest               # the same 50 suites as `python -m nexus_harness selftest`
+```
+
+CI runs the gate on a machine that is not the one it was written on — Windows and Linux, Python 3.11
+and 3.13 — plus a job that installs the wheel and runs it from outside the repository, and one with the
+optional engines installed, where a `SKIP` is treated as a failure.
 
 **It ships as a desktop app**: `NexusHarness-Setup-1.0.0.exe` installs a native window with the engine
 frozen inside (no Python on the target machine). See [docs/DESKTOP.md](docs/DESKTOP.md).
