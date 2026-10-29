@@ -17,7 +17,7 @@ from ..platform import hardware_probe
 from .. import settings_models, triad_presets, triad_recommend
 from ..config import HarnessConfig
 from ..judge import ADVERSARY, NullJudge, judge_for
-from ..message import Message
+from ..core.message import Message
 
 
 # La lista viva de fallos. Existe para que cada `check()` pueda escribirse sin arrastrar el parametro

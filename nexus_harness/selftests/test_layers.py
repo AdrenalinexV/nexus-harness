@@ -1,31 +1,33 @@
-"""El invariante de capas: `platform/` no puede mirar hacia arriba.
+"""El invariante de capas: una capa no puede mirar hacia arriba.
 
-Una capa no es una carpeta con un nombre bonito: es una regla que un test puede romper. Esta suite mide
-la primera y la mas barata de todas -- la hoja -- y sirve de plantilla para las que faltan:
+Una capa no es una carpeta con un nombre bonito: es una regla que un test puede romper. Se declara aqui
+lo que YA esta migrado, y se exige exactamente eso:
 
-* **platform importa solo platform.** Nada de `from ..config`, ni `from . import message`, ni
-  `nexus_harness.chat`. Si la capa de abajo mira hacia arriba, la migracion no ha terminado aunque los
-  tests pasen: es un alias con burocracia.
-* **lo declarado es lo que hay.** El set de modulos de `platform/` es exacto: un fichero suelto ahi es
-  una capa sin duenno, y un modulo declarado que no existe es un documento que miente.
-* **y se puede importar.** Un invariante de texto que no arranca el paquete no prueba que el paquete
-  cargue; se importan los modulos declarados uno a uno.
+* **lo declarado es lo real.** El set de modulos de cada carpeta es exacto: un fichero suelto es una capa
+  sin duenno y un modulo declarado que no existe es un documento que miente.
+* **nadie importa hacia su derecha.** Un modulo puede importar capas a su izquierda (y hermanos de la
+  suya); importar una capa posterior -- o un modulo que sigue plano, que es arriba por definicion -- es un
+  `file:line` con el import completo, no un contador.
+* **y carga.** `importlib` sobre cada modulo declarado: un invariante de texto que no arranca el paquete
+  no prueba nada del paquete.
 
-Deliberadamente NO exige que el resto del arbol ya este por capas: eso es el paso 2, y una suite que se
-pone roja durante semanas por trabajo pendiente se acaba desactivando. Cuando el arbol entero este
-mapeado, la lista de capas de aqui abajo crece y la regla se aplica a todas.
+Deliberadamente NO exige que el arbol entero este mapeado: una suite que lleva semanas roja por trabajo
+pendiente se desactiva mucho antes de que la migracion acabe. El mapa crece con cada capa, y los planos
+que quedan se cuentan en el plan, no se afirman aqui.
 """
 import ast
 import importlib
 from pathlib import Path
 
-PACKAGE = Path(__file__).resolve().parents[1]
-PLATFORM = PACKAGE / "platform"
+PKG = Path(__file__).resolve().parents[1]
 
 # El orden es la ley: cada capa puede importar las de su izquierda, nunca las de su derecha.
-LAYERS = ("platform", "core", "llm", "tools", "context", "verify", "autonomy", "spec", "learning")
-PLATFORM_MODULES = ("backup", "events", "hardware_probe", "ledger", "policy", "tokenizer",
-                    "transcripts", "vault")
+ORDER = ("platform", "core", "llm", "tools", "context", "verify", "autonomy", "spec", "learning")
+DECLARED = {
+    "platform": ("backup", "events", "hardware_probe", "ledger", "policy", "tokenizer",
+                 "transcripts", "vault"),
+    "core": ("budget", "message", "outcomes", "tasks"),
+}
 
 
 def check(name, got, expect, failures):
@@ -33,65 +35,88 @@ def check(name, got, expect, failures):
         failures.append("%s: %r, esperaba %r" % (name, got, expect))
 
 
-def _imports_of(path):
-    """`(linea, texto)` de cada import del fichero, sea relativo o absoluto."""
-    found = []
-    for node in ast.walk(ast.parse(path.read_text(encoding="utf-8", errors="replace"))):
-        if isinstance(node, ast.ImportFrom):
-            where = "." * node.level + (node.module or "")
-            if node.module is None:
-                where = "." * node.level + "{%s}" % ", ".join(a.name for a in node.names)
-            found.append((node.lineno, where))
-        elif isinstance(node, ast.Import):
-            found.extend((node.lineno, alias.name) for alias in node.names)
+def modules_in(layer):
+    return tuple(sorted(p.stem for p in (PKG / layer).glob("*.py") if p.stem != "__init__"))
+
+
+def flat_modules():
+    return {p.stem for p in PKG.glob("*.py")}
+
+
+def package_of(path):
+    return list(path.relative_to(PKG).with_suffix("").parts[:-1])
+
+
+def resolve(node, path):
+    """El modulo absoluto que importa `node`, visto desde `path` (`core.tasks`, `tools`, ...)."""
+    level = node.level or 0
+    package = package_of(path)
+    base = package[:len(package) - (level - 1)] if level > 1 else package
+    if node.module:
+        return ".".join(base + node.module.split("."))
+    return ""
+
+
+def targets_of(node, path):
+    """Los modulos destino de una sentencia de import (vacio si no apunta dentro del paquete)."""
+    if isinstance(node, ast.Import):
+        return [a.name[len("nexus_harness."):] for a in node.names if a.name.startswith("nexus_harness.")]
+    if not isinstance(node, ast.ImportFrom):
+        return []
+    base = resolve(node, path)
+    if node.module:
+        return [base]
+    return ["%s.%s" % (base, alias.name) if base else alias.name for alias in node.names]
+
+
+def layer_of(module):
+    head = module.split(".")[0] if module else ""
+    return head if head in ORDER else None
+
+
+def violations():
+    """`['capa/fichero.py:12 importa tools (a la derecha)']` sobre el mapa declarado."""
+    found, flat = [], flat_modules()
+    for layer, names in DECLARED.items():
+        for name in names:
+            path = PKG / layer / (name + ".py")
+            for node in ast.walk(ast.parse(path.read_text(encoding="utf-8", errors="replace"))):
+                for target in targets_of(node, path):
+                    other = layer_of(target)
+                    where = "%s/%s.py:%s" % (layer, name, node.lineno)
+                    if other is None:
+                        if target.split(".")[0] in flat:
+                            found.append("%s importa %r, que sigue plano (arriba)" % (where, target))
+                    elif ORDER.index(other) > ORDER.index(layer):
+                        found.append("%s importa %r, capa a la derecha" % (where, target))
     return found
 
 
-def _platform_siblings():
-    return {path.stem for path in PLATFORM.glob("*.py") if path.stem != "__init__"}
+def test_declared_is_real(failures):
+    for layer, names in DECLARED.items():
+        check("%s declara exactamente sus modulos" % layer, modules_in(layer),
+              tuple(sorted(names)), failures)
 
 
-def test_platform_is_a_leaf(failures):
-    siblings = _platform_siblings()
-    escapes = []
-    for path in sorted(PLATFORM.glob("*.py")):
-        for line, where in _imports_of(path):
-            if where.startswith(".."):
-                escapes.append("%s:%s %s sale de la capa con un import relativo" % (path.name, line, where))
-                continue
-            if where.startswith("."):
-                if where.startswith(".{"):
-                    names = where[2:-1].split(", ")
-                    for name in names:
-                        if name != "__version__" and name not in siblings:
-                            escapes.append("%s:%s importa %r de la raiz" % (path.name, line, name))
-                continue
-            if where.split(".")[0] == "nexus_harness":
-                target = where.split(".")[1] if "." in where else ""
-                if target not in ("platform",):
-                    escapes.append("%s:%s importa %s" % (path.name, line, where))
-    check("platform no importa nada de fuera de platform", escapes, [], failures)
+def test_nobody_imports_upwards(failures):
+    check("ninguna capa migrada importa hacia su derecha", violations(), [], failures)
 
 
-def test_the_declared_modules_are_the_real_ones(failures):
-    check("los modulos de platform son exactamente los declarados", tuple(sorted(_platform_siblings())),
-          tuple(sorted(PLATFORM_MODULES)), failures)
-
-
-def test_the_layer_loads(failures):
+def test_every_layer_loads(failures):
     broken = []
-    for module in PLATFORM_MODULES:
-        try:
-            importlib.import_module("nexus_harness.platform.%s" % module)
-        except Exception as exc:  # noqa: BLE001 -- un import roto es el hallazgo
-            broken.append("%s: %s: %s" % (module, type(exc).__name__, exc))
-    check("cada modulo de la capa se importa", broken, [], failures)
-    check("y la capa declara su sitio en el orden", LAYERS[0], "platform", failures)
+    for layer, names in DECLARED.items():
+        for name in names:
+            try:
+                importlib.import_module("nexus_harness.%s.%s" % (layer, name))
+            except Exception as exc:  # noqa: BLE001 -- un import roto es el hallazgo
+                broken.append("%s.%s: %s: %s" % (layer, name, type(exc).__name__, exc))
+    check("cada modulo declarado se importa", broken, [], failures)
+    check("y el orden de capas empieza por platform", ORDER[0], "platform", failures)
 
 
 def run():
     failures = []
-    test_platform_is_a_leaf(failures)
-    test_the_declared_modules_are_the_real_ones(failures)
-    test_the_layer_loads(failures)
+    test_declared_is_real(failures)
+    test_nobody_imports_upwards(failures)
+    test_every_layer_loads(failures)
     return failures

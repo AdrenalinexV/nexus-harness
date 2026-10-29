@@ -33,7 +33,7 @@ def test_module_selftest(failures):
 
 
 def test_pruning_saves_most_of_the_window(failures):
-    from ..message import Message, ToolCall
+    from ..core.message import Message, ToolCall
 
     def turn(index):
         call = ToolCall(id="c%d" % index, name="read_file", arguments={"path": "calc.py"},
@@ -54,7 +54,7 @@ def test_pruning_saves_most_of_the_window(failures):
 
 
 def test_prune_preserves_non_tool_messages(failures):
-    from ..message import Message, ToolCall
+    from ..core.message import Message, ToolCall
 
     call = ToolCall(id="c1", name="read_file", arguments={"path": "calc.py"},
                     raw_arguments='{"path": "calc.py"}')

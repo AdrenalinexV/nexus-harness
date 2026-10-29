@@ -17,7 +17,8 @@ import time
 from pathlib import Path
 
 from .fakes import TempProject
-from .. import improve, tasks
+from ..core import tasks
+from .. import improve
 from ..config import HarnessConfig
 from ..daemon import Daemon
 

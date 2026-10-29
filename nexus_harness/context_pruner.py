@@ -149,7 +149,7 @@ def prune(messages, keep_last_steps=KEEP_LAST_STEPS, min_chars=MIN_CHARS):
 def selftest():
     import tempfile
 
-    from .message import Message, ToolCall
+    from .core.message import Message, ToolCall
 
     problems = []
 

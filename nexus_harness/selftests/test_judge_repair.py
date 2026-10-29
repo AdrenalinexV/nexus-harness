@@ -10,7 +10,7 @@ Cuatro cosas que un harness serio tiene que demostrar y que hasta ahora no estab
 """
 from .. import activity, repair_hint
 from ..judge import CONVERSATION, SYSTEM, Judge, mode_for, parse_verdict
-from ..message import Message, as_text
+from ..core.message import Message, as_text
 from ..tools import default_registry
 from .fakes import FakeRouter, ScriptedProvider, TempProject, reply
 

@@ -10,7 +10,7 @@ import tempfile
 from dataclasses import dataclass, field
 from pathlib import Path
 
-from ..message import Message, Reply, ToolCall, Usage
+from ..core.message import Message, Reply, ToolCall, Usage
 
 
 def reply(text="", tools=(), reasoning="", prompt=10, completion=5, model="fake:scripted"):

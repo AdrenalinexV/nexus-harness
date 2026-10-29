@@ -55,7 +55,7 @@ def test_ollama_parser(failures):
 
 def test_anthropic_conversion(failures):
     transport = Anthropic("claude", api_key="k")
-    from ..message import Message, ToolCall
+    from ..core.message import Message, ToolCall
     messages = [Message(role="system", content="eres juez"),
                 Message(role="user", content="objetivo"),
                 Message(role="assistant", content="",

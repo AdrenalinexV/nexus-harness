@@ -22,7 +22,7 @@ from ..config import HarnessConfig
 from ..platform.events import Bus
 from ..gate import Gate
 from ..judge import Judge
-from ..message import Reply, ToolCall, Usage, as_text
+from ..core.message import Reply, ToolCall, Usage, as_text
 from ..tools import Observation, default_registry
 from ..triad_loop import Triad
 from ..platform.transcripts import Transcripts

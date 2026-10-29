@@ -7,7 +7,7 @@
 
 Everything else is the same request: model, messages, stream=false, an `options` block for sampling.
 """
-from ..message import Message, Reply, ToolCall, Usage
+from ..core.message import Message, Reply, ToolCall, Usage
 from . import http
 
 

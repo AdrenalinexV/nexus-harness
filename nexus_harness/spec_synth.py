@@ -96,7 +96,7 @@ def _object(text):
 
 def director_candidates(router, root, goal, config=None):
     """El Director propone criterios; el arnes los valida. Su opinion no basta para congelarlos."""
-    from .message import Message
+    from .core.message import Message
 
     prompt = ("Proyecto: %s\nObjetivo: %s\n\nPropone entre 2 y %d criterios de aceptacion "
               "EJECUTABLES: cada uno con un comando de shell que salga 0 cuando el objetivo este "

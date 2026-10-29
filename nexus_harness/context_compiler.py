@@ -21,7 +21,7 @@ texto, para que el modelo sepa que falta y pueda pedirlo.
 import hashlib
 from dataclasses import dataclass, field
 
-from .message import Message
+from .core.message import Message
 from .platform.tokenizer import count
 
 DELTA_MARKER = "## Contexto actualizado (NEXUS)"

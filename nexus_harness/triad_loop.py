@@ -19,7 +19,7 @@ from pathlib import Path
 
 from .platform import ledger
 from . import triad_brief
-from .budget import CostBudget
+from .core.budget import CostBudget
 from .compaction import Compactor
 from .context_compiler import build_prefix
 from .platform.tokenizer import calibration, count_messages
@@ -27,7 +27,7 @@ from .turn_context import apply_budget, build_turn_prefix, inject_skills
 from .turn_engine import TurnEngine
 from .gate import EXIT_GREEN, EXIT_UNAVAILABLE, Gate
 from .judge import judge_for
-from .message import Message, as_text
+from .core.message import Message, as_text
 from .portfolio import maybe_escalate
 from .reflection import learn
 from .repair_guard import isolated_repair

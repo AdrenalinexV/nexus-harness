@@ -20,7 +20,7 @@ import time
 from pathlib import Path
 
 from . import skill_forge
-from .outcomes import record_skills
+from .core.outcomes import record_skills
 from .skill_forge import ForgeTrigger
 from .skill_router import EXTENSIONS
 from . import oracle

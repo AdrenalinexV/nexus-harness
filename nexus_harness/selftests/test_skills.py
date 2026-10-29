@@ -56,7 +56,7 @@ def test_the_tool_is_in_the_arsenal(failures):
 
 def test_one_catalog_and_the_outcome_boost(failures):
     """Un solo catalogo, y el libro de resultados cambia el ORDEN sin inventar skills."""
-    from .. import outcomes
+    from ..core import outcomes
 
     with TempProject() as root:
         catalog = root / "catalogo"

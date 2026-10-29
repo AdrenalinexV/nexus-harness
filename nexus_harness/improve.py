@@ -14,7 +14,8 @@ con su gate delante; congelar criterios sin ejecutarlos seria volver al principi
 from pathlib import Path
 
 from .platform import ledger
-from . import oracle, tasks
+from .core import tasks
+from . import oracle
 from .spec_synth import SPEC_REL
 
 MAX_FILES = 400

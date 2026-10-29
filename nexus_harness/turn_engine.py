@@ -163,7 +163,7 @@ def selftest():
             return []
 
     from .compaction import Compactor
-    from .message import Message
+    from .core.message import Message
 
     late = [Message(role="system", content="reglas " * 50), Message(role="user", content="hazlo")]
     late += [Message(role="tool", content=BULK, tool_call_id="c%d" % index, name="read_file")

@@ -20,10 +20,10 @@ from dataclasses import dataclass, field
 from . import attachments as attachment_tools
 from .platform import ledger
 from . import checkpoint
-from .budget import CostBudget
+from .core.budget import CostBudget
 from .compaction import Compactor
 from .context_compiler import TurnWindow
-from .message import Message, as_text
+from .core.message import Message, as_text
 from .portfolio import maybe_escalate
 from .reflection import learn
 from .platform.tokenizer import calibration, count_messages

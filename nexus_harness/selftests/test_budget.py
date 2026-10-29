@@ -11,12 +11,12 @@ The suite measures the real module (`nexus_harness.budget`) and the two real loo
   segundo caso (sin techo) y el primero (con techo) llamarian igual.
 """
 from .fakes import FakeGate, FakeRouter, ScriptedProvider, ScriptedSkills, TempProject, reply
-from ..budget import CostBudget, cost_of, price_of
+from ..core.budget import CostBudget, cost_of, price_of
 from ..chat import Chat
 from ..config import HarnessConfig
 from ..platform.events import Bus
 from ..judge import Judge
-from ..message import Usage
+from ..core.message import Usage
 from ..tools import default_registry
 from ..platform.transcripts import Transcripts
 from ..triad_loop import Triad

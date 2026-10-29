@@ -8,7 +8,8 @@ import json
 from pathlib import Path
 
 from .fakes import TempProject
-from .. import outcomes, reflection
+from ..core import outcomes
+from .. import reflection
 from ..config import HarnessConfig
 
 

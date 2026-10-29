@@ -17,7 +17,7 @@ import re
 from dataclasses import dataclass
 from pathlib import Path
 
-from .message import Message
+from .core.message import Message
 
 # El JSON del juez se recorta ahora con `_objects` (escaneo de llaves), no con una regex codiciosa.
 MAX_SUMMARY = 2500

@@ -257,7 +257,7 @@ def selftest():
     check("otro error no se confunde con ventana", overflow(Otro()), 0)
     check("sin cuerpo no hay ventana", overflow(RuntimeError()), 0)
 
-    from .message import Message
+    from .core.message import Message
     big = [Message(role="system", content="reglas " * 100),
            Message(role="user", content="hazlo"),
            Message(role="tool", content="x" * 40000, tool_call_id="c1", name="read_file")]

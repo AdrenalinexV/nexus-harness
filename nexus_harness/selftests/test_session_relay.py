@@ -32,7 +32,7 @@ def check(name, got, expected, failures):
 
 
 def test_meter(failures):
-    from ..message import Usage
+    from ..core.message import Usage
     meter = BudgetMeter(limit=100, threshold=0.7)
     check("a fresh meter is unmeasured", meter.state()["state"], "unmeasured", failures)
     check("and does not relay", meter.state()["should_relay"], False, failures)

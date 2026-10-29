@@ -27,7 +27,7 @@ from pathlib import Path
 from . import improve, projects, spec_synth
 from .autonomy import Autopilot
 from .notify import Notifier, summary
-from .tasks import Inbox
+from .core.tasks import Inbox
 
 STATE_NAME = "daemon.json"
 LOCK_NAME = "daemon.lock"

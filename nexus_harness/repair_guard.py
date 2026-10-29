@@ -12,7 +12,7 @@ escritura sin que se lo pidan es un arnes que rompe flujos que ya funcionaban.
 from pathlib import Path
 
 from .compaction import estimate
-from .message import Message
+from .core.message import Message
 from .worktree_sandbox import Sandbox, _run
 
 

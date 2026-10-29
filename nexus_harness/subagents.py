@@ -27,7 +27,7 @@ from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass, field
 from pathlib import Path
 
-from .message import Message
+from .core.message import Message
 from .tools import SCHEMAS, ROOT_HANDLERS, Registry
 
 SUBAGENT_SYSTEM = """Eres un subagente de investigación de Nexus-Harness. Trabajas en una ventana de

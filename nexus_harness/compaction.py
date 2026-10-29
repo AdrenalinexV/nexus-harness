@@ -22,7 +22,7 @@ Below the threshold nothing happens, and that is recorded (`applied=False`), nev
 """
 from dataclasses import dataclass, field
 
-from .message import Message
+from .core.message import Message
 
 CHARS_PER_TOKEN = 4
 ENVELOPE_CHARS = 16          # role, ids and separators the wire adds around a message's text

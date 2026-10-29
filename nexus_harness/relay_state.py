@@ -190,7 +190,7 @@ def selftest():
     """La poda y el estado, medidos con un transcript de verdad en un directorio temporal."""
     import tempfile
 
-    from .message import Message, ToolCall
+    from .core.message import Message, ToolCall
 
     problems = []
 

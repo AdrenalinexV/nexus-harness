@@ -42,7 +42,7 @@ def cmd_daemon(args):
 
 def cmd_task(args):
     """La bandeja: lo que un bot, un cron o una persona dejan para el daemon."""
-    from .tasks import Inbox
+    from .core.tasks import Inbox
 
     config = _config(args)
     inbox = Inbox(Path(config.workspace))

@@ -26,7 +26,7 @@ def test_the_estimate_grows_with_the_text(failures):
 
 
 def test_a_message_costs_more_than_its_text(failures):
-    from ..message import Message
+    from ..core.message import Message
     text = "hola mundo"
     body = tokenizer.count(text)
     messages = [Message(role="user", content=text), Message(role="assistant", content=text)]

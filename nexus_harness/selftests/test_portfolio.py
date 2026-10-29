@@ -8,9 +8,10 @@ Lo que se mide:
 """
 from .fakes import FakeGate, FakeRouter, ScriptedProvider, TempProject, reply
 from ..platform import ledger
-from .. import budget, savings
+from ..core import budget
+from .. import savings
 from ..config import HarnessConfig
-from ..message import Usage
+from ..core.message import Usage
 from ..portfolio import Portfolio, maybe_escalate
 from ..providers import Router
 from ..selftests.test_triad_loop import config_for

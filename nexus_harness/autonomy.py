@@ -57,7 +57,7 @@ def parse_plan(text):
 
 def model_planner(router, config):
     """El planificador de verdad: el Director, con la spec y el progreso delante."""
-    from .message import Message
+    from .core.message import Message
 
     def plan(root, goal, progress):
         spec = projects.spec_of(root)

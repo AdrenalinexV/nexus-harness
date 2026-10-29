@@ -21,7 +21,7 @@ import re
 from dataclasses import dataclass, field
 from pathlib import Path
 
-from .outcomes import Outcomes
+from .core.outcomes import Outcomes
 from .relay_state import sha256_text
 
 MAX_ACTIVE = 10
