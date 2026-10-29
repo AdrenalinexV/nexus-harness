@@ -86,9 +86,13 @@ function paintState(s) {
   const chosen = $('project').value && !String($('project').value).startsWith('—');
   $('send').disabled = !chosen;
   $('input').placeholder = chosen
-    ? 'Escribe una tarea o una pregunta…  (Ctrl+Enter envía)'
-    : 'Elige un proyecto en la barra lateral para empezar';
-  $('title').textContent = (session && (session.title || session.id)) || 'sin conversación';
+    ? 'Escribe una tarea o una pregunta…  Ctrl+Enter envía'
+    : 'Elige un proyecto en el índice para empezar';
+  // Sin conversación no hay título de página que enseñar: la portada ya dice qué hacer, y dos
+  // titulares compitiendo («sin conversación» + «¿Qué construimos?») es ruido de dashboard.
+  const head = document.querySelector('.doc-head');
+  if (head) head.hidden = !session;
+  $('title').textContent = session ? (session.title || session.id) : '';
   $('doc-meta').textContent = session ? `${session.id} · ${session.turns || 0} turnos` : '';
   const config = s.config || {};
   $('engine').textContent = `${config.host}:${config.port}`;

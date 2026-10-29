@@ -25,23 +25,30 @@ window.NexusSessions = (function () {
     for (const row of visible) {
       const item = document.createElement('li');
       if (row.id === state.session) item.className = 'active';
+      // El folio del índice es el mismo número con el que se cita la conversación.
+      const folio = document.createElement('span');
+      folio.className = 'folio';
+      folio.textContent = String(visible.indexOf(row) + 1).padStart(2, '0');
       const name = document.createElement('span');
       name.className = 'name';
       name.textContent = row.title || row.id;
-      name.title = `${row.id} · ${row.turns || 0} turnos`;
+      name.title = `${row.id} · ${row.turns || 0} turnos · doble clic para renombrar`;
       name.onclick = () => loadSession(row.id);
-      item.appendChild(name);
-      for (const [iconName, label, handler] of [['sliders', 'renombrar', () => renameSession(row)],
-                                                 ['close', 'borrar', () => deleteSession(row)]]) {
+      name.ondblclick = () => renameSession(row);
+      const acts = document.createElement('span');
+      acts.className = 'acts';
+      for (const [text, label, handler] of [['renombrar', 'renombrar', () => renameSession(row)],
+                                            ['×', 'borrar', () => deleteSession(row)]]) {
         const act = document.createElement('span');
         act.className = 'act';
+        act.textContent = text;
         act.title = label;
         act.setAttribute('role', 'button');
         act.setAttribute('aria-label', label);
-        act.appendChild(window.NX.icon(iconName));
         act.onclick = (event) => { event.stopPropagation(); handler(); };
-        item.appendChild(act);
+        acts.appendChild(act);
       }
+      item.append(folio, name, acts);
       list.appendChild(item);
     }
   }

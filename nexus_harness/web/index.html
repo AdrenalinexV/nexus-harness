@@ -11,12 +11,12 @@
 <body class="chat-only">
 <!--NEXUS_SPRITE-->
 
-<!-- El chat, y solo el chat: ancho de lado a lado. La configuración vive en su propia pantalla
-     (`/settings`) y la gobernanza en la suya (`/gov`); las dos se abren desde la columna izquierda.
-     La barra en vivo (fase, herramienta, progreso) la pinta `activity.js` desde `/api/activity`. -->
-<header class="appbar chat-top">
-  <a class="brand" href="/?token={{token}}"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-nexus"/></svg>NEXUS<span>·</span>HARNESS</a>
-  <span id="engine" class="engine mono"></span>
+<!-- El cuaderno de obra: masthead de una línea, índice a la izquierda y el hilo como documento.
+     La configuración (`/settings`) y la gobernanza (`/gov`) son las dos puertas del índice.
+     La línea de estado la pinta `activity.js` desde `/api/activity`. -->
+<header class="masthead chat-top">
+  <a class="brand" href="/?token={{token}}">NEXUS<span>·</span>HARNESS</a>
+  <span class="meta">motor <b id="engine"></b> · v<span id="version"></span></span>
   <div class="top-right">
     <button id="activity" class="activity idle" type="button" aria-expanded="false"
             aria-controls="activity-pop" title="Estado del motor en vivo">
@@ -58,24 +58,26 @@
 
 <div class="app">
   <aside class="sidebar">
-    <label class="field">Proyecto<select id="project"></select></label>
-    <button id="new-chat" class="primary wide">Nueva conversación</button>
-    <div class="side-title">Conversaciones</div>
-    <input id="session-search" class="search" type="search" placeholder="buscar conversación…"
+    <div class="volume"><span class="label">Proyecto</span><select id="project"
+      aria-label="Proyecto"></select></div>
+    <button id="new-chat" class="wide">+ Nueva conversación</button>
+    <div class="side-title">Índice</div>
+    <input id="session-search" class="search" type="search" placeholder="buscar folio…"
            aria-label="Buscar conversación">
     <ul id="sessions" class="sessions"></ul>
     <div class="spacer"></div>
-    <a id="settings" class="navlink settings-btn" href="/settings?token={{token}}">
-      <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-sliders"/></svg>Configuración</a>
+    <div class="side-title">Puertas</div>
+    <a id="settings" class="navlink" href="/settings?token={{token}}">
+      <span class="sigil" aria-hidden="true">§</span>Configuración</a>
     <a id="gov" class="navlink" href="/gov?token={{token}}">
-      <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-shield"/></svg>Gobernanza</a>
-    <div class="foot mono">v<span id="version">?</span> · <span id="engine-root"></span></div>
+      <span class="sigil" aria-hidden="true">◇</span>Gobernanza</a>
+    <div class="foot mono"><span id="engine-root"></span></div>
   </aside>
 
   <main class="main">
     <header class="doc-head">
       <h1 id="title" class="title">sin conversación</h1>
-      <span id="doc-meta" class="meta mono"></span>
+      <span id="doc-meta" class="meta"></span>
     </header>
 
     <section id="thread" class="thread" aria-live="polite"></section>
@@ -83,22 +85,20 @@
     <section class="composer">
       <div id="pending" class="pending"></div>
       <div class="composer-box">
-        <textarea id="input" rows="3" aria-label="Mensaje"
-          placeholder="Elige un proyecto en la barra lateral para empezar"></textarea>
+        <textarea id="input" rows="2" aria-label="Mensaje"
+          placeholder="Elige un proyecto en el índice para empezar"></textarea>
         <div class="composer-tools">
-          <button id="attach" class="ghost" title="Adjuntar imagen o documento">Adjuntar</button>
+          <button id="attach" type="button" title="Adjuntar imagen o documento">Adjuntar</button>
           <span class="grow"></span>
-          <button id="stop" class="ghost" disabled>
-            <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-stop"/></svg>Detener</button>
-          <button id="send" class="primary">
-            <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-send"/></svg>Enviar</button>
+          <button id="stop" type="button" disabled>Detener</button>
+          <button id="send" class="primary" type="button">Enviar ⏎</button>
         </div>
       </div>
       <div class="composer-foot">
         <label class="quick">Director
           <select id="quick-director" title="Modelo del Director para los próximos turnos"></select>
         </label>
-        <span>Ctrl+Enter envía · pega una imagen o arrastra un fichero</span>
+        <span>Ctrl+Enter envía · arrastra un fichero</span>
       </div>
       <input id="file" type="file" multiple hidden
         accept=".png,.jpg,.jpeg,.webp,.gif,.txt,.md,.json,.py,.pdf">

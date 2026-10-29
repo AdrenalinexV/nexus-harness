@@ -53,7 +53,12 @@
       const item = document.createElement('li');
       const link = document.createElement('a');
       link.href = entry.href;
-      link.textContent = entry.label;
+      const folio = document.createElement('span');
+      folio.className = 'pfolio';
+      folio.textContent = entry.folio || '';
+      const name = document.createElement('span');
+      name.textContent = entry.label;
+      link.append(folio, name);
       if (entry.where) {
         const where = document.createElement('span');
         where.className = 'where';

@@ -260,14 +260,15 @@ def nav(active, token=""):
 
 
 NAV_CSS = """
-.hnav{display:flex;gap:.35rem;align-items:center;flex-wrap:wrap;padding:.55rem .9rem;
-  background:var(--card,#11151b);border-bottom:1px solid var(--line,#232b35);
-  font:500 .86rem/1.2 system-ui,-apple-system,Segoe UI,Roboto,sans-serif;position:sticky;top:0;z-index:50}
-.hnav-link{padding:.45rem .7rem;border-radius:9px;text-decoration:none;color:var(--muted,#8b97a6);
-  border:1px solid transparent;white-space:nowrap}
-.hnav-link:hover{color:var(--fg,#e7eef6);background:var(--card2,#151b23);border-color:var(--line,#232b35)}
-.hnav-here{color:var(--muted,#8b97a6);font:500 .8rem/1.2 ui-monospace,monospace;
-  letter-spacing:.08em;text-transform:uppercase;margin-left:auto}
+/* La puerta de vuelta, con el mismo idioma que el masthead de la cabina: texto mono, una regla, cero
+   cajas. Nada de pestañas: las de la vista ya estan dentro. */
+.hnav{display:flex;gap:.6rem;align-items:baseline;flex-wrap:wrap;padding:.5rem 1.1rem;
+  background:var(--bg,#121110);border-bottom:1px solid var(--line,#2b2926);
+  font:400 10.5px/1.2 ui-monospace,monospace;letter-spacing:.12em;text-transform:uppercase;
+  position:sticky;top:0;z-index:50}
+.hnav-link{padding:0;text-decoration:none;color:var(--muted,#a8a29a);border:0;white-space:nowrap}
+.hnav-link:hover{color:var(--fg,#ece7dd)}
+.hnav-here{color:var(--muted,#a8a29a);margin-left:auto;letter-spacing:.18em}
 """
 
 

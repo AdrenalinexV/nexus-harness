@@ -19,11 +19,6 @@ from .platform import hardware_probe
 from .llm import provider_discovery
 from . import onboarding, panels, triad_balance, triad_presets
 from . import settings_kit as kit
-from . import ui_icons
-
-
-def _icon(name, cls=""):
-    return ui_icons.icon(name, cls)
 
 # (rol interno, ancla, titulo, que es)
 ROLES = (
@@ -63,9 +58,9 @@ def _live_badge(state):
 def _hardware_bar(hardware, info):
     """La frase de la maquina, con el veredicto de la triada pegado al final."""
     tone = "ok" if not info["swapping"] else ("bad" if info["oversize"] else "warn")
-    return ('<div class="hwbar"><span data-hw="summary">%s %s</span>'
+    return ('<div class="hwbar"><span data-hw="summary">%s</span>'
             '<span class="chip %s" data-hw="state">%s</span></div>'
-            % (_icon("cpu"), kit.esc(hardware_probe.headline(hardware)), tone,
+            % (kit.esc(hardware_probe.headline(hardware)), tone,
                kit.esc(triad_presets.state_text(info, hardware))))
 
 

@@ -106,72 +106,85 @@ def _icon(name, cls=""):
     return ui_icons.icon(name, cls)
 
 
+def destinations():
+    """Los trece destinos del manual, en orden, con su número de sección.
+
+    El número no es decoración: es lo que permite decir «mira el §04» o «folio 07» sin describir la
+    pantalla. Se calcula una vez y lo usan el índice, la paleta de Ctrl+K y el título de la página.
+    """
+    rows, number = [], 0
+    for group, group_icon, members in GROUPS:
+        for name, label, icon_name, subs in SECTIONS:
+            if name not in members:
+                continue
+            number += 1
+            rows.append({"n": number, "group": group, "icon": group_icon, "name": name,
+                         "label": label, "icon_name": icon_name, "subs": subs})
+    return rows
+
+
 def _tree(active, sub, needle, state, token=""):
-    """El árbol de categorías, agrupado por dominio. `needle` filtra: es el buscador sin script.
+    """El índice del manual, agrupado por dominio y numerado. `needle` filtra: es el buscador sin script.
 
     Cada enlace lleva el token (una pantalla que pierde la credencial al navegar se muere a mitad de
     camino) y el pie dice QUÉ motor se está mirando: su versión y de qué fichero salieron los ajustes.
     """
-    from . import ui_icons
     gt = ("&token=" + quote(str(token), safe="")) if token else ""
-    found = []
-    for group, group_icon, members in GROUPS:
-        blocks = []
-        for name, label, _icon_name, subs in SECTIONS:
-            if name not in members:
+    blocks, group = [], None
+    for row in destinations():
+        name, label, subs = row["name"], row["label"], row["subs"]
+        hit = (not needle or needle in label.lower() or needle in name
+               or any(needle in text.lower() for _value, text in subs)
+               or needle in SEARCH_TERMS.get(name, ""))
+        if needle and not hit:
+            subs = tuple((value, text) for value, text in subs
+                         if needle in text.lower() or needle in SEARCH_TERMS.get(value, ""))
+            if not subs:
                 continue
-            hit = (not needle or needle in label.lower() or needle in name
-                   or any(needle in text.lower() for _value, text in subs)
-                   or needle in SEARCH_TERMS.get(name, ""))
-            if needle and not hit:
-                # Un submenú puede coincidir aunque el título de la categoría no.
-                subs = tuple((value, text) for value, text in subs
-                             if needle in text.lower() or needle in SEARCH_TERMS.get(value, ""))
-                if not subs:
-                    continue
-            if subs:
-                opened = " open" if name == active else ""
-                items = "".join('<li class="%s"><a href="/settings?section=%s&sub=%s%s">%s</a></li>'
-                                % ("on" if (name == active and value == sub) else "", escape(name),
-                                   escape(value), gt, escape(text)) for value, text in subs)
-                blocks.append('<details class="scat%s"%s><summary>%s%s</summary>'
-                              '<ul class="ssubs">%s</ul></details>'
-                              % (" on" if name == active else "", opened, _icon(_icon_name), escape(label),
-                                 items))
-            else:
-                blocks.append('<a class="scat-leaf%s" href="/settings?section=%s%s">%s%s</a>'
-                              % (" on" if name == active else "", escape(name), gt,
-                                 _icon(_icon_name), escape(label)))
-        if blocks:
-            found.append('<p class="sgroup">%s%s</p>%s'
-                         % (_icon(group_icon), escape(group), "".join(blocks)))
-    if not found:
-        found.append('<p class="dim">Nada coincide con «%s».</p>' % escape(needle))
+        if row["group"] != group:
+            group = row["group"]
+            blocks.append('<p class="sgroup">%s</p>' % escape(group))
+        folio = '<span class="folio">%02d</span>' % row["n"]
+        if subs:
+            opened = " open" if name == active else ""
+            items = "".join('<li class="%s"><a href="/settings?section=%s&sub=%s%s">%s</a></li>'
+                            % ("on" if (name == active and value == sub) else "", escape(name),
+                               escape(value), gt, escape(text)) for value, text in subs)
+            blocks.append('<details class="scat%s"%s><summary>%s%s</summary>'
+                          '<ul class="ssubs">%s</ul></details>'
+                          % (" on" if name == active else "", opened, folio, escape(label), items))
+        else:
+            blocks.append('<a class="scat-leaf%s" href="/settings?section=%s%s">%s%s</a>'
+                          % (" on" if name == active else "", escape(name), gt, folio, escape(label)))
+    if not blocks:
+        blocks.append('<p class="dim">Nada coincide con «%s».</p>' % escape(needle))
     config = state.get("config") or {}
     version = state.get("version") or "?"
     source = config.get("source") or "defaults"
-    gov_link = ('<a class="tree-gov" href="/gov?tab=setup%s">%s%s</a>'
-                % (gt, _icon("shield"), "Gobernanza (protocolo)"))
+    gov_link = ('<a class="tree-gov" href="/gov?tab=setup%s">'
+                '<span class="sigil" aria-hidden="true">◇</span>Gobernanza (protocolo)</a>' % gt)
     return ('<nav class="settings-tree">%s%s<p class="tree-foot">'
-            '<span class="dot ok"></span>Motor v%s · conectado<br><code>%s</code></p></nav>'
-            % ("".join(found), gov_link, escape(version), escape(source)))
+            'motor v%s · conectado<br><code>%s</code></p></nav>'
+            % ("".join(blocks), gov_link, escape(version), escape(source)))
 
 
 def _palette(token=""):
-    """El índice de Ctrl+K: los trece destinos, con las palabras con las que se buscan.
+    """El índice de Ctrl+K: los trece destinos con su número y las palabras con las que se buscan.
 
     Va como JSON en el documento para que el buscador sea instantáneo y no pida nada al motor; el
-    `<form>` de al lado sigue funcionando sin script, filtrando el árbol en el servidor.
+    `<form>` de al lado sigue funcionando sin script, filtrando el índice en el servidor.
     """
     gt = ("&token=" + quote(str(token), safe="")) if token else ""
     rows = []
-    for name, label, _icon_name, subs in SECTIONS:
+    for row in destinations():
+        name, label, subs = row["name"], row["label"], row["subs"]
         entries = ([(value, "%s · %s" % (label, text)) for value, text in subs] if subs
                    else [(name, label)])
         for value, text in entries:
             href = ("/settings?section=%s&sub=%s%s" % (name, value, gt) if subs
                     else "/settings?section=%s%s" % (name, gt))
-            rows.append({"label": text, "where": label if subs else "",
+            rows.append({"folio": "%02d" % row["n"], "label": text,
+                         "where": "" if not subs else label,
                          "terms": SEARCH_TERMS.get(value, ""), "href": href})
     return json.dumps(rows, ensure_ascii=False)
 
@@ -185,6 +198,7 @@ def screen(cockpit, query, token=""):
     note = kit.note_from(query)
     state = cockpit.state()
     from . import ui_icons
+    number = next((row["n"] for row in destinations() if row["name"] == section), 0)
     return LAYOUT % {
         "note": note,
         "tree": _tree(section, sub, needle, state, token),
@@ -192,6 +206,7 @@ def screen(cockpit, query, token=""):
         "sprite": ui_icons.sprite(),
         "close_icon": ui_icons.icon("close"),
         "palette": _palette(token),
+        "number": "%02d" % number,
         "title": escape(title),
         "subtitle": escape(subtitle),
         "body": body,
@@ -214,7 +229,7 @@ LAYOUT = """<!doctype html>
 </head>
 <body class="settings-body">
 %(sprite)s
-<header class="settings-top">
+<header class="settings-top masthead">
   <a class="brand" href="/?token=%(token)s">NEXUS<span>·</span>HARNESS</a>
   <form class="settings-search" method="get" action="/settings" id="settings-form">
     <input id="settings-search" name="q" type="search" value="%(query)s" autocomplete="off"
@@ -232,7 +247,7 @@ LAYOUT = """<!doctype html>
 <div class="settings-app">
   %(tree)s
   <section class="settings-panel">
-    <h1>%(title)s</h1>
+    <h1><span class="folio">§%(number)s</span>%(title)s</h1>
     <p class="dim">%(subtitle)s</p>
     %(body)s
   </section>

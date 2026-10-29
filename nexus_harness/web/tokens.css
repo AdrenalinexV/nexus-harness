@@ -1,130 +1,154 @@
-/* Nexus-Harness — tokens: la ley del color, la tipografia y los controles.
+/* Nexus-Harness — tokens: el cuaderno de taller.
 
-   LEY DEL COLOR (la unica de este producto, y se cumple en las tres pantallas):
-     verde  = una decision tomada      (gate verde, juez que aprueba, guardado que se aplico)
-     ambar  = espera a una persona     (pregunta pendiente, juez que objeta, gate NO VERIFICABLE)
-     rojo   = detectado / roto         (gate rojo, clave invalida, seccion caida)
-     gris   = sin registro             (no hay dato: "sin gate", "sin medir", "no configurado")
-   El acento NO es un quinto estado: marca lo interactivo (enlace, foco, boton primario, item activo).
-   Ningun color se usa para decorar. La jerarquia la hacen el tamano, el peso y el espacio.
+   LEY DEL COLOR (una, y se cumple en las tres pantallas):
+     tinta   = lo que se lee                    (no hay "color de marca" para decorar)
+     sello   = el único voltaje: acción primaria, elemento activo, foco. UNA vez por pantalla.
+     verde   = una decisión tomada              (gate verde, juez que aprueba, guardado aplicado)
+     ámbar   = espera a una persona             (pregunta pendiente, juez que objeta, NO VERIFICABLE)
+     rojo    = detectado / roto                 (gate rojo, clave inválida, sección caída)
+     gris    = sin registro                     (sin gate, sin medir, no configurado)
 
-   Tipografia del sistema, sin webfonts: una pagina que necesita la red para verse bien esta rota.
-   Las cifras van en monoespaciada con `tabular-nums`, para que una columna de numeros se alinee. */
+   Sin azul: es el acento por defecto del corpus shadcn/Tailwind, y por eso no distingue nada.
+   Sin tarjetas, sin sombras, sin degradados, sin píldoras. La estructura la hacen las reglas de 1px.
+
+   Tipografía: tres familias DEL SISTEMA y tres trabajos. `ui-serif` (Georgia) para títulos y números
+   de sección; `system-ui` para prosa; `ui-monospace` para toda cifra, folio, ruta y etiqueta técnica.
+   Cero webfonts: una página que necesita la red para verse bien está rota en un avión. */
 
 :root {
   color-scheme: dark light;
-  --bg: #0b0d10; --s1: #0f1216; --s2: #131920; --s3: #1a2129;
-  --line: #232b35; --line2: #303a46;
-  --fg: #e9eef5; --muted: #8e9aab;
-  --accent: #5b8def; --accent-fg: #08101f; --accent-soft: rgba(91, 141, 239, .14);
-  --ok: #3fb950; --warn: #d29922; --bad: #f85149; --idle: #6b7684;
-  --radius: 6px; --radius-sm: 4px;
-  --fs-xs: 11px; --fs-sm: 12.5px; --fs: 14px; --fs-lg: 16px; --fs-xl: 20px; --fs-display: 27px;
+  /* papel oscuro cálido — no es "dark mode", es gráfico de imprenta */
+  --paper: #121110; --paper-2: #171614; --paper-3: #1e1c19;
+  --ink: #ece7dd; --ink-2: #a8a29a; --ink-3: #6f6a63;
+  --rule: #2b2926; --rule-2: #3a3733;
+  --seal: #d4502e; --seal-ink: #17110d; --seal-soft: rgba(212, 80, 46, .13);
+  --ok: #7fae6a; --warn: #c99a3f; --bad: #cc5b45; --idle: #6f6a63;
+  /* alias de lectura para los paneles que sirve el protocolo (gov.py, panels.py) */
+  --card: var(--paper-2); --card2: var(--paper-2); --border: var(--rule);
+  --muted: var(--ink-2); --muted-foreground: var(--ink-2); --fg: var(--ink);
+  --accent: var(--seal); --accent-fg: var(--seal-ink); --line: var(--rule); --line2: var(--rule-2);
+  --radius: 0; --radius-sm: 0;
+  --fs-micro: 10.5px; --fs-xs: 11.5px; --fs-sm: 13px; --fs: 14.5px; --fs-lg: 17px;
+  --fs-xl: 21px; --fs-display: 30px;
   --sans: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --serif: ui-serif, Georgia, "Iowan Old Style", "Palatino Linotype", "Times New Roman", serif;
   --mono: ui-monospace, "Cascadia Mono", "SF Mono", Consolas, monospace;
-  --gap: 14px; --pad: 1.15rem; --rule: 1px solid var(--line);
-  /* Alias de lectura: los paneles que sirve el protocolo (gov.py, panels.py) nombran las superficies
-     `--card`/`--card2`. Un alias evita que su HTML se quede con un color fijo y no siga al tema. */
-  --card: var(--s1); --card2: var(--s2); --border: var(--line); --muted-foreground: var(--muted);
-  --measure: 74ch;
+  --gap: 16px; --pad: 1.35rem; --rule-1: 1px solid var(--rule); --measure: 68ch;
 }
 @media (prefers-color-scheme: light) {
   :root {
-    --bg: #f6f7f9; --s1: #ffffff; --s2: #f1f3f6; --s3: #e8ecf1;
-    --line: #d9dfe6; --line2: #c2cbd6;
-    --fg: #0e1318; --muted: #5a6673;
-    --accent: #2458c9; --accent-fg: #ffffff; --accent-soft: rgba(36, 88, 201, .1);
-    --ok: #1a7f37; --warn: #9a6700; --bad: #c3271f; --idle: #5a6673;
+    --paper: #f4f1ea; --paper-2: #efeade; --paper-3: #e7e0d2;
+    --ink: #191713; --ink-2: #615c53; --ink-3: #8b857b;
+    --rule: #d8d2c6; --rule-2: #c4bcae;
+    --seal: #b8431f; --seal-ink: #fdf9f2; --seal-soft: rgba(184, 67, 31, .1);
+    --ok: #3f7a33; --warn: #8a6512; --bad: #a83a24; --idle: #8b857b;
   }
 }
 
 * { box-sizing: border-box; }
-/* `hidden` del HTML pierde contra cualquier `display` de autor (`button`, `.abar`...). Sin esta regla
-   el boton de parar el bucle y la barra de progreso se ven antes de que haya nada que parar. */
-[hidden] { display: none !important; }
 html, body { height: 100%; margin: 0; }
+/* `hidden` del HTML pierde contra cualquier `display` de autor (button, .abar…). */
+[hidden] { display: none !important; }
 body {
-  background: var(--bg); color: var(--fg); font-size: var(--fs); line-height: 1.55;
-  font-family: var(--sans); -webkit-font-smoothing: antialiased;
+  background: var(--paper); color: var(--ink); font-size: var(--fs); line-height: 1.6;
+  font-family: var(--sans); -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility;
 }
-h1, h2, h3, h4 { letter-spacing: -.01em; line-height: 1.25; }
+h1, h2, h3, h4 { font-family: var(--serif); font-weight: 600; line-height: 1.15; letter-spacing: -.005em; }
 code, .mono, pre, .num { font-family: var(--mono); font-variant-numeric: tabular-nums; }
-a { color: var(--accent); text-underline-offset: 2px; }
-.dim { color: var(--muted); }
-.hint-inline { font-size: var(--fs-sm); color: var(--muted); }
+a { color: inherit; text-decoration: underline; text-decoration-color: var(--rule-2);
+  text-underline-offset: 3px; }
+a:hover { text-decoration-color: var(--seal); }
+.dim { color: var(--ink-2); }
+.hint-inline { font-size: var(--fs-xs); color: var(--ink-3); }
 .sprite { position: absolute; width: 0; height: 0; overflow: hidden; }
 
-/* Un icono mide lo que mide la letra y obedece al color de su texto (`currentColor`). El trazo vive
-   AQUI y no en cada `<svg>`: un icono escrito a mano en el HTML no lleva `style` y sin esta regla
-   heredaba `fill:black` y se pintaba como una mancha. */
+/* Un icono mide lo que mide la letra y obedece al color de su texto. El trazo vive AQUÍ y no en cada
+   `<svg>`: un icono escrito a mano en el HTML no lleva `style` y sin esta regla heredaba `fill:black`. */
 .icon {
-  width: 1.05em; height: 1.05em; flex: 0 0 auto; vertical-align: -.16em;
+  width: 1em; height: 1em; flex: 0 0 auto; vertical-align: -.12em;
   fill: none; stroke: currentColor; stroke-width: 1.5;
   stroke-linecap: round; stroke-linejoin: round;
 }
 
-/* ---------- aviso global (motor viejo, falta de credencial) ---------- */
+/* ---------- la etiqueta técnica: caja alta, mono o sans, muy espaciada ---------- */
+.label {
+  font-size: var(--fs-micro); letter-spacing: .16em; text-transform: uppercase;
+  color: var(--ink-3); font-weight: 600;
+}
+.folio { font-family: var(--mono); font-size: var(--fs-micro); color: var(--ink-3);
+  font-variant-numeric: tabular-nums; letter-spacing: .04em; }
+
+/* ---------- aviso global ---------- */
 .warn {
-  padding: .6rem var(--pad); font-size: var(--fs-sm);
-  background: color-mix(in srgb, var(--warn) 12%, var(--s1));
-  border-bottom: 1px solid var(--warn); border-left: 0;
+  padding: .5rem var(--pad); font-size: var(--fs-sm); color: var(--ink);
+  background: var(--paper-2); border-bottom: 1px solid var(--warn); border-left: 0;
 }
 
-/* ---------- controles ---------- */
-.field { display: flex; flex-direction: column; gap: .3rem; font-size: var(--fs-xs);
-  text-transform: uppercase; letter-spacing: .07em; color: var(--muted); }
+/* ---------- controles: reglas, no cajas ---------- */
+.field { display: flex; flex-direction: column; gap: .25rem; }
+.field > span, .field-label { font-size: var(--fs-micro); letter-spacing: .16em;
+  text-transform: uppercase; color: var(--ink-3); font-weight: 600; }
 select, input, textarea {
-  font: inherit; font-size: var(--fs); color: var(--fg); background: var(--s2);
-  border: 1px solid var(--line2); border-radius: var(--radius-sm); padding: .45rem .55rem;
+  font: inherit; font-size: var(--fs-sm); color: var(--ink); background: transparent;
+  border: 1px solid var(--rule-2); border-radius: 2px; padding: .35rem .45rem;
 }
+/* Una casilla mide lo que mide una casilla: la regla de ancho de los campos la convertía en una caja
+   de 26rem que empujaba su etiqueta al otro extremo de la línea. */
+input[type="checkbox"], input[type="radio"] { width: auto; accent-color: var(--seal); }
 select:focus-visible, input:focus-visible, textarea:focus-visible, a:focus-visible,
 button:focus-visible, summary:focus-visible {
-  outline: 2px solid var(--accent); outline-offset: 1px;
+  outline: 1px solid var(--seal); outline-offset: 1px;
 }
 button {
-  font: inherit; font-size: var(--fs); cursor: pointer; padding: .45rem .75rem;
-  border-radius: var(--radius-sm); border: 1px solid var(--line2);
-  background: var(--s2); color: var(--fg); display: inline-flex; align-items: center; gap: .4rem;
+  font: inherit; font-size: var(--fs-sm); cursor: pointer; padding: .35rem .7rem;
+  border: 1px solid var(--rule-2); border-radius: 2px; background: transparent; color: var(--ink);
+  display: inline-flex; align-items: center; gap: .4rem;
 }
-button:hover:not(:disabled) { border-color: var(--accent); }
-button:disabled { opacity: .45; cursor: not-allowed; }
-button.primary { background: var(--accent); border-color: var(--accent); color: var(--accent-fg);
-  font-weight: 600; }
-button.primary .icon { stroke-width: 1.7; }
-button.ghost { background: transparent; color: var(--muted); }
-button.ghost:hover:not(:disabled) { color: var(--fg); }
-button.danger { color: var(--bad); border-color: color-mix(in srgb, var(--bad) 45%, var(--line2)); }
+button:hover:not(:disabled) { border-color: var(--ink-2); }
+button:disabled { opacity: .4; cursor: not-allowed; }
+button.primary {
+  background: var(--seal); border-color: var(--seal); color: var(--seal-ink); font-weight: 600;
+}
+button.primary:hover:not(:disabled) { background: color-mix(in srgb, var(--seal) 88%, var(--paper)); }
+button.ghost { border-color: transparent; color: var(--ink-2); }
+button.ghost:hover:not(:disabled) { color: var(--ink); border-color: var(--rule-2); }
+button.danger { color: var(--bad); }
 button.wide { width: 100%; justify-content: center; }
 .search { width: 100%; }
 .row { display: flex; gap: .4rem; align-items: center; }
-.foot { font-size: var(--fs-xs); color: var(--muted); line-height: 1.5; }
+.foot { font-size: var(--fs-micro); color: var(--ink-3); line-height: 1.6; }
 
-/* ---------- piezas de dato (chips, celdas, puntos) ---------- */
-.chip, .tag, .cell {
-  font-size: var(--fs-xs); padding: .1rem .45rem; border-radius: var(--radius-sm);
-  background: var(--s2); border: 1px solid var(--line2); color: var(--muted);
-  font-family: var(--mono); font-variant-numeric: tabular-nums;
+/* ---------- piezas de dato: texto mono, sin caja ---------- */
+.chip, .tag {
+  font-family: var(--mono); font-size: var(--fs-micro); letter-spacing: .02em;
+  padding: 0; border: 0; background: none; color: var(--ink-2);
 }
-.chip.ok { color: var(--ok); border-color: color-mix(in srgb, var(--ok) 55%, var(--line2)); }
-.chip.warn { color: var(--warn); border-color: color-mix(in srgb, var(--warn) 55%, var(--line2)); }
-.chip.bad { color: var(--bad); border-color: color-mix(in srgb, var(--bad) 55%, var(--line2)); }
+.chip.ok { color: var(--ok); }
+.chip.warn { color: var(--warn); }
+.chip.bad { color: var(--bad); }
 .chip.off { color: var(--idle); }
-.chips { display: flex; flex-wrap: wrap; gap: .3rem; }
-.dot { display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: var(--idle);
-  vertical-align: middle; }
+.cell { font-family: var(--mono); font-size: var(--fs-xs); color: var(--ink-2); }
+.chips { display: flex; flex-wrap: wrap; gap: .1rem .5rem; align-items: baseline; }
+
+/* Un tono, cuando no hay texto que lo diga, es una marca cuadrada de 6px: nunca un punto de color
+   suelto sin palabra. */
+.dot { display: inline-block; width: 6px; height: 6px; background: var(--idle); vertical-align: middle; }
 .dot.ok { background: var(--ok); }
 .dot.warn { background: var(--warn); }
 .dot.bad { background: var(--bad); }
+.mark { display: inline-flex; align-items: center; gap: .3rem; font-size: var(--fs-micro);
+  letter-spacing: .12em; text-transform: uppercase; font-weight: 600; }
+.mark.ok { color: var(--ok); }
+.mark.warn { color: var(--warn); }
+.mark.bad { color: var(--bad); }
+.mark.idle { color: var(--idle); }
 
-/* La leyenda de los cuatro tonos: se imprime donde hay un veredicto, no en un sitio lejano. */
-.legend { display: flex; flex-wrap: wrap; gap: .15rem .9rem; font-size: var(--fs-xs);
-  color: var(--muted); margin: .5rem 0 0; padding: .45rem 0 0; border-top: var(--rule); }
-.legend span { display: inline-flex; align-items: center; gap: .3rem; }
-.legend .icon { width: .95em; height: .95em; }
+/* Leyenda de los cuatro tonos: donde se lee un veredicto, con su palabra. */
+.legend { display: flex; flex-wrap: wrap; gap: .3rem 1.1rem; font-size: var(--fs-micro);
+  color: var(--ink-3); margin: .55rem 0 0; padding: .55rem 0 0; border-top: var(--rule-1);
+  letter-spacing: .02em; }
+.legend span { display: inline-flex; align-items: center; gap: .35rem; }
 .legend .t-ok { color: var(--ok); }
 .legend .t-warn { color: var(--warn); }
 .legend .t-bad { color: var(--bad); }
-.legend .t-idle { color: var(--idle); }
-
-/* Numeros: una cifra que se lee de una API no se toca con la mano, y se alinea. */
-.num { font-family: var(--mono); font-variant-numeric: tabular-nums; }
+.legend .t-idle { color: var(--ink-3); }

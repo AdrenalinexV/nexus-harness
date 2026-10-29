@@ -1,7 +1,8 @@
 # Cabina — rework de UI y correcciones U1–U5 (2026-10-29)
 
 > Repo `C:\Proyectos\Nexus-Harness` · partida `d9be74a` · **código de la cabina hasta `174a65f`** ·
-> versión `1.1.0`. Lo que va después son correcciones de este documento y sus capturas.
+> versión `1.1.0`, más la **segunda pasada de dirección de arte** (§6). Lo que va después son
+> correcciones de este documento y sus capturas.
 > Commits: `534f9df` (U1/U2/U3/U5 + prueba), `6886bd9` (sistema visual + chat + configuración),
 > `14c4019` (gobernanza), `174a65f` (iconos dibujados, estado honesto en reposo) y los de este
 > documento con sus capturas. Nada de esto toca el motor, el gate ni la lógica de turno.
@@ -125,6 +126,64 @@ chat **6,4 %**, configuración **15,9 %**, gobernanza **1,5 %**.
   `40966603175` (1m35s), `40966851010` (1m20s). Se comprueba con `gh run list --limit 2`.
 - **El vacío del chat «antes»**: el hilo no pintaba estado vacío en esa corrida y no se investigó por
   qué (queda como diferencia observada, no como defecto nombrado).
+
+## 6. Segunda pasada — dirección de arte (por qué la primera seguía siendo genérica)
+
+La primera entrega era correcta y **fea del modo en que lo es todo lo vibecodeado**: sidebar, tarjetas
+con radio y borde, acento azul, modo oscuro permanente. Es el patrón que la comunidad tiene medido:
+
+- [Rottoways, *The vibecoding design problem*](https://rottoways.com/blog/vibecoding-design-problem):
+  los modelos convergen porque el corpus es el mismo (shadcn, Tailwind, plantillas Vercel). «Cambiar de
+  herramienta no ayuda; la varianza está entre el default del LLM y un design system restringido».
+- [*AI Design Slop: 16 patterns*](https://www.developersdigest.tech/blog/ai-design-slop-and-how-to-spot-it):
+  Inter en todo, acento lavanda/azul, dark mode permanente, tarjetas idénticas con icono.
+- [Washington Post DESIGN.md](https://www.shadcn.io/design/wapo/raw): «hairline-only dividers — no
+  shadows, no card fills, no border tints», un solo color de voltaje, tinta casi negra nunca pura.
+- [agent-manager DESIGN.md](https://github.com/YoanWai/agent-manager/blob/main/DESIGN.md): superficie
+  densa de trabajo, profundidad estructural, estado = glifo + color + **palabra**.
+- [awesome-tui-design](https://github.com/cola-runner/awesome-tui-design): el catálogo de lo que hay
+  que **no** copiar del cliché «neo-terminal» (fósforo verde, scanlines, rejillas de puntos).
+
+Dirección aplicada, escrita en `docs/DESIGN.md` y en la skill `nexus-ui-surgeon`: **«Cuaderno de
+taller»** — la cabina como documento técnico impreso.
+
+- Sin tarjetas: la estructura son reglas de 1px y espacio.
+- Sin azul: el único voltaje es un **bermellón de sello** (`--seal #d4502e`), una vez por pantalla
+  (acción primaria + elemento activo).
+- Papel cálido (`#121110`) y tinta cálida (`#ece7dd`), nunca el par azulado del «dark mode por defecto».
+- Tres familias del sistema con tres trabajos: `ui-serif` (Georgia) para títulos y `§` de sección,
+  `system-ui` para prosa, `ui-monospace` para **toda** cifra, folio, ruta y etiqueta.
+- El chat es un documento: **folio por mensaje** en el margen (01, 02…), título serif, medida de 68ch,
+  y un compositor que es una línea de formulario con las acciones en mono.
+- La configuración es un **manual de operación**: índice numerado 01–10 agrupado por dominio, `§NN` en
+  el título del panel, y cada ajuste es una línea `etiqueta | control | regla`.
+- Las tarjetas del arnés dentro de `/gov` se reescribieron con **colores literales**: ese HTML se
+  inyecta en el documento del protocolo, que define su propio `--accent` azul; heredarlo era volver al
+  producto vecino.
+
+Medido en navegador real, tras la segunda pasada (misma sonda):
+
+Tres versiones servidas a la vez (worktrees de `d9be74a` en `:8800` y de la primera pasada `174a65f`
+en `:8801`, la actual en `:8799`) y la **misma** sonda en las dos pantallas. Pares *chat / settings*:
+
+| criterio | `d9be74a` | 1.ª pasada | **2.ª pasada** |
+|---|---|---|---|
+| cajas con relleno propio (fondo ≠ papel, fuera de campos) | 4 / 25 | 3 / 26 | **0 / 2** (un aviso y un `<summary>`) |
+| `border-radius > 2px` fuera de campos | 3 / 41 | 3 / 38 | **0 / 0** |
+| `box-shadow` | 1 / 2 | 0 / 0 | **0 / 0** |
+| elementos con el azul del corpus | 5 / 28 | 6 / 18 | **0 / 0** |
+| píldoras (`radius >= 100px`) | 2 / 10 | 0 / 0 | **0 / 0** |
+| emojis en body | 1 / 14 | 0 / 0 | **0 / 0** (en `/gov` queda 1: el `🌐` del protocolo) |
+| `main + índice = body` | 1000+264=1264 | ídem | **1000+264=1264** |
+| familia del título | `system-ui` 16px | `system-ui` 16px | **`ui-serif` 21px** |
+| fichero mayor | `app.js` 395 | `settings.py` 372 | **`settings.py` 386** |
+
+Diferencia de píxeles contra `d9be74a` (misma ventana): chat **6,8 %**, configuración **16,9 %**,
+gobernanza **8,7 %**.
+
+Capturas: `v2-chat-empty.png`, `v2-chat-thread.png`, `v2-settings-modelos.png`,
+`v2-settings-memoria.png`, `v2-settings-stats.png`, `v2-settings-palette.png`, `v2-gov.png`;
+lado a lado en `diff2-chat.png`, `diff2-settings.png`, `diff2-gov.png`.
 
 ## 5. Tamaño de los ficheros (ley de 400 también aquí)
 

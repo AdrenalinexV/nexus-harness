@@ -32,11 +32,16 @@ window.NexusStream = (function () {
       .map((part) => ({name: 'imagen', kind: 'image', preview: (part.image_url || {}).url || ''}));
   }
 
+  /* Cada mensaje es un asiento del cuaderno: FOLIO en el margen + quien habla + lo que dijo. Se puede
+     citar («folio 07») sin describir el mensaje, que es lo que hace un documento de obra. */
   function addMessage(role, text, meta) {
-    const wrap = document.createElement('div');
+    state.folio = (state.folio || 0) + 1;
+    const wrap = document.createElement('article');
     wrap.className = 'msg ' + role;
-    wrap.innerHTML = `<div class="who">${role === 'user' ? 'TÚ' : 'NEXUS'}</div>
-                      <div class="bubble">${esc(text)}</div>`;
+    wrap.innerHTML = `<div class="folio">${String(state.folio).padStart(2, '0')}</div>
+                      <div class="body"><div class="who">${role === 'user' ? 'TÚ' : 'NEXUS'}</div>
+                      <div class="bubble">${esc(text)}</div></div>`;
+    const body = wrap.querySelector('.body');
     if (meta && meta.attachments && meta.attachments.length) {
       const box = document.createElement('div');
       box.className = 'tools';
@@ -47,7 +52,7 @@ window.NexusStream = (function () {
         chip.title = item.kind === 'image' ? 'imagen adjunta' : 'documento adjunto';
         box.appendChild(chip);
       }
-      wrap.appendChild(box);
+      body.appendChild(box);
     }
     if (meta && meta.tools && meta.tools.length) {
       const chips = document.createElement('div');
@@ -59,7 +64,7 @@ window.NexusStream = (function () {
         chip.title = ((tool.args ? JSON.stringify(tool.args) : '') + '\n' + (tool.result || '')).slice(0, 600);
         chips.appendChild(chip);
       }
-      wrap.appendChild(chips);
+      body.appendChild(chips);
     }
     $('thread').appendChild(wrap);
     $('thread').scrollTop = $('thread').scrollHeight;
@@ -96,12 +101,15 @@ window.NexusStream = (function () {
   function renderThread(messages) {
     const thread = $('thread');
     thread.innerHTML = '';
+    state.folio = 0;
     if (!messages.length) {
       thread.innerHTML = `<div class="empty"><h1>¿Qué construimos?</h1>
-        <p>Pide una tarea o haz una pregunta. El gate (lint Nexus, ley de 400, tests) se ejecuta en cuanto
-        se toca un fichero; si sale rojo, el obrero lo repara antes de contestarte.</p>
-        <p class="dim">El modelo de la tríada, las claves, la memoria y las skills se cambian en
-        <a href="/settings?token=${encodeURIComponent(window.NexusToken || '')}">Configuración</a>.</p></div>`;
+        <p>Pide una tarea o haz una pregunta. El gate —lint Nexus, ley de 400 líneas, tests— corre en
+        cuanto se toca un fichero; si sale rojo, el obrero lo repara antes de contestarte.</p>
+        <div class="rule"></div>
+        <p class="dim">La tríada de modelos, las claves, la memoria y las skills se cambian en
+        <a href="/settings?token=${encodeURIComponent(window.NexusToken || '')}">Configuración</a>;
+        el ledger y el gate, en <a href="/gov?token=${encodeURIComponent(window.NexusToken || '')}">Gobernanza</a>.</p></div>`;
     } else {
       const pending = {};
       for (const message of messages) {

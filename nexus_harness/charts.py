@@ -15,11 +15,13 @@ Tres reglas que se aplican solas:
 """
 import html
 
-TONE = {"ok": "#22c55e", "bad": "#ef4444", "warn": "#f59e0b", "idle": "#64748b",
-        "accent": "#3b82f6", "violet": "#8b5cf6"}
+# La paleta de los gráficos es la de la cabina: tinta cálida y tonos de estado, con el sello como
+# única serie de acento. Un gráfico con azul/violeta de librería es el mismo slop, en SVG.
+TONE = {"ok": "#7fae6a", "bad": "#cc5b45", "warn": "#c99a3f", "idle": "#6f6a63",
+        "accent": "#d4502e", "violet": "#bda98c"}
 FONT = "system-ui,-apple-system,'Segoe UI',Roboto,sans-serif"
-MUTED = "#8b97a6"
-LINE = "#2e3844"
+MUTED = "#a8a29a"
+LINE = "#2b2926"
 
 
 def esc(value):
@@ -94,7 +96,7 @@ def donut(rows, size=180, thickness=26, centre="turnos", why="sin decisiones reg
     return ("<svg class='vchart' viewBox='0 0 %d %d' role='img' aria-label='%s'>"
             "<circle cx='%s' cy='%s' r='%s' fill='none' stroke='%s' stroke-width='%s' opacity='.45'/>"
             "%s<text x='%s' y='%s' text-anchor='middle' font-family=\"%s\" font-size='22' "
-            "font-weight='700' fill='#e7eef6'>%s</text>"
+            "font-weight='700' fill='#ece7dd'>%s</text>"
             "<text x='%s' y='%s' text-anchor='middle' font-family=\"%s\" font-size='11' "
             "fill='%s'>%s</text></svg>"
             % (size, size, esc(why if not rows else centre), _f(middle), _f(middle), _f(radius),
@@ -120,7 +122,7 @@ def bars(rows, width=580, row_height=28, unit="", label_width=176, why="nada que
         parts.append("<rect x='%s' y='%s' width='%s' height='%s' rx='4' fill='%s'/>"
                      % (label_width, _f(y + 5), _f(max(span, 0)), row_height - 12,
                         colour(row.get("tone"))))
-        parts.append("<text x='%s' y='%s' font-family=\"%s\" font-size='11.5' fill='#e7eef6'>%s%s</text>"
+        parts.append("<text x='%s' y='%s' font-family=\"%s\" font-size='11.5' fill='#ece7dd'>%s%s</text>"
                      % (_f(label_width + max(span, 0) + 6), _f(y + row_height / 2 + 4), FONT,
                         esc(fmt(value)), esc(unit)))
     return ("<svg class='vchart' viewBox='0 0 %d %d' role='img' aria-label='%s'>%s</svg>"

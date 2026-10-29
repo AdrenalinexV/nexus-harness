@@ -263,7 +263,7 @@ def _charts(cockpit, state, aggregate):
                   kit.esc(price)))
     return ('<h3 class="ssub">Gráfico 1 · Tokens consumidos vs evitados por proyecto</h3>'
             '<div class="chartcard">%s<div class="vlegends">'
-            '<span class="vlegend"><i style="background:#3b82f6"></i>consumidos</span>'
+            '<span class="vlegend"><i style="background:#d4502e"></i>consumidos</span>'
             '<span class="vlegend"><i style="background:#22c55e"></i>evitados por el gate</span></div>'
             '<p class="dim">%s</p></div>'
             '<h3 class="ssub">Gráfico 2 · Eficacia de la tríada y del gate</h3>'

@@ -73,7 +73,10 @@ def test_format_and_legend(failures):
     check("a broken number is zero, not a crash", charts.fmt("nope"), "0", failures)
     legend = charts.legend([{"label": "verde", "value": 4, "tone": "ok"},
                             {"label": "cero", "value": 0, "tone": "bad"}])
-    check("the legend carries the colour", "#22c55e" in legend, True, failures)
+    # El color de la leyenda se lee de la UNICA fuente (la paleta de `charts`): fijar aqui un hex
+    # convertia cada cambio de paleta en un rojo falso, y el contrato real es "la leyenda lleva el
+    # color de su serie", no "lleva este verde".
+    check("the legend carries the colour", charts.TONE["ok"] in legend, True, failures)
     check("and skips what was not drawn", "cero" in legend, False, failures)
 
 

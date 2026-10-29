@@ -205,19 +205,26 @@ def keys_state():
 
 # -- los controles del arnes dentro de la vista de gobernanza ---------------------------------
 SECTION_CSS = """
-.hsec{margin:0 0 1.4rem;padding:1rem 1.1rem;background:var(--card,#11151b);
-  border:1px solid var(--line,#232b35);border-radius:var(--radius,14px);max-width:1200px}
-.hsec h3{margin:0 0 .2rem;font-size:.95rem;letter-spacing:.02em;text-transform:uppercase;
-  color:var(--muted,#8b97a6)}
-.hsec p{margin:.35rem 0;color:var(--fg,#e7eef6)}
-.hsec .row{display:flex;flex-wrap:wrap;gap:.5rem;align-items:center;margin-top:.6rem}
-.hsec .cell{padding:.45rem .65rem;background:var(--card2,#151b23);border:1px solid var(--line,#232b35);
-  border-radius:9px;font-size:.86rem}
-.hsec button,.hsec select{font:inherit;padding:.42rem .7rem;border-radius:9px;
-  border:1px solid var(--line2,#2e3844);background:var(--card2,#151b23);color:var(--fg,#e7eef6)}
-.hsec button.primary{background:var(--accent,#3b82f6);border-color:var(--accent,#3b82f6);color:#fff}
-.hsec .ok{color:var(--ok,#22c55e)} .hsec .bad{color:var(--bad,#ef4444)} .hsec .warn{color:var(--warn,#f59e0b)}
-.hsec .dim{color:var(--muted,#8b97a6)}
+/* Las tarjetas del arnes dentro de la vista del protocolo. Van con COLORES LITERALES a proposito: este
+   HTML se inyecta en un documento ajeno que define sus propios `--accent`/`--line` (azul, gris azulado),
+   y una tarjeta que hereda el tema del vecino parece otro producto. La ley es la de la cabina:
+   papel calido, tinta calida, un solo sello, reglas de 1px, ningun radio. */
+.hsec{margin:0 0 1.1rem;padding:.75rem 0 .8rem;background:transparent;border:0;
+  border-top:1px solid #2b2926;max-width:1100px}
+.hsec h3{margin:0 0 .35rem;font:600 10.5px/1.2 ui-monospace,monospace;letter-spacing:.16em;
+  text-transform:uppercase;color:#a8a29a}
+.hsec p{margin:.3rem 0;color:#ece7dd;font-size:13px;line-height:1.6}
+.hsec .row{display:flex;flex-wrap:wrap;gap:.15rem 1.2rem;align-items:baseline;margin-top:.35rem}
+.hsec .cell{padding:0;background:none;border:0;border-radius:0;
+  font:400 11.5px/1.6 ui-monospace,monospace;color:#a8a29a}
+.hsec .cell b{font-weight:600}
+.hsec button,.hsec select{font:400 10.5px/1.2 ui-monospace,monospace;letter-spacing:.1em;
+  text-transform:uppercase;padding:.3rem .55rem;border:1px solid #3a3733;border-radius:0;
+  background:#171614;color:#ece7dd;appearance:none}
+.hsec button:hover{border-color:#ece7dd}
+.hsec button.primary{background:#d4502e;border-color:#d4502e;color:#17110d;font-weight:700}
+.hsec .ok{color:#7fae6a} .hsec .bad{color:#cc5b45}
+.hsec .warn{color:#c99a3f} .hsec .dim{color:#a8a29a}
 """
 
 
