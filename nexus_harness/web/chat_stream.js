@@ -1,0 +1,175 @@
+/* El hilo: mensajes, herramientas, la tira de lo que pasa y el sondeo del bus de eventos.
+
+   Vive aparte de `app.js` por la ley de 400 líneas y, sobre todo, por responsabilidad: aquí se PINTA lo
+   que el motor ya decidió; no se decide nada. Todo lo que viene del modelo pasa por `esc()`. */
+window.NexusStream = (function () {
+  const {$, api, esc, state} = window.NX;
+
+  const LABEL = {
+    'chat.user': 'TÚ', 'chat.assistant': 'NEXUS', 'chat.turn': 'TURNO', 'chat.repair': 'REPARACIÓN',
+    'chat.stopped': 'DETENIDO', 'chat.new': 'NUEVA', 'chat.load': 'ABIERTA', 'chat.limit': 'LÍMITE',
+    'tool.call': 'TOOL', 'skills.injected': 'SKILLS', 'gate.verdict': 'GATE', 'judge.verdict': 'JUEZ',
+    'worker.reasoning': 'RAZÓN', 'worker.error': 'ERROR', 'memory.add': 'MEMORIA',
+    'memory.remove': 'MEMORIA-', 'bridge.claim': 'PUENTE', 'bridge.close': 'PUENTE',
+    'tool.parallel': 'PARALELO', 'subagent.start': 'SUBAGENTES', 'subagent.result': 'SUBAGENTE',
+    'subagent.tool': 'SUB-TOOL', 'subagent.end': 'SUBAGENTES', 'subagent.limit': 'SUB-LÍMITE',
+    'chat.stopping': 'DETENIENDO', 'run.stopping': 'DETENIENDO', 'worker.stopped': 'DETENIDO',
+    'session.relay': 'RELEVO', 'chat.rename': 'RENOMBRADA', 'skills.saved': 'SKILL',
+  };
+
+  function msgText(content) {
+    if (Array.isArray(content)) {
+      return content.filter((part) => part && part.type === 'text'
+          && !String(part.text || '').startsWith('<document'))
+        .map((part) => part.text || '').join('\n').trim();
+    }
+    return String(content || '');
+  }
+
+  function msgAttachments(message) {
+    if (!Array.isArray(message.content)) return [];
+    return message.content.filter((part) => part && part.type !== 'text')
+      .map((part) => ({name: 'imagen', kind: 'image', preview: (part.image_url || {}).url || ''}));
+  }
+
+  function addMessage(role, text, meta) {
+    const wrap = document.createElement('div');
+    wrap.className = 'msg ' + role;
+    wrap.innerHTML = `<div class="who">${role === 'user' ? 'TÚ' : 'NEXUS'}</div>
+                      <div class="bubble">${esc(text)}</div>`;
+    if (meta && meta.attachments && meta.attachments.length) {
+      const box = document.createElement('div');
+      box.className = 'tools';
+      for (const item of meta.attachments) {
+        const chip = document.createElement('span');
+        chip.className = 'attach';
+        chip.textContent = item.name;
+        chip.title = item.kind === 'image' ? 'imagen adjunta' : 'documento adjunto';
+        box.appendChild(chip);
+      }
+      wrap.appendChild(box);
+    }
+    if (meta && meta.tools && meta.tools.length) {
+      const chips = document.createElement('div');
+      chips.className = 'tools';
+      for (const tool of meta.tools) {
+        const chip = document.createElement('span');
+        chip.className = 'tool' + (tool.ok === false ? ' bad' : '');
+        chip.textContent = tool.name;
+        chip.title = ((tool.args ? JSON.stringify(tool.args) : '') + '\n' + (tool.result || '')).slice(0, 600);
+        chips.appendChild(chip);
+      }
+      wrap.appendChild(chips);
+    }
+    $('thread').appendChild(wrap);
+    $('thread').scrollTop = $('thread').scrollHeight;
+    return wrap;
+  }
+
+  /* La tira de lo que pasa durante el turno: dentro del hilo, al final y discreta. */
+  function paintFeed() {
+    const box = $('inline');
+    if (!box) return;
+    box.innerHTML = '';
+    for (const row of state.feed.slice(-14)) {
+      const line = document.createElement('div');
+      line.className = 'feed-row' + (row.kind === 'gate.verdict' || row.kind === 'judge.verdict' ? ' gate' : '');
+      const detail = String(row.detail || '');
+      if (row.kind.endsWith('.reasoning')) {
+        /* El pensamiento de un modelo local no se tira ni se mezcla con la respuesta: va en un bloque
+           plegable, entero y escapado. Un `<details>` no rompe el parser ni el JSON del juez. */
+        const fold = document.createElement('details');
+        fold.className = 'reasoning';
+        fold.innerHTML = `<summary><span class="k">${esc(LABEL[row.kind] || row.kind)}</span>
+          <span class="d">${esc(detail.slice(0, 120))}</span></summary>
+          <pre>${esc(detail)}</pre>`;
+        box.appendChild(fold);
+        continue;
+      }
+      line.innerHTML = `<span class="k">${esc(LABEL[row.kind] || row.kind)}</span>
+                        <span class="d">${esc(detail.slice(0, 160))}</span>`;
+      box.appendChild(line);
+    }
+    if (state.feed.length) $('thread').scrollTop = $('thread').scrollHeight;
+  }
+
+  function renderThread(messages) {
+    const thread = $('thread');
+    thread.innerHTML = '';
+    if (!messages.length) {
+      thread.innerHTML = `<div class="empty"><h1>¿Qué construimos?</h1>
+        <p>Pide una tarea o haz una pregunta. El gate (lint Nexus, ley de 400, tests) se ejecuta en cuanto
+        se toca un fichero; si sale rojo, el obrero lo repara antes de contestarte.</p>
+        <p class="dim">El modelo de la tríada, las claves, la memoria y las skills se cambian en
+        <a href="/settings?token=${encodeURIComponent(window.NexusToken || '')}">Configuración</a>.</p></div>`;
+    } else {
+      const pending = {};
+      for (const message of messages) {
+        if (message.role === 'user') {
+          addMessage('user', msgText(message.content) || '·', {attachments: msgAttachments(message)});
+        } else if (message.role === 'assistant') {
+          const tools = (message.tool_calls || []).map((call) => {
+            let args = {};
+            try { args = JSON.parse(call.function.arguments || '{}'); } catch (error) { args = {}; }
+            const tool = {name: call.function.name, args, id: call.id, ok: true};
+            pending[tool.id] = tool;
+            return tool;
+          });
+          if ((message.content || '').trim() || tools.length) {
+            addMessage('assistant', (message.content || '').trim() || '·', {tools});
+          }
+        } else if (message.role === 'tool') {
+          const tool = pending[message.tool_call_id];
+          if (tool) {
+            tool.result = message.content || '';
+            tool.ok = !String(message.content || '').startsWith('ERROR');
+          }
+        }
+      }
+    }
+    const inline = document.createElement('div');
+    inline.id = 'inline';
+    inline.className = 'inline-feed';
+    thread.appendChild(inline);
+    paintFeed();
+    thread.scrollTop = thread.scrollHeight;
+  }
+
+  async function refreshChat() {
+    const {ok, data} = await api('/api/chat');
+    if (!ok) return;
+    const next = data.session ? data.session.id : null;
+    if (next !== state.session) { state.since = 0; state.feed = []; }
+    state.session = next;
+    renderThread(data.messages || []);
+  }
+
+  async function pollEvents() {
+    if (state.polling) return;
+    state.polling = true;
+    try {
+      const {ok, data} = await api('/api/events?since=' + state.since);
+      if (!ok) return;
+      for (const event of data.events || []) {
+        state.since = Math.max(state.since, event.seq);
+        if (!LABEL[event.kind]) continue;
+        state.feed.push({kind: event.kind, detail: event.detail || ''});
+      }
+      if ((data.events || []).length) paintFeed();
+    } finally { state.polling = false; }
+  }
+
+  function noteSkills(skills) {
+    if (state.feed.some((row) => row.kind === 'skills.injected')) return;
+    state.feed.push({kind: 'skills.injected', detail: (skills || []).join(', ')});
+    paintFeed();
+  }
+
+  function reset() {
+    state.feed = [];
+    state.since = 0;
+    renderThread([]);
+  }
+
+  return {addMessage, renderThread, refreshChat, pollEvents, noteSkills, reset};
+}());

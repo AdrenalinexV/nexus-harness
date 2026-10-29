@@ -1,12 +1,10 @@
-/* Lo que el chat necesita además de app.js: adjuntar ficheros al mensaje.
+/* El compositor: enviar, detener y adjuntar.
 
-   Aquí vivía también el modal de configuración (modelos, claves, MCP, puente) y el editor de
-   SKILL.md. Todo eso se fue a su propia pantalla (`/settings`), que se sirve con su HTML y su script:
-   tenerlo en los dos sitios era tener dos sitios donde arreglarlo. Lo que queda es lo único que el
-   compositor necesita de verdad: coger ficheros del sistema y dejarlos listos para enviar. */
-
-(function () {
-  const $ = (id) => document.getElementById(id);
+   Aquí vive lo que antes estaba en `panels.js` (adjuntar ficheros) porque es la misma caja de escribir:
+   separarlo obligaba a dos ficheros para una sola pregunta. Límite de 6 MB por fichero, y el nombre va
+   tal cual: es del operador, no lo inventa el modelo. */
+window.NexusComposer = (function () {
+  const {$, api, state} = window.NX;
   const LIMIT = 6 * 1024 * 1024;
   let pending = [];
 
@@ -15,9 +13,10 @@
     box.textContent = '';
     pending.forEach((item, index) => {
       const chip = document.createElement('span');
-      chip.className = 'tool';
-      chip.textContent = `${item.kind === 'image' ? '🖼' : '📄'} ${item.name} ✕`;
+      chip.className = 'attach';
+      chip.textContent = item.name;
       chip.title = 'quitar';
+      chip.setAttribute('role', 'button');
       chip.onclick = () => { pending.splice(index, 1); paintPending(); };
       box.appendChild(chip);
     });
@@ -45,6 +44,28 @@
     }
   }
 
+  async function send() {
+    const attachments = pending.splice(0, pending.length);
+    paintPending();
+    const text = $('input').value.trim();
+    if (!text && !attachments.length) return;
+    $('input').value = '';
+    window.NexusStream.addMessage('user', text || '·', {attachments: attachments.map((item) => ({
+      name: item.name, kind: item.kind}))});
+    const {ok, status, data} = await api('/api/chat',
+      {method: 'POST', body: JSON.stringify({text, attachments})});
+    if (!ok) {
+      window.NexusStream.addMessage('assistant',
+        status === 409 ? 'Ya hay un turno en marcha.' : (data.reason || 'no se pudo enviar'));
+      return;
+    }
+    window.setTimeout(() => window.NexusStream.refreshChat(), 700);
+  }
+
+  async function stopTurn() {
+    await api('/api/stop', {method: 'POST', body: '{}'});
+  }
+
   $('attach').onclick = () => $('file').click();
   $('file').onchange = () => { addFiles($('file').files); $('file').value = ''; };
   $('input').addEventListener('paste', (event) => {
@@ -57,7 +78,5 @@
     addFiles(event.dataTransfer ? event.dataTransfer.files : []);
   });
 
-  window.NexusUI = {
-    take: () => { const items = pending.splice(0, pending.length); paintPending(); return items; },
-  };
+  return {send, stopTurn, take: () => pending.splice(0, pending.length), state};
 }());

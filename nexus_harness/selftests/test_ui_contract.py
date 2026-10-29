@@ -154,6 +154,36 @@ def test_401_is_not_a_dead_engine(base, failures):
     check("que habla de credencial y no de reiniciar", "pide token" in js, True, failures)
 
 
+def _emoji(text):
+    """Los caracteres que no son un sistema de iconos: pictogramas y dingbats."""
+    return sorted({ch for ch in text if 0x1F300 <= ord(ch) <= 0x1FAFF or 0x2600 <= ord(ch) <= 0x27BF})
+
+
+def test_iconography_is_svg(base, failures):
+    """Cero emojis y cero assets externos en las tres pantallas y en sus scripts.
+
+    Un emoji cambia de forma por sistema operativo, no se alinea con el texto ni hereda el color: no
+    es un icono, es el slop mas reconocible que existe. El sprite vive en `ui_icons.py` y se sirve
+    inline; una pagina que necesita la red para verse bien esta rota en un avion.
+    """
+    status, index = _get(base, "/")
+    check("el chat se sirve", status, 200, failures)
+    check("el chat no tiene emojis", _emoji(index), [], failures)
+    check("el chat no carga nada de fuera", ('src="http' in index) or ('href="http' in index), False,
+          failures)
+    check("y trae el sprite inline", '<symbol id="i-search"' in index, True, failures)
+    for name in ("modelos", "espacio", "seguridad", "memoria", "skills", "mcp", "puente",
+                 "autonomia", "vps", "stats"):
+        status, page = _get(base, "/settings?section=" + name)
+        check("settings/%s se sirve" % name, status, 200, failures)
+        check("settings/%s no tiene emojis" % name, _emoji(page), [], failures)
+    for asset in ("app.js", "chat_stream.js", "sessions.js", "composer.js", "activity.js",
+                  "settings.js", "token.js"):
+        status, body = _get(base, "/" + asset)
+        check("%s se sirve" % asset, status, 200, failures)
+        check("%s no tiene emojis" % asset, _emoji(body), [], failures)
+
+
 def run():
     failures = []
     root = Path(tempfile.mkdtemp(prefix="nexus-uicontract-"))
@@ -165,6 +195,7 @@ def run():
         test_units_are_normalised(base, failures)
         test_verdict_classes(failures)
         test_401_is_not_a_dead_engine(base, failures)
+        test_iconography_is_svg(base, failures)
     finally:
         server.shutdown()
         server.server_close()

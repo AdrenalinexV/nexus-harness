@@ -1,13 +1,15 @@
 /* La pantalla de configuración funciona SIN este fichero: navegar es un `<a>` y guardar es un
-   `<form>` que contesta un 303. Aquí van solo las tres cosas que de verdad necesitan script:
-   1. Ctrl+K para buscar y Esc para volver al chat.
-   2. El editor de `SKILL.md` en una ventana (lo único que habla JSON con el motor).
-   3. Al elegir proveedor, la lista de modelos sugiere solo los de ese proveedor.
+   `<form>` que contesta un 303. Aquí van solo las cosas que de verdad necesitan script:
 
-   Nota de seguridad: el único `innerHTML` de este fichero es el marcado FIJO de la ventana del editor
-   (no lleva ni un dato interpolado). Todo lo que viene del motor se pinta con `textContent` o con
-   `value`, nunca como marcado. */
+   1. Ctrl+K: un buscador de DESTINOS (los trece), con flechas y Enter. Sin script, el mismo campo es
+      el filtro del árbol que atiende el servidor (`/settings?q=`), así que no se pierde nada.
+   2. Esc: cierra el buscador; si ya está cerrado, vuelve al chat.
+   3. El editor de `SKILL.md` en una ventana (lo único que habla JSON con el motor).
+   4. La cola de proyectos: arrastrar y soltar.
+   5. Al elegir proveedor, los modelos de ese proveedor.
 
+   Seguridad: el único `innerHTML` es el marcado FIJO de la ventana del editor. Todo lo que viene del
+   motor se pinta con `textContent` o `value`. */
 (function () {
   const $ = (id) => document.getElementById(id);
   const TOKEN = window.NexusToken || '';
@@ -19,13 +21,105 @@
       ok: response.ok, status: response.status, data: await response.json().catch(() => ({}))}));
   }
 
-  /* ---------- 2. el editor de SKILL.md ---------- */
+  /* ---------- 1 y 2. Ctrl+K: destinos, flechas, Enter y Esc ---------- */
+  const search = $('settings-search');
+  const palette = $('sk-palette');
+  let index = [];
+  try {
+    index = JSON.parse(($('sk-index') || {}).textContent || '[]');
+  } catch (error) {
+    index = [];
+  }
+  let cursor = -1;
+
+  function matches(entry, needle) {
+    if (!needle) return true;
+    const haystack = [entry.label, entry.where, entry.terms].join(' ').toLowerCase();
+    return needle.split(/\s+/).every((word) => haystack.includes(word));
+  }
+
+  function paintPalette() {
+    const needle = String(search.value || '').trim().toLowerCase();
+    const rows = index.filter((entry) => matches(entry, needle));
+    palette.textContent = '';
+    cursor = -1;
+    if (!rows.length) {
+      const empty = document.createElement('li');
+      empty.className = 'empty-row';
+      empty.textContent = 'Ningún destino coincide con «' + search.value + '». Pulsa Enter para filtrar el árbol.';
+      palette.appendChild(empty);
+    }
+    rows.forEach((entry) => {
+      const item = document.createElement('li');
+      const link = document.createElement('a');
+      link.href = entry.href;
+      link.textContent = entry.label;
+      if (entry.where) {
+        const where = document.createElement('span');
+        where.className = 'where';
+        where.textContent = entry.where;
+        link.appendChild(where);
+      }
+      item.appendChild(link);
+      palette.appendChild(item);
+    });
+    palette.hidden = false;
+  }
+
+  function move(step) {
+    const links = Array.from(palette.querySelectorAll('a'));
+    if (!links.length) return;
+    cursor = (cursor + step + links.length) % links.length;
+    links.forEach((link, position) => link.classList.toggle('on', position === cursor));
+    links[cursor].scrollIntoView({block: 'nearest'});
+  }
+
+  function closePalette() {
+    palette.hidden = true;
+    cursor = -1;
+  }
+
+  function openPalette() {
+    paintPalette();
+  }
+
+  if (search && palette) {
+    search.addEventListener('focus', openPalette);
+    search.addEventListener('input', openPalette);
+    search.addEventListener('keydown', (event) => {
+      if (event.key === 'ArrowDown') { event.preventDefault(); move(1); }
+      else if (event.key === 'ArrowUp') { event.preventDefault(); move(-1); }
+      else if (event.key === 'Enter' && cursor >= 0) {
+        event.preventDefault();
+        window.location.href = palette.querySelectorAll('a')[cursor].href;
+      } else if (event.key === 'Escape') {
+        event.stopPropagation();
+        closePalette();
+        search.blur();
+      }
+    });
+    document.addEventListener('click', (event) => {
+      if (!event.target.closest('.settings-search')) closePalette();
+    });
+  }
+
+  document.addEventListener('keydown', (event) => {
+    if ((event.ctrlKey || event.metaKey) && String(event.key).toLowerCase() === 'k') {
+      event.preventDefault();
+      if (search) { search.focus(); search.select(); openPalette(); }
+    } else if (event.key === 'Escape' && !document.querySelector('dialog[open]')) {
+      if (palette && !palette.hidden) { closePalette(); return; }
+      window.location.href = '/?token=' + encodeURIComponent(TOKEN);
+    }
+  });
+
+  /* ---------- 3. el editor de SKILL.md ---------- */
   const dialog = document.createElement('dialog');
   dialog.className = 'skilldlg';
   dialog.innerHTML =
     '<header><strong id="skdlg-name">SKILL.md</strong>'
     + '<span class="dim" id="skdlg-meta"></span>'
-    + '<button class="ghost" id="skdlg-close">✕</button></header>'
+    + '<button class="ghost" id="skdlg-close" aria-label="Cerrar">Cerrar</button></header>'
     + '<textarea id="skdlg-text" spellcheck="false"></textarea>'
     + '<footer><span class="dim" id="skdlg-note"></span>'
     + '<button class="primary" id="skdlg-save">Guardar SKILL.md</button></footer>';
@@ -73,47 +167,26 @@
     openSkill(button.dataset.skill, button.dataset.root || '');
   });
 
-  /* ---------- 1. atajos y filtro del árbol ---------- */
-  const search = $('settings-search');
-  if (search) {
-    search.addEventListener('input', () => {
-      const needle = search.value.trim().toLowerCase();
-      for (const category of document.querySelectorAll('.scat')) {
-        const text = category.textContent.toLowerCase();
-        category.hidden = Boolean(needle) && !text.includes(needle);
-        if (needle) category.open = text.includes(needle);
-      }
-    });
-  }
-  document.addEventListener('keydown', (event) => {
-    if ((event.ctrlKey || event.metaKey) && String(event.key).toLowerCase() === 'k') {
-      event.preventDefault();
-      if (search) { search.focus(); search.select(); }
-    } else if (event.key === 'Escape' && !dialog.open) {
-      window.location.href = '/';
-    }
-  });
-
   /* ---------- 4. la cola de proyectos: arrastrar y soltar ---------- */
   const queue = $('queue');
   let dragged = null;
 
   function renumber() {
-    Array.from(queue.querySelectorAll('.qcard')).forEach((card, index) => {
+    Array.from(queue.querySelectorAll('.qcard')).forEach((card, position) => {
       const num = card.querySelector('.qnum');
-      if (num) num.textContent = '#' + (index + 1);
+      if (num) num.textContent = '#' + (position + 1);
     });
   }
 
   async function persistOrder() {
     const names = Array.from(queue.querySelectorAll('.qcard')).map((card) => card.dataset.project);
     const {ok, data} = await api('/api/projects/order', {method: 'POST', body: JSON.stringify({names})});
-    const note = document.createElement('p');
-    note.className = 'snote ' + (ok ? 'ok' : 'bad');
-    note.textContent = ok ? 'cola guardada: ' + (data.order || []).join(' → ')
+    const box = document.createElement('p');
+    box.className = 'snote ' + (ok ? 'ok' : 'bad');
+    box.textContent = ok ? 'cola guardada: ' + (data.order || []).join(' → ')
       : ('no se pudo guardar: ' + (data.reason || 'motivo desconocido'));
-    queue.parentNode.insertBefore(note, queue);
-    window.setTimeout(() => note.remove(), 6000);
+    queue.parentNode.insertBefore(box, queue);
+    window.setTimeout(() => box.remove(), 6000);
   }
 
   if (queue) {
@@ -145,7 +218,7 @@
     });
   }
 
-  /* ---------- 5. el buscador de las carpetas sin gobernanza ---------- */
+  /* ---------- 5. las carpetas sin gobernanza y los modelos por proveedor ---------- */
   for (const input of document.querySelectorAll('[data-filter]')) {
     input.addEventListener('input', () => {
       const needle = input.value.trim().toLowerCase();
@@ -155,7 +228,6 @@
     });
   }
 
-  /* ---------- 3. los modelos que existen, por proveedor ---------- */
   document.addEventListener('change', (event) => {
     const select = event.target;
     if (!select.matches || !select.matches('select[name="vendor"]')) return;

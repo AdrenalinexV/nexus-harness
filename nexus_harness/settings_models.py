@@ -19,6 +19,11 @@ from .platform import hardware_probe
 from .llm import provider_discovery
 from . import onboarding, panels, triad_balance, triad_presets
 from . import settings_kit as kit
+from . import ui_icons
+
+
+def _icon(name, cls=""):
+    return ui_icons.icon(name, cls)
 
 # (rol interno, ancla, titulo, que es)
 ROLES = (
@@ -58,9 +63,9 @@ def _live_badge(state):
 def _hardware_bar(hardware, info):
     """La frase de la maquina, con el veredicto de la triada pegado al final."""
     tone = "ok" if not info["swapping"] else ("bad" if info["oversize"] else "warn")
-    return ('<div class="hwbar"><span data-hw="summary">🖥 %s</span>'
+    return ('<div class="hwbar"><span data-hw="summary">%s %s</span>'
             '<span class="chip %s" data-hw="state">%s</span></div>'
-            % (kit.esc(hardware_probe.headline(hardware)), tone,
+            % (_icon("cpu"), kit.esc(hardware_probe.headline(hardware)), tone,
                kit.esc(triad_presets.state_text(info, hardware))))
 
 
@@ -190,7 +195,7 @@ def _role_card(cockpit, role, anchor, title, what, info, focused, state, roles):
             '<form class="sform" method="post" action="/api/settings">%s'
             '<div class="sactions"><button class="primary">Aplicar cambios</button>'
             '<button class="ghost" formaction="/api/settings/do" name="what" value="detect_models">'
-            '🔄 Detectar modelos en vivo</button></div></form></div>'
+            'Detectar modelos en vivo</button></div></form></div>'
             % (" focus" if focused else "", kit.esc(anchor), kit.esc(title), tone,
                kit.esc(info.get("model") or "sin modelo"), kit.esc(what), body,
                kit.hidden("section", "modelos") + kit.hidden("role", role) + kit.hidden("back", anchor)))
@@ -268,13 +273,13 @@ def _plan_card(plan):
     """El plan auto-adaptativo: lo que el balanceador propone ahora mismo, con su boton."""
     resolved = ", ".join("%s=%s" % (role, spec) for role, spec in sorted(plan["roles"].items()))
     notes = " ".join(plan["notes"])
-    return ('<div class="snote%s"><strong>✨ Tríada equilibrada para tu hardware</strong>'
+    return ('<div class="snote%s"><strong>Tríada equilibrada para tu hardware</strong>'
             '<p class="mono">%s</p><p class="dim">juez: %s%s</p>%s'
             '<div class="sactions">%s</div></div>'
             % ("" if plan["ok"] else " bad", kit.esc(resolved or "(sin resolver)"),
                kit.esc(plan["judge_mode"]), kit.esc(" · " + notes if notes else ""),
                _vram_bar(plan),
-               _action_form("optimize", "✨ Auto-Optimizar Tríada para mi hardware", primary=plan["ok"])))
+               _action_form("optimize", "Auto-optimizar la tríada para mi hardware", primary=plan["ok"])))
 
 
 def _providers_bar(cockpit):

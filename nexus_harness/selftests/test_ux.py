@@ -168,7 +168,7 @@ def test_projects_panel(base, failures):
     check("the plain folders are folded into a table",
           "carpetas sin gobernanza" in body and 'class="stable plainlist"' in body, True, failures)
     check("with a filter for them", 'data-filter=".plainbox table tr"' in body, True, failures)
-    check("and the autopilot per project", "🚀 Autopilot" in body, True, failures)
+    check("and the autopilot per project", "Autopilot" in body, True, failures)
     check("the keyboard still works (arrows)", "project_move" in body, True, failures)
 
 

@@ -67,7 +67,7 @@ def _card(row):
     auto = ('<form class="qauto" method="post" action="/api/settings/do">%s%s%s'
             '<input type="number" name="iterations" value="3" min="1" max="50" '
             'title="iteraciones del bucle">'
-            '<button class="primary" title="Backup, planifica, ejecuta, verifica y avanza">🚀 Autopilot</button>'
+            '<button class="primary" title="Backup, planifica, ejecuta, verifica y avanza">Autopilot</button>'
             '</form>'
             % (kit.hidden("section", "espacio"), kit.hidden("what", "autonomy_start"),
                kit.hidden("project", name)))

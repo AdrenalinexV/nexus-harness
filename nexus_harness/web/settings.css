@@ -1,18 +1,237 @@
-/* Las piezas que solo existen en la pantalla de configuracion: la cola de proyectos, las carpetas
- * sueltas, la rejilla de skills y los graficos.
- *
- * Vive aparte de `app.css` por dos razones: la ley de 400 lineas (el chat y sus estados ya ocupan su
- * sitio) y porque estas reglas nunca viajan al chat, asi que cargarlas alli seria peso muerto.
- *
- * Tres decisiones de lectura, que son las que se pidieron:
- * - Las pastillas de filtro van en UNA fila (`flex-wrap`), no como barras apiladas de ancho completo.
- * - La rejilla de skills es de tarjetas anchas (`minmax(280px, 1fr)`): 3 o 4 por fila, legibles.
- * - Los KPI son 4 columnas, no una tira de nueve cajas del mismo tamano que el titulo.
- */
+/* Nexus-Harness — la pantalla de configuración: árbol de categorías + panel del dueño.
 
-/* ---------- la cola de proyectos ---------- */
+   Esta pantalla responde a una pregunta: «¿qué cambia esto y qué valor tiene ahora?». De ahí tres
+   decisiones de lectura:
+   - El árbol va AGRUPADO por dominio (modelo, trabajo, operación, sistema) con encabezados de sección,
+     porque trece entradas planas no son un árbol: son una lista larga.
+   - Cada entrada tiene icono y nombre; el activo se marca con una regla de acento y no con un bloque
+     de color (la jerarquía la hacen el tamaño y el espacio).
+   - El panel del dueño conserva SUS piezas (tarjetas, KPI, tablas): aquí solo se les da la forma de
+     esta casa — 1px de borde, tres niveles de superficie, una sola escala tipográfica. */
+
+/* ---------- cabecera de la pantalla ---------- */
+/* Columna: cabecera, nota (cuando la hay) y el cuerpo que ocupa el resto. La altura sale de la
+   ventana, no de un `calc(100vh - 58px)` que caduca en cuanto la cabecera cambia de alto. */
+.settings-body { display: flex; flex-direction: column; height: 100dvh; }
+.settings-top {
+  display: flex; align-items: center; gap: var(--gap); padding: .5rem var(--pad);
+  background: var(--s1); border-bottom: var(--rule); position: sticky; top: 0; z-index: 60;
+}
+.settings-top .brand { text-decoration: none; }
+.settings-search { display: flex; gap: .35rem; flex: 1 1 auto; position: relative; }
+.settings-search input { flex: 1 1 auto; max-width: 42rem; }
+.settings-close {
+  display: inline-flex; align-items: center; justify-content: center; width: 2rem; height: 2rem;
+  text-decoration: none; border-radius: var(--radius-sm); border: 1px solid var(--line2);
+  color: var(--muted);
+}
+.settings-close:hover { border-color: var(--accent); color: var(--fg); }
+.settings-close .icon { width: 1em; height: 1em; }
+
+/* Sugerencias de Ctrl+K: una lista de destinos, no un filtro que esconde el arbol. */
+.palette {
+  position: absolute; top: calc(100% + .3rem); left: 0; z-index: 70; width: min(42rem, 90vw);
+  max-height: 60vh; overflow: auto; padding: .25rem; list-style: none; margin: 0;
+  background: var(--s1); border: 1px solid var(--line2); border-radius: var(--radius);
+}
+.palette li { border-radius: var(--radius-sm); }
+.palette a {
+  display: flex; align-items: center; gap: .55rem; padding: .45rem .55rem;
+  text-decoration: none; color: var(--fg); font-size: var(--fs-sm);
+}
+.palette a .icon { color: var(--muted); }
+.palette a .where { margin-left: auto; font-size: var(--fs-xs); color: var(--muted); }
+.palette a:hover, .palette a.on { background: var(--s2); }
+.palette a.on .icon { color: var(--accent); }
+.palette .empty-row { padding: .45rem .55rem; color: var(--muted); font-size: var(--fs-sm); }
+
+/* ---------- árbol ---------- */
+.settings-app { display: grid; grid-template-columns: 300px minmax(0, 1fr); min-height: 0;
+  flex: 1 1 auto; }
+.settings-tree {
+  overflow: auto; padding: .7rem .6rem 2rem; background: var(--s1); border-right: var(--rule);
+}
+.sgroup {
+  margin: .9rem 0 .25rem; padding: 0 .55rem; font-size: var(--fs-xs); text-transform: uppercase;
+  letter-spacing: .12em; color: var(--muted); font-weight: 600;
+}
+.sgroup:first-child { margin-top: .2rem; }
+.scat { margin: 0; }
+.scat > summary {
+  cursor: pointer; display: flex; align-items: center; gap: .5rem;
+  padding: .4rem .55rem; border-radius: var(--radius-sm); font-size: var(--fs-sm);
+  list-style: none; border-left: 2px solid transparent;
+}
+.scat > summary::-webkit-details-marker { display: none; }
+.scat > summary .icon { color: var(--muted); }
+.scat > summary:hover { background: var(--s2); }
+.scat.on > summary { background: var(--s2); border-left-color: var(--accent); font-weight: 600; }
+.scat.on > summary .icon { color: var(--accent); }
+/* Una categoría sin submenús es un enlace, no un desplegable: mismo aspecto que `summary` para que
+   el árbol se lea como una sola lista. */
+.scat-leaf {
+  display: flex; align-items: center; gap: .5rem; padding: .4rem .55rem;
+  border-radius: var(--radius-sm); font-size: var(--fs-sm); color: var(--fg);
+  text-decoration: none; border-left: 2px solid transparent;
+}
+.scat-leaf .icon { color: var(--muted); width: 1.05em; height: 1.05em; }
+.scat-leaf:hover { background: var(--s2); }
+.scat-leaf.on { background: var(--s2); border-left-color: var(--accent); font-weight: 600; }
+.scat-leaf.on .icon { color: var(--accent); }
+.scat > summary .icon, .sgroup .icon { width: 1.05em; height: 1.05em; }
+.sgroup .icon { margin-right: .35rem; vertical-align: -.15em; }
+.ssubs { list-style: none; margin: 0 0 .3rem; padding: 0 0 0 1.9rem; }
+.ssubs a {
+  display: block; padding: .3rem .5rem; border-radius: var(--radius-sm);
+  color: var(--muted); text-decoration: none; font-size: var(--fs-sm);
+  border-left: 2px solid transparent;
+}
+.ssubs a:hover { background: var(--s2); color: var(--fg); }
+.ssubs li.on a { color: var(--fg); border-left-color: var(--accent); background: var(--s2); }
+.tree-foot { margin: 1.4rem .55rem 0; font-size: var(--fs-xs); color: var(--muted); line-height: 1.7; }
+.tree-foot code { word-break: break-all; }
+.tree-gov { display: flex; align-items: center; gap: .5rem; margin: .9rem .55rem 0;
+  padding-top: .8rem; border-top: var(--rule); color: var(--muted); text-decoration: none;
+  font-size: var(--fs-sm); }
+.tree-gov:hover { color: var(--fg); }
+
+/* ---------- panel ---------- */
+.settings-panel { overflow: auto; padding: 1.5rem 1.9rem 3rem; min-width: 0; }
+.settings-panel h1 { font-size: var(--fs-xl); margin: 0 0 .3rem; font-weight: 650; }
+.settings-panel > .dim { margin: 0 0 1.2rem; max-width: var(--measure); }
+.settings-panel h3.ssub {
+  margin: 1.7rem 0 .5rem; font-size: var(--fs-xs); text-transform: uppercase;
+  letter-spacing: .12em; color: var(--muted);
+}
+.sstack { display: flex; flex-direction: column; gap: .45rem; }
+.sgrid { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: .9rem; }
+.sfield { display: flex; flex-direction: column; gap: .25rem; font-size: var(--fs-sm); }
+.slabel { color: var(--fg); font-size: var(--fs-sm); }
+.shint { color: var(--muted); font-size: var(--fs-xs); }
+.sform { display: flex; flex-direction: column; gap: .7rem; margin-top: .9rem;
+  max-width: 62rem; }
+.sform.inline { display: inline-flex; margin: 0; }
+.sform.inline button { padding: .2rem .55rem; font-size: var(--fs-xs); }
+.sactions { display: flex; align-items: center; gap: .8rem; flex-wrap: wrap; }
+.srow { display: flex; flex-direction: column; gap: .3rem; padding: .6rem .7rem;
+  background: var(--s2); border: 1px solid var(--line); border-radius: var(--radius-sm); }
+.sgrow { display: flex; align-items: center; gap: .5rem; flex-wrap: wrap; }
+.sgrow input { flex: 1 1 18rem; }
+.slist { display: flex; flex-direction: column; gap: .2rem; }
+.srow-link { display: flex; justify-content: space-between; gap: .6rem; padding: .4rem .6rem;
+  border-radius: var(--radius-sm); text-decoration: none; color: var(--fg); background: var(--s2);
+  border: 1px solid var(--line); }
+.srow-link:hover { border-color: var(--accent); }
+.snote {
+  padding: .55rem .75rem; border-radius: var(--radius-sm); font-size: var(--fs-sm); margin: .7rem 0;
+  border: 1px solid var(--line2); border-left: 3px solid var(--line2); background: var(--s2);
+  color: var(--muted);
+}
+.snote.ok { border-left-color: var(--ok); color: var(--ok); }
+.snote.warn { border-left-color: var(--warn); color: var(--warn); }
+.snote.bad { border-left-color: var(--bad); color: var(--bad); }
+.sout { max-height: 22rem; overflow: auto; padding: .7rem .8rem; background: var(--bg);
+  border: 1px solid var(--line); border-radius: var(--radius-sm); font-size: var(--fs-sm);
+  white-space: pre-wrap; font-family: var(--mono); }
+.stable { width: 100%; border-collapse: collapse; font-size: var(--fs-sm); margin-top: .6rem; }
+.stable th, .stable td { text-align: left; padding: .35rem .5rem; border-bottom: 1px solid var(--line); }
+.stable th { color: var(--muted); font-weight: 500; font-size: var(--fs-xs);
+  text-transform: uppercase; letter-spacing: .07em; }
+.stable td.num, .stable .num { font-variant-numeric: tabular-nums; }
+.scheck { display: flex; align-items: center; gap: .35rem; font-size: var(--fs-sm); color: var(--muted); }
+.settings-panel textarea { min-height: 320px; width: 100%; font-size: var(--fs-sm); }
+
+/* ---------- KPI: cifras grandes, etiqueta pequeña ---------- */
+.kpigrid { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: .7rem; }
+.kpi { display: flex; flex-direction: column; gap: .1rem; padding: .75rem .85rem;
+  background: var(--s1); border: 1px solid var(--line); border-radius: var(--radius);
+  border-left: 3px solid var(--line2); }
+.kpi.ok { border-left-color: var(--ok); }
+.kpi.warn { border-left-color: var(--warn); }
+.kpi.bad { border-left-color: var(--bad); }
+.kpi.off { border-left-color: var(--idle); }
+.kpi-label { font-size: var(--fs-xs); text-transform: uppercase; letter-spacing: .09em;
+  color: var(--muted); }
+.kpi-value { font-family: var(--mono); font-size: 1.5rem; line-height: 1.25;
+  font-variant-numeric: tabular-nums; }
+.kpi-hint { font-size: var(--fs-xs); color: var(--muted); font-style: normal; }
+
+.kpigrid.four { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+@media (max-width: 1180px) { .kpigrid.four { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+@media (max-width: 900px) { .kpigrid.four { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 640px) { .kpigrid.four { grid-template-columns: 1fr; } }
+
+/* Un bloque de superficie para lo que un panel envuelve sin decir mas (settings_models, autonomy). */
+.card { padding: .75rem .85rem; background: var(--s1); border: 1px solid var(--line);
+  border-radius: var(--radius-sm); }
+
+/* ---------- modelos: cuatro papeles a la vista ---------- */
+.rolegrid2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(330px, 1fr)); gap: .8rem;
+  margin-top: .6rem; }
+.rolecard { display: flex; flex-direction: column; gap: .35rem; padding: .85rem .95rem;
+  background: var(--s1); border: 1px solid var(--line); border-radius: var(--radius); }
+.rolecard.focus { border-color: var(--accent); }
+.rolehead { display: flex; align-items: center; justify-content: space-between; gap: .5rem; }
+.rolecard .rolegrid { grid-template-columns: 1fr; }
+.rolecard .freeid { margin-top: .35rem; }
+.rolecard .switch { display: flex; gap: .45rem; align-items: center; font-size: var(--fs-sm); }
+.wide { width: 100%; }
+
+/* ---------- bóveda: una tarjeta por clave ---------- */
+.keygrid { display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: .7rem; }
+.keycard { display: flex; flex-direction: column; gap: .45rem; padding: .7rem .8rem;
+  background: var(--s2); border: 1px solid var(--line); border-radius: var(--radius-sm); }
+.keycard .sform { margin-top: 0; }
+.modes { display: flex; flex-wrap: wrap; gap: .5rem; }
+.modeopt { display: flex; align-items: center; gap: .5rem; padding: .5rem .7rem; cursor: pointer;
+  background: var(--s2); border: 1px solid var(--line); border-radius: var(--radius-sm); }
+.modeopt.on { border-color: var(--accent); background: var(--accent-soft); }
+.modeopt em { display: block; font-style: normal; font-size: var(--fs-xs); color: var(--muted); }
+
+/* ---------- skills: filtros en UNA fila, tarjetas anchas, arquitecto arriba ---------- */
+.filters { display: flex; flex-direction: row; align-items: center; gap: .6rem; flex-wrap: wrap;
+  margin-bottom: .7rem; }
+.filters form { display: flex; gap: .4rem; flex: 0 1 22rem; min-width: 12rem; }
+.filters input.search { flex: 1 1 auto; }
+.fpills { display: flex; align-items: center; gap: .3rem; flex-wrap: wrap; }
+.fpill {
+  text-decoration: none; font-size: var(--fs-xs); padding: .18rem .5rem;
+  border-radius: var(--radius-sm); background: var(--s2); border: 1px solid var(--line2);
+  color: var(--muted); white-space: nowrap;
+}
+.fpill:hover { color: var(--fg); border-color: var(--accent); }
+.fpill.on { background: var(--accent); border-color: var(--accent); color: var(--accent-fg);
+  font-weight: 600; }
+.skillgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: .7rem; }
+@media (min-width: 1600px) {
+  .skillgrid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+}
+.skcard { display: flex; flex-direction: column; gap: .4rem; padding: .75rem .85rem;
+  background: var(--s2); border: 1px solid var(--line); border-radius: var(--radius); }
+.skhead { display: flex; align-items: center; gap: .35rem; flex-wrap: wrap; }
+.skhead strong { font-size: var(--fs); }
+.skdesc { margin: 0; font-size: var(--fs-sm); color: var(--muted); min-height: 2.6em; }
+.skfoot { display: flex; align-items: center; gap: .4rem; flex-wrap: wrap; }
+.skfoot .sform { margin: 0; }
+.modebtn { font-size: var(--fs-xs); padding: .16rem .45rem; border-radius: var(--radius-sm);
+  background: var(--s1); border: 1px solid var(--line2); color: var(--muted); }
+.modebtn.on { color: var(--accent-fg); background: var(--accent); border-color: var(--accent); }
+.arch { padding: .8rem .9rem; background: var(--s1); border: 1px solid var(--accent);
+  border-radius: var(--radius); display: flex; flex-direction: column; gap: .5rem; }
+.archtop { padding: .8rem .9rem; background: var(--s1); border: 1px solid var(--accent);
+  border-radius: var(--radius); }
+.archtop .arch { border: 0; padding: 0; background: transparent; }
+.check { display: flex; align-items: center; gap: .4rem; font-size: var(--fs-sm); color: var(--muted); }
+.specview { margin: .3rem 0; }
+.specview summary { cursor: pointer; color: var(--accent); font-size: var(--fs-sm); }
+.pager { display: flex; align-items: center; gap: .5rem; margin-top: .8rem; flex-wrap: wrap; }
+
+/* ---------- MCP, proyectos y cola ---------- */
+.mcpgrid { display: grid; grid-template-columns: repeat(auto-fit, minmax(330px, 1fr)); gap: .7rem; }
+.mcpserver { display: flex; flex-direction: column; gap: .35rem; padding: .75rem .85rem;
+  background: var(--s2); border: 1px solid var(--line); border-radius: var(--radius); }
 .boardhead { display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem;
-  flex-wrap: wrap; padding: .9rem 1rem; background: var(--card); border: 1px solid var(--line);
+  flex-wrap: wrap; padding: .9rem 1rem; background: var(--s1); border: 1px solid var(--line);
   border-radius: var(--radius); }
 .boardhead p { margin: .35rem 0 0; max-width: 62ch; }
 .newproj > summary { cursor: pointer; }
@@ -21,93 +240,91 @@
   font-weight: 600; list-style: none; }
 .primary-sum::-webkit-details-marker { display: none; }
 .newproj[open] .primary-sum { margin-bottom: .4rem; }
-
 .queue { list-style: none; margin: .4rem 0 0; padding: 0; display: flex; flex-direction: column;
-  gap: .5rem; font-size: var(--fs); }
-.qcard { display: grid; grid-template-columns: 3rem minmax(0, 1fr) auto; gap: .7rem; align-items: start;
-  padding: .7rem .8rem; background: var(--card); border: 1px solid var(--line);
+  gap: .5rem; }
+.qcard { display: grid; grid-template-columns: 2.6rem minmax(0, 1fr) auto; gap: .7rem;
+  align-items: start; padding: .65rem .8rem; background: var(--s1); border: 1px solid var(--line);
   border-left: 3px solid var(--line2); border-radius: var(--radius); cursor: grab; }
 .qcard:hover { border-color: var(--line2); }
 .qcard:first-child { border-left-color: var(--accent); }
 .qcard.dragging { opacity: .45; border-style: dashed; }
-.qpos { display: flex; flex-direction: column; align-items: center; gap: .1rem; font-weight: 700;
-  font-size: 1rem; color: var(--accent); text-align: center; padding-top: .1rem; }
+.qpos { display: flex; flex-direction: column; align-items: center; gap: .1rem; color: var(--accent);
+  font-family: var(--mono); font-size: var(--fs-sm); text-align: center; padding-top: .1rem; }
 .qgrip { font-style: normal; color: var(--muted); font-size: 13px; cursor: grab; line-height: 1; }
-.qnum { font-size: 1rem; }
-.qcard .qtest { display: flex; flex-direction: row; gap: .35rem; margin: .35rem 0 0; }
-.qcard .qtest input { flex: 1 1 16rem; padding: .3rem .45rem; font-size: 12.5px; }
-.qcard .qtest button { padding: .25rem .55rem; font-size: 11.5px; }
+.qnum { font-size: var(--fs-sm); }
 .qtitle { display: flex; align-items: center; gap: .5rem; flex-wrap: wrap; }
 .qgoal { margin: .2rem 0 .35rem; font-size: var(--fs-sm); color: var(--muted); }
 .qacts { display: flex; align-items: center; gap: .3rem; flex-wrap: wrap; justify-content: flex-end; }
 .qmove, .qauto { display: flex; align-items: center; gap: .25rem; margin: 0; }
-.qmove button, .qauto button { padding: .25rem .5rem; font-size: 11.5px; }
-.qauto input { width: 4.2rem; padding: .25rem .35rem; font-size: 12px; }
+.qmove button, .qauto button { padding: .2rem .45rem; font-size: var(--fs-xs); }
+.qauto input, .qcard .qtest input { width: 4.2rem; padding: .25rem .35rem; font-size: var(--fs-xs); }
+.qcard .qtest { display: flex; flex-direction: row; gap: .35rem; margin: .35rem 0 0; }
+.qcard .qtest input { flex: 1 1 16rem; width: auto; }
+.qcard .qtest button { padding: .2rem .5rem; font-size: var(--fs-xs); }
 .qcard .specview { grid-column: 2 / -1; }
 .qcard .sout { max-height: 12rem; }
-
-/* ---------- carpetas sin gobernanza: tabla plegada, no 28 tarjetas ---------- */
-.plainbox { margin-top: .4rem; padding: .6rem .8rem; background: var(--card2);
+.qitem, .qmain, .qtext, .plan, .vps { min-width: 0; }
+.plainbox { margin-top: .4rem; padding: .6rem .8rem; background: var(--s2);
   border: 1px solid var(--line); border-radius: var(--radius); }
 .plainbox > summary { cursor: pointer; color: var(--accent); font-size: var(--fs-sm); }
 .plainsearch { margin: .5rem 0 .2rem; max-width: 26rem; }
 .plainlist code { font-size: var(--fs-sm); }
 .plainlist td { vertical-align: middle; }
-.sform.inline { display: inline-flex; margin: 0; }
-.sform.inline button { padding: .2rem .55rem; font-size: 11.5px; }
+.projcard { display: flex; flex-direction: column; gap: .45rem; padding: .85rem .95rem;
+  background: var(--s1); border: 1px solid var(--line); border-radius: var(--radius); }
+.projcard.plain { background: var(--s2); }
+.projcard .sform { margin: 0; }
+.projcard .sout { max-height: 14rem; }
 
-/* ---------- filtros de skills: una fila ---------- */
-/* `flex-direction: row` NO es redundante: `app.css` los puso en columna (barras apiladas de ancho
-   completo, que es justo lo que se quiso quitar) y una regla posterior que no lo diga hereda la
-   columna. Medido en el navegador: sin esta linea, las pastillas seguian apiladas. */
-.filters { display: flex; flex-direction: row; align-items: center; gap: .6rem; flex-wrap: wrap; }
-/* `flex: 0 1 22rem` y NO `1 1`: con `flex-grow`, el buscador se comia la fila entera y empujaba las
-   pastillas a la linea de abajo (medido en el navegador: mismo alto, dos filas). Sin crecer, el
-   buscador se queda a su ancho y las cinco pastillas viven a su derecha, que es lo que se pidio. */
-.filters form { display: flex; gap: .4rem; flex: 0 1 22rem; min-width: 12rem; }
-.filters input.search { flex: 1 1 auto; }
-.fpills { display: flex; align-items: center; gap: .3rem; flex-wrap: wrap; }
-/* Pastillas compactas: con el tamano de texto del chat, cinco etiquetas no cabian junto al buscador
-   hasta 1600 px. A 11.5 px caben desde 1280 y siguen siendo pulsables. */
-.fpill { margin: 0; white-space: nowrap; font-size: 11.5px; padding: .2rem .5rem; }
-.pager { display: flex; align-items: center; gap: .5rem; margin-top: .8rem; flex-wrap: wrap; }
-.archtop { padding: .8rem .9rem; background: var(--card); border: 1px solid var(--accent);
-  border-radius: var(--radius); }
-.archtop .arch { border: 0; padding: 0; background: transparent; }
+/* ---------- la ventana del editor de SKILL.md ---------- */
+.skilldlg { width: min(920px, 92vw); max-height: 86vh; padding: 0; border: 1px solid var(--line2);
+  border-radius: var(--radius); background: var(--s1); color: var(--fg); }
+.skilldlg::backdrop { background: rgba(0, 0, 0, .55); }
+.skilldlg header, .skilldlg footer { display: flex; align-items: center; justify-content: space-between;
+  gap: .6rem; padding: .7rem .9rem; border-bottom: var(--rule); }
+.skilldlg footer { border-bottom: 0; border-top: var(--rule); }
+.skilldlg textarea { display: block; width: calc(100% - 1.8rem); min-height: 46vh; margin: .9rem;
+  font-family: var(--mono); font-size: var(--fs-sm); }
+.skilldlg .note { color: var(--muted); }
+.skilldlg .note.bad, #skdlg-note.bad { color: var(--bad); }
 
-/* ---------- rejilla de skills legible ---------- */
-/* minmax(280px, 1fr) es la regla; en una pantalla de 1920 el `auto-fill` daba CINCO columnas de 293
-   px, que es volver al muro por otro camino. A partir de 1600 se fija en cuatro: tarjetas anchas y
-   el mismo numero en cualquier monitor grande. */
-.skillgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: .7rem; }
-@media (min-width: 1600px) {
-  .skillgrid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
-}
+/* ---------- hardware, perfiles y VRAM ---------- */
+.hwbar { display: flex; flex-wrap: wrap; gap: .5rem; align-items: center;
+  justify-content: space-between; padding: .6rem .8rem; border: 1px solid var(--line);
+  border-radius: var(--radius-sm); background: var(--s1); font-size: var(--fs-sm);
+  margin-bottom: .6rem; }
+.presets { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: .8rem;
+  margin-bottom: .8rem; }
+.preset { display: flex; flex-direction: column; gap: .4rem; padding: .8rem .9rem;
+  border: 1px solid var(--line); border-radius: var(--radius-sm); background: var(--s1); }
+.preset.off { opacity: .62; }
+.preset .mono { font-family: var(--mono); font-size: var(--fs-sm); color: var(--muted); }
+.inlineform { display: inline; }
+.vbar { display: flex; height: 12px; overflow: hidden; margin: .5rem 0 .3rem;
+  border: 1px solid var(--line); background: var(--s2); border-radius: 2px; }
+.vseg { display: inline-block; height: 100%; }
+.vseg.heavy, i.vseg.heavy { background: var(--accent); }
+.vseg.judge, i.vseg.judge { background: var(--warn); }
+.vseg.free, i.vseg.free { background: var(--ok); opacity: .35; }
+.vlegend { display: flex; flex-wrap: wrap; gap: .8rem; font-size: var(--fs-sm); color: var(--muted); }
+.vkey { display: inline-flex; align-items: center; gap: .35rem; }
+.vkey i.vseg { width: 10px; height: 10px; border-radius: 2px; }
 
-/* ---------- KPI: cuatro columnas ---------- */
-.kpigrid.four { grid-template-columns: repeat(4, minmax(0, 1fr)); }
-@media (max-width: 1180px) { .kpigrid.four { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
-@media (max-width: 900px) { .kpigrid.four { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
-@media (max-width: 640px) { .kpigrid.four { grid-template-columns: 1fr; } }
-
-/* ---------- graficos ---------- */
-.chartcard { padding: .8rem .9rem; background: var(--card); border: 1px solid var(--line);
+/* ---------- gráficos de estadísticas ---------- */
+.chartcard { padding: .8rem .9rem; background: var(--s1); border: 1px solid var(--line);
   border-radius: var(--radius); margin-bottom: .8rem; }
-.chartcard h4 { margin: 0 0 .4rem; font-size: .85rem; text-transform: uppercase;
-  letter-spacing: .06em; color: var(--muted); }
+.chartcard h4 { margin: 0 0 .4rem; font-size: var(--fs-xs); text-transform: uppercase;
+  letter-spacing: .09em; color: var(--muted); }
 .chartgrid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: .8rem; }
 .chartrow { display: flex; gap: 1rem; align-items: center; flex-wrap: wrap; }
 .chartside { flex: 1 1 240px; display: flex; flex-direction: column; gap: .4rem; }
-/* Un SVG con `width: 100%` escala tambien en alto: el anillo (viewBox cuadrado) se ponia a 1480 px de
-   alto en un panel de 1920, y eso no es un grafico, es un muro. Cada tipo de grafico tiene su tope. */
 .vchart { display: block; width: 100%; height: auto; max-width: 100%; }
 .chartcard > .vchart { max-width: 980px; }
 .chartrow > .vchart { width: 240px; max-width: 240px; flex: 0 0 auto; }
 .chartgrid .vchart { max-width: 100%; }
 .vlegends { display: flex; gap: .8rem; flex-wrap: wrap; margin: .3rem 0; font-size: var(--fs-sm);
   color: var(--muted); }
-.vlegend { display: inline-flex; align-items: center; gap: .35rem; }
-.vlegend i { width: .65rem; height: .65rem; border-radius: 3px; display: inline-block; }
+.vlegend i { width: .65rem; height: .65rem; border-radius: 2px; display: inline-block; }
 .vlegend b { color: var(--fg); font-weight: 600; }
 .sources { margin-top: .9rem; font-size: var(--fs-sm); }
 .sources summary { cursor: pointer; color: var(--accent); }

@@ -20,6 +20,10 @@
   const POLL_LIVE_MS = 400;
   const POLL_IDLE_MS = 1600;
   const TONE = ['ok', 'warn', 'bad', 'info', 'idle'];
+  // El motor sigue mandando su `glyph` historico (compatibilidad), pero la cabina NO pinta caracteres:
+  // el icono sale del TONO, que es el significado. Un icono cambia con el tono; un emoji cambiaba con
+  // el sistema operativo.
+  const TONE_ICON = {ok: 'check', warn: 'alert', bad: 'xcircle'};
   let last = null;
   let failures = 0;
 
@@ -30,13 +34,33 @@
       ok: response.ok, status: response.status, data: await response.json().catch(() => ({}))}));
   }
 
-  /* ---------- la pildora ---------- */
+  /* ---------- el icono y la frase ---------- */
+  function setGlyph(tone) {
+    const host = $('activity-glyph');
+    if (!host) return;
+    const name = TONE_ICON[tone] || '';
+    if (host.dataset.icon === (name || 'dot')) return;
+    host.dataset.icon = name || 'dot';
+    host.textContent = '';
+    if (!name) {
+      // Gris = sin registro: un punto, no un check (que diria «decidido» sin haber decidido nada).
+      const dot = document.createElement('span');
+      dot.className = 'dot';
+      host.appendChild(dot);
+      return;
+    }
+    host.appendChild(window.NX.icon(name));
+  }
+
   function paint(data) {
     const pill = $('activity');
     if (!pill) return;
-    pill.className = 'activity ' + (TONE.includes(data.tone) ? data.tone : 'idle');
-    $('activity-glyph').textContent = data.glyph || '🟢';
-    $('activity-label').textContent = data.label || '';
+    const tone = TONE.includes(data.tone) ? data.tone : 'idle';
+    pill.className = 'activity ' + tone;
+    setGlyph(tone);
+    // La frase del motor trae su glifo pegado por compatibilidad; aqui se recorta y el icono ya dice
+    // el tono. Sin esto, el DOM volveria a tener emojis y el color seria decorativo otra vez.
+    $('activity-label').textContent = String(data.label || '').replace(/^[^\p{L}\p{N}]+/u, '');
     const bar = $('activity-bar');
     const progress = data.progress || {};
     if (progress.total) {
@@ -91,8 +115,11 @@
     }
     const body = $('pop-gate');
     body.textContent = '';
+    // El veredicto tiene tres finales (`gate.class`): verde decidido, ambar no verificable, rojo roto.
+    // Colapsarlos en `ok/bad` era exactamente el bug U5 visto desde el desplegable.
+    const gateTone = {ok: 'ok', unavailable: 'warn', bad: 'bad'}[gate.class] || '';
     body.append(
-      row('Gate', gate.exit == null ? 'sin gate' : 'exit ' + gate.exit, gate.ok ? 'ok' : 'bad'),
+      row('Gate', gate.label || (gate.exit == null ? 'sin gate' : 'exit ' + gate.exit), gateTone),
       row('Juez', judge.verdict || 'no consultado',
           judge.verdict === 'approve' ? 'ok' : (judge.verdict === 'reject' ? 'bad' : '')),
       row('Tokens', tokens.total ? (tokens.prompt || 0) + ' entrada · ' + (tokens.completion || 0)
@@ -160,7 +187,7 @@
       failures += 1;
       if (failures > 2 && $('activity-label')) {
         $('activity').className = 'activity bad';
-        $('activity-glyph').textContent = '⚠️';
+        setGlyph('bad');
         $('activity-label').textContent = 'motor sin respuesta';
       }
       return failures > 2;

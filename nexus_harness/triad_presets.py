@@ -42,12 +42,12 @@ LADDERS = {
               ("anthropic", "claude-opus-4"), ("openai", "gpt-4o")),
 }
 PRESETS = (
-    ("cloud", "☁️ Cloud ultra-barato · 0 % GPU",
+    ("cloud", "Cloud ultra-barato · 0 % GPU",
      "Los tres roles en nube barata: 0 MB de VRAM, sirve mientras juegas o usas la GPU en otra cosa."),
-    ("hybrid", "⚡ Híbrido élite · un solo peso local",
+    ("hybrid", "Híbrido élite · un solo peso local",
      "Director y juez en nube (auditoría cruzada de verdad) y el obrero en el ÚNICO modelo local: 0 s "
      "de swapping."),
-    ("local", "🏠 100 % local sin swapping · $0",
+    ("local", "100 % local sin swapping · $0",
      "Los tres roles en el mismo modelo residente que cabe en tu VRAM. Sin nube y sin recargas; el "
      "juez se queda en el gate determinista, porque juzgarse a sí mismo no es auditar."),
 )
@@ -129,9 +129,9 @@ def state_text(info, hardware):
     if not info["swapping"]:
         return "Óptimo: un solo peso local"
     if info["oversize"]:
-        return ("⚠️ Alerta de swapping de VRAM: %s GB en un motor de %s GB — ≈%d s por fase"
+        return ("Alerta de swapping de VRAM: %s GB en un motor de %s GB — ≈%d s por fase"
                 % (info["local_gb"], info["vram_gb"], int(info["seconds"])))
-    return "⚠️ Swapping: %d modelo(s) local(es) distinto(s), ≈%d s por recarga" % (
+    return "Swapping: %d modelo(s) local(es) distinto(s), ≈%d s por recarga" % (
         len(info["models"]), int(info["seconds"]))
 
 

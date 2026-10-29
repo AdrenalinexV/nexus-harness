@@ -5,32 +5,40 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="nexus-token" content="{{token}}">
 <title>Nexus Harness</title>
+<link rel="stylesheet" href="tokens.css">
 <link rel="stylesheet" href="app.css">
 </head>
-<body>
+<body class="chat-only">
 <!--NEXUS_SPRITE-->
 
-<!-- El chat, y solo el chat: ancho de lado a lado. La configuracion vive en su propia pantalla
-     (`/settings`), que se abre con el boton de la barra lateral. -->
-<header class="topbar chat-top">
-  <div class="brand">NEXUS<span>·</span>HARNESS</div>
-  <!-- La barra en vivo: fase activa, herramienta en curso y progreso. Al pulsar, el ultimo turno y el
-       control del Autopilot. La pinta `activity.js` desde `/api/activity`. -->
+<!-- El chat, y solo el chat: ancho de lado a lado. La configuración vive en su propia pantalla
+     (`/settings`) y la gobernanza en la suya (`/gov`); las dos se abren desde la columna izquierda.
+     La barra en vivo (fase, herramienta, progreso) la pinta `activity.js` desde `/api/activity`. -->
+<header class="appbar chat-top">
+  <a class="brand" href="/?token={{token}}"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-nexus"/></svg>NEXUS<span>·</span>HARNESS</a>
+  <span id="engine" class="engine mono"></span>
   <div class="top-right">
     <button id="activity" class="activity idle" type="button" aria-expanded="false"
             aria-controls="activity-pop" title="Estado del motor en vivo">
-      <span id="activity-glyph" class="aglyph" aria-hidden="true">🟢</span>
+      <span id="activity-glyph" class="aglyph" aria-hidden="true"></span>
       <span id="activity-label" class="alabel">conectando…</span>
       <span id="activity-bar" class="abar" hidden aria-hidden="true"><i></i></span>
     </button>
     <div id="activity-pop" class="popover" role="dialog" aria-label="Último turno y Autopilot" hidden>
       <header class="pophead">
         <strong>Último turno</strong>
-        <span id="pop-when" class="dim"></span>
+        <span id="pop-when" class="dim mono"></span>
       </header>
       <p id="pop-summary" class="dim">todavía sin turnos en este proyecto</p>
       <div id="pop-files" class="chips"></div>
       <div id="pop-gate" class="poprows"></div>
+      <!-- La ley del color, donde se lee un veredicto: cuatro estados, un significado cada uno. -->
+      <p class="legend" aria-label="Leyenda de veredictos">
+        <span class="t-ok"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-check"/></svg>decisión tomada</span>
+        <span class="t-warn"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-alert"/></svg>espera a una persona / no verificable</span>
+        <span class="t-bad"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-xcircle"/></svg>detectado</span>
+        <span class="t-idle"><span class="dot"></span>sin registro</span>
+      </p>
       <footer class="popfoot">
         <label class="quick">Iteraciones
           <input id="auto-iterations" type="number" value="3" min="1" max="50"
@@ -38,7 +46,7 @@
         </label>
         <button id="auto-start" class="primary"
                 title="Backup, planifica, ejecuta, verifica y avanza hasta terminar o agotar ciclos">
-          🚀 Modo Autónomo Iterativo</button>
+          Modo Autónomo Iterativo</button>
         <button id="auto-stop" class="ghost" hidden>Detener bucle</button>
       </footer>
       <p id="pop-note" class="dim popnote"></p>
@@ -48,21 +56,26 @@
 
 <div id="warn" class="warn" hidden></div>
 
-<div class="app chat-only">
+<div class="app">
   <aside class="sidebar">
     <label class="field">Proyecto<select id="project"></select></label>
     <button id="new-chat" class="primary wide">Nueva conversación</button>
     <div class="side-title">Conversaciones</div>
-    <input id="session-search" class="search" type="search" placeholder="buscar conversación…">
+    <input id="session-search" class="search" type="search" placeholder="buscar conversación…"
+           aria-label="Buscar conversación">
     <ul id="sessions" class="sessions"></ul>
     <div class="spacer"></div>
-    <a id="settings" class="settings-btn" href="/settings?token={{token}}">⚙ Configuración</a>
-    <div id="engine" class="foot"></div>
+    <a id="settings" class="navlink settings-btn" href="/settings?token={{token}}">
+      <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-sliders"/></svg>Configuración</a>
+    <a id="gov" class="navlink" href="/gov?token={{token}}">
+      <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-shield"/></svg>Gobernanza</a>
+    <div class="foot mono">v<span id="version">?</span> · <span id="engine-root"></span></div>
   </aside>
 
   <main class="main">
-    <header class="topbar-inner">
-      <div id="title" class="title">sin conversación</div>
+    <header class="doc-head">
+      <h1 id="title" class="title">sin conversación</h1>
+      <span id="doc-meta" class="meta mono"></span>
     </header>
 
     <section id="thread" class="thread" aria-live="polite"></section>
@@ -70,19 +83,22 @@
     <section class="composer">
       <div id="pending" class="pending"></div>
       <div class="composer-box">
-        <textarea id="input" rows="3"
+        <textarea id="input" rows="3" aria-label="Mensaje"
           placeholder="Elige un proyecto en la barra lateral para empezar"></textarea>
         <div class="composer-tools">
-          <button id="attach" class="ghost" title="Adjuntar imagen o documento">+ Adjuntar</button>
-          <button id="send" class="primary">Enviar</button>
-          <button id="stop" class="ghost" disabled>Detener</button>
+          <button id="attach" class="ghost" title="Adjuntar imagen o documento">Adjuntar</button>
+          <span class="grow"></span>
+          <button id="stop" class="ghost" disabled>
+            <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-stop"/></svg>Detener</button>
+          <button id="send" class="primary">
+            <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-send"/></svg>Enviar</button>
         </div>
       </div>
       <div class="composer-foot">
         <label class="quick">Director
           <select id="quick-director" title="Modelo del Director para los próximos turnos"></select>
         </label>
-        <span class="dim hint-inline">Ctrl+Enter envía · pega una imagen o arrastra un fichero</span>
+        <span>Ctrl+Enter envía · pega una imagen o arrastra un fichero</span>
       </div>
       <input id="file" type="file" multiple hidden
         accept=".png,.jpg,.jpeg,.webp,.gif,.txt,.md,.json,.py,.pdf">
@@ -92,7 +108,9 @@
 
 <script src="token.js"></script>
 <script src="app.js"></script>
-<script src="panels.js"></script>
+<script src="chat_stream.js"></script>
+<script src="sessions.js"></script>
+<script src="composer.js"></script>
 <script src="activity.js"></script>
 </body>
 </html>

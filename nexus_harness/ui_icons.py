@@ -46,8 +46,8 @@ SYMBOLS = {
     "send": '<path d="M4 12l16-7-7 16-2.4-6.4z"/><path d="M13.6 10.4L20 5"/>',
     # detener
     "stop": '<rect x="7" y="7" width="10" height="10" rx="1.6"/>',
-    # adjuntar
-    "paperclip": '<path d="M9 12.5l5.4-5.4a2.6 2.6 0 013.7 3.7l-7.6 7.6a4 4 0 01-5.7-5.7l7-7"/>',
+    # estadisticas
+    "chart": '<path d="M4 20h16"/><path d="M7.5 20v-6.5M12 20V6M16.5 20v-9.5"/>',
     # veredicto: decision tomada
     "check": '<circle cx="12" cy="12" r="8.5"/><path d="M8.5 12.2l2.4 2.4 4.6-5"/>',
     # veredicto: espera a una persona / no verificable

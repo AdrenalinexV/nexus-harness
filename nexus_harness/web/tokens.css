@@ -1,0 +1,121 @@
+/* Nexus-Harness — tokens: la ley del color, la tipografia y los controles.
+
+   LEY DEL COLOR (la unica de este producto, y se cumple en las tres pantallas):
+     verde  = una decision tomada      (gate verde, juez que aprueba, guardado que se aplico)
+     ambar  = espera a una persona     (pregunta pendiente, juez que objeta, gate NO VERIFICABLE)
+     rojo   = detectado / roto         (gate rojo, clave invalida, seccion caida)
+     gris   = sin registro             (no hay dato: "sin gate", "sin medir", "no configurado")
+   El acento NO es un quinto estado: marca lo interactivo (enlace, foco, boton primario, item activo).
+   Ningun color se usa para decorar. La jerarquia la hacen el tamano, el peso y el espacio.
+
+   Tipografia del sistema, sin webfonts: una pagina que necesita la red para verse bien esta rota.
+   Las cifras van en monoespaciada con `tabular-nums`, para que una columna de numeros se alinee. */
+
+:root {
+  color-scheme: dark light;
+  --bg: #0b0d10; --s1: #0f1216; --s2: #131920; --s3: #1a2129;
+  --line: #232b35; --line2: #303a46;
+  --fg: #e9eef5; --muted: #8e9aab;
+  --accent: #5b8def; --accent-fg: #08101f; --accent-soft: rgba(91, 141, 239, .14);
+  --ok: #3fb950; --warn: #d29922; --bad: #f85149; --idle: #6b7684;
+  --radius: 6px; --radius-sm: 4px;
+  --fs-xs: 11px; --fs-sm: 12.5px; --fs: 14px; --fs-lg: 16px; --fs-xl: 20px; --fs-display: 27px;
+  --sans: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --mono: ui-monospace, "Cascadia Mono", "SF Mono", Consolas, monospace;
+  --gap: 14px; --pad: 1.15rem; --rule: 1px solid var(--line);
+  /* Alias de lectura: los paneles que sirve el protocolo (gov.py, panels.py) nombran las superficies
+     `--card`/`--card2`. Un alias evita que su HTML se quede con un color fijo y no siga al tema. */
+  --card: var(--s1); --card2: var(--s2); --border: var(--line); --muted-foreground: var(--muted);
+  --measure: 74ch;
+}
+@media (prefers-color-scheme: light) {
+  :root {
+    --bg: #f6f7f9; --s1: #ffffff; --s2: #f1f3f6; --s3: #e8ecf1;
+    --line: #d9dfe6; --line2: #c2cbd6;
+    --fg: #0e1318; --muted: #5a6673;
+    --accent: #2458c9; --accent-fg: #ffffff; --accent-soft: rgba(36, 88, 201, .1);
+    --ok: #1a7f37; --warn: #9a6700; --bad: #c3271f; --idle: #5a6673;
+  }
+}
+
+* { box-sizing: border-box; }
+html, body { height: 100%; margin: 0; }
+body {
+  background: var(--bg); color: var(--fg); font-size: var(--fs); line-height: 1.55;
+  font-family: var(--sans); -webkit-font-smoothing: antialiased;
+}
+h1, h2, h3, h4 { letter-spacing: -.01em; line-height: 1.25; }
+code, .mono, pre, .num { font-family: var(--mono); font-variant-numeric: tabular-nums; }
+a { color: var(--accent); text-underline-offset: 2px; }
+.dim { color: var(--muted); }
+.hint-inline { font-size: var(--fs-sm); color: var(--muted); }
+.sprite { position: absolute; width: 0; height: 0; overflow: hidden; }
+
+/* Un icono mide lo que mide la letra y obedece al color de su texto (currentColor). */
+.icon { width: 1.05em; height: 1.05em; flex: 0 0 auto; vertical-align: -.16em; }
+
+/* ---------- aviso global (motor viejo, falta de credencial) ---------- */
+.warn {
+  padding: .6rem var(--pad); font-size: var(--fs-sm);
+  background: color-mix(in srgb, var(--warn) 12%, var(--s1));
+  border-bottom: 1px solid var(--warn); border-left: 0;
+}
+
+/* ---------- controles ---------- */
+.field { display: flex; flex-direction: column; gap: .3rem; font-size: var(--fs-xs);
+  text-transform: uppercase; letter-spacing: .07em; color: var(--muted); }
+select, input, textarea {
+  font: inherit; font-size: var(--fs); color: var(--fg); background: var(--s2);
+  border: 1px solid var(--line2); border-radius: var(--radius-sm); padding: .45rem .55rem;
+}
+select:focus-visible, input:focus-visible, textarea:focus-visible, a:focus-visible,
+button:focus-visible, summary:focus-visible {
+  outline: 2px solid var(--accent); outline-offset: 1px;
+}
+button {
+  font: inherit; font-size: var(--fs); cursor: pointer; padding: .45rem .75rem;
+  border-radius: var(--radius-sm); border: 1px solid var(--line2);
+  background: var(--s2); color: var(--fg); display: inline-flex; align-items: center; gap: .4rem;
+}
+button:hover:not(:disabled) { border-color: var(--accent); }
+button:disabled { opacity: .45; cursor: not-allowed; }
+button.primary { background: var(--accent); border-color: var(--accent); color: var(--accent-fg);
+  font-weight: 600; }
+button.primary .icon { stroke-width: 1.7; }
+button.ghost { background: transparent; color: var(--muted); }
+button.ghost:hover:not(:disabled) { color: var(--fg); }
+button.danger { color: var(--bad); border-color: color-mix(in srgb, var(--bad) 45%, var(--line2)); }
+button.wide { width: 100%; justify-content: center; }
+.search { width: 100%; }
+.row { display: flex; gap: .4rem; align-items: center; }
+.foot { font-size: var(--fs-xs); color: var(--muted); line-height: 1.5; }
+
+/* ---------- piezas de dato (chips, celdas, puntos) ---------- */
+.chip, .tag, .cell {
+  font-size: var(--fs-xs); padding: .1rem .45rem; border-radius: var(--radius-sm);
+  background: var(--s2); border: 1px solid var(--line2); color: var(--muted);
+  font-family: var(--mono); font-variant-numeric: tabular-nums;
+}
+.chip.ok { color: var(--ok); border-color: color-mix(in srgb, var(--ok) 55%, var(--line2)); }
+.chip.warn { color: var(--warn); border-color: color-mix(in srgb, var(--warn) 55%, var(--line2)); }
+.chip.bad { color: var(--bad); border-color: color-mix(in srgb, var(--bad) 55%, var(--line2)); }
+.chip.off { color: var(--idle); }
+.chips { display: flex; flex-wrap: wrap; gap: .3rem; }
+.dot { display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: var(--idle);
+  vertical-align: middle; }
+.dot.ok { background: var(--ok); }
+.dot.warn { background: var(--warn); }
+.dot.bad { background: var(--bad); }
+
+/* La leyenda de los cuatro tonos: se imprime donde hay un veredicto, no en un sitio lejano. */
+.legend { display: flex; flex-wrap: wrap; gap: .15rem .9rem; font-size: var(--fs-xs);
+  color: var(--muted); margin: .5rem 0 0; padding: .45rem 0 0; border-top: var(--rule); }
+.legend span { display: inline-flex; align-items: center; gap: .3rem; }
+.legend .icon { width: .95em; height: .95em; }
+.legend .t-ok { color: var(--ok); }
+.legend .t-warn { color: var(--warn); }
+.legend .t-bad { color: var(--bad); }
+.legend .t-idle { color: var(--idle); }
+
+/* Numeros: una cifra que se lee de una API no se toca con la mano, y se alinea. */
+.num { font-family: var(--mono); font-variant-numeric: tabular-nums; }

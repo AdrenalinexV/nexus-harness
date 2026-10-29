@@ -1,36 +1,22 @@
-/* Nexus-Harness — el chat. Una pagina, un motor: lo que carga la ventana de escritorio y lo que
-   carga el navegador, asi que un arreglo aqui lo es en los dos. Sin framework y sin build.
+/* El núcleo del chat: DOM, red, aviso y estado de esta pantalla.
 
-   Reglas de este fichero:
-   - Toda interpolacion pasa por esc(); lo unico sin escapar es el marcado fijo que escribe el propio
-     fichero. El hilo lleva salida de un modelo: no es decoracion.
-   - Nada de la barra lateral derecha: se quito. La configuracion vive en `/settings` y lo que pasa
-     durante un turno (tool, gate, juez, skills) se cuenta EN EL HILO, en una tira discreta.
-   - `API_VERSION` es el contrato con el motor. Si el proceso en marcha es mas viejo que esta pagina,
-     se dice en una banda: un boton que no responde es la peor forma de enterarse. */
+   `token.js` resolvió la credencial antes que este fichero. Aquí se publica `window.NX`, el único sitio
+   del que beben `chat_stream.js`, `sessions.js` y `composer.js`: si cada módulo guardase su copia del
+   hilo o de la sesión, la pantalla tendría tres verdades y se desincronizarían al primer turno.
 
+   Reglas: toda interpolación pasa por `esc()`; el estado se pinta desde `/api/*` y nunca se estima. */
 const $ = (id) => document.getElementById(id);
-// La credencial la resuelve `token.js` (URL, meta o sessionStorage) y la comparten los tres scripts.
 const TOKEN = window.NexusToken || '';
-const WANTED = new URLSearchParams(location.search).get('project') || '';
 // Contrato con el motor (`api.API_VERSION`). 3 = barra en vivo, cola de proyectos y bucle autonomo.
 const API_VERSION = 3;
-let since = 0, currentSession = null, polling = false, allSessions = [], feed = [];
 
-const LABEL = {
-  'chat.user': 'TÚ', 'chat.assistant': 'NEXUS', 'chat.turn': 'TURNO', 'chat.repair': 'REPARACIÓN',
-  'chat.stopped': 'DETENIDO', 'chat.new': 'NUEVA', 'chat.load': 'ABIERTA', 'chat.limit': 'LÍMITE',
-  'tool.call': 'TOOL', 'skills.injected': 'SKILLS', 'gate.verdict': 'GATE', 'judge.verdict': 'JUEZ',
-  'worker.reasoning': 'RAZÓN', 'worker.error': 'ERROR', 'memory.add': 'MEMORIA',
-  'memory.remove': 'MEMORIA-', 'bridge.claim': 'PUENTE', 'bridge.close': 'PUENTE',
-  'tool.parallel': 'PARALELO', 'subagent.start': 'SUBAGENTES', 'subagent.result': 'SUBAGENTE',
-  'subagent.tool': 'SUB-TOOL', 'subagent.end': 'SUBAGENTES', 'subagent.limit': 'SUB-LÍMITE',
-  'chat.stopping': 'DETENIENDO', 'run.stopping': 'DETENIENDO', 'worker.stopped': 'DETENIDO',
-  'session.relay': 'RELEVO', 'chat.rename': 'RENOMBRADA', 'skills.saved': 'SKILL',
+const state = {
+  since: 0, session: null, feed: [], sessions: [], polling: false, last: null,
 };
 
 function esc(text) {
-  return String(text == null ? '' : text).replace(/[&<>]/g, (c) => ({'&': '&amp;', '<': '&lt;', '>': '&gt;'}[c]));
+  return String(text == null ? '' : text)
+    .replace(/[&<>"]/g, (c) => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;'}[c]));
 }
 
 function api(path, options = {}) {
@@ -43,16 +29,30 @@ function api(path, options = {}) {
 }
 
 function warn(message) {
-  $('warn').hidden = false;
-  $('warn').textContent = message;
+  const box = $('warn');
+  if (!box) return;
+  box.hidden = false;
+  box.textContent = message;
 }
 
-/* ---------- el motor que esta en marcha ---------- */
+function icon(name, cls = '') {
+  const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+  svg.setAttribute('class', ('icon ' + cls).trim());
+  svg.setAttribute('viewBox', '0 0 24 24');
+  svg.setAttribute('aria-hidden', 'true');
+  const use = document.createElementNS('http://www.w3.org/2000/svg', 'use');
+  use.setAttribute('href', '#i-' + name);
+  svg.appendChild(use);
+  return svg;
+}
+
+window.NX = {$, api, esc, warn, icon, state, TOKEN, API_VERSION};
+
+/* ---------- el motor que está en marcha ---------- */
 async function checkEngine() {
   const {ok, status, data} = await api('/api/health');
-  // Un 401 NO es un motor caido y no se arregla relanzando nada: es que a esta pagina le falta la
-  // credencial. Antes las dos cosas se pintaban igual, y el consejo ("relanza Nexus-Harness.bat")
-  // mandaba a reiniciar un proceso sano mientras el fallo de verdad seguia ahi.
+  // Un 401 NO es un motor caído y no se arregla relanzando nada: es que a esta página le falta la
+  // credencial. Antes las dos cosas se pintaban igual y el consejo mandaba a reiniciar un proceso sano.
   if (status === 401) {
     warn('El motor está en marcha pero pide token: esta página se abrió sin la credencial. Ábrela desde la ventana de escritorio o añade ?token=… a la dirección.');
     return;
@@ -70,126 +70,6 @@ async function checkEngine() {
   }
 }
 
-/* ---------- hilo ---------- */
-function msgText(content) {
-  if (Array.isArray(content)) {
-    return content.filter((part) => part && part.type === 'text' && !String(part.text || '').startsWith('<document'))
-      .map((part) => part.text || '').join('\n').trim();
-  }
-  return String(content || '');
-}
-
-function msgAttachments(message) {
-  if (!Array.isArray(message.content)) return [];
-  return message.content.filter((part) => part && part.type !== 'text')
-    .map((part) => ({name: 'imagen', kind: 'image', preview: (part.image_url || {}).url || ''}));
-}
-
-function addMessage(role, text, meta) {
-  const wrap = document.createElement('div');
-  wrap.className = 'msg ' + role;
-  wrap.innerHTML = `<div class="who">${role === 'user' ? 'TÚ' : 'NEXUS'}</div>
-                    <div class="bubble">${esc(text)}</div>`;
-  if (meta && meta.attachments && meta.attachments.length) {
-    const box = document.createElement('div');
-    box.className = 'tools';
-    for (const item of meta.attachments) {
-      const chip = document.createElement('span');
-      chip.className = 'attach';
-      chip.textContent = `${item.kind === 'image' ? '🖼' : '📄'} ${item.name}`;
-      if (item.preview) chip.style.backgroundImage = `url(${item.preview})`;
-      box.appendChild(chip);
-    }
-    wrap.appendChild(box);
-  }
-  if (meta && meta.tools && meta.tools.length) {
-    const chips = document.createElement('div');
-    chips.className = 'tools';
-    for (const tool of meta.tools) {
-      const chip = document.createElement('span');
-      chip.className = 'tool' + (tool.ok === false ? ' bad' : '');
-      chip.textContent = tool.name + (tool.ok === false ? ' ✕' : '');
-      chip.title = ((tool.args ? JSON.stringify(tool.args) : '') + '\n' + (tool.result || '')).slice(0, 600);
-      chips.appendChild(chip);
-    }
-    wrap.appendChild(chips);
-  }
-  $('thread').appendChild(wrap);
-  $('thread').scrollTop = $('thread').scrollHeight;
-  return wrap;
-}
-
-/* La tira de lo que pasa durante el turno: dentro del hilo, al final, discreta. Es lo que antes vivia
-   en una barra lateral derecha fija, que sobraba en el chat. */
-function paintFeed() {
-  const box = $('inline');
-  if (!box) return;
-  box.innerHTML = '';
-  for (const row of feed.slice(-14)) {
-    const line = document.createElement('div');
-    line.className = 'feed-row' + (row.kind === 'gate.verdict' || row.kind === 'judge.verdict' ? ' gate' : '');
-    const detail = String(row.detail || '');
-    if (row.kind.endsWith('.reasoning')) {
-      /* El pensamiento de un modelo local (Qwen/DeepSeek) no se tira ni se mezcla con la respuesta:
-         va en un bloque plegable, entero y escapado. Un `<details>` no rompe el parser ni el JSON del
-         juez, y el operador puede leerlo sin que ocupe la conversacion. */
-      const fold = document.createElement('details');
-      fold.className = 'reasoning';
-      fold.innerHTML = `<summary><span class="k">${esc(LABEL[row.kind] || row.kind)}</span>
-        <span class="d">${esc(detail.slice(0, 120))}</span></summary>
-        <pre>${esc(detail)}</pre>`;
-      box.appendChild(fold);
-      continue;
-    }
-    line.innerHTML = `<span class="k">${esc(LABEL[row.kind] || row.kind)}</span>
-                      <span class="d">${esc(detail.slice(0, 160))}</span>`;
-    box.appendChild(line);
-  }
-  if (feed.length) $('thread').scrollTop = $('thread').scrollHeight;
-}
-
-function renderThread(messages) {
-  const thread = $('thread');
-  thread.innerHTML = '';
-  if (!messages.length) {
-    thread.innerHTML = `<div class="empty"><h1>¿Qué construimos?</h1>
-      <p>Pide una tarea o haz una pregunta. El gate (lint Nexus, ley de 400, tests) se ejecuta en cuanto
-      se toca un fichero; si sale rojo, el obrero lo repara antes de contestarte.</p>
-      <p class="dim">El modelo de la tríada, las claves, la memoria y las skills se cambian en
-      <a href="/settings">Configuración</a>.</p></div>`;
-  } else {
-    const pending = {};
-    for (const message of messages) {
-      if (message.role === 'user') {
-        addMessage('user', msgText(message.content) || '·', {attachments: msgAttachments(message)});
-      } else if (message.role === 'assistant') {
-        const tools = (message.tool_calls || []).map((call) => {
-          let args = {};
-          try { args = JSON.parse(call.function.arguments || '{}'); } catch (error) { args = {}; }
-          const tool = {name: call.function.name, args, id: call.id, ok: true};
-          pending[tool.id] = tool;
-          return tool;
-        });
-        if ((message.content || '').trim() || tools.length) {
-          addMessage('assistant', (message.content || '').trim() || '·', {tools});
-        }
-      } else if (message.role === 'tool') {
-        const tool = pending[message.tool_call_id];
-        if (tool) {
-          tool.result = message.content || '';
-          tool.ok = !String(message.content || '').startsWith('ERROR');
-        }
-      }
-    }
-  }
-  const inline = document.createElement('div');
-  inline.id = 'inline';
-  inline.className = 'inline-feed';
-  thread.appendChild(inline);
-  paintFeed();
-  thread.scrollTop = thread.scrollHeight;
-}
-
 /* ---------- estado y conversaciones ---------- */
 function fillSelect(el, options, value) {
   const current = value || el.value;
@@ -198,28 +78,26 @@ function fillSelect(el, options, value) {
 }
 
 function paintState(s) {
-  const run = s.run || {};
   const last = (s.chat && s.chat.last) || {};
-  // La pildora de la esquina NO se pinta aqui: la lleva `activity.js` desde `/api/activity`, que sabe
-  // la fase viva y el progreso. Este `state()` solo manda lo que es de esta pantalla.
+  const session = (s.chat && s.chat.session) || null;
+  state.last = last;
   $('stop').disabled = !s.running;
   $('stop').style.display = s.running ? '' : 'none';
-  const chosen = $('project').value && $('project').value !== '— elige un proyecto —';
+  const chosen = $('project').value && !String($('project').value).startsWith('—');
   $('send').disabled = !chosen;
   $('input').placeholder = chosen
     ? 'Escribe una tarea o una pregunta…  (Ctrl+Enter envía)'
     : 'Elige un proyecto en la barra lateral para empezar';
-  $('title').textContent = (s.chat && s.chat.session && (s.chat.session.title || s.chat.session.id))
-    || 'sin conversación';
-  $('engine').textContent = `${s.config.host}:${s.config.port} · ${s.config.root}`;
-  if (last.skills && last.skills.length && !feed.some((row) => row.kind === 'skills.injected')) {
-    feed.push({kind: 'skills.injected', detail: last.skills.join(', ')});
-    paintFeed();
-  }
-  void run;
+  $('title').textContent = (session && (session.title || session.id)) || 'sin conversación';
+  $('doc-meta').textContent = session ? `${session.id} · ${session.turns || 0} turnos` : '';
+  const config = s.config || {};
+  $('engine').textContent = `${config.host}:${config.port}`;
+  $('version').textContent = s.version || '?';
+  $('engine-root').textContent = config.root || '';
+  if (last.skills && last.skills.length) window.NexusStream.noteSkills(last.skills);
   const projects = (s.models || {}).projects || [];
-  // The conversation's project is the authority, not the engine's start directory.
-  const chatProject = (s.chat && s.chat.project) || s.config.root;
+  // El proyecto de la conversación manda; la raíz del motor solo es el punto de partida.
+  const chatProject = (s.chat && s.chat.project) || config.root || '';
   const current = chatProject.split(/[\\/]/).pop();
   const known = projects.includes(current);
   const placeholder = '— elige un proyecto —';
@@ -230,129 +108,9 @@ function paintState(s) {
   fillSelect($('quick-director'), options.length ? options : [director.spec || ''], director.spec);
 }
 
-function matchesSession(row, needle) {
-  return !needle || `${row.title || ''} ${row.id || ''}`.toLowerCase().includes(needle);
-}
-
-function paintSessions(rows) {
-  allSessions = rows || [];
-  const needle = String($('session-search').value || '').trim().toLowerCase();
-  const list = $('sessions');
-  list.innerHTML = '';
-  const visible = allSessions.filter((row) => matchesSession(row, needle));
-  if (!visible.length) {
-    const empty = document.createElement('li');
-    empty.className = 'dim';
-    empty.textContent = allSessions.length ? 'sin resultados' : 'todavía ninguna';
-    list.appendChild(empty);
-    return;
-  }
-  for (const row of visible) {
-    const item = document.createElement('li');
-    if (row.id === currentSession) item.className = 'active';
-    const name = document.createElement('span');
-    name.className = 'name';
-    name.textContent = `${row.title || row.id} · ${row.turns || 0}`;
-    name.title = row.id;
-    name.onclick = () => loadSession(row.id);
-    item.appendChild(name);
-    for (const [glyph, label, handler] of [['✎', 'renombrar', () => renameSession(row)],
-                                           ['✕', 'borrar', () => deleteSession(row)]]) {
-      const act = document.createElement('span');
-      act.className = 'act';
-      act.textContent = glyph;
-      act.title = label;
-      act.onclick = (event) => { event.stopPropagation(); handler(); };
-      item.appendChild(act);
-    }
-    list.appendChild(item);
-  }
-}
-
-/* ---------- datos ---------- */
 async function refreshState() {
   const {ok, data} = await api('/api/state');
   if (ok) paintState(data);
-}
-
-async function refreshChat() {
-  const {ok, data} = await api('/api/chat');
-  if (!ok) return;
-  const next = data.session ? data.session.id : null;
-  if (next !== currentSession) { since = 0; feed = []; }
-  currentSession = next;
-  renderThread(data.messages || []);
-}
-
-async function refreshSessions() {
-  const {ok, data} = await api('/api/sessions');
-  if (ok) paintSessions(data.sessions);
-}
-
-/* ---------- acciones ---------- */
-async function send() {
-  const attachments = (window.NexusUI && window.NexusUI.take()) || [];
-  const text = $('input').value.trim();
-  if (!text && !attachments.length) return;
-  $('input').value = '';
-  addMessage('user', text || '·', {attachments: attachments.map((item) => ({
-    name: item.name, kind: item.kind, preview: item.preview || ''}))});
-  const {ok, status, data} = await api('/api/chat',
-    {method: 'POST', body: JSON.stringify({text, attachments})});
-  if (!ok) {
-    addMessage('assistant', status === 409 ? 'Ya hay un turno en marcha.' : (data.reason || 'no se pudo enviar'));
-    return;
-  }
-  setTimeout(refreshChat, 700);
-}
-
-async function stopTurn() {
-  await api('/api/stop', {method: 'POST', body: '{}'});
-}
-
-async function newChat() {
-  const project = $('project').value;
-  if (!project || project === '— elige un proyecto —') return;
-  const {ok, data} = await api('/api/chat/new', {method: 'POST', body: JSON.stringify({project})});
-  if (!ok) return;
-  currentSession = data.session ? data.session.id : null;
-  feed = [];
-  renderThread([]);
-  since = 0;
-  refreshSessions();
-}
-
-async function loadSession(id) {
-  const {ok} = await api('/api/chat/load', {method: 'POST', body: JSON.stringify({id})});
-  if (!ok) return;
-  currentSession = id;
-  since = 0;
-  await refreshChat();
-  refreshSessions();
-}
-
-async function renameSession(row) {
-  const title = window.prompt('Nuevo título de la conversación', row.title || row.id);
-  if (title === null || !title.trim()) return;
-  const {ok} = await api('/api/chat/rename',
-    {method: 'POST', body: JSON.stringify({id: row.id, title: title.trim()})});
-  if (ok) refreshSessions();
-  else warn('No se pudo renombrar la conversación.');
-}
-
-async function deleteSession(row) {
-  if (!window.confirm(`¿Borrar «${row.title || row.id}»? No se puede deshacer.`)) return;
-  const {ok} = await api('/api/chat/delete', {method: 'POST', body: JSON.stringify({id: row.id})});
-  if (!ok) {
-    warn('No se pudo borrar la conversación.');
-    return;
-  }
-  if (row.id === currentSession) {
-    currentSession = null;
-    feed = [];
-    renderThread([]);
-  }
-  refreshSessions();
 }
 
 async function swapDirector(spec) {
@@ -362,46 +120,30 @@ async function swapDirector(spec) {
   refreshState();
 }
 
-async function pollEvents() {
-  if (polling) return;
-  polling = true;
-  try {
-    const {ok, data} = await api('/api/events?since=' + since);
-    if (!ok) return;
-    for (const event of data.events || []) {
-      since = Math.max(since, event.seq);
-      if (!LABEL[event.kind]) continue;
-      feed.push({kind: event.kind, detail: event.detail || ''});
-    }
-    if ((data.events || []).length) paintFeed();
-  } finally { polling = false; }
+/* ---------- cableado y arranque ---------- */
+function wire() {
+  $('send').onclick = () => window.NexusComposer.send();
+  $('stop').onclick = () => window.NexusComposer.stopTurn();
+  $('new-chat').onclick = () => window.NexusSessions.newChat();
+  $('session-search').addEventListener('input', () => window.NexusSessions.repaint());
+  $('quick-director').addEventListener('change', (event) => swapDirector(event.target.value));
+  $('project').addEventListener('change', () => window.NexusSessions.newChat());
+  $('input').addEventListener('keydown', (event) => {
+    if ((event.ctrlKey || event.metaKey) && event.key === 'Enter') window.NexusComposer.send();
+  });
 }
 
-/* ---------- wiring ---------- */
-$('send').onclick = send;
-$('stop').onclick = stopTurn;
-$('new-chat').onclick = newChat;
-$('session-search').addEventListener('input', () => paintSessions(allSessions));
-$('quick-director').addEventListener('change', (event) => swapDirector(event.target.value));
-$('input').addEventListener('keydown', (event) => {
-  if ((event.ctrlKey || event.metaKey) && event.key === 'Enter') send();
-});
-$('project').addEventListener('change', newChat);
-
-async function openProject(name) {
-  const option = Array.from($('project').options).find((item) => item.value === name);
-  if (!option) return;
-  $('project').value = name;
-  if (!currentSession) await newChat();
-}
-
-(async function boot() {
+async function boot() {
+  wire();
   await checkEngine();
   await refreshState();
-  await refreshChat();
-  await refreshSessions();
-  if (WANTED) await openProject(WANTED);
-  setInterval(pollEvents, 800);
-  setInterval(refreshState, 2500);
-  setInterval(refreshChat, 2500);
-})();
+  await window.NexusStream.refreshChat();
+  await window.NexusSessions.refreshSessions();
+  const wanted = new URLSearchParams(location.search).get('project') || '';
+  if (wanted) await window.NexusSessions.openProject(wanted);
+  window.setInterval(() => window.NexusStream.pollEvents(), 800);
+  window.setInterval(refreshState, 2500);
+  window.setInterval(() => window.NexusStream.refreshChat(), 2500);
+}
+
+document.addEventListener('DOMContentLoaded', boot);

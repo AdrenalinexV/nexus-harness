@@ -24,11 +24,11 @@ POLICY_MODES = (
 def _key_card(name, stored, is_sealed):
     """Una clave, su estado real y sus dos botones. Nunca su valor: no se puede leer, solo reemplazar."""
     if name in stored:
-        badge = ('<span class="chip ok">🟢 Guardada en DPAPI</span>' if is_sealed else
-                 '<span class="chip warn">🟠 Guardada sin cifrar</span>')
+        badge = ('<span class="chip ok">Cifrada en DPAPI</span>' if is_sealed else
+                 '<span class="chip warn">Guardada sin cifrar</span>')
         placeholder = "guardada — escribe para reemplazarla"
     else:
-        badge = '<span class="chip off">⚪ No configurada</span>'
+        badge = '<span class="chip off">No configurada</span>'
         placeholder = "pega la clave y guarda"
     save = ('<form class="sform" method="post" action="/api/settings">'
             + kit.hidden("section", "seguridad")

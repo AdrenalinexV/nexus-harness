@@ -9,8 +9,6 @@ que contesta un **303 de vuelta** con una nota. `settings.js` solo añade Ctrl+K
 si ese script no corre, navegar y guardar siguen funcionando.
 """
 import json
-import subprocess
-import sys
 from html import escape
 from urllib.parse import quote
 
@@ -21,20 +19,51 @@ from . import (settings_models, settings_projects, settings_skills, settings_too
                settings_work)
 
 TITLE = "Configuración"
-SECTIONS = (
-    ("modelos", "\u2699 Modelos (Tr\u00edada IA)", tuple(settings_models.SUBS)),
-    ("espacio", "\U0001f4c1 Espacio de trabajo & Proyectos", ()),
-    ("seguridad", "\U0001f6e1 Seguridad & B\u00f3veda", ()),
-    ("memoria", "\U0001f9e0 Memoria y contexto", ()),
-    ("skills", "\u26a1 Skills & Skill Architect", ()),
-    ("mcp", "\U0001f50c Conectores MCP", ()),
-    ("puente", "\U0001f4f1 Puente M\u00f3vil (Bots)", ()),
-    ("autonomia", "\U0001f916 Autonom\u00eda & Preguntas", ()),
-    ("vps", "\U0001f5a5 VPS 24/7 (Deploy)", ()),
-    ("stats", "\U0001f4ca Estad\u00edsticas & Auditor\u00eda", ()),
+
+# Diez categorías, trece destinos (las cuatro sub-vistas de la tríada). Agrupadas por dominio: trece
+# entradas planas no son un árbol, son una lista larga donde no se encuentra nada.
+GROUPS = (
+    ("Modelo", "cpu", ("modelos", "memoria")),
+    ("Trabajo", "folder", ("espacio", "skills")),
+    ("Operación", "plug", ("mcp", "puente", "autonomia", "vps")),
+    ("Sistema", "shield", ("seguridad", "stats")),
 )
-NAMES = tuple(name for name, _label, _subs in SECTIONS)
-SUBS_OF = {name: tuple(value for value, _text in subs) for name, _label, subs in SECTIONS}
+SECTIONS = (
+    ("modelos", "Modelos (tríada)", "cpu",
+     (("principal", "Modelo principal (Director)"),
+      ("obrero", "Obrero (worktree repair)"),
+      ("juez", "Juez y auditoría"),
+      ("subagentes", "Subagentes"))),
+    ("espacio", "Espacio de trabajo", "folder", ()),
+    ("seguridad", "Seguridad y bóveda", "shield", ()),
+    ("memoria", "Memoria y contexto", "layers", ()),
+    ("skills", "Skills", "bolt", ()),
+    ("mcp", "Conectores MCP", "plug", ()),
+    ("puente", "Puente móvil", "plug", ()),
+    ("autonomia", "Autonomía y preguntas", "bolt", ()),
+    ("vps", "VPS 24/7", "cpu", ()),
+    ("stats", "Estadísticas y auditoría", "chart", ()),
+)
+NAMES = tuple(name for name, _label, _icon, _subs in SECTIONS)
+SUBS_OF = {name: tuple(value for value, _text in subs) for name, _label, _icon, subs in SECTIONS}
+# Lo que un operador escribe cuando busca cada panel, en sus palabras y no en las del codigo: la
+# busqueda de la cabina tiene que encontrar «relevo» sin que el panel se llame asi.
+SEARCH_TERMS = {
+    "modelos": "modelo director obrero juez triada ia llm temperatura proveedor",
+    "principal": "director razonamiento planifica modelo principal",
+    "obrero": "worker obrero codigo edicion worktree reparacion",
+    "juez": "juez judge auditoria verdict adversario",
+    "subagentes": "subagentes hijos paralelo profundidad",
+    "espacio": "proyectos workspace cola orden spec carpetas",
+    "seguridad": "claves boveda dpapi api key secretos politica comandos",
+    "memoria": "memoria contexto tokens presupuesto relevo compactacion",
+    "skills": "skills architect forjar rutas modo",
+    "mcp": "mcp conectores tools servidores",
+    "puente": "puente bots telegram discord movil daemon",
+    "autonomia": "autonomia autopilot preguntas pendientes bucle",
+    "vps": "vps deploy 24/7 servidor remoto colmena",
+    "stats": "estadisticas auditoria ledger graficos ahorro coste",
+}
 
 
 def resolve(section, sub):
@@ -65,7 +94,7 @@ def _render(name, cockpit, sub, item, query):
     if name == "autonomia":
         from . import settings_autonomy
         return (settings_autonomy.TITLE,
-                "Qu\u00e9 decidi\u00f3 el bucle solo, qu\u00e9 te est\u00e1 preguntando y por d\u00f3nde puede o\u00edrte.",
+                "Qu\\u00e9 decidi\\u00f3 el bucle solo, qu\\u00e9 te est\\u00e1 preguntando y por d\\u00f3nde puede o\\u00edrte.",
                 settings_autonomy.block(cockpit))
     if name == "vps":
         from . import settings_vps
@@ -73,46 +102,79 @@ def _render(name, cockpit, sub, item, query):
     return settings_tools.stats(cockpit)
 
 
+def _icon(name, cls=""):
+    from . import ui_icons
+    return ui_icons.icon(name, cls)
+
+
 def _tree(active, sub, needle, state, token=""):
-    """El árbol de categorías. `needle` filtra por título: es el buscador de arriba, sin script.
+    """El árbol de categorías, agrupado por dominio. `needle` filtra: es el buscador sin script.
 
-    Cada enlace lleva el token: una pantalla de configuración que pierde la credencial al navegar es
-    una pantalla que se muere a mitad de camino (el 303 ya lo arrastraba, los enlaces no).
-
-    El pie lleva lo que el operador necesita para saber QUE motor esta mirando: su version, que
-    responde, y de que fichero de configuracion salieron los ajustes. Antes leia `version` del bloque
-    `config`, donde no vive, y el pie decia literalmente `Motor ? · config ?` -- un marcador de
-    plantilla sin sustituir es peor que no poner nada.
+    Cada enlace lleva el token (una pantalla que pierde la credencial al navegar se muere a mitad de
+    camino) y el pie dice QUÉ motor se está mirando: su versión y de qué fichero salieron los ajustes.
     """
+    from . import ui_icons
     gt = ("&token=" + quote(str(token), safe="")) if token else ""
-    out = []
-    for name, label, subs in SECTIONS:
-        hit = (not needle or needle in label.lower()
-               or any(needle in text.lower() for _value, text in subs)
-               or needle in name)
-        if not hit and needle:
-            continue
-        opened = " open" if name == active else ""
-        items = "".join('<li class="%s"><a href="/settings?section=%s&sub=%s%s">%s</a></li>'
-                        % ("on" if (name == active and value == sub) else "", escape(name),
-                           escape(value), gt, escape(text)) for value, text in subs)
-        # Una categoría SIN submenús tiene que ser un enlace: si su etiqueta solo despliega, el panel
-        # no se abre con un clic y parece que la pantalla no responde (medido en el navegador: siete de
-        # las ocho categorías no llevaban a ningún sitio).
-        head = (escape(label) if subs else
-                '<a href="/settings?section=%s%s">%s</a>' % (escape(name), gt, escape(label)))
-        out.append('<details class="scat%s"%s><summary class="%s">%s</summary>'
-                   '<ul class="ssubs">%s</ul></details>'
-                   % (" on" if name == active else "", opened,
-                      "on" if name == active else "", head, items))
-    if not out:
-        out.append('<p class="dim">Nada coincide con «%s».</p>' % escape(needle))
+    found = []
+    for group, group_icon, members in GROUPS:
+        blocks = []
+        for name, label, _icon_name, subs in SECTIONS:
+            if name not in members:
+                continue
+            hit = (not needle or needle in label.lower() or needle in name
+                   or any(needle in text.lower() for _value, text in subs)
+                   or needle in SEARCH_TERMS.get(name, ""))
+            if needle and not hit:
+                # Un submenú puede coincidir aunque el título de la categoría no.
+                subs = tuple((value, text) for value, text in subs
+                             if needle in text.lower() or needle in SEARCH_TERMS.get(value, ""))
+                if not subs:
+                    continue
+            if subs:
+                opened = " open" if name == active else ""
+                items = "".join('<li class="%s"><a href="/settings?section=%s&sub=%s%s">%s</a></li>'
+                                % ("on" if (name == active and value == sub) else "", escape(name),
+                                   escape(value), gt, escape(text)) for value, text in subs)
+                blocks.append('<details class="scat%s"%s><summary>%s%s</summary>'
+                              '<ul class="ssubs">%s</ul></details>'
+                              % (" on" if name == active else "", opened, _icon(_icon_name), escape(label),
+                                 items))
+            else:
+                blocks.append('<a class="scat-leaf%s" href="/settings?section=%s%s">%s%s</a>'
+                              % (" on" if name == active else "", escape(name), gt,
+                                 _icon(_icon_name), escape(label)))
+        if blocks:
+            found.append('<p class="sgroup">%s%s</p>%s'
+                         % (_icon(group_icon), escape(group), "".join(blocks)))
+    if not found:
+        found.append('<p class="dim">Nada coincide con «%s».</p>' % escape(needle))
     config = state.get("config") or {}
     version = state.get("version") or "?"
     source = config.get("source") or "defaults"
-    return ('<nav class="settings-tree">%s<p class="tree-foot">'
-            '<span class="dot ok"></span>Motor v%s · Conectado<br><code>%s</code></p></nav>'
-            % ("".join(out), escape(version), escape(source)))
+    gov = ('<a class="tree-gov" href="/gov?tab=setup%s">%s%s</a>'
+           % (gt.replace("&token=", "&token="), _icon("shield"), "Gobernanza (protocolo)"))
+    return ('<nav class="settings-tree">%s%s<p class="tree-foot">'
+            '<span class="dot ok"></span>Motor v%s · conectado<br><code>%s</code></p></nav>'
+            % ("".join(found), gov, escape(version), escape(source)))
+
+
+def _palette(token=""):
+    """El índice de Ctrl+K: los trece destinos, con las palabras con las que se buscan.
+
+    Va como JSON en el documento para que el buscador sea instantáneo y no pida nada al motor; el
+    `<form>` de al lado sigue funcionando sin script, filtrando el árbol en el servidor.
+    """
+    gt = ("&token=" + quote(str(token), safe="")) if token else ""
+    rows = []
+    for name, label, _icon_name, subs in SECTIONS:
+        entries = ([(value, "%s · %s" % (label, text)) for value, text in subs] if subs
+                   else [(name, label)])
+        for value, text in entries:
+            href = ("/settings?section=%s&sub=%s%s" % (name, value, gt) if subs
+                    else "/settings?section=%s%s" % (name, gt))
+            rows.append({"label": text, "where": label if subs else "",
+                         "terms": SEARCH_TERMS.get(value, ""), "href": href})
+    return json.dumps(rows, ensure_ascii=False)
 
 
 def screen(cockpit, query, token=""):
@@ -123,10 +185,14 @@ def screen(cockpit, query, token=""):
     title, subtitle, body = _render(section, cockpit, sub, item, query)
     note = kit.note_from(query)
     state = cockpit.state()
+    from . import ui_icons
     return LAYOUT % {
         "note": note,
         "tree": _tree(section, sub, needle, state, token),
         "token": escape(str(token), quote=True),
+        "sprite": ui_icons.sprite(),
+        "close_icon": ui_icons.icon("close"),
+        "palette": _palette(token),
         "title": escape(title),
         "subtitle": escape(subtitle),
         "body": body,
@@ -143,22 +209,25 @@ LAYOUT = """<!doctype html>
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="nexus-token" content="%(token)s">
 <title>Nexus Harness · Configuración</title>
+<link rel="stylesheet" href="tokens.css">
 <link rel="stylesheet" href="app.css">
 <link rel="stylesheet" href="settings.css">
 </head>
 <body class="settings-body">
+%(sprite)s
 <header class="settings-top">
-  <div class="brand">NEXUS<span>·</span>HARNESS <span class="dim">Configuración</span></div>
-  <form class="settings-search" method="get" action="/settings">
-    <input id="settings-search" name="q" type="search" value="%(query)s"
-           placeholder="Buscar en la configuración…  (Ctrl+K)">
+  <a class="brand" href="/?token=%(token)s">NEXUS<span>·</span>HARNESS</a>
+  <form class="settings-search" method="get" action="/settings" id="settings-form">
+    <input id="settings-search" name="q" type="search" value="%(query)s" autocomplete="off"
+           placeholder="Buscar en la configuración…  (Ctrl+K)"
+           aria-label="Buscar en la configuración" aria-controls="sk-palette">
     <input type="hidden" name="section" value="%(section)s">
     <input type="hidden" name="sub" value="%(sub)s">
     <input type="hidden" name="token" value="%(token)s">
-    <button class="ghost">Buscar</button>
+    <ul id="sk-palette" class="palette" role="listbox" aria-label="Destinos" hidden></ul>
   </form>
   <a class="settings-close" id="settings-close" href="/?token=%(token)s"
-     title="Volver al chat (Esc)" aria-label="Volver al chat">✕</a>
+     title="Volver al chat (Esc)">%(close_icon)s</a>
 </header>
 %(note)s
 <div class="settings-app">
@@ -169,6 +238,7 @@ LAYOUT = """<!doctype html>
     %(body)s
   </section>
 </div>
+<script type="application/json" id="sk-index">%(palette)s</script>
 <script src="token.js"></script>
 <script src="settings.js"></script>
 </body>
