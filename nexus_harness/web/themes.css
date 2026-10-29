@@ -1,0 +1,102 @@
+/* Nexus-Harness — pantones. Cada tema es un juego de tokens; la estructura no cambia.
+
+   Regla de esta casa: un tema puede cambiar el color, la textura y el brillo; NO puede cambiar la
+   composición (masthead, índice, folios, reglas). Así seis pantones son seis vestidos del mismo
+   documento, no seis productos distintos.
+
+   Excepción declarada: los temas neón son DUOTONO por diseño (sello + señal). Fuera de ellos rige la
+   ley de un solo voltaje. Los tres tonos de estado (verde/ámbar/rojo) se conservan con su significado
+   en todos los temas; lo que cambia es su saturación, no su lectura.
+
+   Contraste: `nexus_harness/selftests/test_themes.py` calcula WCAG sobre cada par (tinta/papel,
+   tinta-2/papel, sello/papel, estados/papel) y falla si alguno baja del umbral. Un pantone bonito que
+   no se lee es un defecto, no un gusto. */
+
+:root { --signal: var(--seal); --glow: 0 0 0 transparent; }
+
+/* ---------- 01 · Neón nocturno (cyberpunk retro) ---------- */
+[data-theme="neon"] {
+  --paper: #07060e; --paper-2: #0d0a18; --paper-3: #141026;
+  --ink: #eaf6ff; --ink-2: #9fb0cf; --ink-3: #6d7ea0;
+  --rule: #241b3a; --rule-2: #3d2a60;
+  --seal: #ff2e88; --seal-ink: #12030a; --seal-soft: rgba(255, 46, 136, .14);
+  --signal: #22d3ee;
+  --ok: #29f0a5; --warn: #ffc94d; --bad: #ff5c6c; --idle: #6d7ea0;
+  --glow: 0 0 14px rgba(255, 46, 136, .35);
+}
+[data-theme="neon"] .brand span,
+[data-theme="neon"] .settings-panel > h1 .folio { text-shadow: 0 0 10px var(--seal); }
+[data-theme="neon"] .masthead {
+  border-bottom-color: color-mix(in srgb, var(--seal) 55%, var(--rule));
+  box-shadow: 0 0 22px -8px var(--seal);
+}
+[data-theme="neon"] .sidebar { box-shadow: inset -1px 0 0 color-mix(in srgb, var(--signal) 22%, transparent); }
+[data-theme="neon"] button.primary { box-shadow: var(--glow); }
+[data-theme="neon"] .doc-head::after { border-bottom-color: color-mix(in srgb, var(--signal) 45%, var(--rule)); }
+[data-theme="neon"] .composer { border-top-color: color-mix(in srgb, var(--seal) 35%, var(--rule)); }
+[data-theme="neon"] .sessions li.active { background: linear-gradient(90deg, var(--seal-soft), transparent 60%); }
+
+/* ---------- 02 · Fósforo (CRT verde, con líneas de barrido) ---------- */
+[data-theme="crt"] {
+  --paper: #050a06; --paper-2: #08120b; --paper-3: #0c1a11;
+  --ink: #b8ffcb; --ink-2: #6fbf85; --ink-3: #4d8a5f;
+  --rule: #12351f; --rule-2: #1d4c2d;
+  --seal: #ffb000; --seal-ink: #100a00; --seal-soft: rgba(255, 176, 0, .12);
+  --signal: #7dffb0;
+  --ok: #35ff86; --warn: #ffd166; --bad: #ff6b6b; --idle: #4d8a5f;
+}
+[data-theme="crt"] body { text-shadow: 0 0 6px rgba(88, 255, 140, .28); }
+[data-theme="crt"] body::after {
+  content: ""; position: fixed; inset: 0; pointer-events: none; z-index: 9999;
+  background: repeating-linear-gradient(to bottom, rgba(0, 0, 0, .26) 0 1px, transparent 1px 3px);
+  opacity: .55;
+}
+[data-theme="crt"] button.primary { box-shadow: 0 0 12px rgba(255, 176, 0, .45); }
+[data-theme="crt"] .doc-head::after { border-bottom-color: color-mix(in srgb, var(--ok) 35%, var(--rule)); }
+
+/* ---------- 03 · Synthwave (SynthWave '84: ciruela, magenta, cian) ---------- */
+[data-theme="synth"] {
+  --paper: #1a0b2e; --paper-2: #24103c; --paper-3: #2f1550;
+  --ink: #f7edff; --ink-2: #c3a6e0; --ink-3: #8d6fb0;
+  --rule: #3a1c5c; --rule-2: #57308a;
+  --seal: #ff3ea5; --seal-ink: #1a0010; --seal-soft: rgba(255, 62, 165, .16);
+  --signal: #21d4fd;
+  --ok: #72f1b8; --warn: #f3e70f; --bad: #fe4450; --idle: #8d6fb0;
+}
+[data-theme="synth"] .masthead {
+  border-bottom-color: color-mix(in srgb, var(--signal) 40%, var(--rule));
+}
+[data-theme="synth"] button.primary { box-shadow: 0 0 12px rgba(255, 62, 165, .4); }
+[data-theme="synth"] .doc-head::after { border-bottom-color: color-mix(in srgb, var(--signal) 40%, var(--rule)); }
+
+/* ---------- 04 · Ámbar (terminal monocroma) ---------- */
+[data-theme="amber"] {
+  --paper: #0b0805; --paper-2: #120e08; --paper-3: #1a1309;
+  --ink: #ffd7a3; --ink-2: #c79a5f; --ink-3: #8a6a3e;
+  --rule: #33240f; --rule-2: #4d3717;
+  --seal: #ff9a1f; --seal-ink: #120a00; --seal-soft: rgba(255, 154, 31, .12);
+  --signal: #ffd7a3;
+  --ok: #ffcf66; --warn: #ffb84d; --bad: #ff7a45; --idle: #8a6a3e;
+}
+[data-theme="amber"] body { text-shadow: 0 0 6px rgba(255, 154, 31, .22); }
+
+/* ---------- 05 · Risográfica (papel crema, duotono de imprenta) ---------- */
+[data-theme="riso"] {
+  --paper: #f3efe4; --paper-2: #ebe4d3; --paper-3: #e2d8c2;
+  --ink: #1b1913; --ink-2: #5a5344; --ink-3: #8a806c;
+  --rule: #d3c7ad; --rule-2: #bda98c;
+  --seal: #d93a10; --seal-ink: #fff6ef; --seal-soft: rgba(217, 58, 16, .12);
+  --signal: #2b4bff;
+  --ok: #1f7a4d; --warn: #a86a00; --bad: #c3271f; --idle: #8a806c;
+}
+[data-theme="riso"] .brand span { color: var(--signal); }
+
+/* ---------- 06 · Cuaderno (papel cálido y bermellón) ---------- */
+[data-theme="paper"] {
+  --paper: #f4f1ea; --paper-2: #efeade; --paper-3: #e7e0d2;
+  --ink: #191713; --ink-2: #615c53; --ink-3: #8b857b;
+  --rule: #d8d2c6; --rule-2: #c4bcae;
+  --seal: #b8431f; --seal-ink: #fdf9f2; --seal-soft: rgba(184, 67, 31, .1);
+  --signal: #b8431f;
+  --ok: #3f7a33; --warn: #8a6512; --bad: #a83a24; --idle: #8b857b;
+}

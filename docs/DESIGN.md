@@ -27,6 +27,22 @@ Consecuencias que son decisiones, no gustos:
    glifo. Verde = decisión tomada · ámbar = espera humana o *no verificable* · rojo = detectado/roto ·
    gris = sin registro.
 
+## Temas (pantones)
+
+La estructura es ley; el color no. Un tema es un juego de tokens en `web/themes.css`, elegido en
+`§ Apariencia` y guardado como `ui_theme` (validado: una clave que no existe no se escribe). Seis
+pantones viajan de serie: `neon` (cyberpunk retro, por defecto), `crt` (fósforo), `synth` (SynthWave
+'84), `amber` (monocromo), `riso` (papel crema y duotono de imprenta) y `paper` (cuaderno).
+
+- **Excepción declarada al «un solo acento»:** los temas neón son duotono por género — `--seal`
+  (acción/activo) y `--signal` (sigilos `§`/`◇`, filetes de acento). Fuera de ellos, un solo voltaje.
+- **Contraste medido, no estimado:** `selftests/test_themes.py` exige tinta/papel ≥ 7:1, tinta-2 ≥ 4.5:1
+  y sello/estados ≥ 3:1 en TODOS los temas. Un pantón que no se lee es un defecto, no un gusto.
+- **La textura es del tema y se declara:** líneas de barrido (solo `crt`, overlay con
+  `pointer-events:none`) y brillo (neón/synth/crt, sobre la acción primaria). Nada más se mueve.
+- La skill que gobierna esto es `nexus-visual-identity` (viaja en `nexus_harness/skills/` y se instala
+  en Hermes con `python tools/install_skill.py nexus-visual-identity`).
+
 ## Tokens
 
 | token | valor (papel oscuro) | papel claro | uso |

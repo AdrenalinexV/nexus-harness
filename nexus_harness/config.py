@@ -82,6 +82,7 @@ DEFAULTS = {
     # Memoria por capas (SQLite+FTS5): el core viaja siempre con techo; el resto se consulta.
     "recall_enabled": True,
     "lang": "es",
+    "ui_theme": "neon",
     # El juez de la triada: `gate` (solo gate determinista, $0 y 0 ms), `fast` (una llamada corta) o
     # `adversary` (el mismo contrato con la instruccion de buscar el fallo). Un juez puede ser el mismo
     # modelo que el director, pero entonces no audita: el panel lo avisa y `gate` es la opcion honesta.
@@ -175,6 +176,8 @@ class HarnessConfig:
     browser_headless: bool = True
     recall_enabled: bool = True
     lang: str = "es"
+    # Pantón de la cabina (`ui_theme.THEMES`): un juego de tokens, no otra pantalla.
+    ui_theme: str = "neon"
     judge_mode: str = "fast"
     consult_enabled: bool = True
     ask_deadline: int = 900

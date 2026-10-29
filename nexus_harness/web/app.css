@@ -97,9 +97,9 @@ body.chat-only > .app { flex: 1 1 auto; min-height: 0; }
 #new-chat {
   border: 0; border-bottom: 1px solid var(--rule); border-radius: 0; padding: .35rem 0;
   justify-content: flex-start; font-family: var(--mono); font-size: var(--fs-micro);
-  letter-spacing: .12em; text-transform: uppercase; color: var(--ink-2);
+  letter-spacing: .12em; text-transform: uppercase; color: var(--seal);
 }
-#new-chat:hover { color: var(--ink); border-bottom-color: var(--seal); }
+#new-chat:hover { color: var(--ink); border-bottom-color: var(--signal); }
 
 /* Etiquetas de sección del índice: caja alta, mono, con su regla encima. */
 .side-title {
@@ -113,8 +113,9 @@ body.chat-only > .app { flex: 1 1 auto; min-height: 0; }
   display: flex; align-items: baseline; gap: .5rem; text-decoration: none; color: var(--ink-2);
   padding: .3rem 0; font-size: var(--fs-sm); border-bottom: 1px solid transparent;
 }
-.navlink .sigil { font-family: var(--mono); font-size: var(--fs-micro); color: var(--ink-3); width: .9rem; }
-.navlink:hover { color: var(--ink); border-bottom-color: var(--seal); }
+.navlink .sigil { font-family: var(--mono); font-size: var(--fs-micro); color: var(--signal);
+  width: .9rem; }
+.navlink:hover { color: var(--ink); border-bottom-color: var(--signal); }
 .navlink:hover .sigil { color: var(--seal); }
 .settings-btn { border-top: 1px solid var(--rule); padding-top: .55rem; margin-top: .2rem; }
 
@@ -196,7 +197,8 @@ body.chat-only > .app { flex: 1 1 auto; min-height: 0; }
 .empty h1 { font-family: var(--serif); font-size: var(--fs-display); font-weight: 600;
   margin: 0 0 .8rem; letter-spacing: -.01em; }
 .empty p { color: var(--ink-2); margin: 0 0 .5rem; max-width: var(--measure); font-size: var(--fs); }
-.empty .rule { border-top: 1px solid var(--rule); margin: 1.1rem 0 .8rem; }
+.empty .rule { border-top: 1px solid var(--rule); margin: 1.1rem 0 .8rem;
+  border-top-color: color-mix(in srgb, var(--signal) 40%, var(--rule)); }
 .empty .dim { font-size: var(--fs-xs); color: var(--ink-3); }
 
 /* ---------- el compositor: una línea de formulario, no una caja ---------- */

@@ -327,3 +327,22 @@
 .sources { margin-top: .9rem; font-size: var(--fs-xs); color: var(--ink-2); }
 .sources summary { cursor: pointer; }
 .sources ul { margin: .4rem 0 0; padding-left: 1.1rem; }
+
+/* ---------- apariencia: los pantones ---------- */
+.themegrid {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(228px, 1fr)); gap: .9rem 1.6rem;
+  margin-top: .8rem; max-width: 62rem;
+}
+.themeopt {
+  display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: baseline;
+  gap: .15rem .5rem; padding: .6rem 0 .7rem .8rem; border-left: 2px solid var(--rule-2);
+  cursor: pointer;
+}
+.themeopt.on { border-left-color: var(--seal); }
+.themeopt input[type="radio"] { grid-row: 1; align-self: center; }
+.themeopt .tname { font-family: var(--serif); font-size: var(--fs); font-weight: 600; }
+.themeopt .tswatch { grid-column: 2; display: flex; gap: .25rem; }
+.themeopt .sw { width: 1.5rem; height: .6rem; display: inline-block; border: 1px solid var(--rule); }
+.themeopt .tnote { grid-column: 2; font-size: var(--fs-xs); color: var(--ink-2); }
+.themeopt .tratio { grid-column: 2; font-family: var(--mono); font-size: var(--fs-micro);
+  color: var(--ink-3); letter-spacing: .04em; }

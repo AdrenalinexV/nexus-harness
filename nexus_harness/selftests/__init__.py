@@ -31,7 +31,7 @@ def require_protocol(module):
 SUITES = ("providers", "retry", "repair", "tools", "linelaw", "layers", "edit_v4a", "shell_session", "shell_policy", "checkpoint", "subagents", "attachments",
           "onboarding", "mcp_client", "sidecar", "nightshift", "context", "triad_loop", "session_relay", "relay_state", "savings", "skills", "worktree", "deploy", "judge_repair", "compaction", "chat",
           "memory", "ui", "bridge", "budget", "charts", "activity", "projects", "autonomy", "ux",
-          "learning", "oracle", "tokenizer", "spec", "plan_graph", "portfolio", "eval", "daemon", "notify", "browser", "recall", "ui_contract",
+          "learning", "oracle", "tokenizer", "spec", "plan_graph", "portfolio", "eval", "daemon", "notify", "browser", "recall", "ui_contract", "themes", "packaged_skills",
           "context_window", "triad_presets", "triad_balance", "consult")
 
 

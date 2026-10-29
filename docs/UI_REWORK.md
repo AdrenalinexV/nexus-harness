@@ -185,6 +185,49 @@ Capturas: `v2-chat-empty.png`, `v2-chat-thread.png`, `v2-settings-modelos.png`,
 `v2-settings-memoria.png`, `v2-settings-stats.png`, `v2-settings-palette.png`, `v2-gov.png`;
 lado a lado en `diff2-chat.png`, `diff2-settings.png`, `diff2-gov.png`.
 
+## 7. Tercera pasada — pantones y skill de diseño nativa
+
+La cabina ya se puede vestir. Un tema es un **juego de tokens** (`web/themes.css`), no otra pantalla:
+masthead, índice, folios y reglas no se mueven. Seis pantones de serie, elegidos en `§10 Apariencia`,
+guardados como `ui_theme` y servidos en `data-theme` desde el servidor (sin parpadeo: el color se
+resuelve antes del primer pintado).
+
+| clave | pantón | cita | papel / tinta / sello | tinta-papel |
+|---|---|---|---|---|
+| `neon` | Neón nocturno | cyberpunk retro (magenta + cian) | `#07060e` / `#eaf6ff` / `#ff2e88` | 18,4:1 |
+| `crt` | Fósforo | CRT verde con líneas de barrido | `#050a06` / `#b8ffcb` / `#ffb000` | 17,3:1 |
+| `synth` | Synthwave | SynthWave '84 | `#1a0b2e` / `#f7edff` / `#ff3ea5` | 16,4:1 |
+| `amber` | Ámbar | terminal monocromo | `#0b0805` / `#ffd7a3` / `#ff9a1f` | 14,7:1 |
+| `riso` | Risográfica | serigrafía de dos tintas | `#f3efe4` / `#1b1913` / `#d93a10` | 15,3:1 |
+| `paper` | Cuaderno | papel cálido y bermellón | `#f4f1ea` / `#191713` / `#b8431f` | 15,9:1 |
+
+- **Contraste medido**: `selftests/test_themes.py` recalcula WCAG para tinta, tinta-2, sello y los tres
+  estados en cada pantón, y falla si el CSS no tiene el bloque o el tema no define sus tokens. El
+  naranja riso original (`#ff4a1c`, 2,93:1) se oscureció a `#d93a10` (4,01:1): el mismo pigmento,
+  legible. Ese hallazgo salió del test, no del ojo.
+- **Duotono declarado**: los temas neón usan `--seal` (acción/activo) y `--signal` (sigilos y filetes).
+  Es la excepción escrita a «un solo acento»; en el resto, un voltaje.
+- **Persistencia real**: el selector postea `ui_theme` a `/api/settings`, la lista blanca de
+  `onboarding.save_settings` valida la clave (una errata no se escribe), `reload_config()` la relee y el
+  servidor pinta `data-theme`. Recargar no reenvía nada (303).
+
+El índice pasa de 13 a **15 destinos** (11 categorías + las 4 sub-vistas de la tríada): el §10 es el
+nuevo panel de pantones.
+
+**Skill nativa en los dos lados.** `nexus_harness/skills/nexus-visual-identity/` viaja en el paquete y
+es una raíz de enrutado (`context/skill_router.py`), así que el arnés la puede inyectar en un turno sin
+Hermes; `tools/install_skill.py nexus-visual-identity` la instala en el perfil de Hermes. Contenido:
+método para inventar un pantón, los seis con sus números y un mapa de implementación.
+
+Verificación nueva:
+
+```bash
+python -c "import sys;sys.path.insert(0,'.');from nexus_harness.selftests import run;print(run(['themes','packaged_skills']))"
+# themes OK · packaged_skills OK
+```
+
+Capturas: `themes-sheet.png` (los seis chats), `theme-<clave>.png`, `theme-panel.png` (§ Apariencia).
+
 ## 5. Tamaño de los ficheros (ley de 400 también aquí)
 
 | antes | líneas | después | líneas |

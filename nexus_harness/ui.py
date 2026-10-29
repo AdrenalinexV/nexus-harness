@@ -124,9 +124,10 @@ class Handler(BaseHTTPRequestHandler):
         sin token es una pantalla que pierde la credencial), y el sprite de iconos SVG, que se sirve
         inline desde `ui_icons.py`: una pagina que necesita la red para verse bien esta rota.
         """
-        from . import ui_icons
+        from . import ui_icons, ui_theme
         html = (WEB / "index.html").read_text(encoding="utf-8")
         html = html.replace("{{token}}", quote(self.server.token or "", safe=""))
+        html = html.replace("{{theme}}", ui_theme.resolve(getattr(self.cockpit.config, "ui_theme", "")))
         return html.replace("<!--NEXUS_SPRITE-->", ui_icons.sprite()).encode("utf-8")
 
     def _static(self, name):
@@ -151,7 +152,8 @@ class Handler(BaseHTTPRequestHandler):
             return self._gov((query.get("tab") or [""])[0])
         if path == "/settings":
             from . import settings
-            return self._page(settings.screen(self.cockpit, query, self.server.token))
+            theme = self.cockpit.config.ui_theme
+            return self._page(settings.screen(self.cockpit, query, self.server.token, theme))
         if path.startswith("/api/settings/"):
             from . import settings_api
             answer = settings_api.handle(self.cockpit, "GET", path, query, {})

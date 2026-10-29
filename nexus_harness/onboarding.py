@@ -177,7 +177,7 @@ def save_settings(changes):
              "cost_limit": float, "max_steps": int, "max_repairs": int, "max_children": int,
              "subagent_steps": int, "subagent_depth": int, "tool_workers": int,
              "shell_timeout": int, "request_timeout": int, "max_tokens": int,
-             "temperature": float, "lang": str, "workspace": str,
+             "temperature": float, "lang": str, "workspace": str, "ui_theme": str,
              "worker_resident": bool, "hardware_ceiling": int, "triad_auto_adapt": bool,
              "triad_bias": str, "ask_deadline": int, "consult_enabled": bool}
     out, saved, notes = {}, {}, []
@@ -189,6 +189,15 @@ def save_settings(changes):
                 notes.append("judge_mode: %r no es uno de %s" % (value, ", ".join(MODES)))
                 continue
             out[name] = saved[name] = mode
+        elif name == "ui_theme":
+            # Un pantón que no existe no se guarda: se dice. Callar y caer al de por defecto deja al
+            # operador mirando un color que no eligió y sin saber por qué.
+            from . import ui_theme
+            key = str(value or "").strip().lower()
+            if key not in ui_theme.KEYS:
+                notes.append("ui_theme: %r no es uno de %s" % (value, ", ".join(ui_theme.KEYS)))
+                continue
+            out[name] = saved[name] = key
         elif name == "triad_bias":
             mode = str(value or "").strip().lower()
             if mode not in ("ahorro", "velocidad"):
