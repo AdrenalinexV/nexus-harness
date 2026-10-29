@@ -14,7 +14,7 @@ falso: sin red, sin LM Studio, sin reloj.
 """
 from .fakes import FakeRouter, ScriptedSkills, TempProject
 from ..llm import context_window
-from ..compaction import Compactor
+from ..context.compaction import Compactor
 from ..config import HarnessConfig
 from ..llm.context_window import fit, overflow, shrink
 from ..platform.events import Bus

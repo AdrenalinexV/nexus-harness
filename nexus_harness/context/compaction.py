@@ -22,7 +22,7 @@ Below the threshold nothing happens, and that is recorded (`applied=False`), nev
 """
 from dataclasses import dataclass, field
 
-from .core.message import Message
+from ..core.message import Message
 
 CHARS_PER_TOKEN = 4
 ENVELOPE_CHARS = 16          # role, ids and separators the wire adds around a message's text
@@ -175,7 +175,7 @@ class Compactor:
 
     def counter(self, model=None):
         """El contador calibrado de `model` (o del de este compactor)."""
-        from .platform.tokenizer import count_messages
+        from ..platform.tokenizer import count_messages
         name = str(model if model is not None else self.model or "")
         return lambda rows: count_messages(rows, name)
 
@@ -202,7 +202,7 @@ class Compactor:
         Se poda todo lo que se puede podar (umbral 0) y, si aun asi no baja, se recorta el cuerpo de
         los mensajes mas grandes con `context_window.shrink`. Devuelve `(messages, informe)`.
         """
-        from .llm.context_window import shrink
+        from ..llm.context_window import shrink
         target = int(limit if limit is not None else self.limit or 0)
         counter = self.counter(model)
         before = counter(messages)

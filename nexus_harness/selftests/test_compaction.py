@@ -1,6 +1,6 @@
 """Compactacion determinista: el transcript se condensa antes de quedarse sin sitio.
 
-The suite measures the real module (`nexus_harness.compaction`), never a stand-in:
+The suite measures the real module (`nexus_harness.context.compaction`), never a stand-in:
 
 * below the threshold nothing happens, and that is recorded, not silent;
 * a transcript over it compacts to the SAME bytes twice -- a digest that changes between runs is not
@@ -10,7 +10,7 @@ The suite measures the real module (`nexus_harness.compaction`), never a stand-i
 * the loop actually calls it, and the run keeps going green after the cut.
 """
 from .fakes import FakeGate, FakeRouter, ScriptedProvider, ScriptedSkills, TempProject, reply
-from ..compaction import DIGEST_HEADER, Compactor, compact, estimate
+from ..context.compaction import DIGEST_HEADER, Compactor, compact, estimate
 from ..config import HarnessConfig
 from ..platform.events import Bus
 from ..llm.judge import Judge

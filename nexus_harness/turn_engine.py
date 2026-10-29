@@ -162,7 +162,7 @@ def selftest():
         def schemas(self):
             return []
 
-    from .compaction import Compactor
+    from .context.compaction import Compactor
     from .core.message import Message
 
     late = [Message(role="system", content="reglas " * 50), Message(role="user", content="hazlo")]

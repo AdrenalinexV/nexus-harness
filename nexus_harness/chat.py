@@ -21,15 +21,15 @@ from .tools import attachments as attachment_tools
 from .platform import ledger
 from . import checkpoint
 from .core.budget import CostBudget
-from .compaction import Compactor
-from .context_compiler import TurnWindow
+from .context.compaction import Compactor
+from .context.context_compiler import TurnWindow
 from .core.message import Message, as_text
 from .llm.portfolio import maybe_escalate
 from .reflection import learn
 from .platform.tokenizer import calibration, count_messages
 from .turn_context import apply_budget, chat_prefix, inject_skills, split_history
 from .turn_engine import TurnEngine
-from .savings import CACHE_REL as SKILLS_CACHE, SavingsLedger
+from .context.savings import CACHE_REL as SKILLS_CACHE, SavingsLedger
 from .tools.subagents import Delegate
 from .tools.toolbox import process_manager
 from .tools import Observation, parallel_reads
@@ -234,7 +234,7 @@ class Chat:
         proveedor devolvio, para que el proximo presupuesto (55/70 %) mida con el sesgo de ESTE modelo
         y no con un `chars / 4` que se desvia un 20-30 %.
         """
-        from .compaction import estimate
+        from .context.compaction import estimate
         model = self._model_of("worker") or str(getattr(reply, "model", "") or "")
         measured = bool(getattr(reply.usage, "measured", False))
         sent = int(getattr(reply.usage, "prompt", 0) or 0) or estimate(messages)[1]

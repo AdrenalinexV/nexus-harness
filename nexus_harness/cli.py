@@ -16,7 +16,7 @@ from pathlib import Path
 from . import __version__
 from .bridge import Bridge
 from .config import HarnessConfig
-from .skill_router import library
+from .context.skill_router import library
 from .platform.events import Bus
 from .gate import Gate
 from .llm.judge import judge_for
@@ -86,7 +86,7 @@ def cmd_serve(args):
 def cmd_chat(args):
     """One conversational turn from a shell: the same engine the window uses."""
     from .chat import Chat
-    from .memory import Memory
+    from .context.memory import Memory
     from .platform.transcripts import Transcripts
     config = _config(args)
     bus = Bus()

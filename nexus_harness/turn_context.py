@@ -11,9 +11,9 @@ Existe por dos razones, y las dos son deuda que ya se pago una vez:
 Lo que NO vive aqui: el bucle. Este modulo construye lo que viaja; quien decide cuando llamar al modelo
 es el llamante.
 """
-from .context_compiler import DELTA_MARKER, TurnWindow, build_prefix
-from .context_pruner import prune
-from . import triad_brief
+from .context.context_compiler import DELTA_MARKER, TurnWindow, build_prefix
+from .context.context_pruner import prune
+from .context import triad_brief
 
 
 def is_delta(message):
@@ -142,7 +142,7 @@ def chat_prefix(config, router, base, memory=None, goal=""):
     completo de skills y lo declara; en modo Nexus, las skills viajan como delta del turno.
     """
     if not getattr(config, "nexus_engines", True):
-        from .savings import full_index_brief
+        from .context.savings import full_index_brief
         brief = full_index_brief()
         parts = [("rules", base)]
         if brief:

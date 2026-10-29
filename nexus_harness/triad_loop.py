@@ -18,10 +18,10 @@ from dataclasses import dataclass, field
 from pathlib import Path
 
 from .platform import ledger
-from . import triad_brief
+from .context import triad_brief
 from .core.budget import CostBudget
-from .compaction import Compactor
-from .context_compiler import build_prefix
+from .context.compaction import Compactor
+from .context.context_compiler import build_prefix
 from .platform.tokenizer import calibration, count_messages
 from .turn_context import apply_budget, build_turn_prefix, inject_skills
 from .turn_engine import TurnEngine
@@ -31,11 +31,11 @@ from .core.message import Message, as_text
 from .llm.portfolio import maybe_escalate
 from .reflection import learn
 from .repair_guard import isolated_repair
-from .savings import CACHE_REL as SKILLS_CACHE, SavingsLedger
+from .context.savings import CACHE_REL as SKILLS_CACHE, SavingsLedger
 from .tools.subagents import Delegate
 from .tools.toolbox import process_manager
 from .tools import default_registry
-from .triad_brief import CLOSE_PROMPT, JUDGE_REJECT, REPAIR_PROMPT, WORKER_PROMPT
+from .context.triad_brief import CLOSE_PROMPT, JUDGE_REJECT, REPAIR_PROMPT, WORKER_PROMPT
 
 @dataclass
 class RunResult:
@@ -123,7 +123,7 @@ class Triad:
         """
         if getattr(self, "_prefix_cache", None) is None:
             if not getattr(self.config, "nexus_engines", True):
-                from .savings import full_index_brief
+                from .context.savings import full_index_brief
                 brief = full_index_brief()
                 self._injected_tokens = len(brief) // 4
                 self._prefix_cache = build_prefix([("rules", WORKER_PROMPT), ("skills", brief)])
@@ -162,7 +162,7 @@ class Triad:
 
     def _count_savings(self, reply, messages):
         """Cierra la request en el libro de ahorro: lo enviado, el baseline y por que difieren."""
-        from .compaction import estimate
+        from .context.compaction import estimate
         model = getattr(reply, "model", "") or ""
         measured = bool(getattr(reply.usage, "measured", False))
         sent = int(getattr(reply.usage, "prompt", 0) or 0) or estimate(messages)[1]

@@ -6,7 +6,8 @@ habria mandado (indice de skills dormidas), el mapa AST se cuenta como COSTE (no
 reparacion aislada no engorda el hilo principal.
 """
 from ..platform import ledger
-from .. import context_pruner, savings, stats_savings, triad_brief
+from ..context import context_pruner, savings, triad_brief
+from .. import stats_savings
 from ..config import HarnessConfig
 from ..platform.events import Bus
 from ..gate import Gate

@@ -21,9 +21,9 @@ import re
 from dataclasses import dataclass, field
 from pathlib import Path
 
-from .core.outcomes import Outcomes
-from .relay_state import sha256_text
-from .platform.skillfiles import FORGED_REL, parse_frontmatter  # noqa: E402
+from ..core.outcomes import Outcomes
+from ..platform.digest import sha256_text
+from ..platform.skillfiles import FORGED_REL, parse_frontmatter  # noqa: E402
 
 MAX_ACTIVE = 10
 DORMANT_REL = Path(".nexus") / "skills-dormant"

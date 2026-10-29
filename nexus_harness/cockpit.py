@@ -22,12 +22,12 @@ from .autonomy import Autopilot, model_planner
 from .bridge import Bridge
 from .chat import Chat
 from .config import HarnessConfig
-from .skill_router import library
+from .context.skill_router import library
 from .platform.events import Bus
 from .gate import Gate
 from .llm.judge import judge_for
 from .tools.mcp_client import McpManager
-from .memory import Memory
+from .context.memory import Memory
 from .llm.providers import Router
 from .tools import default_registry
 from .platform.transcripts import Transcripts

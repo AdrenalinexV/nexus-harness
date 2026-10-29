@@ -9,7 +9,7 @@ Lo que se mide aqui es lo que hace que la autonomia no sea una promesa:
 * la herramienta `forge_or_update_skill` existe en el arsenal del modelo y devuelve ruta y sha.
 """
 from ..tools import skill_forge
-from .. import skill_router
+from ..context import skill_router
 from ..config import HarnessConfig
 from ..tools import default_registry
 from .fakes import TempProject

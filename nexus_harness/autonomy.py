@@ -27,7 +27,7 @@ from .platform import backup, ledger
 from . import plan_graph, projects, spec_synth
 from . import autonomy_ask
 from .reflection import lessons_block
-from .repo_map import RepoMap
+from .context.repo_map import RepoMap
 
 AUTONOMY_LOG = Path(".nexus") / "harness" / "autonomy.jsonl"
 

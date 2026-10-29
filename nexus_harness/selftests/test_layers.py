@@ -30,6 +30,8 @@ DECLARED = {
     "llm": ("context_window", "judge", "portfolio", "provider_discovery", "providers"),
     "tools": ("attachments", "mcp_client", "recall", "repair_hint", "registry", "sidecar",
               "skill_forge", "subagents", "toolbox"),
+    "context": ("compaction", "context_compiler", "context_pruner", "memory", "repo_map",
+                "savings", "skill_router", "triad_brief"),
 }
 
 

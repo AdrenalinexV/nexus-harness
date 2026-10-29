@@ -2,7 +2,7 @@
 import tempfile
 from pathlib import Path
 
-from ..memory import MAX_CHARS, MAX_ENTRIES, Memory
+from ..context.memory import MAX_CHARS, MAX_ENTRIES, Memory
 
 
 def check(name, got, expected, failures):

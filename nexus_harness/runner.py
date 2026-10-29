@@ -11,7 +11,7 @@ codigo de salida es una consecuencia, no la medida.
 from dataclasses import replace
 from pathlib import Path
 
-from .skill_router import library
+from .context.skill_router import library
 from .gate import Gate
 from .llm.judge import judge_for
 from .session_relay import SessionRelay

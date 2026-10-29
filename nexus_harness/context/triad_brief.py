@@ -92,7 +92,7 @@ def proof_block(config):
 
 def plan_for(triad, goal):
     """El plan del Director, con el estado del repositorio y su coste contado en el ahorro."""
-    from .core.message import Message
+    from ..core.message import Message
 
     prompt = "OBJETIVO:\n%s\n\nESTADO DEL REPOSITORIO:\n%s" % (goal, facts(triad.config.default_root))
     try:

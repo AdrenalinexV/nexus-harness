@@ -25,7 +25,7 @@ import json
 import time
 from pathlib import Path
 
-from .context_pruner import MARKER as PRUNED_MARK, prune
+from .context.context_pruner import MARKER as PRUNED_MARK, prune
 from .platform.digest import sha256_text, utc_now  # noqa: E402
 
 PROTOCOL = "nexus.harness.relay-state/1"
