@@ -4,7 +4,7 @@
    separarlo obligaba a dos ficheros para una sola pregunta. Límite de 6 MB por fichero, y el nombre va
    tal cual: es del operador, no lo inventa el modelo. */
 window.NexusComposer = (function () {
-  const {$, api, state} = window.NX;
+  const {$, api} = window.NX;
   const LIMIT = 6 * 1024 * 1024;
   let pending = [];
 
@@ -78,5 +78,5 @@ window.NexusComposer = (function () {
     addFiles(event.dataTransfer ? event.dataTransfer.files : []);
   });
 
-  return {send, stopTurn, take: () => pending.splice(0, pending.length), state};
+  return {send, stopTurn};
 }());

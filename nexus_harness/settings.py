@@ -12,8 +12,7 @@ import json
 from html import escape
 from urllib.parse import quote
 
-from .platform import vault
-from . import gov, onboarding, panels, triad_balance
+from . import onboarding, triad_balance
 from . import settings_kit as kit
 from . import (settings_models, settings_projects, settings_skills, settings_tools, settings_vps,
                settings_work)
@@ -151,11 +150,11 @@ def _tree(active, sub, needle, state, token=""):
     config = state.get("config") or {}
     version = state.get("version") or "?"
     source = config.get("source") or "defaults"
-    gov = ('<a class="tree-gov" href="/gov?tab=setup%s">%s%s</a>'
-           % (gt.replace("&token=", "&token="), _icon("shield"), "Gobernanza (protocolo)"))
+    gov_link = ('<a class="tree-gov" href="/gov?tab=setup%s">%s%s</a>'
+                % (gt, _icon("shield"), "Gobernanza (protocolo)"))
     return ('<nav class="settings-tree">%s%s<p class="tree-foot">'
             '<span class="dot ok"></span>Motor v%s · conectado<br><code>%s</code></p></nav>'
-            % ("".join(found), gov, escape(version), escape(source)))
+            % ("".join(found), gov_link, escape(version), escape(source)))
 
 
 def _palette(token=""):
