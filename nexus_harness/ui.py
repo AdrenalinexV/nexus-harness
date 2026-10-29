@@ -60,7 +60,12 @@ class Handler(BaseHTTPRequestHandler):
         for key, value in extra:
             self.send_header(key, value)
         self.end_headers()
-        self.wfile.write(data)
+        try:
+            self.wfile.write(data)
+        except (BrokenPipeError, ConnectionAbortedError, ConnectionResetError):
+            # El operador cerro la pestana (o el sondeo en vivo se corto a mitad de respuesta). Eso no
+            # es un fallo del motor y no puede llenar el log de trazas: la peticion se descarta.
+            return None
 
     def _page(self, body, content_type=None):
         """Una pagina del arnes. Deja el token en una cookie: un `<form>` no puede poner cabeceras, y

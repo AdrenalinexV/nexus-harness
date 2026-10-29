@@ -154,6 +154,25 @@ def test_401_is_not_a_dead_engine(base, failures):
     check("que habla de credencial y no de reiniciar", "pide token" in js, True, failures)
 
 
+def test_aborted_client_does_not_kill_the_engine(base, failures):
+    """Una pestaña cerrada a mitad de respuesta no puede tumbar el motor ni llenar el log.
+
+    Se manda una peticion por socket y se cierra sin leer: el `sendall` del servidor falla con
+    `ConnectionAborted`/`BrokenPipe`. El handler lo descarta; lo que se afirma es que el siguiente
+    cliente sigue siendo atendido.
+    """
+    import socket
+    from urllib.parse import urlparse
+    host, port = urlparse(base).hostname, urlparse(base).port
+    for _attempt in range(3):
+        sock = socket.create_connection((host, port), timeout=5)
+        sock.sendall(b"GET /api/health HTTP/1.0\r\nHost: x\r\n\r\n")
+        sock.close()
+    status, body = _get(base, "/api/health")
+    check("el motor sigue atendiendo tras un cliente abortado", status, 200, failures)
+    check("y su contrato sigue intacto", "api" in body, True, failures)
+
+
 def _emoji(text):
     """Los caracteres que no son un sistema de iconos: pictogramas y dingbats."""
     return sorted({ch for ch in text if 0x1F300 <= ord(ch) <= 0x1FAFF or 0x2600 <= ord(ch) <= 0x27BF})
@@ -196,6 +215,7 @@ def run():
         test_verdict_classes(failures)
         test_401_is_not_a_dead_engine(base, failures)
         test_iconography_is_svg(base, failures)
+        test_aborted_client_does_not_kill_the_engine(base, failures)
     finally:
         server.shutdown()
         server.server_close()
