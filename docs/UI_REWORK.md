@@ -117,8 +117,8 @@ chat **6,4 %**, configuración **15,9 %**, gobernanza **1,6 %**.
   API sin credencial. Cerrarlo del todo: abrir la cabina con el motor reiniciado y token nuevo.
 - **Contraste y accesibilidad.** No hay herramienta de contraste en el repo; «no medido». Cerrarlo:
   `axe-core` sobre las tres pantallas, o un cálculo de luminancia por par token/fondo.
-- **CI.** Verde: `verify` sobre `master`, run `40966603175` (Windows + Linux), 1m35s. Los tres commits
-  anteriores pasaron el mismo workflow (`534f9df` en local, `6886bd9`+`14c4019` en el remoto).
+- **CI.** Verde en cada commit de la rama: workflow `verify` (Windows + Linux). Últimos runs:
+  `40966603175` (1m35s), `40966851010` (1m20s). Se comprueba con `gh run list --limit 2`.
 - **El vacío del chat «antes»**: el hilo no pintaba estado vacío en esa corrida y no se investigó por
   qué (queda como diferencia observada, no como defecto nombrado).
 
