@@ -80,6 +80,8 @@ Medido en navegador real (1264×569), salvo donde se dice.
 | `/gov` «relevo automático» | **7000 %** | **63 %** | `curl /gov \| grep relevo` |
 | `150 %` | se escribía | **rechazado** (`&bad=1`, fichero intacto) | `curl -D -` con `relay_threshold=150` |
 | `/gov` «relevo» tras guardar 70 % | `7000 %` | **70 %** | `curl /gov \| grep relevo` |
+| Medidor de progreso en reposo | carril de 64 px al 0 % (se lee como «en marcha») | **oculto**: solo con progreso real | navegador: `display` del `#activity-bar` = `none` |
+| Botón «Detener bucle» en reposo | visible (el `hidden` del HTML perdía contra `button{display}`) | **oculto** | regla `[hidden]{display:none!important}` en `tokens.css` |
 | `401` | «motor caído, relanza» | rama propia («pide token») | `test_ui_contract` |
 | Veredicto `exit 20` | «Gate ROJO» | **ámbar «NO VERIFICABLE»** + leyenda | `test_ui_contract` |
 | Entradas de Configuración | 13 planas, 13×200 con `h1` propio | **13 en 4 grupos**, 13×200 con `h1` propio | sonda por `href` |
@@ -101,11 +103,12 @@ En `docs/ui/` (1264×569, mismo navegador, misma ventana):
 | `after-settings-memoria.png` | el panel de Memoria con los porcentajes en % (63/41) y su nota |
 | `before-gov.png` / `after-gov.png` | gobernanza: antes la barra de 4 pestañas; después una sola puerta de vuelta |
 | `after-settings-palette.png` | Ctrl+K abierto buscando «relevo»: un solo destino, «Memoria y contexto» |
+| `after-activity-legend.png` | el desplegable de estado con la leyenda de los cuatro tonos y el botón del Autopilot |
 | `after-chat-thread.png` | un hilo real (3 mensajes, herramientas y turno) — no tiene «antes»: el hilo vacío del chat antes no se pintaba y no hay captura equivalente |
 | `diff-chat.png`, `diff-settings.png`, `diff-gov.png` | antes \| después lado a lado |
 
 Diferencia de píxeles (umbral 24 sobre 255, misma ventana; mide **cuánto cambió**, no si mejoró):
-chat **6,4 %**, configuración **15,9 %**, gobernanza **1,6 %**.
+chat **6,4 %**, configuración **15,9 %**, gobernanza **1,5 %**.
 
 ## 4. No medido (y cómo se cerraría)
 

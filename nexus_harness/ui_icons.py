@@ -56,9 +56,6 @@ SYMBOLS = {
     "xcircle": '<circle cx="12" cy="12" r="8.5"/><path d="M9.2 9.2l5.6 5.6M14.8 9.2l-5.6 5.6"/>',
 }
 
-STYLE = "fill:none;stroke:currentColor;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round"
-
-
 def sprite():
     """El sprite entero, oculto: `<svg><symbol id="i-search">…` y un `icon('search')` en cada sitio."""
     body = "".join('<symbol id="i-%s" viewBox="0 0 24 24">%s</symbol>' % (name, path)
@@ -74,5 +71,7 @@ def icon(name, cls="", label=""):
     name = escape(name)
     hidden = '' if label else ' aria-hidden="true"'
     title = '<title>%s</title>' % escape(label) if label else ""
-    return ('<svg class="icon %s" viewBox="0 0 24 24" style="%s"%s>%s'
-            '<use href="#i-%s"/></svg>' % (escape(cls), STYLE, hidden, title, name))
+    # El trazo y el color los pone `tokens.css` (`.icon`): una sola definicion para los iconos que
+    # escribe Python y para los que estan escritos a mano en el HTML.
+    return ('<svg class="icon %s" viewBox="0 0 24 24"%s>%s<use href="#i-%s"/></svg>'
+            % (escape(cls), hidden, title, name))

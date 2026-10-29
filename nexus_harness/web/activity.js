@@ -63,7 +63,10 @@
     $('activity-label').textContent = String(data.label || '').replace(/^[^\p{L}\p{N}]+/u, '');
     const bar = $('activity-bar');
     const progress = data.progress || {};
-    if (progress.total) {
+    // El medidor solo aparece cuando HAY algo que medir: un carril vacio al 0 % en reposo es ruido
+    // (y ademas se leia como "turno en marcha" sin que hubiera turno).
+    const shows = Boolean(progress.total) && (Boolean(data.running) || (progress.done || 0) > 0);
+    if (shows) {
       bar.hidden = false;
       const ratio = Math.max(0, Math.min(1, (progress.done || 0) / progress.total));
       bar.firstElementChild.style.width = (ratio * 100).toFixed(0) + '%';
