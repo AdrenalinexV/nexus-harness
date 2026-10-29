@@ -17,6 +17,7 @@ aparecen como basura en el repositorio ni en `git status`.
 """
 import os
 import re
+import shlex
 import shutil
 import subprocess
 import time
@@ -29,7 +30,15 @@ KEEP = ("findings=0",)
 
 
 def _run(command, cwd, timeout=300):
-    """`(exit, salida)`. Nunca lanza: un worktree roto se informa, no tumba el bucle."""
+    """`(exit, salida)`. Nunca lanza: un worktree roto se informa, no tumba el bucle.
+
+    Un `gate_command` llega como STRING ("pytest -q"), y en POSIX un string sin `shell=True` no se
+    ejecuta: el ejecutable es la frase entera y devuelve 127 (FileNotFoundError). Windows lo tolera y
+    por eso el fallo solo aparecia en Linux: el gate salia rojo siempre. Se parte como lo partiria un
+    shell, en las dos plataformas.
+    """
+    if isinstance(command, str):
+        command = shlex.split(command)
     try:
         done = subprocess.run(command, cwd=str(cwd), capture_output=True, text=True,
                               errors="replace", timeout=timeout, creationflags=WINDOWS_FLAGS)

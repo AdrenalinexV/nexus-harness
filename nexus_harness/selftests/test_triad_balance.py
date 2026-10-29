@@ -208,7 +208,16 @@ model:
 def test_the_panel_renders_the_balancer(failures):
     from .. import settings_models
     cfg = config()
-    body = settings_models.panel(Cockpit(cfg), "", dict(STATE, roles={}), HW)[2]
+    # `_providers_bar` reads the machine's Hermes config: en CI no hay ninguno y el panel saldria sin
+    # chips (rojo por la maquina, no por el codigo). Se inyecta la deteccion, como ya se inyectan
+    # `state` y `hardware`, y asi el chip se mide siempre igual.
+    original = settings_models.provider_discovery.candidates
+    settings_models.provider_discovery.candidates = lambda _config: [
+        {"name": "orca", "base_url": "https://orca.example", "secret": True, "builtin": False}]
+    try:
+        body = settings_models.panel(Cockpit(cfg), "", dict(STATE, roles={}), HW)[2]
+    finally:
+        settings_models.provider_discovery.candidates = original
     check("el techo es un selector", 'name="hardware_ceiling"' in body, True)
     check("y el sesgo del reparto", 'name="triad_bias"' in body, True)
     check("y la reaccion automatica", 'name="triad_auto_adapt"' in body, True)

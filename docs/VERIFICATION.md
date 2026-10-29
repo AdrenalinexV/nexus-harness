@@ -8,8 +8,8 @@ the numbers.
 
 ```
 $ python tools/verify.py
-lint      exit 0   files=177 findings=0 max_lines=400 ignored_runtime=0 linter=protocol(R0,R1,R2,R3)
-selftest  exit 0   suites=50 failures=0 skipped=0
+lint      exit 0   files=177 findings=0 max_lines=400 ignored_runtime=0 linter=builtin(R0,R1,R2)
+selftest  exit 0   suites=50 failures=0 skipped=2
 verify: GREEN
 ```
 
@@ -18,69 +18,71 @@ verify: GREEN
 ```
 providers        OK    0.10s
 retry            OK    0.00s
-repair           OK    0.41s
-tools            OK    0.19s
-linelaw          OK    0.03s
+repair           OK    0.40s
+tools            OK    0.18s
+linelaw          OK    0.02s
 edit_v4a         OK    0.04s
-shell_session    OK    1.56s
-shell_policy     OK    0.23s
-checkpoint       OK    0.24s
+shell_session    OK    1.54s
+shell_policy     OK    0.24s
+checkpoint       OK    0.25s
 subagents        OK    0.01s
 warning: The `fitz` API is deprecated and will be removed in future. Use `import pymupdf` instead.
-attachments      OK    0.14s
-onboarding       OK    0.13s
-mcp_client       OK    0.44s
-sidecar          OK    5.08s
+attachments      OK    0.15s
+onboarding       OK    0.14s
+mcp_client       OK    0.45s
+sidecar          OK    5.14s
 estado listo: 2 criterios (2 pendientes)
 a -> exit 0 (VERDE)
 findings=0
 b -> exit 10 (ROJO)
 b marcado blocked
 criterio desconocido: zzz
-cerrojo ocupado: el turno de noche ya esta en marcha: pid 38740 desde 2026-10-29T18:34:05+00:00 (suite)
-no se toca nada. Si esa sesion ya no corre, el cerrojo se hereda solo; para forzarlo a mano, borra C:\Users\Vexus\AppData\Local\Temp\nightshift-kbvww8gf\.nexus\harness\nightshift.lock
+cerrojo ocupado: el turno de noche ya esta en marcha: pid 39632 desde 2026-10-29T18:39:56+00:00 (suite)
+no se toca nada. Si esa sesion ya no corre, el cerrojo se hereda solo; para forzarlo a mano, borra C:\Users\Vexus\AppData\Local\Temp\nightshift-0fnq1eel\.nexus\harness\nightshift.lock
 TOCA: b — falla
   prueba: python -c "raise SystemExit(10)"
   estado: blocked (intentos 1)
 a -> exit 0 (VERDE)
 findings=0
-nightshift       OK    0.43s
+nightshift       OK    0.44s
 context          OK    0.13s
-triad_loop       OK    2.68s
-session_relay    OK    1.42s
-relay_state      OK    0.32s
-savings          OK    0.87s
-skills           OK    0.21s
-worktree         OK    3.85s
+triad_loop       OK    2.78s
+session_relay    SKIP  0.00s
+    - necesita el gobernador (nexus.hive.relay): ModuleNotFoundError: No module named 'nexus.hive' -- apunta NEXUS_PROTOCOL a NexusProtocol
+relay_state      OK    0.31s
+savings          OK    0.84s
+skills           OK    0.19s
+worktree         OK    3.80s
 deploy           OK    0.02s
 judge_repair     OK    0.02s
-compaction       OK    0.23s
+compaction       OK    0.24s
 chat             OK    0.79s
 memory           OK    0.32s
-ui               OK    1.02s
-bridge           OK    0.06s
-budget           OK    0.45s
+ui               OK    0.86s
+bridge           SKIP  0.00s
+    - necesita el gobernador (nexus.hive.queue): ModuleNotFoundError: No module named 'nexus.hive' -- apunta NEXUS_PROTOCOL a NexusProtocol
+budget           OK    0.49s
 charts           OK    0.00s
 activity         OK    0.00s
-projects         OK    0.86s
-autonomy         OK    0.99s
-ux               OK    2.11s
+projects         OK    0.89s
+autonomy         OK    1.01s
+ux               OK    1.29s
 learning         OK    0.04s
 oracle           OK    0.34s
 tokenizer        OK    0.02s
-spec             OK    0.43s
+spec             OK    0.44s
 plan_graph       OK    0.00s
 portfolio        OK    0.19s
-eval             OK    5.39s
-daemon           OK    0.43s
+eval             OK    5.21s
+daemon           OK    0.45s
 notify           OK    0.00s
-browser          OK    5.71s
+browser          OK    5.19s
 recall           OK    0.24s
-context_window   OK    0.46s
-triad_presets    OK    0.07s
-triad_balance    OK    0.06s
+context_window   OK    0.47s
+triad_presets    OK    0.06s
+triad_balance    OK    0.04s
 consult          OK    0.16s
-suites=50 failures=0 skipped=0
+suites=50 failures=0 skipped=2
 ```
 
 What each one actually proves:

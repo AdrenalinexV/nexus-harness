@@ -108,20 +108,23 @@ def plan_for(triad, goal):
 
 def selftest():
     problems = []
+    # La raiz del repo se DERIVA, no se escribe: la que estaba clavada era la ruta de la maquina del
+    # autor, y en cualquier otra (CI, un portatil) el mapa salia vacio y la suite se ponia roja.
+    root = str(Path(__file__).resolve().parents[1])
 
     def check(name, got, expected):
         if got != expected:
             problems.append("%s: %r, esperaba %r" % (name, got, expected))
 
-    check("el mapa se cachea por config", map_block(_Config("C:/Proyectos/Nexus-Harness"))[1] > 0, True)
-    config = _Config("C:/Proyectos/Nexus-Harness")
+    check("el mapa se cachea por config", map_block(_Config(root))[1] > 0, True)
+    config = _Config(root)
     first = map_block(config)
     second = map_block(config)
     check("y la segunda llamada no lo recalcula", first is second, True)
     check("el mapa cabe en el techo", first[1] <= MAP_TOKENS + 40, True)
     check("sin proyecto no hay mapa", map_block(_Config("C:/no/existe/xyz"))[1], 0)
-    check("los hechos dicen la raiz", "root:" in facts("C:/Proyectos/Nexus-Harness"), True)
-    check("y las entradas", "nexus_harness" in facts("C:/Proyectos/Nexus-Harness"), True)
+    check("los hechos dicen la raiz", "root:" in facts(root), True)
+    check("y las entradas", "nexus_harness" in facts(root), True)
     check("los prompts existen", bool(DIRECTOR_PROMPT and WORKER_PROMPT and REPAIR_PROMPT), True)
     check("el prompt del Obrero pide rangos", "offset=X" in WORKER_PROMPT, True)
     check("sin test_command no hay bloque", proof_block(_Config(".")), "")
