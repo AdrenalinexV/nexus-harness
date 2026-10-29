@@ -11,7 +11,7 @@ Tres cosas que un relevo tiene que demostrar, y ninguna se puede fingir:
 from .. import relay_state
 from ..config import HarnessConfig
 from ..platform.events import Bus
-from ..gate import Gate
+from ..verify.gate import Gate
 from ..llm.judge import Judge
 from ..relay_state import RelayState, prune_tool_outputs
 from ..tools import default_registry

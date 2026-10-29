@@ -113,7 +113,7 @@ def test_diff_of_the_turn(failures):
     import tempfile
     from pathlib import Path
 
-    from .. import checkpoint
+    from ..verify import checkpoint
 
     root = Path(tempfile.mkdtemp(prefix="nexus-diff-"))
     try:

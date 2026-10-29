@@ -19,7 +19,7 @@ from pathlib import Path
 
 from .eval_tasks import TASKS, Task, selected
 from .platform.events import Bus
-from .gate import Gate
+from .verify.gate import Gate
 from .llm.judge import judge_for
 from .llm.providers import Router
 from .selftests.fakes import FakeRouter, ScriptedProvider, ScriptedSkills, TempProject, reply

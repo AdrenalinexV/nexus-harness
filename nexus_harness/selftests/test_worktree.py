@@ -12,10 +12,10 @@ El mapa AST se mide con su cache: no se reconstruye si nada cambio, y se invalid
 import subprocess
 
 from ..context import repo_map
-from .. import repair_guard, worktree_sandbox
+from ..verify import repair_guard, worktree_sandbox
 from ..config import HarnessConfig
 from ..platform.events import Bus
-from ..gate import Gate
+from ..verify.gate import Gate
 from ..llm.judge import Judge
 from ..tools import default_registry
 from ..triad_loop import Triad

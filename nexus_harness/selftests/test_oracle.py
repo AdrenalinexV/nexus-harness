@@ -5,9 +5,9 @@ proyecto sin pruebas salia "verde" habiendo comprobado solo lint y ley de 400. A
 algo ejecutado, y que cuando no se pueda probar se diga con el codigo del protocolo (20).
 """
 from .fakes import TempProject
-from .. import oracle
+from ..verify import oracle
 from ..config import HarnessConfig
-from ..gate import EXIT_GREEN, EXIT_RED, EXIT_UNAVAILABLE, Gate
+from ..verify.gate import EXIT_GREEN, EXIT_RED, EXIT_UNAVAILABLE, Gate
 
 
 def check(name, got, expected, failures):

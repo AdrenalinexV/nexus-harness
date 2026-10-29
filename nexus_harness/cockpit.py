@@ -24,7 +24,7 @@ from .chat import Chat
 from .config import HarnessConfig
 from .context.skill_router import library
 from .platform.events import Bus
-from .gate import Gate
+from .verify.gate import Gate
 from .llm.judge import judge_for
 from .tools.mcp_client import McpManager
 from .context.memory import Memory

@@ -4,11 +4,11 @@ Measured with the fake gate so the count is exact, and with the real toolbox so 
 on disk. The conversation is persisted and reloaded, because a desktop chat that forgets is a demo.
 """
 from .fakes import FakeRouter, FakeGate, ScriptedProvider, ScriptedSkills, TempProject, reply
-from .. import checkpoint
+from ..verify import checkpoint
 from ..chat import Chat
 from ..config import HarnessConfig
 from ..platform.events import Bus
-from ..gate import Check, Verdict
+from ..verify.gate import Check, Verdict
 from ..context.memory import Memory
 from ..tools.toolbox import file_ops as files
 from ..tools import default_registry
@@ -22,7 +22,7 @@ def check(name, got, expected, failures):
 
 
 def verdict(ok, name="tests"):
-    from ..gate import EXIT_GREEN, EXIT_RED
+    from ..verify.gate import EXIT_GREEN, EXIT_RED
     check_row = Check(name, ok, "forced", exit=EXIT_GREEN if ok else EXIT_RED)
     return Verdict(ok=ok, exit=EXIT_GREEN if ok else EXIT_RED, checks=[check_row],
                    failures="" if ok else "tests: exit 1", at="2026-10-24T00:00:00Z")

@@ -23,7 +23,7 @@ from .tools import skill_forge
 from .core.outcomes import record_skills
 from .tools.skill_forge import ForgeTrigger
 from .context.skill_router import EXTENSIONS
-from . import oracle
+from .verify import oracle
 
 COUNTERS_REL = Path(".nexus") / "harness" / "forge_trigger.json"
 LESSONS_REL = Path(".nexus") / "harness" / "lessons.jsonl"

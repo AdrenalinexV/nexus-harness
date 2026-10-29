@@ -19,7 +19,7 @@ from dataclasses import dataclass, field
 
 from .tools import attachments as attachment_tools
 from .platform import ledger
-from . import checkpoint
+from .verify import checkpoint
 from .core.budget import CostBudget
 from .context.compaction import Compactor
 from .context.context_compiler import TurnWindow

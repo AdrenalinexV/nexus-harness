@@ -165,7 +165,7 @@ def _diff_stat(root, name):
     """
     if not root or not name:
         return [], {}
-    from . import checkpoint
+    from .verify import checkpoint
     journal = checkpoint.find(root, name)
     if journal is None:
         return [], {}

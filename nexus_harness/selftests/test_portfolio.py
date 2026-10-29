@@ -175,7 +175,7 @@ def test_the_triad_escalates_after_two_red_gates(failures):
         router.portfolio = Portfolio(config)
         moved = []
         router.swap = lambda role, spec: moved.append((role, spec)) or router.info(role)
-        red = __import__("nexus_harness.gate", fromlist=["Check", "Verdict"])
+        red = __import__("nexus_harness.verify.gate", fromlist=["Check", "Verdict"])
         verdicts = [__import__("nexus_harness.selftests.test_chat", fromlist=["verdict"])
                     .verdict(False) for _ in range(2)] + [
                     __import__("nexus_harness.selftests.test_chat", fromlist=["verdict"])

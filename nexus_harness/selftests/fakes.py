@@ -127,7 +127,7 @@ class FakeGate:
         self.calls = 0
 
     def run(self, touched=None):
-        from ..gate import Check, Verdict
+        from ..verify.gate import Check, Verdict
         self.calls += 1
         if self.verdicts:
             return self.verdicts.pop(0)

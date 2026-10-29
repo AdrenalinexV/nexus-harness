@@ -32,6 +32,7 @@ DECLARED = {
               "skill_forge", "subagents", "toolbox"),
     "context": ("compaction", "context_compiler", "context_pruner", "memory", "repo_map",
                 "savings", "skill_router", "triad_brief"),
+    "verify": ("checkpoint", "gate", "linelaw", "oracle", "repair_guard", "worktree_sandbox"),
 }
 
 

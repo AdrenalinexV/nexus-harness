@@ -18,7 +18,7 @@ from .bridge import Bridge
 from .config import HarnessConfig
 from .context.skill_router import library
 from .platform.events import Bus
-from .gate import Gate
+from .verify.gate import Gate
 from .llm.judge import judge_for
 from .llm.providers import Router, SpecError
 from .session_relay import SessionRelay
@@ -113,7 +113,7 @@ def cmd_checkpoint(args):
 
     Exit codes: 0 hecho, 10 restauracion incompleta (falta una instantanea), 20 no hay diario.
     """
-    from . import checkpoint
+    from .verify import checkpoint
     root = Path(args.project) if args.project else HarnessConfig.load().default_root
     if args.undo is not None:
         journal = checkpoint.find(root, args.undo) if args.undo else checkpoint.latest(root)

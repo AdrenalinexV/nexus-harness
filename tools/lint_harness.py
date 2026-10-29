@@ -21,7 +21,7 @@ ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from nexus_harness import linelaw  # noqa: E402  (the package is one level up, by design)
+from nexus_harness.verify import linelaw  # noqa: E402  (the law lives in the verify layer)
 
 
 def canonical():

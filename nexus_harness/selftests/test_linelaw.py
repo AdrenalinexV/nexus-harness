@@ -12,7 +12,7 @@ import sys
 from pathlib import Path
 
 from .fakes import TempProject
-from .. import linelaw
+from ..verify import linelaw
 
 
 def check(name, got, expect, failures):

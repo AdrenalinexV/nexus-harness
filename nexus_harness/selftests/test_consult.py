@@ -234,7 +234,8 @@ def test_the_loop_asks_before_giving_up(failures):
 def test_revert_undoes_the_turn(failures):
     """`revertir` no es una palabra: restaura los bytes que el turno tenia antes."""
     import shutil
-    from .. import autonomy_ask, checkpoint
+    from ..verify import checkpoint
+    from .. import autonomy_ask
 
     workspace = Path(tempfile.mkdtemp(prefix="consult-undo-"))
     try:

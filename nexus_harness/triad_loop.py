@@ -25,12 +25,12 @@ from .context.context_compiler import build_prefix
 from .platform.tokenizer import calibration, count_messages
 from .turn_context import apply_budget, build_turn_prefix, inject_skills
 from .turn_engine import TurnEngine
-from .gate import EXIT_GREEN, EXIT_UNAVAILABLE, Gate
+from .verify.gate import EXIT_GREEN, EXIT_UNAVAILABLE, Gate
 from .llm.judge import judge_for
 from .core.message import Message, as_text
 from .llm.portfolio import maybe_escalate
 from .reflection import learn
-from .repair_guard import isolated_repair
+from .verify.repair_guard import isolated_repair
 from .context.savings import CACHE_REL as SKILLS_CACHE, SavingsLedger
 from .tools.subagents import Delegate
 from .tools.toolbox import process_manager

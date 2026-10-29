@@ -14,7 +14,7 @@ from . import require_protocol
 from .fakes import FakeRouter, ScriptedProvider, ScriptedSkills, TempProject, reply
 from ..config import HarnessConfig
 from ..platform.events import Bus
-from ..gate import Gate
+from ..verify.gate import Gate
 from ..llm.judge import Judge
 from ..session_relay import BudgetMeter, SessionRelay, SessionStore
 from ..tools import default_registry

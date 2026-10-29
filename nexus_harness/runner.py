@@ -12,7 +12,7 @@ from dataclasses import replace
 from pathlib import Path
 
 from .context.skill_router import library
-from .gate import Gate
+from .verify.gate import Gate
 from .llm.judge import judge_for
 from .session_relay import SessionRelay
 from .tools import default_registry

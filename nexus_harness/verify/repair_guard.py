@@ -11,8 +11,8 @@ escritura sin que se lo pidan es un arnes que rompe flujos que ya funcionaban.
 """
 from pathlib import Path
 
-from .context.compaction import estimate
-from .core.message import Message
+from ..context.compaction import estimate
+from ..core.message import Message
 from .worktree_sandbox import Sandbox, _run
 
 

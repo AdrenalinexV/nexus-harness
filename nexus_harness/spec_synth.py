@@ -25,7 +25,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from .platform import policy
-from . import oracle
+from .verify import oracle
 
 SPEC_REL = Path(".ai") / "CURRENT_SPEC.json"
 MAX_CAS = 8

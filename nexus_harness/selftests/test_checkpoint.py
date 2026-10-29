@@ -14,7 +14,7 @@ import hashlib
 import os
 
 from .fakes import TempProject
-from .. import checkpoint
+from ..verify import checkpoint
 from ..tools.toolbox import edit, file_ops
 
 
