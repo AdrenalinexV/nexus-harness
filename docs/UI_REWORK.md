@@ -122,8 +122,10 @@ chat **6,4 %**, configuración **15,9 %**, gobernanza **1,5 %**.
   API sin credencial. Cerrarlo del todo: abrir la cabina con el motor reiniciado y token nuevo.
 - **Contraste y accesibilidad.** No hay herramienta de contraste en el repo; «no medido». Cerrarlo:
   `axe-core` sobre las tres pantallas, o un cálculo de luminancia por par token/fondo.
-- **CI.** Verde en cada commit de la rama: workflow `verify` (Windows + Linux). Últimos runs:
-  `40966603175` (1m35s), `40966851010` (1m20s). Se comprueba con `gh run list --limit 2`.
+- **CI.** Workflow `verify` (Windows + Linux). El commit `39d2973` (pantones) salió **rojo** y con razón:
+  la suite corre también sobre el **wheel instalado** y `nexus_harness/skills/` no viajaba en
+  `package-data`, así que `packaged_skills` falló allí. Arreglado en `a00ebfb` (run `40972338204`, verde,
+  1m24s) y comprobado sobre el wheel extraído, no solo en el checkout.
 - **El vacío del chat «antes»**: el hilo no pintaba estado vacío en esa corrida y no se investigó por
   qué (queda como diferencia observada, no como defecto nombrado).
 
