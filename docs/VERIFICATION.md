@@ -8,7 +8,7 @@ the numbers.
 
 ```
 $ python tools/verify.py
-lint      exit 0   files=195 findings=0 max_lines=400 ignored_runtime=0 linter=builtin(R0,R1,R2)
+lint      exit 0   files=196 findings=0 max_lines=400 ignored_runtime=0 linter=builtin(R0,R1,R2)
 selftest  exit 0   suites=54 failures=0 skipped=2
 verify: GREEN
 ```
@@ -16,73 +16,73 @@ verify: GREEN
 ## The suites, individually
 
 ```
-providers        OK    0.09s
+providers        OK    0.06s
 retry            OK    0.00s
-repair           OK    0.35s
-tools            OK    0.12s
+repair           OK    0.33s
+tools            OK    0.11s
 linelaw          OK    0.02s
 layers           OK    0.08s
-edit_v4a         OK    0.03s
-shell_session    OK    1.30s
-shell_policy     OK    0.13s
+edit_v4a         OK    0.04s
+shell_session    OK    1.34s
+shell_policy     OK    0.14s
 checkpoint       OK    0.23s
 subagents        OK    0.01s
 warning: The `fitz` API is deprecated and will be removed in future. Use `import pymupdf` instead.
-attachments      OK    0.13s
-onboarding       OK    0.15s
-mcp_client       OK    0.29s
-sidecar          OK    5.08s
+attachments      OK    0.14s
+onboarding       OK    0.12s
+mcp_client       OK    0.30s
+sidecar          OK    5.09s
 estado listo: 2 criterios (2 pendientes)
 a -> exit 0 (VERDE)
 findings=0
 b -> exit 10 (ROJO)
 b marcado blocked
 criterio desconocido: zzz
-cerrojo ocupado: el turno de noche ya esta en marcha: pid 32548 desde 2026-10-29T23:40:34+00:00 (suite)
-no se toca nada. Si esa sesion ya no corre, el cerrojo se hereda solo; para forzarlo a mano, borra C:\Users\Vexus\AppData\Local\Temp\nightshift-xuxxi3o8\.nexus\harness\nightshift.lock
+cerrojo ocupado: el turno de noche ya esta en marcha: pid 31160 desde 2026-10-29T23:54:03+00:00 (suite)
+no se toca nada. Si esa sesion ya no corre, el cerrojo se hereda solo; para forzarlo a mano, borra C:\Users\Vexus\AppData\Local\Temp\nightshift-g4txwfxu\.nexus\harness\nightshift.lock
 TOCA: b — falla
   prueba: python -c "raise SystemExit(10)"
   estado: blocked (intentos 1)
 a -> exit 0 (VERDE)
 findings=0
-nightshift       OK    0.30s
+nightshift       OK    0.28s
 context          OK    0.11s
-triad_loop       OK    2.18s
+triad_loop       OK    2.10s
 session_relay    SKIP  0.00s
     - necesita el gobernador (nexus.hive.relay): ModuleNotFoundError: No module named 'nexus.hive' -- apunta NEXUS_PROTOCOL a NexusProtocol
-relay_state      OK    0.29s
-savings          OK    0.60s
-skills           OK    0.24s
-worktree         OK    2.55s
+relay_state      OK    0.27s
+savings          OK    0.57s
+skills           OK    0.16s
+worktree         OK    2.35s
 deploy           OK    0.02s
 judge_repair     OK    0.02s
 compaction       OK    0.20s
-chat             OK    0.75s
-memory           OK    0.37s
-ui               OK    1.03s
+chat             OK    0.65s
+memory           OK    0.30s
+ui               OK    1.00s
 bridge           SKIP  0.00s
     - necesita el gobernador (nexus.hive.queue): ModuleNotFoundError: No module named 'nexus.hive' -- apunta NEXUS_PROTOCOL a NexusProtocol
-budget           OK    0.38s
+budget           OK    0.37s
 charts           OK    0.00s
 activity         OK    0.00s
-projects         OK    0.54s
-autonomy         OK    0.61s
-ux               OK    1.12s
-learning         OK    0.05s
-oracle           OK    0.27s
+projects         OK    0.49s
+autonomy         OK    0.60s
+ux               OK    1.15s
+learning         OK    0.04s
+oracle           OK    0.26s
 tokenizer        OK    0.01s
-spec             OK    0.28s
+spec             OK    0.26s
 plan_graph       OK    0.00s
-portfolio        OK    0.14s
-eval             OK    4.30s
-daemon           OK    0.28s
+portfolio        OK    0.13s
+eval             OK    4.15s
+daemon           OK    0.27s
 notify           OK    0.00s
-browser          OK    4.41s
-recall           OK    0.21s
-ui_contract      OK    1.40s
+browser          OK    4.31s
+recall           OK    0.22s
+ui_contract      OK    1.43s
 themes           OK    0.00s
 packaged_skills  OK    0.00s
-context_window   OK    0.44s
+context_window   OK    0.45s
 triad_presets    OK    0.03s
 triad_balance    OK    0.04s
 consult          OK    0.15s

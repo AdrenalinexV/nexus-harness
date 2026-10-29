@@ -52,7 +52,7 @@ def _render(name, cockpit, sub, item, query):
     return settings_tools.stats(cockpit)
 
 
-def screen(cockpit, query, token="", theme="", skin=""):
+def screen(cockpit, query, token="", accent="", skin="", mode="", font=""):
     """El HTML de la pantalla entera, con la sección pedida ya pintada."""
     section, sub = resolve((query.get("section") or [""])[0], (query.get("sub") or [""])[0])
     item = str((query.get("item") or [""])[0])
@@ -66,8 +66,10 @@ def screen(cockpit, query, token="", theme="", skin=""):
         "note": note,
         "tree": tree(section, sub, needle, state, token),
         "token": escape(str(token), quote=True),
-        "theme": escape(str(theme or ""), quote=True),
+        "accent": escape(str(accent or ""), quote=True),
         "skin": escape(str(skin or ""), quote=True),
+        "mode": escape(str(mode or ""), quote=True),
+        "font": escape(str(font or ""), quote=True),
         "sprite": ui_icons.sprite(),
         "close_icon": ui_icons.icon("close"),
         "palette": palette(token),
@@ -82,7 +84,7 @@ def screen(cockpit, query, token="", theme="", skin=""):
 
 
 LAYOUT = """<!doctype html>
-<html lang="es" data-theme="%(theme)s" data-skin="%(skin)s">
+<html lang="es" data-mode="%(mode)s" data-accent="%(accent)s" data-skin="%(skin)s" data-font="%(font)s">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
@@ -91,6 +93,7 @@ LAYOUT = """<!doctype html>
 <link rel="stylesheet" href="tokens.css">
 <link rel="stylesheet" href="themes.css">
 <link rel="stylesheet" href="skins.css">
+<link rel="stylesheet" href="skins-special.css">
 <link rel="stylesheet" href="app.css">
 <link rel="stylesheet" href="settings.css">
 </head>
@@ -225,11 +228,13 @@ def save(cockpit, body):
     elif section == "apariencia":
         # Dos ejes con la misma tubería: diseño (`ui_skin`) y pantón (`ui_theme`). El formulario manda
         # solo el que se pulsó, así que se guarda lo que venga y se dice cuál cambió.
-        changes = {key: body[key] for key in ("ui_skin", "ui_theme") if body.get(key)}
+        axes = (("ui_skin", "diseño"), ("ui_theme", "pantón"), ("ui_mode", "modo"),
+                ("ui_font", "tipografía"))
+        changes = {key: body[key] for key, _label in axes if body.get(key)}
         saved, problems = onboarding.save_settings(changes)
         notes += problems
         ok = ok and bool(saved)
-        for key, label in (("ui_skin", "diseño"), ("ui_theme", "pantón")):
+        for key, label in axes:
             if key in saved:
                 notes.append("%s → %s" % (label, saved[key]))
         cockpit.reload_config()

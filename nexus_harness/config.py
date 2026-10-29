@@ -82,7 +82,9 @@ DEFAULTS = {
     # Memoria por capas (SQLite+FTS5): el core viaja siempre con techo; el resto se consulta.
     "recall_enabled": True,
     "lang": "es",
-    "ui_theme": "neon",
+    "ui_theme": "paper",
+    "ui_mode": "dark",
+    "ui_font": "system",
     "ui_skin": "document",
     # El juez de la triada: `gate` (solo gate determinista, $0 y 0 ms), `fast` (una llamada corta) o
     # `adversary` (el mismo contrato con la instruccion de buscar el fallo). Un juez puede ser el mismo
@@ -177,8 +179,11 @@ class HarnessConfig:
     browser_headless: bool = True
     recall_enabled: bool = True
     lang: str = "es"
-    # Pantón de la cabina (`ui_theme.THEMES`): un juego de tokens, no otra pantalla.
-    ui_theme: str = "neon"
+    # Aspecto de la cabina: pantón (`ui_theme.ACCENTS`), modo, diseño y tipografía. Cuatro ejes.
+    ui_theme: str = "paper"
+    # Modo (papel) y tipografía: ejes independientes del pantón y del diseño.
+    ui_mode: str = "dark"
+    ui_font: str = "system"
     # Diseño (composición) — independiente del pantón: `ui_theme.SKINS`.
     ui_skin: str = "document"
     judge_mode: str = "fast"

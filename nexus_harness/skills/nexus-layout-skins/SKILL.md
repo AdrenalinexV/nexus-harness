@@ -33,14 +33,19 @@ Two independent axes, learned from how others do it:
 - Conclusion: **composition and colour are different decisions.** 4 skins × 6 pantones = 24 valid
   combinations, each skin with a recommended palette (a recommendation, never a lock).
 
-## The four that ship
+## The six that ship (three groups: one main, two special, three alternates)
 
-| key | name | composition | recommended palette |
+| group | key | composition | recommended palette |
 |---|---|---|---|
-| `document` | Documento | serif titles, folios in the margin, 1px rules, ruled composer | `paper` |
-| `terminal` | Terminal | everything monospace, dashed separators, `#` title, `›`/`·` prefixes, dense | `crt` |
-| `minimal` | Minimal | no folios, no rules, one accent dot, air, sans only, rounded composer | `riso` |
-| `neon` | HUD neón | uppercase, `::` labels, corner brackets, glow, framed message panels | `neon` |
+| **main** | `main` | serif titles, folios in the margin, 1px rules, ruled composer | `paper` |
+| **special** | `matrix` | retro terminal: phosphor, scanlines, narrow column, dotted separators, `0x` folio | `crt` |
+| **special** | `glossy` | 2000s: gradient bar, beveled glossy buttons, rounded bubbles, inset fields | `paper` |
+| alternate | `terminal` | everything monospace, dashed separators, `#` title, `›`/`·` prefixes, dense | `crt` |
+| alternate | `minimal` | no folios, no rules, one accent dot, air, sans only, rounded composer | `riso` |
+| alternate | `neon` | uppercase, `::` labels, corner brackets, glow, framed message panels | `neon` |
+
+There is also a **font axis** (`ui_font`: `system`, `serif`, `mono`, `condensed`) that changes the
+voice without touching the composition — `[data-font="…"]` rules live at the end of `skins.css`.
 
 What each one changes (and a new one must change all four): **type role** (`--serif` vs `--mono` in
 titles), **geometry** (radius, rule style, padding), **density** (message rhythm, sidebar width) and
@@ -48,7 +53,8 @@ titles), **geometry** (radius, rule style, padding), **density** (message rhythm
 
 ## How a skin is built
 
-1. `[data-skin="key"]` block in `web/skins.css`. The base (`document`) has no block: it is the default.
+1. `[data-skin="key"]` block in `web/skins.css` (or `web/skins-special.css` for the specials). The base
+   (`main`) has no block: it is the default.
 2. Override concrete properties of existing selectors — `.masthead`, `.title`, `.app`, `.msg`,
    `.composer`, `.sfield`, `.sessions`, `.settings-*`. Do not add DOM: the same HTML must serve all four.
 3. Keep the contract: folio/gate/judge stay visible (a skin may restyle them, never hide meaning);
@@ -60,7 +66,7 @@ titles), **geometry** (radius, rule style, padding), **density** (message rhythm
 
 ## Pitfalls paid for
 
-- **Hiding a grid item with `display:none` collapses the columns.** In `minimal` the folio was hidden but
+- **Hiding a grid item with `display:none` collapses the columns.** In `minimal` (and `matrix`) the folio was hidden but
   the track `1.6rem` stayed, so the *name* fell into that 25px column and every title became «ch…».
   Redefine `grid-template-columns` in the skin: `minmax(0,1fr) auto`.
 - **Row actions that are `opacity:0` still take width.** Use `display:none` until `:hover`/`.active`.

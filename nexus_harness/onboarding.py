@@ -177,7 +177,7 @@ def save_settings(changes):
              "cost_limit": float, "max_steps": int, "max_repairs": int, "max_children": int,
              "subagent_steps": int, "subagent_depth": int, "tool_workers": int,
              "shell_timeout": int, "request_timeout": int, "max_tokens": int,
-             "temperature": float, "lang": str, "workspace": str, "ui_theme": str, "ui_skin": str,
+             "temperature": float, "lang": str, "workspace": str, "ui_theme": str, "ui_skin": str, "ui_mode": str, "ui_font": str,
              "worker_resident": bool, "hardware_ceiling": int, "triad_auto_adapt": bool,
              "triad_bias": str, "ask_deadline": int, "consult_enabled": bool}
     out, saved, notes = {}, {}, []
@@ -197,13 +197,22 @@ def save_settings(changes):
                 notes.append("ui_skin: %r no es uno de %s" % (value, ", ".join(ui_theme.SKIN_KEYS)))
                 continue
             out[name] = saved[name] = key
+        elif name in ("ui_mode", "ui_font"):
+            # Ejes hermanos del pantón y del diseño: se validan contra su catálogo y se dice el error.
+            from . import ui_theme
+            catalog = ui_theme.MODE_KEYS if name == "ui_mode" else ui_theme.FONT_KEYS
+            key = str(value or "").strip().lower()
+            if key not in catalog:
+                notes.append("%s: %r no es uno de %s" % (name, value, ", ".join(catalog)))
+                continue
+            out[name] = saved[name] = key
         elif name == "ui_theme":
             # Un pantón que no existe no se guarda: se dice. Callar y caer al de por defecto deja al
             # operador mirando un color que no eligió y sin saber por qué.
             from . import ui_theme
             key = str(value or "").strip().lower()
-            if key not in ui_theme.KEYS:
-                notes.append("ui_theme: %r no es uno de %s" % (value, ", ".join(ui_theme.KEYS)))
+            if key not in ui_theme.ACCENT_KEYS:
+                notes.append("ui_theme: %r no es uno de %s" % (value, ", ".join(ui_theme.ACCENT_KEYS)))
                 continue
             out[name] = saved[name] = key
         elif name == "triad_bias":

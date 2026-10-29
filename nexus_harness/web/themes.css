@@ -1,102 +1,35 @@
-/* Nexus-Harness — pantones. Cada tema es un juego de tokens; la estructura no cambia.
-
-   Regla de esta casa: un tema puede cambiar el color, la textura y el brillo; NO puede cambiar la
-   composición (masthead, índice, folios, reglas). Así seis pantones son seis vestidos del mismo
-   documento, no seis productos distintos.
-
-   Excepción declarada: los temas neón son DUOTONO por diseño (sello + señal). Fuera de ellos rige la
-   ley de un solo voltaje. Los tres tonos de estado (verde/ámbar/rojo) se conservan con su significado
-   en todos los temas; lo que cambia es su saturación, no su lectura.
-
-   Contraste: `nexus_harness/selftests/test_themes.py` calcula WCAG sobre cada par (tinta/papel,
-   tinta-2/papel, sello/papel, estados/papel) y falla si alguno baja del umbral. Un pantone bonito que
-   no se lee es un defecto, no un gusto. */
-
+/* Nexus-Harness — pantones: 2 modos x 6 colores. GENERADO por tools/gen_themes.py.
+   No se edita a mano: la fuente es `nexus_harness/ui_theme.tokens()` y el test compara. */
 :root { --signal: var(--seal); --glow: 0 0 0 transparent; }
+[data-mode="dark"] { --paper: #121110; --paper-2: #171614; --paper-3: #1e1c19; --rule: #2b2926; --rule-2: #3a3733; --ink: #ece7dd; --ink-2: #a8a29a; --ink-3: #6f6a63; --seal: #b8431f; --seal-ink: #121110; --signal: #b8431f; --ok: #7fae6a; --warn: #c99a3f; --bad: #cc5b45; --idle: #6f6a63; }
+[data-mode="light"] { --paper: #f5f2ea; --paper-2: #ece7dc; --paper-3: #e2dbcc; --rule: #d6cdba; --rule-2: #c4b9a2; --ink: #191713; --ink-2: #5f594e; --ink-3: #8a8478; --seal: #b8431f; --seal-ink: #ffffff; --signal: #b8431f; --ok: #3f7a33; --warn: #8a6512; --bad: #a83a24; --idle: #8a8478; }
+/* neon · Neón */
+[data-mode="dark"][data-accent="neon"] { --paper: #07060e; --paper-2: #0d0a18; --paper-3: #141026; --rule: #241b3a; --rule-2: #3d2a60; --ink: #eaf6ff; --ink-2: #9fb0cf; --ink-3: #6d7ea0; --seal: #ff2e88; --seal-ink: #120a06; --signal: #22d3ee; --ok: #7fae6a; --warn: #c99a3f; --bad: #cc5b45; --idle: #6f6a63; }
+[data-mode="light"][data-accent="neon"] { --paper: #f5f2ea; --paper-2: #ece7dc; --paper-3: #e2dbcc; --rule: #d6cdba; --rule-2: #c4b9a2; --ink: #191713; --ink-2: #5f594e; --ink-3: #8a8478; --seal: #c31f66; --seal-ink: #ffffff; --signal: #0e7490; --ok: #3f7a33; --warn: #8a6512; --bad: #a83a24; --idle: #8a8478; }
+/* crt · Fósforo */
+[data-mode="dark"][data-accent="crt"] { --paper: #050a06; --paper-2: #08120b; --paper-3: #0c1a11; --rule: #12351f; --rule-2: #1d4c2d; --ink: #b8ffcb; --ink-2: #6fbf85; --ink-3: #4d8a5f; --seal: #b8ffcb; --seal-ink: #050a06; --signal: #7dffb0; --ok: #7fae6a; --warn: #c99a3f; --bad: #cc5b45; --idle: #6f6a63; }
+[data-mode="light"][data-accent="crt"] { --paper: #f5f2ea; --paper-2: #ece7dc; --paper-3: #e2dbcc; --rule: #d6cdba; --rule-2: #c4b9a2; --ink: #191713; --ink-2: #5f594e; --ink-3: #8a8478; --seal: #1f7a3a; --seal-ink: #ffffff; --signal: #166534; --ok: #3f7a33; --warn: #8a6512; --bad: #a83a24; --idle: #8a8478; }
+/* synth · Synthwave */
+[data-mode="dark"][data-accent="synth"] { --paper: #1a0b2e; --paper-2: #24103c; --paper-3: #2f1550; --rule: #3a1c5c; --rule-2: #57308a; --ink: #f7edff; --ink-2: #c3a6e0; --ink-3: #8d6fb0; --seal: #ff3ea5; --seal-ink: #120a06; --signal: #21d4fd; --ok: #7fae6a; --warn: #c99a3f; --bad: #cc5b45; --idle: #6f6a63; }
+[data-mode="light"][data-accent="synth"] { --paper: #f5f2ea; --paper-2: #ece7dc; --paper-3: #e2dbcc; --rule: #d6cdba; --rule-2: #c4b9a2; --ink: #191713; --ink-2: #5f594e; --ink-3: #8a8478; --seal: #a8247c; --seal-ink: #ffffff; --signal: #7c3aed; --ok: #3f7a33; --warn: #8a6512; --bad: #a83a24; --idle: #8a8478; }
+/* amber · Ámbar */
+[data-mode="dark"][data-accent="amber"] { --paper: #0b0805; --paper-2: #120e08; --paper-3: #1a1309; --rule: #33240f; --rule-2: #4d3717; --ink: #ffd7a3; --ink-2: #c79a5f; --ink-3: #8a6a3e; --seal: #ffd7a3; --seal-ink: #120a06; --signal: #ffd7a3; --ok: #7fae6a; --warn: #c99a3f; --bad: #cc5b45; --idle: #6f6a63; }
+[data-mode="light"][data-accent="amber"] { --paper: #f5f2ea; --paper-2: #ece7dc; --paper-3: #e2dbcc; --rule: #d6cdba; --rule-2: #c4b9a2; --ink: #191713; --ink-2: #5f594e; --ink-3: #8a8478; --seal: #8a5a00; --seal-ink: #ffffff; --signal: #7a4a00; --ok: #3f7a33; --warn: #8a6512; --bad: #a83a24; --idle: #8a8478; }
+/* riso · Risográfica */
+[data-mode="dark"][data-accent="riso"] { --paper: #12100c; --paper-2: #181510; --paper-3: #1f1b14; --rule: #2e2820; --rule-2: #3f382d; --ink: #efe8dc; --ink-2: #b9ad99; --ink-3: #8c8171; --seal: #d93a10; --seal-ink: #12100c; --signal: #bda98c; --ok: #7fae6a; --warn: #c99a3f; --bad: #cc5b45; --idle: #6f6a63; }
+[data-mode="light"][data-accent="riso"] { --paper: #f5f2ea; --paper-2: #ece7dc; --paper-3: #e2dbcc; --rule: #d6cdba; --rule-2: #c4b9a2; --ink: #191713; --ink-2: #5f594e; --ink-3: #8a8478; --seal: #c0330c; --seal-ink: #ffffff; --signal: #2b4bff; --ok: #3f7a33; --warn: #8a6512; --bad: #a83a24; --idle: #8a8478; }
+/* paper · Bermellón */
+[data-mode="dark"][data-accent="paper"] { --paper: #121110; --paper-2: #171614; --paper-3: #1e1c19; --rule: #2b2926; --rule-2: #3a3733; --ink: #ece7dd; --ink-2: #a8a29a; --ink-3: #6f6a63; --seal: #b8431f; --seal-ink: #121110; --signal: #b8431f; --ok: #7fae6a; --warn: #c99a3f; --bad: #cc5b45; --idle: #6f6a63; }
+[data-mode="light"][data-accent="paper"] { --paper: #f5f2ea; --paper-2: #ece7dc; --paper-3: #e2dbcc; --rule: #d6cdba; --rule-2: #c4b9a2; --ink: #191713; --ink-2: #5f594e; --ink-3: #8a8478; --seal: #b8431f; --seal-ink: #ffffff; --signal: #b8431f; --ok: #3f7a33; --warn: #8a6512; --bad: #a83a24; --idle: #8a8478; }
 
-/* ---------- 01 · Neón nocturno (cyberpunk retro) ---------- */
-[data-theme="neon"] {
-  --paper: #07060e; --paper-2: #0d0a18; --paper-3: #141026;
-  --ink: #eaf6ff; --ink-2: #9fb0cf; --ink-3: #6d7ea0;
-  --rule: #241b3a; --rule-2: #3d2a60;
-  --seal: #ff2e88; --seal-ink: #12030a; --seal-soft: rgba(255, 46, 136, .14);
-  --signal: #22d3ee;
-  --ok: #29f0a5; --warn: #ffc94d; --bad: #ff5c6c; --idle: #6d7ea0;
-  --glow: 0 0 14px rgba(255, 46, 136, .35);
-}
-[data-theme="neon"] .brand span,
-[data-theme="neon"] .settings-panel > h1 .folio { text-shadow: 0 0 10px var(--seal); }
-[data-theme="neon"] .masthead {
-  border-bottom-color: color-mix(in srgb, var(--seal) 55%, var(--rule));
-  box-shadow: 0 0 22px -8px var(--seal);
-}
-[data-theme="neon"] .sidebar { box-shadow: inset -1px 0 0 color-mix(in srgb, var(--signal) 22%, transparent); }
-[data-theme="neon"] button.primary { box-shadow: var(--glow); }
-[data-theme="neon"] .doc-head::after { border-bottom-color: color-mix(in srgb, var(--signal) 45%, var(--rule)); }
-[data-theme="neon"] .composer { border-top-color: color-mix(in srgb, var(--seal) 35%, var(--rule)); }
-[data-theme="neon"] .sessions li.active { background: linear-gradient(90deg, var(--seal-soft), transparent 60%); }
-
-/* ---------- 02 · Fósforo (CRT verde, con líneas de barrido) ---------- */
-[data-theme="crt"] {
-  --paper: #050a06; --paper-2: #08120b; --paper-3: #0c1a11;
-  --ink: #b8ffcb; --ink-2: #6fbf85; --ink-3: #4d8a5f;
-  --rule: #12351f; --rule-2: #1d4c2d;
-  --seal: #ffb000; --seal-ink: #100a00; --seal-soft: rgba(255, 176, 0, .12);
-  --signal: #7dffb0;
-  --ok: #35ff86; --warn: #ffd166; --bad: #ff6b6b; --idle: #4d8a5f;
-}
-[data-theme="crt"] body { text-shadow: 0 0 6px rgba(88, 255, 140, .28); }
-[data-theme="crt"] body::after {
+[data-mode="dark"][data-accent="crt"] body::after {
   content: ""; position: fixed; inset: 0; pointer-events: none; z-index: 9999;
   background: repeating-linear-gradient(to bottom, rgba(0, 0, 0, .26) 0 1px, transparent 1px 3px);
-  opacity: .55;
+  opacity: .5;
 }
-[data-theme="crt"] button.primary { box-shadow: 0 0 12px rgba(255, 176, 0, .45); }
-[data-theme="crt"] .doc-head::after { border-bottom-color: color-mix(in srgb, var(--ok) 35%, var(--rule)); }
-
-/* ---------- 03 · Synthwave (SynthWave '84: ciruela, magenta, cian) ---------- */
-[data-theme="synth"] {
-  --paper: #1a0b2e; --paper-2: #24103c; --paper-3: #2f1550;
-  --ink: #f7edff; --ink-2: #c3a6e0; --ink-3: #8d6fb0;
-  --rule: #3a1c5c; --rule-2: #57308a;
-  --seal: #ff3ea5; --seal-ink: #1a0010; --seal-soft: rgba(255, 62, 165, .16);
-  --signal: #21d4fd;
-  --ok: #72f1b8; --warn: #f3e70f; --bad: #fe4450; --idle: #8d6fb0;
-}
-[data-theme="synth"] .masthead {
-  border-bottom-color: color-mix(in srgb, var(--signal) 40%, var(--rule));
-}
-[data-theme="synth"] button.primary { box-shadow: 0 0 12px rgba(255, 62, 165, .4); }
-[data-theme="synth"] .doc-head::after { border-bottom-color: color-mix(in srgb, var(--signal) 40%, var(--rule)); }
-
-/* ---------- 04 · Ámbar (terminal monocroma) ---------- */
-[data-theme="amber"] {
-  --paper: #0b0805; --paper-2: #120e08; --paper-3: #1a1309;
-  --ink: #ffd7a3; --ink-2: #c79a5f; --ink-3: #8a6a3e;
-  --rule: #33240f; --rule-2: #4d3717;
-  --seal: #ff9a1f; --seal-ink: #120a00; --seal-soft: rgba(255, 154, 31, .12);
-  --signal: #ffd7a3;
-  --ok: #ffcf66; --warn: #ffb84d; --bad: #ff7a45; --idle: #8a6a3e;
-}
-[data-theme="amber"] body { text-shadow: 0 0 6px rgba(255, 154, 31, .22); }
-
-/* ---------- 05 · Risográfica (papel crema, duotono de imprenta) ---------- */
-[data-theme="riso"] {
-  --paper: #f3efe4; --paper-2: #ebe4d3; --paper-3: #e2d8c2;
-  --ink: #1b1913; --ink-2: #5a5344; --ink-3: #8a806c;
-  --rule: #d3c7ad; --rule-2: #bda98c;
-  --seal: #d93a10; --seal-ink: #fff6ef; --seal-soft: rgba(217, 58, 16, .12);
-  --signal: #2b4bff;
-  --ok: #1f7a4d; --warn: #a86a00; --bad: #c3271f; --idle: #8a806c;
-}
-[data-theme="riso"] .brand span { color: var(--signal); }
-
-/* ---------- 06 · Cuaderno (papel cálido y bermellón) ---------- */
-[data-theme="paper"] {
-  --paper: #f4f1ea; --paper-2: #efeade; --paper-3: #e7e0d2;
-  --ink: #191713; --ink-2: #615c53; --ink-3: #8b857b;
-  --rule: #d8d2c6; --rule-2: #c4bcae;
-  --seal: #b8431f; --seal-ink: #fdf9f2; --seal-soft: rgba(184, 67, 31, .1);
-  --signal: #b8431f;
-  --ok: #3f7a33; --warn: #8a6512; --bad: #a83a24; --idle: #8b857b;
-}
+[data-mode="dark"][data-accent="crt"] body { text-shadow: 0 0 6px rgba(88, 255, 140, .26); }
+[data-mode="dark"][data-accent="amber"] body { text-shadow: 0 0 6px rgba(255, 154, 31, .2); }
+[data-accent="neon"] .brand span { text-shadow: 0 0 10px var(--seal); }
+[data-mode="dark"][data-accent="neon"] .masthead { box-shadow: 0 0 22px -10px var(--seal); }
+[data-mode="dark"][data-accent="neon"] button.primary,
+[data-mode="dark"][data-accent="synth"] button.primary { box-shadow: 0 0 14px -4px var(--seal); }

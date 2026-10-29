@@ -1,10 +1,10 @@
-"""Panel de apariencia: DOS ejes, dos selectores.
+"""Panel de apariencia: cuatro ejes, cuatro selectores, un solo sitio.
 
-Lo aprendido de Hermes (skin != personalidad), OpenCode (temas como tokens) y Crush (layout != color):
-el DISEÑO y el PANTÓN son decisiones separadas. Aquí se eligen por separado, cada una con su formulario
-y su 303, y se guardan en claves distintas (`ui_skin`, `ui_theme`) que valida `onboarding`.
+    modo (papel) · diseño (composición) · pantón (color) · tipografía (voz)
 
-Cada diseño declara el pantón con el que se pensó (recomendación, no candado: 4 x 6 = 24 válidas).
+Cada eje se elige por separado, con su formulario y su 303, y se guarda en su clave (`ui_mode`,
+`ui_skin`, `ui_theme`, `ui_font`) que valida `onboarding`. El diseño se presenta agrupado: uno
+principal, dos especiales que cambian el esqueleto, y los alternativos.
 """
 from html import escape
 
@@ -12,47 +12,72 @@ from . import settings_kit as kit
 from . import ui_theme
 
 TITLE = "Apariencia"
-SUBTITLE = ("El diseño cambia la composición —tipografía, densidad, dónde vive el estado—; el pantón "
-            "cambia el color. Son ejes independientes: cualquier diseño funciona con cualquier pantón.")
+SUBTITLE = ("Cuatro ejes independientes: el papel (oscuro o claro), la composición, el color y la voz. "
+            "Cambiar uno no toca los otros.")
+GROUP_LABELS = (("main", "Principal"), ("special", "Especiales"), ("alt", "Alternativos"))
 
 
-def _card(kind, key, name, note, extra, current):
-    """Una opción: radio nativo (funciona sin script) + nombre + intención + dato medido."""
-    checked = " checked" if key == current else ""
-    return ('<label class="themeopt%s"><input type="radio" name="%s" value="%s"%s>'
+def _radio(name, key, current):
+    return ' checked' if key == current else ''
+
+
+def _option(name, key, label, note, extra, current, css="themeopt"):
+    return ('<label class="%s%s"><input type="radio" name="%s" value="%s"%s>'
             '<span class="tname">%s</span><span class="tnote">%s</span>'
             '<span class="tratio">%s</span></label>'
-            % (" on" if key == current else "", kind, escape(key), checked, escape(name),
-               escape(note), extra))
+            % (css, " on" if key == current else "", name, escape(key), _radio(name, key, current),
+               escape(label), escape(note), extra))
+
+
+def _form(rows, submit):
+    return ('<form class="sform themegrid" method="post" action="/api/settings">%s%s'
+            '<div class="sactions"><button class="primary">%s</button></div></form>'
+            % (kit.hidden("section", "apariencia"), "".join(rows), escape(submit)))
 
 
 def _skins(current):
-    rows = []
-    for key, name, note, palette in ui_theme.SKINS:
-        extra = "par sugerido: %s" % ui_theme.skin_palette(key)
-        rows.append(_card("ui_skin", key, name, note, extra, current))
-    return ('<form class="sform themegrid" method="post" action="/api/settings">%s%s'
-            '<div class="sactions"><button class="primary">Aplicar diseño</button></div></form>'
-            % (kit.hidden("section", "apariencia"), "".join(rows)))
+    blocks = []
+    for key, label in GROUP_LABELS:
+        rows = [_option("ui_skin", skin, name, note, "par: %s" % ui_theme.skin_palette(skin), current)
+                for skin, name, note, _palette, group in ui_theme.SKINS if group == key]
+        if rows:
+            blocks.append('<p class="subgroup">%s</p>%s' % (escape(label), "".join(rows)))
+    return _form(blocks, "Aplicar diseño")
 
 
-def _themes(current):
+def _modes(current):
+    rows = [_option("ui_mode", mode, label, "papel %s" % mode, "", current)
+            for mode, label in ui_theme.MODES]
+    return _form(rows, "Aplicar modo")
+
+
+def _accents(current, mode):
     rows = []
-    for key, name, note, swatches in ui_theme.THEMES:
+    for key, name, note, swatches in ui_theme.ACCENTS:
         chips = "".join('<i class="sw" style="background:%s"></i>' % escape(color) for color in swatches)
-        rows.append(_card("ui_theme", key, name, note,
-                          '<span class="tswatch">%s</span> tinta/papel %s:1'
-                          % (chips, ui_theme.contrast(key)), current))
-    return ('<form class="sform themegrid" method="post" action="/api/settings">%s%s'
-            '<div class="sactions"><button class="primary">Aplicar pantón</button></div></form>'
-            % (kit.hidden("section", "apariencia"), "".join(rows)))
+        rows.append(_option("ui_theme", key, name, note,
+                            '<span class="tswatch">%s</span> tinta/papel %s:1'
+                            % (chips, ui_theme.contrast(mode, key)), current))
+    return _form(rows, "Aplicar pantón")
+
+
+def _fonts(current):
+    rows = [_option("ui_font", key, label, note, "", current)
+            for key, label, note in ui_theme.FONTS]
+    return _form(rows, "Aplicar tipografía")
 
 
 def panel(cockpit):
-    skin = ui_theme.resolve_skin(getattr(cockpit.config, "ui_skin", ""))
-    theme = ui_theme.resolve(getattr(cockpit.config, "ui_theme", ""))
+    config = cockpit.config
+    skin = ui_theme.resolve_skin(config.ui_skin)
+    mode = ui_theme.resolve_mode(config.ui_mode)
+    accent = ui_theme.resolve(config.ui_theme)
+    font = ui_theme.resolve_font(config.ui_font)
     body = ('<h3 class="ssub">01 · Diseño</h3>%s'
-            '<h3 class="ssub">02 · Pantón</h3>%s'
-            '<p class="shint">Se guardan por separado: cambiar de pantón no toca el diseño, y al revés.</p>'
-            % (_skins(skin), _themes(theme)))
+            '<h3 class="ssub">02 · Modo</h3>%s'
+            '<h3 class="ssub">03 · Pantón</h3>%s'
+            '<h3 class="ssub">04 · Tipografía</h3>%s'
+            '<p class="shint">Se guardan por separado: cambiar el pantón no toca el diseño ni la voz. '
+            'El modo no depende del sistema: lo eliges tú.</p>'
+            % (_skins(skin), _modes(mode), _accents(accent, mode), _fonts(font)))
     return (TITLE, SUBTITLE, body)

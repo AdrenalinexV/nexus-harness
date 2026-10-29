@@ -27,54 +27,61 @@ Consecuencias que son decisiones, no gustos:
    glifo. Verde = decisión tomada · ámbar = espera humana o *no verificable* · rojo = detectado/roto ·
    gris = sin registro.
 
-## Dos ejes: diseño (skin) y pantón (palette)
+## Cuatro ejes: papel, composición, color y voz
 
-Aprendido de cómo lo resuelven otros: **Hermes** separa *skin* (bordes, banner, carácter) de
-*personalidad*; **OpenCode** guarda temas como ficheros de tokens; **Crush** expone el layout
-(`compact`, diffs, transparencia) aparte del color. La conclusión: **composición y color son decisiones
-distintas**, y mezclarlas produce «el mismo diseño con otro pantón».
+Aprendido de cómo lo resuelven otros: **Hermes** separa *skin* de *personalidad*; **OpenCode** guarda
+temas como tokens; **Crush** expone el layout aparte del color. De ahí, cuatro ejes que se eligen por
+separado — y mezclar dos ejes en uno es lo que produce «el mismo diseño con otro pantón».
 
-| eje | fichero | clave | cuántos | prueba |
-|---|---|---|---|---|
-| **diseño** | `web/skins.css` | `ui_skin` | 4 | `test_skins_are_structural` |
-| **pantón** | `web/themes.css` | `ui_theme` | 6 | `test_every_theme_reads` |
+| eje | clave | fichero | cuántos |
+|---|---|---|---|
+| **papel** (modo) | `ui_mode` | `themes.css` (`[data-mode]`) | 2: `dark`, `light` |
+| **composición** (diseño) | `ui_skin` | `skins.css` + `skins-special.css` | 6 en 3 grupos |
+| **color** (pantón) | `ui_theme` | `themes.css` (`[data-accent]`) | 6 |
+| **voz** (tipografía) | `ui_font` | `skins.css` | 4 |
 
-4 × 6 = **24 combinaciones válidas**, con un par recomendado por diseño (recomendación, no candado).
+El modo **no** depende del sistema: lo elige el operador (un cockpit que cambia de color porque
+Windows cambió de tema no es una decisión). 2 × 6 = **12 juegos de color** con contraste medido, más
+6 composiciones y 4 voces.
 
 ### Diseños
 
-| clave | nombre | composición | par |
+| grupo | clave | composición | par |
 |---|---|---|---|
-| `document` | Documento | serif en títulos, folios al margen, reglas de 1px, compositor reglado | `paper` |
-| `terminal` | Terminal | todo monoespaciado, separadores discontinuos, `#` y `›`/`·`, denso | `crt` |
-| `minimal` | Minimal | sin folios ni reglas, un punto de acento, aire, sans, caja redondeada | `riso` |
-| `neon` | HUD neón | mayúsculas, `::`, esquinas de sello, brillo, mensaje como panel | `neon` |
+| **principal** | `main` | cuaderno de obra: serif en títulos, folios, reglas de 1px, compositor reglado | `paper` |
+| **especial** | `matrix` | terminal retro: fósforo, barrido, columna estrecha, separadores de puntos, `0x` en el folio | `crt` |
+| **especial** | `glossy` | años 2000: barra con degradado, botones con brillo y relieve, burbujas redondeadas | `paper` |
+| alternativo | `terminal` | TUI densa: todo mono, línea de estado, prefijos `›` y `·` | `crt` |
+| alternativo | `minimal` | swiss: aire, una regla, cero adornos, sans | `riso` |
+| alternativo | `neon` | HUD: mayúsculas, `::`, esquinas cortadas, brillo, mensaje como panel | `neon` |
 
-Un diseño cambia **tipografía, geometría, densidad y forma del mensaje** — no el significado: los
-cuatro tonos siguen iguales y el folio/gate/juez no se esconden.
+Solo `main` es la casa; los especiales cambian el esqueleto a propósito; los alternativos van por
+detrás y se mantienen porque el operador los pidió.
 
-### Pantones
+### Color: generado, no escrito dos veces
 
-Seis: `neon` (cyberpunk retro, por defecto), `crt` (fósforo), `synth` (SynthWave '84), `amber`
-(monocromo), `riso` (papel crema y duotono de imprenta) y `paper` (cuaderno).
+Los colores tienen **una sola fuente**: `ui_theme.tokens(mode, accent)`. `web/themes.css` es el
+artefacto que sirve el navegador, generado con `python tools/gen_themes.py`, y `test_themes` compara
+los dos: editar el CSS a mano es un error que se detecta. Cada juego se valida con WCAG (tinta ≥ 7:1,
+tinta-2 ≥ 4.5:1, sello y estados ≥ 3:1).
 
-- **Excepción declarada al «un solo acento»:** los pantones neón son duotono por género — `--seal`
-  (acción/activo) y `--signal` (sigilos `§`/`◇`, filetes). Fuera de ellos, un voltaje.
-- **Contraste medido:** `selftests/test_themes.py` exige tinta/papel ≥ 7:1, tinta-2 ≥ 4.5:1 y
-  sello/estados ≥ 3:1 en TODOS. Un pantón que no se lee es un defecto, no un gusto.
-- **La textura es del pantón y se declara:** líneas de barrido (solo `crt`, overlay con
-  `pointer-events:none`) y brillo (neón/synth/crt, sobre la acción primaria).
+- **Duotono declarado** en los pantones neón: `--seal` (acción/activo) y `--signal` (sigilos `§`/`◇`).
+  En el resto, un solo voltaje.
+- **Textura del pantón**: barrido de CRT y brillo de neón; `glossy` añade degradados y relieve **por
+  diseño** (es lo que cita ese estilo), no por color.
+
+### Voz
+
+`system` (sans del escritorio) · `serif` (editorial, cuerpo en serif) · `mono` (técnica) · `condensed`
+(Bahnschrift/Arial Narrow). Cambia la tipografía, no la composición.
 
 ### La colección de skills de diseño
 
-Tres skills, cada una con un trabajo, y todas nativas (viajan en `nexus_harness/skills/`, se enrutan en
-los turnos y se instalan en Hermes con `tools/install_skill.py <nombre>`):
-
 | skill | se ocupa de |
 |---|---|
-| `nexus-ui-surgeon` | implementación y auditoría: la sonda que cuenta cajas, radios, sombras, emojis y píldoras |
-| `nexus-visual-identity` | color: inventar un pantón, medir contraste, anti-patrones del género neón |
-| `nexus-layout-skins` | composición: los cuatro diseños, qué toca cada uno, cómo añadir el quinto |
+| `nexus-ui-surgeon` | implementación y auditoría (la sonda: cajas, radios, sombras, emojis, píldoras) |
+| `nexus-visual-identity` | color: modos, pantones, contraste WCAG, CSS generado |
+| `nexus-layout-skins` | composición: los seis diseños, qué toca cada uno, cómo añadir el séptimo |
 
 ## Tokens
 

@@ -256,7 +256,7 @@ hacen Hermes (*skin* ≠ *personalidad*), OpenCode (temas = tokens) y Crush (*la
 Capturas: `skins-sheet.png` (los cuatro diseños con su par recomendado) y `matrix-sheet.png` (un mismo
 diseño, HUD neón, con cuatro pantones), más `skin-*.png` y `matrix-neon-*.png`.
 
-## 5. Tamaño de los ficheros (ley de 400 también aquí)
+## Anexo · Tamaño de los ficheros (ley de 400 también aquí)
 
 | antes | líneas | después | líneas |
 |---|---|---|---|
@@ -277,3 +277,29 @@ diseño, HUD neón, con cuatro pantones), más `skin-*.png` y `matrix-neon-*.png
 | — | — | `ui_icons.py` | 78 |
 
 `python tools/verify.py` → `lint exit 0 files=189 findings=0 max_lines=400`.
+
+## 9. Cuatro ejes: papel, composición, color y voz
+
+La colección anterior (4 diseños) recibió una crítica justa: eran «el mismo diseño con otros
+pantones». La causa era un eje mezclado — cada composición venía atada a un pantón fijo. Se separa en
+cuatro ejes independientes y el catálogo sube a 6 composiciones en 3 grupos.
+
+| criterio | antes | después | comando (real) |
+|---|---|---|---|
+| ejes independientes | 2 (diseño + pantón) | **4**: `ui_mode`, `ui_skin`, `ui_theme`, `ui_font` | `python -c "import sys;sys.path.insert(0,'.');from nexus_harness import ui_theme as t;print(len(t.MODE_KEYS),len(t.SKIN_KEYS),len(t.ACCENT_KEYS),len(t.FONT_KEYS))"` → `2 6 6 4` |
+| modos | solo oscuro (o `prefers-color-scheme`) | `dark` / `light` elegidos por el operador, servidos como `data-mode` | `curl -s '…/?token=…' \| grep -o 'data-mode="[a-z]*"'` |
+| composiciones | 4 | **6 en 3 grupos** (main · matrix, glossy · terminal, minimal, neon) | `python -c "…;print([(r[0],r[4]) for r in t.SKINS])"` |
+| juegos de color | 6 fijos | **12** (6 pantones × 2 modos), contraste WCAG medido | `python -c "…;print(run(['themes']))"` → `OK` |
+| CSS de color | escrito a mano | **generado** desde `ui_theme.tokens` | `python tools/gen_themes.py --check` → exit 0 |
+| voces | 1 por diseño | **4** (`system`, `serif`, `mono`, `condensed`) con regla CSS propia | `python -c "…;print(run(['themes']))"` (incluye `test_fonts_change_the_voice`) |
+| diseños estructurales | 4 sin prueba | **cada uno exige ≥10 reglas** y redefinir `.title/.app/.msg/.sfield` | ídem (`test_skins_are_structural`) |
+| selector | 2 ejes | **4 secciones** en `§ Apariencia` con radios nativos y `303` por eje | navegador: `document.querySelectorAll('input[name^="ui_"]')` → 18 |
+
+Lo que **no** está medido: las **24 combinaciones** (6 diseños × 4 voces, o las 12 de color × 6
+diseños) no se han recorrido una a una en el navegador. Se capturaron **cuatro** (`main` oscuro,
+`main` claro, `matrix`, `glossy`) y el resto queda cubierto por el test de contraste (12/12) y el de
+estructura (6/6). Cerrarlo del todo: un script que recorra las parejas y compare capturas — no se ha
+escrito.
+
+Capturas: `axes-main-dark.png`, `axes-main-light.png`, `axes-matrix.png`, `axes-glossy.png`,
+`axes-panel.png`, `axes-sheet.png` (las cuatro en una hoja).
