@@ -15,6 +15,9 @@ MIN_TEXT, MIN_SECOND, MIN_STATE = 7.0, 4.5, 3.0
 # (clave en TOKENS, nombre real en el CSS)
 CORE = (("paper", "--paper"), ("ink", "--ink"), ("ink2", "--ink-2"), ("seal", "--seal"))
 CSS = Path(__file__).resolve().parents[1] / "web" / "themes.css"
+SKINS_CSS = Path(__file__).resolve().parents[1] / "web" / "skins.css"
+# Un diseño que solo cambia colores no es un diseño: tiene que tocar tipografía, rejilla y mensaje.
+SKIN_MUST = (".title", ".app", ".msg", ".sfield")
 
 
 def check(name, got, expect, failures):
@@ -47,9 +50,28 @@ def test_css_covers_every_theme(failures):
             check("%s define %s" % (key, token), (token + ":") in body, True, failures)
 
 
+def test_skins_are_structural(failures):
+    """Cada diseño cambia ESTRUCTURA, no solo color: título, rejilla, mensaje y campo."""
+    css = SKINS_CSS.read_text(encoding="utf-8")
+    for key in ui_theme.SKIN_KEYS:
+        if key == ui_theme.DEFAULT_SKIN:
+            check("el diseño base se declara", '01 · document' in css, True, failures)
+            continue
+        block = '[data-skin="%s"]' % key
+        check("%s tiene su bloque" % key, block in css, True, failures)
+        rules = css.count(block)
+        check("%s toca al menos 10 reglas (no es un pantón)" % key, rules >= 10, True, failures)
+        for selector in SKIN_MUST:
+            check("%s redefine %s" % (key, selector), (block + " " + selector) in css, True, failures)
+
+
 def test_choice_is_validated(failures):
     check("un tema desconocido resuelve al de por defecto", ui_theme.resolve("nope"),
           ui_theme.DEFAULT, failures)
+    check("un diseño desconocido resuelve al de por defecto", ui_theme.resolve_skin("nope"),
+          ui_theme.DEFAULT_SKIN, failures)
+    check("cada diseño recomienda un pantón que existe",
+          [row[3] for row in ui_theme.SKINS if row[3] not in ui_theme.KEYS], [], failures)
     check("y el de por defecto existe", ui_theme.DEFAULT in ui_theme.KEYS, True, failures)
     original = onboarding.CONFIG_FILE
     with tempfile.TemporaryDirectory() as root:
@@ -58,7 +80,12 @@ def test_choice_is_validated(failures):
             _saved, notes = onboarding.save_settings({"ui_theme": "cyberpunk"})
             check("un tema con errata no se guarda", len(notes), 1, failures)
             check("y no se escribe el fichero", onboarding.CONFIG_FILE.is_file(), False, failures)
-            saved, _notes = onboarding.save_settings({"ui_theme": "crt"})
+            _saved, notes = onboarding.save_settings({"ui_skin": "hud"})
+            check("un diseño con errata no se guarda", len(notes), 1, failures)
+            saved, _notes = onboarding.save_settings({"ui_skin": "neon", "ui_theme": "crt"})
+            check("diseño y pantón se guardan juntos",
+                  sorted(k for k in saved if k in ("ui_skin", "ui_theme")), ["ui_skin", "ui_theme"],
+                  failures)
             check("uno que existe sí", saved.get("ui_theme"), "crt", failures)
             written = json.loads(onboarding.CONFIG_FILE.read_text(encoding="utf-8"))
             check("y queda en el fichero", written.get("ui_theme"), "crt", failures)
@@ -70,5 +97,6 @@ def run():
     failures = []
     test_every_theme_reads(failures)
     test_css_covers_every_theme(failures)
+    test_skins_are_structural(failures)
     test_choice_is_validated(failures)
     return failures

@@ -1,4 +1,16 @@
-"""Los pantones de la cabina: qué temas existen y cómo se elige uno.
+"""El aspecto de la cabina en DOS ejes independientes: diseño (skin) y pantón (palette).
+
+Lo aprendimos de como lo resuelven otros: Hermes separa *skin* (bordes, banner, caracter) de
+*personalidad*; OpenCode guarda temas como ficheros de tokens con jerarquia; Crush separa las opciones
+de LAYOUT (compacto, diffs, transparencia) del color. La conclusion es la misma: el color y la
+composicion son ejes distintos, y mezclarlos produce "el mismo diseno con otro pantone".
+
+* **skin** — la composicion: tipografia, geometria, densidad, donde va el estado, como se dibuja un
+  mensaje. `web/skins.css` (`[data-skin="..."]`). Cuatro: document, terminal, minimal, neon.
+* **palette** — el color: `web/themes.css` (`[data-theme="..."]`). Seis pantones.
+
+Cualquier skin funciona con cualquier panton (4 x 6 = 24 combinaciones) y hay pares recomendados.
+
 
 Un tema es un juego de tokens (`web/themes.css`); la composición no cambia. Aquí viven los metadatos
 —nombre, intención y tres muestras para el selector— y la validación: un `ui_theme` que no esté en
@@ -7,6 +19,16 @@ esta lista no se guarda, se dice. Un ajuste de color que rompe el arranque no es
 El contraste de cada pantón lo mide `selftests/test_themes.py` (WCAG sobre tinta/papel). Paleta bonita
 que no se lee = defecto.
 """
+
+# (clave, nombre, intención, pantón recomendado) — el orden es el del selector de diseños.
+SKINS = (
+    ("document", "Documento", "cuaderno de obra: serif, folios, reglas de 1px", "paper"),
+    ("terminal", "Terminal", "TUI densa: todo monoespaciado y línea de estado", "crt"),
+    ("minimal", "Minimal", "swiss: aire, una regla, cero adornos", "riso"),
+    ("neon", "HUD neón", "cyberpunk: mayúsculas, esquinas cortadas, brillo", "neon"),
+)
+SKIN_KEYS = tuple(row[0] for row in SKINS)
+DEFAULT_SKIN = "document"
 
 # (clave, nombre, intención, (papel, sello, señal)) — el orden es el del selector.
 THEMES = (
@@ -35,6 +57,30 @@ TOKENS = {
     "paper": {"paper": "#f4f1ea", "ink": "#191713", "ink2": "#615c53", "seal": "#b8431f",
               "ok": "#3f7a33", "warn": "#8a6512", "bad": "#a83a24"},
 }
+
+
+def resolve_skin(value):
+    """La clave de diseño válida más cercana: lo que llegue por URL o fichero nunca rompe la cabina."""
+    key = str(value or "").strip().lower()
+    return key if key in SKIN_KEYS else DEFAULT_SKIN
+
+
+def skin_meta(key):
+    wanted = resolve_skin(key)
+    return next(row for row in SKINS if row[0] == wanted)
+
+
+def skin_label(key):
+    return skin_meta(key)[1]
+
+
+def skin_note(key):
+    return skin_meta(key)[2]
+
+
+def skin_palette(key):
+    """El pantón con el que el diseño se pensó (recomendación, no candado)."""
+    return skin_meta(key)[3]
 
 
 def _luminance(hex_color):

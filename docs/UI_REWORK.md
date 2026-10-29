@@ -230,6 +230,32 @@ python -c "import sys;sys.path.insert(0,'.');from nexus_harness.selftests import
 
 Capturas: `themes-sheet.png` (los seis chats), `theme-<clave>.png`, `theme-panel.png` (§ Apariencia).
 
+## 8. Cuarta pasada — DISEÑOS, no pantones (y por qué)
+
+La crítica era justa: la pasada anterior cambió el vestido, no el traje. Se separan los dos ejes, como
+hacen Hermes (*skin* ≠ *personalidad*), OpenCode (temas = tokens) y Crush (*layout* ≠ color):
+
+- **`ui_skin`** — composición: `web/skins.css`, cuatro diseños. **`ui_theme`** — color: `web/themes.css`,
+  seis pantones. **24 combinaciones válidas**, con un par recomendado por diseño.
+- `§ Apariencia` tiene ahora dos selectores separados (eje 01 Diseño, eje 02 Pantón), cada uno su
+  formulario y su `303`; se guardan en claves distintas y `onboarding` valida ambas.
+
+| diseño | qué cambia de verdad |
+|---|---|
+| **Documento** | serif en títulos, folios al margen, reglas de 1px, compositor reglado |
+| **Terminal** | todo monoespaciado, separadores discontinuos, `#` en el título, `›`/`·` por mensaje, denso, `[01]` en el índice |
+| **Minimal** | sin folios ni reglas, un punto de acento, aire, sans, caja redondeada, columna más estrecha |
+| **Neón (HUD)** | mayúsculas, `::` en los rótulos, esquinas de sello, brillo, **mensaje como panel** con corchete |
+
+- La prueba `test_skins_are_structural` no acepta un «diseño» que solo toque colores: exige ≥10 reglas
+  y que redefina `.title`, `.app`, `.msg` y `.sfield`.
+- Dos defectos reales cazados al mirar capturas: ocultar el folio con `display:none` dejaba la rejilla
+  de tres columnas y el **nombre caía en la columna de 1,6rem** («ch…»), y las acciones de fila con
+  `opacity:0` seguían comiendo ancho. Los dos arreglados en su sitio (rejilla del skin y `display`).
+
+Capturas: `skins-sheet.png` (los cuatro diseños con su par recomendado) y `matrix-sheet.png` (un mismo
+diseño, HUD neón, con cuatro pantones), más `skin-*.png` y `matrix-neon-*.png`.
+
 ## 5. Tamaño de los ficheros (ley de 400 también aquí)
 
 | antes | líneas | después | líneas |

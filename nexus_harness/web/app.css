@@ -131,8 +131,10 @@ body.chat-only > .app { flex: 1 1 auto; min-height: 0; }
 .sessions li .folio { padding-top: .15rem; }
 .sessions li.active .folio { color: var(--seal); }
 .sessions li .name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.sessions li .acts { display: flex; gap: .45rem; opacity: 0; }
-.sessions li:hover .acts, .sessions li.active .acts { opacity: 1; }
+.sessions li .acts { display: none; gap: .45rem; }
+/* Las acciones de una fila NO ocupan sitio hasta que la fila se toca: `opacity: 0` seguia
+   comiendo el ancho y en los disenos de columna estrecha el titulo quedaba en «ch...». */
+.sessions li:hover .acts, .sessions li.active .acts { display: flex; }
 .sessions li .act { font-family: var(--mono); font-size: var(--fs-micro); color: var(--ink-3);
   letter-spacing: .04em; }
 .sessions li .act:hover { color: var(--seal); }

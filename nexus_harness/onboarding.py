@@ -177,7 +177,7 @@ def save_settings(changes):
              "cost_limit": float, "max_steps": int, "max_repairs": int, "max_children": int,
              "subagent_steps": int, "subagent_depth": int, "tool_workers": int,
              "shell_timeout": int, "request_timeout": int, "max_tokens": int,
-             "temperature": float, "lang": str, "workspace": str, "ui_theme": str,
+             "temperature": float, "lang": str, "workspace": str, "ui_theme": str, "ui_skin": str,
              "worker_resident": bool, "hardware_ceiling": int, "triad_auto_adapt": bool,
              "triad_bias": str, "ask_deadline": int, "consult_enabled": bool}
     out, saved, notes = {}, {}, []
@@ -189,6 +189,14 @@ def save_settings(changes):
                 notes.append("judge_mode: %r no es uno de %s" % (value, ", ".join(MODES)))
                 continue
             out[name] = saved[name] = mode
+        elif name == "ui_skin":
+            # Hermana de `ui_theme`: el diseno y el panton se validan igual y por separado.
+            from . import ui_theme
+            key = str(value or "").strip().lower()
+            if key not in ui_theme.SKIN_KEYS:
+                notes.append("ui_skin: %r no es uno de %s" % (value, ", ".join(ui_theme.SKIN_KEYS)))
+                continue
+            out[name] = saved[name] = key
         elif name == "ui_theme":
             # Un pantón que no existe no se guarda: se dice. Callar y caer al de por defecto deja al
             # operador mirando un color que no eligió y sin saber por qué.

@@ -23,8 +23,9 @@ allowed-tools: [read_file, write_file, patch, terminal, search_files, browser_ex
 
 # Nexus visual identity
 
-Use when the cockpit needs a **new look** — a palette, a theme, a "pantón" — without redrawing the
-product. The structure (masthead, index, folios, 1px rules, four tones) is law; what you change is the
+Use when the cockpit needs a **new colour** — a palette, a "pantón" — without redrawing the product.
+For a different **composition** (type, density, message shape) the skill is `nexus-layout-skins`:
+colour and layout are two independent axes (4 skins × 6 pantones = 24 combinations). The structure (masthead, index, folios, 1px rules, four tones) is law; what you change is the
 dressing: colour, texture, glow. Six themes already ship; a seventh is a token set, not a stylesheet.
 
 ## Method (in this order)

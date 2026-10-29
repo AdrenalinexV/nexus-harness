@@ -27,21 +27,54 @@ Consecuencias que son decisiones, no gustos:
    glifo. Verde = decisión tomada · ámbar = espera humana o *no verificable* · rojo = detectado/roto ·
    gris = sin registro.
 
-## Temas (pantones)
+## Dos ejes: diseño (skin) y pantón (palette)
 
-La estructura es ley; el color no. Un tema es un juego de tokens en `web/themes.css`, elegido en
-`§ Apariencia` y guardado como `ui_theme` (validado: una clave que no existe no se escribe). Seis
-pantones viajan de serie: `neon` (cyberpunk retro, por defecto), `crt` (fósforo), `synth` (SynthWave
-'84), `amber` (monocromo), `riso` (papel crema y duotono de imprenta) y `paper` (cuaderno).
+Aprendido de cómo lo resuelven otros: **Hermes** separa *skin* (bordes, banner, carácter) de
+*personalidad*; **OpenCode** guarda temas como ficheros de tokens; **Crush** expone el layout
+(`compact`, diffs, transparencia) aparte del color. La conclusión: **composición y color son decisiones
+distintas**, y mezclarlas produce «el mismo diseño con otro pantón».
 
-- **Excepción declarada al «un solo acento»:** los temas neón son duotono por género — `--seal`
-  (acción/activo) y `--signal` (sigilos `§`/`◇`, filetes de acento). Fuera de ellos, un solo voltaje.
-- **Contraste medido, no estimado:** `selftests/test_themes.py` exige tinta/papel ≥ 7:1, tinta-2 ≥ 4.5:1
-  y sello/estados ≥ 3:1 en TODOS los temas. Un pantón que no se lee es un defecto, no un gusto.
-- **La textura es del tema y se declara:** líneas de barrido (solo `crt`, overlay con
-  `pointer-events:none`) y brillo (neón/synth/crt, sobre la acción primaria). Nada más se mueve.
-- La skill que gobierna esto es `nexus-visual-identity` (viaja en `nexus_harness/skills/` y se instala
-  en Hermes con `python tools/install_skill.py nexus-visual-identity`).
+| eje | fichero | clave | cuántos | prueba |
+|---|---|---|---|---|
+| **diseño** | `web/skins.css` | `ui_skin` | 4 | `test_skins_are_structural` |
+| **pantón** | `web/themes.css` | `ui_theme` | 6 | `test_every_theme_reads` |
+
+4 × 6 = **24 combinaciones válidas**, con un par recomendado por diseño (recomendación, no candado).
+
+### Diseños
+
+| clave | nombre | composición | par |
+|---|---|---|---|
+| `document` | Documento | serif en títulos, folios al margen, reglas de 1px, compositor reglado | `paper` |
+| `terminal` | Terminal | todo monoespaciado, separadores discontinuos, `#` y `›`/`·`, denso | `crt` |
+| `minimal` | Minimal | sin folios ni reglas, un punto de acento, aire, sans, caja redondeada | `riso` |
+| `neon` | HUD neón | mayúsculas, `::`, esquinas de sello, brillo, mensaje como panel | `neon` |
+
+Un diseño cambia **tipografía, geometría, densidad y forma del mensaje** — no el significado: los
+cuatro tonos siguen iguales y el folio/gate/juez no se esconden.
+
+### Pantones
+
+Seis: `neon` (cyberpunk retro, por defecto), `crt` (fósforo), `synth` (SynthWave '84), `amber`
+(monocromo), `riso` (papel crema y duotono de imprenta) y `paper` (cuaderno).
+
+- **Excepción declarada al «un solo acento»:** los pantones neón son duotono por género — `--seal`
+  (acción/activo) y `--signal` (sigilos `§`/`◇`, filetes). Fuera de ellos, un voltaje.
+- **Contraste medido:** `selftests/test_themes.py` exige tinta/papel ≥ 7:1, tinta-2 ≥ 4.5:1 y
+  sello/estados ≥ 3:1 en TODOS. Un pantón que no se lee es un defecto, no un gusto.
+- **La textura es del pantón y se declara:** líneas de barrido (solo `crt`, overlay con
+  `pointer-events:none`) y brillo (neón/synth/crt, sobre la acción primaria).
+
+### La colección de skills de diseño
+
+Tres skills, cada una con un trabajo, y todas nativas (viajan en `nexus_harness/skills/`, se enrutan en
+los turnos y se instalan en Hermes con `tools/install_skill.py <nombre>`):
+
+| skill | se ocupa de |
+|---|---|
+| `nexus-ui-surgeon` | implementación y auditoría: la sonda que cuenta cajas, radios, sombras, emojis y píldoras |
+| `nexus-visual-identity` | color: inventar un pantón, medir contraste, anti-patrones del género neón |
+| `nexus-layout-skins` | composición: los cuatro diseños, qué toca cada uno, cómo añadir el quinto |
 
 ## Tokens
 

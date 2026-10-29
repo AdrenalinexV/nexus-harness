@@ -133,6 +133,7 @@ class Handler(BaseHTTPRequestHandler):
         html = (WEB / "index.html").read_text(encoding="utf-8")
         html = html.replace("{{token}}", quote(self.server.token or "", safe=""))
         html = html.replace("{{theme}}", ui_theme.resolve(getattr(self.cockpit.config, "ui_theme", "")))
+        html = html.replace("{{skin}}", ui_theme.resolve_skin(getattr(self.cockpit.config, "ui_skin", "")))
         return html.replace("<!--NEXUS_SPRITE-->", ui_icons.sprite()).encode("utf-8")
 
     def _static(self, name):
@@ -157,8 +158,9 @@ class Handler(BaseHTTPRequestHandler):
             return self._gov((query.get("tab") or [""])[0])
         if path == "/settings":
             from . import settings
-            theme = self.cockpit.config.ui_theme
-            return self._page(settings.screen(self.cockpit, query, self.server.token, theme))
+            config = self.cockpit.config
+            return self._page(settings.screen(self.cockpit, query, self.server.token,
+                                             config.ui_theme, config.ui_skin))
         if path.startswith("/api/settings/"):
             from . import settings_api
             answer = settings_api.handle(self.cockpit, "GET", path, query, {})
