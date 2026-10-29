@@ -24,7 +24,7 @@ from nexus_harness.platform import backup
 from nexus_harness import autonomy, projects, runner  # noqa: E402
 from nexus_harness.config import HarnessConfig  # noqa: E402
 from nexus_harness.events import Bus  # noqa: E402
-from nexus_harness.providers import Router  # noqa: E402
+from nexus_harness.llm.providers import Router  # noqa: E402
 
 PROJECT = "Nexus-Harness"
 DEFAULT_GOAL = ("Audita y mejora la robustez de Nexus-Harness: un cambio pequeño, verificado por el "

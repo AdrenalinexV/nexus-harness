@@ -89,7 +89,7 @@ class OpenAICompatible:
 
     def window(self, timeout=4):
         """La ventana cargada del motor, o 0 si este servidor no la publica."""
-        from ..context_window import of
+        from ..llm.context_window import of
         return of(self, timeout=timeout)
 
 

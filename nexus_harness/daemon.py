@@ -67,7 +67,7 @@ def _alive(pid):
 
 def default_runner(config):
     """El ejecutor real: una triada completa por tarea. Se importa aqui para no cargar el motor en tests."""
-    from .providers import Router
+    from .llm.providers import Router
     from .runner import run_triad
 
     def run(goal, root):
@@ -96,7 +96,7 @@ class Daemon:
             # Produccion: el planificador es el Director real. En pruebas se inyecta un runner y el
             # planificador de reserva convierte el objetivo en un unico paso (sin modelo).
             from .autonomy import model_planner
-            from .providers import Router
+            from .llm.providers import Router
             planner = model_planner(Router(config), config)
         self.autopilot = Autopilot(config, runner=runner or default_runner(config),
                                    planner=planner or self._fallback_planner, bus=bus,

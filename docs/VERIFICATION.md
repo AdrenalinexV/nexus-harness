@@ -8,7 +8,7 @@ the numbers.
 
 ```
 $ python tools/verify.py
-lint      exit 0   files=180 findings=0 max_lines=400 ignored_runtime=0 linter=builtin(R0,R1,R2)
+lint      exit 0   files=181 findings=0 max_lines=400 ignored_runtime=0 linter=builtin(R0,R1,R2)
 selftest  exit 0   suites=51 failures=0 skipped=2
 verify: GREEN
 ```
@@ -18,19 +18,19 @@ verify: GREEN
 ```
 providers        OK    0.08s
 retry            OK    0.00s
-repair           OK    0.41s
-tools            OK    0.19s
+repair           OK    0.47s
+tools            OK    0.21s
 linelaw          OK    0.02s
-layers           OK    0.02s
+layers           OK    0.03s
 edit_v4a         OK    0.04s
-shell_session    OK    1.55s
-shell_policy     OK    0.24s
-checkpoint       OK    0.25s
+shell_session    OK    1.59s
+shell_policy     OK    0.26s
+checkpoint       OK    0.26s
 subagents        OK    0.01s
 warning: The `fitz` API is deprecated and will be removed in future. Use `import pymupdf` instead.
 attachments      OK    0.15s
-onboarding       OK    0.14s
-mcp_client       OK    0.44s
+onboarding       OK    0.16s
+mcp_client       OK    0.45s
 sidecar          OK    5.13s
 estado listo: 2 criterios (2 pendientes)
 a -> exit 0 (VERDE)
@@ -38,48 +38,48 @@ findings=0
 b -> exit 10 (ROJO)
 b marcado blocked
 criterio desconocido: zzz
-cerrojo ocupado: el turno de noche ya esta en marcha: pid 39600 desde 2026-10-29T19:24:14+00:00 (suite)
-no se toca nada. Si esa sesion ya no corre, el cerrojo se hereda solo; para forzarlo a mano, borra C:\Users\Vexus\AppData\Local\Temp\nightshift-pqv_4eqy\.nexus\harness\nightshift.lock
+cerrojo ocupado: el turno de noche ya esta en marcha: pid 16800 desde 2026-10-29T19:28:02+00:00 (suite)
+no se toca nada. Si esa sesion ya no corre, el cerrojo se hereda solo; para forzarlo a mano, borra C:\Users\Vexus\AppData\Local\Temp\nightshift-tkpwm48j\.nexus\harness\nightshift.lock
 TOCA: b — falla
   prueba: python -c "raise SystemExit(10)"
   estado: blocked (intentos 1)
 a -> exit 0 (VERDE)
 findings=0
-nightshift       OK    0.47s
+nightshift       OK    0.44s
 context          OK    0.13s
-triad_loop       OK    2.72s
+triad_loop       OK    2.73s
 session_relay    SKIP  0.00s
     - necesita el gobernador (nexus.hive.relay): ModuleNotFoundError: No module named 'nexus.hive' -- apunta NEXUS_PROTOCOL a NexusProtocol
-relay_state      OK    0.33s
-savings          OK    0.86s
-skills           OK    0.18s
-worktree         OK    3.95s
+relay_state      OK    0.34s
+savings          OK    0.94s
+skills           OK    0.20s
+worktree         OK    3.98s
 deploy           OK    0.02s
 judge_repair     OK    0.02s
 compaction       OK    0.24s
-chat             OK    0.80s
-memory           OK    0.34s
-ui               OK    1.06s
+chat             OK    0.78s
+memory           OK    0.35s
+ui               OK    1.03s
 bridge           SKIP  0.00s
     - necesita el gobernador (nexus.hive.queue): ModuleNotFoundError: No module named 'nexus.hive' -- apunta NEXUS_PROTOCOL a NexusProtocol
-budget           OK    0.47s
+budget           OK    0.44s
 charts           OK    0.00s
 activity         OK    0.00s
-projects         OK    1.02s
-autonomy         OK    1.09s
-ux               OK    1.31s
+projects         OK    0.91s
+autonomy         OK    1.04s
+ux               OK    1.26s
 learning         OK    0.04s
 oracle           OK    0.35s
 tokenizer        OK    0.02s
-spec             OK    0.46s
+spec             OK    0.45s
 plan_graph       OK    0.00s
 portfolio        OK    0.19s
-eval             OK    5.29s
-daemon           OK    0.44s
+eval             OK    5.22s
+daemon           OK    0.43s
 notify           OK    0.00s
-browser          OK    5.16s
-recall           OK    0.25s
-context_window   OK    0.51s
+browser          OK    5.11s
+recall           OK    0.24s
+context_window   OK    0.48s
 triad_presets    OK    0.06s
 triad_balance    OK    0.05s
 consult          OK    0.16s

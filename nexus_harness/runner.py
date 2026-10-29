@@ -13,7 +13,7 @@ from pathlib import Path
 
 from .skill_router import library
 from .gate import Gate
-from .judge import judge_for
+from .llm.judge import judge_for
 from .session_relay import SessionRelay
 from .tools import default_registry
 from .triad_loop import Triad

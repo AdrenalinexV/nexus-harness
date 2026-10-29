@@ -137,7 +137,7 @@ def state_text(info, hardware):
 
 def vendors_table(config):
     """La tabla de proveedores (de serie + los del operador), sin importar el router entero."""
-    from .providers import merged_vendors
+    from .llm.providers import merged_vendors
     return merged_vendors(config)[0]
 
 
@@ -250,7 +250,7 @@ def plan(name, config, state, hardware):
     if missing:
         # Un proveedor DETECTADO en la maquina pero sin clave visible no es «no hay nube»: es «pega la
         # clave una vez». La diferencia es la que hace que el panel sea util o decorativo.
-        from .provider_discovery import pending_key
+        from .llm.provider_discovery import pending_key
         pending = pending_key(config)
         if pending:
             notes.append("detectado(s) %s en tu configuración: falta la clave (Seguridad, una vez)"

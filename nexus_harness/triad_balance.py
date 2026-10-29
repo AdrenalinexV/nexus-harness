@@ -87,7 +87,7 @@ def optimize(config, state, hardware, ready=None):
     El **director es el ancla**: lo que el operador eligió no se cambia aquí. Lo que se recalcula es la
     pareja obrero/juez a su alrededor, que es justo lo que nadie quiere cuadrar a mano.
     """
-    from . import provider_discovery
+    from .llm import provider_discovery
     ceiling = getattr(config, "hardware_ceiling", 75)
     bias = str(getattr(config, "triad_bias", "ahorro") or "ahorro")
     room = budget(hardware, ceiling)

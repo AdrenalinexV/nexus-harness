@@ -16,7 +16,7 @@ Dos responsabilidades, y las dos son de tamaño, no de estilo:
 El modulo no conoce el bucle: recibe el prompt, lo reescribe si hace falta y avisa con `resync`
 para que el llamante vuelva a separar historia de deltas.
 """
-from . import context_window
+from .llm import context_window
 from .transports import http
 
 

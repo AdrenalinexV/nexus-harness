@@ -25,7 +25,7 @@ Ninguna de estas funciones levanta: un motor apagado es `0`, no una excepcion en
 import json
 import re
 
-from .transports import http
+from ..transports import http
 
 LMSTUDIO_MODELS = "/api/v0/models"
 OLLAMA_PS = "/api/ps"
@@ -192,7 +192,7 @@ def shrink(messages, budget, model=""):
     varias pasadas: primero los cuerpos mas grandes que la media, y el tope baja a la mitad si aun no
     cabe, asi que termina siempre.
     """
-    from .platform.tokenizer import count_messages
+    from ..platform.tokenizer import count_messages
 
     body = list(messages or ())
     budget = _digits(budget)
@@ -257,11 +257,11 @@ def selftest():
     check("otro error no se confunde con ventana", overflow(Otro()), 0)
     check("sin cuerpo no hay ventana", overflow(RuntimeError()), 0)
 
-    from .core.message import Message
+    from ..core.message import Message
     big = [Message(role="system", content="reglas " * 100),
            Message(role="user", content="hazlo"),
            Message(role="tool", content="x" * 40000, tool_call_id="c1", name="read_file")]
-    from .platform.tokenizer import count_messages
+    from ..platform.tokenizer import count_messages
     before = count_messages(big, "")
     shrunk = shrink(big, 3000, "")
     check("recorta hasta caber", count_messages(shrunk, "") <= 3000, True)

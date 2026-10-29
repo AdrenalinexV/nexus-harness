@@ -1,6 +1,6 @@
 """Providers: spec parsing, the three parsers, and a router that refuses what it cannot build."""
 from ..config import HarnessConfig
-from ..providers import Router, SpecError, parse_spec
+from ..llm.providers import Router, SpecError, parse_spec
 from ..transports.anthropic import Anthropic
 from ..transports.ollama import Ollama
 from ..transports.openai_compat import OpenAICompatible

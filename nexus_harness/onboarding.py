@@ -22,7 +22,7 @@ from pathlib import Path
 
 from .platform import vault
 from .config import CONFIG_FILE, DEFAULT_ROLES, HarnessConfig, WORKSPACE_DEFAULT
-from .providers import VENDORS, SpecError, parse_spec
+from .llm.providers import VENDORS, SpecError, parse_spec
 
 PROBES = {
     "lmstudio": ("http://127.0.0.1:1234/v1/models", "openai"),
@@ -183,7 +183,7 @@ def save_settings(changes):
     out, saved, notes = {}, {}, []
     for name, value in (changes or {}).items():
         if name == "judge_mode":
-            from .judge import MODES
+            from .llm.judge import MODES
             mode = str(value or "").strip().lower()
             if mode not in MODES:
                 notes.append("judge_mode: %r no es uno de %s" % (value, ", ".join(MODES)))

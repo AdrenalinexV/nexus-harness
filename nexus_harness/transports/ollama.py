@@ -86,7 +86,7 @@ class Ollama:
 
     def window(self, timeout=4):
         """La ventana con la que Ollama cargo el modelo (`/api/ps`), o 0 si aun no esta cargado."""
-        from ..context_window import of
+        from ..llm.context_window import of
         return of(self, timeout=timeout)
 
 

@@ -16,7 +16,7 @@ Determinista: hardware y estado local entran inyectados; ni `nvidia-smi` ni LM S
 """
 from .. import triad_balance, triad_presets
 from ..config import HarnessConfig
-from ..provider_discovery import candidates, enrich, pending_key, read_providers
+from ..llm.provider_discovery import candidates, enrich, pending_key, read_providers
 
 HW = {"gpus": [{"name": "NVIDIA GeForce RTX 5070 Ti", "total_mb": 16303, "free_mb": 2000}],
       "memory": {"total_mb": 32768, "free_mb": 12000}, "cpu": {"name": "t", "cores": 16}}
@@ -60,7 +60,7 @@ class Cockpit:
 
 
 def test_module_selftests(failures):
-    from .. import provider_discovery
+    from ..llm import provider_discovery
     for problem in triad_balance.selftest():
         failures.append("triad_balance.selftest: %s" % problem)
     for problem in provider_discovery.selftest():
@@ -173,7 +173,7 @@ def test_orca_is_detected_and_imported(failures):
 model:
   provider: orca
 """
-    from .. import provider_discovery
+    from ..llm import provider_discovery
     # El entorno de quien lanza la suite puede tener la clave real de orca (Hermes se la pasa a sus
     # hijos). Esta prueba mide el caso "endpoint sí, clave no", asi que lo fija explicitamente; si no,
     # el resultado depende de la maquina y la suite miente en la mitad de las ejecuciones.

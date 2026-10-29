@@ -9,7 +9,7 @@ Cuatro cosas que un harness serio tiene que demostrar y que hasta ahora no estab
 * la pildora de actividad cuenta el relevo, la poda y la skill forjada (lo que el operador ve).
 """
 from .. import activity, repair_hint
-from ..judge import CONVERSATION, SYSTEM, Judge, mode_for, parse_verdict
+from ..llm.judge import CONVERSATION, SYSTEM, Judge, mode_for, parse_verdict
 from ..core.message import Message, as_text
 from ..tools import default_registry
 from .fakes import FakeRouter, ScriptedProvider, TempProject, reply
@@ -37,7 +37,7 @@ def test_modes(failures):
 
 def test_a_reasoning_model_with_dirty_json_is_still_read(failures):
     """Un juez que razona antes de contestar ensucia el JSON; el veredicto no se puede perder por eso."""
-    from ..judge import parse_verdict
+    from ..llm.judge import parse_verdict
     check("dos objetos: gana el que parsea",
           parse_verdict("pienso {esto no es json} y luego {\"verdict\": \"approve\", \"reason\": "
                         "\"util\"}")[0], "approve", failures)
@@ -106,7 +106,7 @@ def test_the_judge_sees_the_change_not_just_the_names(failures):
     """Un renombrado correcto fue rechazado porque el juez solo veia nombres: ahora ve el contenido."""
     import tempfile
     from pathlib import Path
-    from ..judge import Judge
+    from ..llm.judge import Judge
     from .fakes import FakeRouter
 
     with tempfile.TemporaryDirectory(prefix="judge-evidence-") as workspace:

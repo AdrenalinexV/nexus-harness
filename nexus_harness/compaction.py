@@ -202,7 +202,7 @@ class Compactor:
         Se poda todo lo que se puede podar (umbral 0) y, si aun asi no baja, se recorta el cuerpo de
         los mensajes mas grandes con `context_window.shrink`. Devuelve `(messages, informe)`.
         """
-        from .context_window import shrink
+        from .llm.context_window import shrink
         target = int(limit if limit is not None else self.limit or 0)
         counter = self.counter(model)
         before = counter(messages)

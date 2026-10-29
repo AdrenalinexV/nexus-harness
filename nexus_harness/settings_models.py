@@ -16,7 +16,8 @@ cargados en VRAM; los de nube, el catálogo curado del rol con su aviso si falta
 texto al lado acepta cualquier id escrito a mano, porque un catálogo no es una jaula.
 """
 from .platform import hardware_probe
-from . import onboarding, panels, provider_discovery, triad_balance, triad_presets
+from .llm import provider_discovery
+from . import onboarding, panels, triad_balance, triad_presets
 from . import settings_kit as kit
 
 # (rol interno, ancla, titulo, que es)

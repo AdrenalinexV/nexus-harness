@@ -71,7 +71,7 @@ def context_fields(config, window=0, role=""):
     cuanto se va a usar de verdad: prometer 60.000 tokens con un motor de 12.544 es como se llega a
     un 400 que el operador no puede explicar.
     """
-    from .context_window import fit
+    from .llm.context_window import fit
     used = fit(config.budget_limit, window, config.max_tokens)
     budget_hint = "el presupuesto de la conversación; al acercarse, el motor compacta y luego releva"
     if int(window or 0) > 0:

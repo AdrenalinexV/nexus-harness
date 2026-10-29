@@ -225,7 +225,7 @@ class HarnessConfig:
                      source=str(location) if from_file else "defaults", **values)
         # Los proveedores que esta maquina ya usa (Hermes, entorno, boveda) entran sin escribir nada:
         # `orca` deja de ser invisible y pasa a ser un vendor mas del selector y de los presets.
-        from .provider_discovery import enrich
+        from .llm.provider_discovery import enrich
         enrich(config)
         return config
 

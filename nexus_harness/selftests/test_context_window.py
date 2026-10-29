@@ -9,14 +9,14 @@ El fallo que cierra, tal como se midio: LM Studio con 64.256 tokens cargados, `b
 y el turno se perdio con un error crudo en el panel. Una suite que no cubra esto deja el arnes
 prometiendo sitio que no tiene.
 
-Se prueba el modulo real (`nexus_harness.context_window` y `nexus_harness.turn_engine`) con un motor
+Se prueba el modulo real (`nexus_harness.llm.context_window` y `nexus_harness.turn_engine`) con un motor
 falso: sin red, sin LM Studio, sin reloj.
 """
 from .fakes import FakeRouter, ScriptedSkills, TempProject
-from .. import context_window
+from ..llm import context_window
 from ..compaction import Compactor
 from ..config import HarnessConfig
-from ..context_window import fit, overflow, shrink
+from ..llm.context_window import fit, overflow, shrink
 from ..platform.events import Bus
 from ..core.message import Message, Reply
 from ..platform.tokenizer import count_messages
@@ -171,7 +171,7 @@ def test_the_chat_survives_the_window(failures):
 
 def test_z_the_window_is_asked_not_typed(failures):
     """`Router.window` pregunta a los endpoints reales; con un servidor que no contesta, 0."""
-    from ..context_window import lmstudio_window, ollama_window
+    from ..llm.context_window import lmstudio_window, ollama_window
     payload = {"data": [{"id": "m", "state": "loaded", "loaded_context_length": 64256,
                          "max_context_length": 262144},
                         {"id": "otro", "state": "loaded", "loaded_context_length": 32768}]}

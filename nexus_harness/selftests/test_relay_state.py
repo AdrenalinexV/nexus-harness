@@ -12,7 +12,7 @@ from .. import relay_state
 from ..config import HarnessConfig
 from ..platform.events import Bus
 from ..gate import Gate
-from ..judge import Judge
+from ..llm.judge import Judge
 from ..relay_state import RelayState, prune_tool_outputs
 from ..tools import default_registry
 from ..triad_loop import Triad

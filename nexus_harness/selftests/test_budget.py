@@ -15,7 +15,7 @@ from ..core.budget import CostBudget, cost_of, price_of
 from ..chat import Chat
 from ..config import HarnessConfig
 from ..platform.events import Bus
-from ..judge import Judge
+from ..llm.judge import Judge
 from ..core.message import Usage
 from ..tools import default_registry
 from ..platform.transcripts import Transcripts

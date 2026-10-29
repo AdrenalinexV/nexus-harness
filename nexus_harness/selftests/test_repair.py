@@ -21,7 +21,7 @@ from ..chat import Chat
 from ..config import HarnessConfig
 from ..platform.events import Bus
 from ..gate import Gate
-from ..judge import Judge
+from ..llm.judge import Judge
 from ..core.message import Reply, ToolCall, Usage, as_text
 from ..tools import Observation, default_registry
 from ..triad_loop import Triad

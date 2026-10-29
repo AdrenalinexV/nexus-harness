@@ -19,8 +19,8 @@ from .config import HarnessConfig
 from .skill_router import library
 from .platform.events import Bus
 from .gate import Gate
-from .judge import judge_for
-from .providers import Router, SpecError
+from .llm.judge import judge_for
+from .llm.providers import Router, SpecError
 from .session_relay import SessionRelay
 from .tools import default_registry
 from .cli_ops import cmd_daemon, cmd_notify, cmd_task
@@ -192,7 +192,7 @@ def cmd_gate(args):
 
 def cmd_spec(args):
     """Objetivo -> criterios ejecutables, validados hoy. Sin `--write` es un plan en seco."""
-    from .providers import Router
+    from .llm.providers import Router
     from .spec_synth import synthesize
 
     config = _config(args)

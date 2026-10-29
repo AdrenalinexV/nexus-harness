@@ -13,7 +13,7 @@ from .fakes import FakeGate, FakeRouter, ScriptedProvider, ScriptedSkills, TempP
 from ..compaction import DIGEST_HEADER, Compactor, compact, estimate
 from ..config import HarnessConfig
 from ..platform.events import Bus
-from ..judge import Judge
+from ..llm.judge import Judge
 from ..core.message import Message, ToolCall
 from ..tools import default_registry
 from ..triad_loop import Triad

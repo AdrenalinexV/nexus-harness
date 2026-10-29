@@ -27,7 +27,7 @@ if str(ROOT) not in sys.path:
 from nexus_harness import runner  # noqa: E402
 from nexus_harness.config import HarnessConfig  # noqa: E402
 from nexus_harness.events import Bus  # noqa: E402
-from nexus_harness.providers import Router  # noqa: E402
+from nexus_harness.llm.providers import Router  # noqa: E402
 
 PROJECT = "RepairCycle"
 TASK = ("Arregla add en calc.py: tiene que devolver la suma. El test del proyecto es la prueba.")

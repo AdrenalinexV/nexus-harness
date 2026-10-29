@@ -36,7 +36,7 @@ from nexus_harness.platform import backup
 from nexus_harness import runner, stats_savings  # noqa: E402
 from nexus_harness.config import HarnessConfig  # noqa: E402
 from nexus_harness.events import Bus  # noqa: E402
-from nexus_harness.providers import Router  # noqa: E402
+from nexus_harness.llm.providers import Router  # noqa: E402
 
 PROJECT = "BenchAB"
 DEFAULT_TASK = ("Lee los modulos del proyecto, encuentra el defecto de calc.py (add devuelve mal) y "

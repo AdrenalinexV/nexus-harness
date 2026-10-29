@@ -27,6 +27,7 @@ DECLARED = {
     "platform": ("backup", "events", "hardware_probe", "ledger", "policy", "tokenizer",
                  "transcripts", "vault"),
     "core": ("budget", "message", "outcomes", "tasks"),
+    "llm": ("context_window", "judge", "portfolio", "provider_discovery", "providers"),
 }
 
 

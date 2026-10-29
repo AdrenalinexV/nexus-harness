@@ -16,7 +16,7 @@ Determinista: sin red, sin GPU y sin LM Studio. El hardware y el sondeo local en
 from ..platform import hardware_probe
 from .. import settings_models, triad_presets, triad_recommend
 from ..config import HarnessConfig
-from ..judge import ADVERSARY, NullJudge, judge_for
+from ..llm.judge import ADVERSARY, NullJudge, judge_for
 from ..core.message import Message
 
 

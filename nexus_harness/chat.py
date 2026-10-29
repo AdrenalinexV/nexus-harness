@@ -24,7 +24,7 @@ from .core.budget import CostBudget
 from .compaction import Compactor
 from .context_compiler import TurnWindow
 from .core.message import Message, as_text
-from .portfolio import maybe_escalate
+from .llm.portfolio import maybe_escalate
 from .reflection import learn
 from .platform.tokenizer import calibration, count_messages
 from .turn_context import apply_budget, chat_prefix, inject_skills, split_history

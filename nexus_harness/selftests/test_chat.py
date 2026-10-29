@@ -13,7 +13,7 @@ from ..memory import Memory
 from ..toolbox import file_ops as files
 from ..tools import default_registry
 from ..platform.transcripts import Transcripts
-from ..judge import Judge
+from ..llm.judge import Judge
 
 
 def check(name, got, expected, failures):

@@ -11,9 +11,9 @@ import os
 from dataclasses import dataclass
 
 from .portfolio import FailoverTransport, Portfolio
-from .transports.anthropic import Anthropic
-from .transports.ollama import Ollama
-from .transports.openai_compat import OpenAICompatible
+from ..transports.anthropic import Anthropic
+from ..transports.ollama import Ollama
+from ..transports.openai_compat import OpenAICompatible
 
 VENDORS = {
     "lmstudio": {"wire": "openai", "base_url": "http://127.0.0.1:1234/v1",

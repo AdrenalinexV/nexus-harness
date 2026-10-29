@@ -20,8 +20,8 @@ from pathlib import Path
 from .eval_tasks import TASKS, Task, selected
 from .platform.events import Bus
 from .gate import Gate
-from .judge import judge_for
-from .providers import Router
+from .llm.judge import judge_for
+from .llm.providers import Router
 from .selftests.fakes import FakeRouter, ScriptedProvider, ScriptedSkills, TempProject, reply
 from .triad_loop import Triad
 

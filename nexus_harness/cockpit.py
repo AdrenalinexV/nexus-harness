@@ -25,10 +25,10 @@ from .config import HarnessConfig
 from .skill_router import library
 from .platform.events import Bus
 from .gate import Gate
-from .judge import judge_for
+from .llm.judge import judge_for
 from .mcp_client import McpManager
 from .memory import Memory
-from .providers import Router
+from .llm.providers import Router
 from .tools import default_registry
 from .platform.transcripts import Transcripts
 

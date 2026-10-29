@@ -12,8 +12,8 @@ from ..core import budget
 from .. import savings
 from ..config import HarnessConfig
 from ..core.message import Usage
-from ..portfolio import Portfolio, maybe_escalate
-from ..providers import Router
+from ..llm.portfolio import Portfolio, maybe_escalate
+from ..llm.providers import Router
 from ..selftests.test_triad_loop import config_for
 from ..triad_loop import Triad
 
@@ -181,7 +181,7 @@ def test_the_triad_escalates_after_two_red_gates(failures):
                     __import__("nexus_harness.selftests.test_chat", fromlist=["verdict"])
                     .verdict(True)]
         triad = Triad(router, config, gate=FakeGate(verdicts=verdicts),
-                      judge=__import__("nexus_harness.judge", fromlist=["Judge"]).Judge(router, "es"))
+                      judge=__import__("nexus_harness.llm.judge", fromlist=["Judge"]).Judge(router, "es"))
         triad.run("arregla calc.py")
         check("escalo una vez", len(moved), 1, failures)
         check("al segundo peldano", moved[0][1] if moved else "", "fake:big", failures)

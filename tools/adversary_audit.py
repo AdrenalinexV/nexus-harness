@@ -19,7 +19,7 @@ if str(ROOT) not in sys.path:
 
 from nexus_harness.config import HarnessConfig  # noqa: E402
 from nexus_harness.message import Message  # noqa: E402
-from nexus_harness.providers import Router, SpecError  # noqa: E402
+from nexus_harness.llm.providers import Router, SpecError  # noqa: E402
 
 SYSTEM = """Eres un auditor adversarial de código Python. Te dan UN módulo y su contrato.
 
