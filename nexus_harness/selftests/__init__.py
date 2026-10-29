@@ -1,10 +1,17 @@
 """Deterministic suites: no network, no key, no clock, no LM Studio required.
 
-Each module exposes `run() -> list[str]`; an empty list is a pass. `runner.run()` is what
-`python -m nexus_harness selftest` calls, and it prints one line per suite plus the failures.
+Each module exposes `run() -> list[str]`; an empty list is a pass. A suite whose capability this
+machine simply does not have raises `Skip(reason)` instead: it is printed as SKIP with the reason and
+counted apart from failures, because a check that could not run is not a check that passed -- and a
+silent skip is a lie the same way a false green is.
 """
 import importlib
 import time
+
+
+class Skip(Exception):
+    """Raised by a suite that cannot run on this machine (missing optional engine, repo-only script)."""
+
 
 SUITES = ("providers", "retry", "repair", "tools", "edit_v4a", "shell_session", "shell_policy", "checkpoint", "subagents", "attachments",
           "onboarding", "mcp_client", "sidecar", "nightshift", "context", "triad_loop", "session_relay", "relay_state", "savings", "skills", "worktree", "deploy", "judge_repair", "compaction", "chat",
@@ -16,22 +23,27 @@ SUITES = ("providers", "retry", "repair", "tools", "edit_v4a", "shell_session", 
 def run(names=None, stream=None):
     """Run the suites; returns the number of failures. Raises nothing a caller must catch."""
     out = stream or (lambda text: print(text))
-    failures_total, failed_suites = 0, []
+    failures_total, failed_suites, skipped = 0, [], []
     for name in names or SUITES:
         started = time.time()
         try:
             module = importlib.import_module("nexus_harness.selftests.test_%s" % name)
             problems = list(module.run())
+            status = "OK" if not problems else "FAIL"
+        except Skip as exc:
+            problems, status = [str(exc)], "SKIP"
+            skipped.append(name)
         except Exception as exc:  # a suite that cannot even import is a failure, not a skip
             problems = ["crashed before asserting: %s: %s" % (type(exc).__name__, exc)]
+            status = "FAIL"
         elapsed = time.time() - started
-        out("%-16s %-4s %5.2fs" % (name, "OK" if not problems else "FAIL", elapsed))
+        out("%-16s %-4s %5.2fs" % (name, status, elapsed))
         for problem in problems:
             out("    - %s" % problem)
-        failures_total += len(problems)
-        if problems:
+        if status == "FAIL":
+            failures_total += len(problems)
             failed_suites.append(name)
-    out("suites=%d failures=%d%s" % (len(names or SUITES), failures_total,
-                                     "" if not failed_suites else " failing=%s"
-                                     % ",".join(failed_suites)))
+    out("suites=%d failures=%d skipped=%d%s" % (len(names or SUITES), failures_total, len(skipped),
+                                                "" if not failed_suites else " failing=%s"
+                                                % ",".join(failed_suites)))
     return failures_total

@@ -1,0 +1,577 @@
+<!doctype html><html lang="es"><head><meta charset="utf-8">
+<title>Nexus-Harness · Dossier de release</title><style>
+@page { size: A4; margin: 16mm 14mm 18mm 14mm; }
+:root { --ink:#12151c; --mut:#5b6472; --acc:#2f6df6; --line:#e3e7ee; --good:#0f7a53; }
+* { box-sizing: border-box; }
+html { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+body { font-family: "Segoe UI", "Helvetica Neue", Arial, sans-serif; color: var(--ink);
+       font-size: 10.5px; line-height: 1.5; margin: 0; }
+h1 { font-size: 25px; line-height: 1.15; margin: 0 0 4px; letter-spacing: -0.02em; }
+h2 { font-size: 15px; margin: 22px 0 8px; padding-top: 8px; border-top: 2px solid var(--ink);
+     page-break-after: avoid; }
+h3 { font-size: 12.5px; margin: 16px 0 6px; color: var(--acc); page-break-after: avoid; }
+p, li { orphans: 3; widows: 3; }
+a { color: var(--acc); text-decoration: none; word-break: break-word; }
+code { font-family: "Cascadia Mono", Consolas, monospace; font-size: 9.5px;
+       background: #f4f6fa; border: 1px solid var(--line); border-radius: 3px; padding: 0 3px; }
+pre { background: #0f1320; color: #e8ecf5; border-radius: 6px; padding: 10px 12px; overflow-x: auto;
+      font-size: 9.5px; line-height: 1.45; page-break-inside: avoid; }
+pre code { background: none; border: none; color: inherit; padding: 0; }
+blockquote { margin: 10px 0; padding: 8px 12px; background: #f4f7ff; border-left: 3px solid var(--acc);
+             color: #2b3442; }
+table { border-collapse: collapse; width: 100%; margin: 10px 0; font-size: 9.5px;
+        page-break-inside: avoid; }
+th, td { border: 1px solid var(--line); padding: 4px 6px; text-align: left; vertical-align: top; }
+th { background: #eef2f8; font-weight: 600; }
+td:not(:first-child), th:not(:first-child) { text-align: center; }
+tr:nth-child(even) td { background: #fafbfe; }
+hr { border: none; border-top: 1px solid var(--line); margin: 18px 0; }
+h2 { break-before: auto; }
+.cover { border-bottom: 3px solid var(--acc); padding-bottom: 10px; margin-bottom: 6px; }
+.tag { display: inline-block; font-size: 9px; letter-spacing: .12em; text-transform: uppercase;
+       background: var(--ink); color: #fff; padding: 3px 8px; border-radius: 3px; margin-bottom: 12px; }
+</style></head>
+<body><div class="cover"><span class="tag">Dossier de release · v1.1.0 · developer preview</span></div>
+<h1 id="nexus-harness-dossier-de-release-y-posicionamiento">Nexus-Harness · Dossier de release y posicionamiento</h1>
+<blockquote>
+<p>Simulación honesta de dossier de marketing <strong>y</strong> de realidad. No hay una cifra aquí que no salga de un
+comando. Fecha de medición: <strong>2026-10-29</strong>. Base: <code>f8a2491</code> (v1.1.0).
+Todo lo que dice «medido» se puede reproducir con <code>python tools/verify.py</code>.</p>
+</blockquote>
+<hr />
+<h2 id="0-resumen-ejecutivo-si-solo-lees-esto">0. Resumen ejecutivo (si solo lees esto)</h2>
+<p><strong>Qué es.</strong> Un harness de ingeniería autónoma en Python puro (0 dependencias), donde el Protocolo Nexus
+<strong>es el bucle de turno</strong>: enrutado de skills antes de cada llamada, lint determinista como <em>gate</em>, y una
+sesión que se releva sola al llenarse. Se instala como app de Windows y también corre por CLI y cabina web.</p>
+<p><strong>El foso real.</strong> No es «hace el trabajo mejor». Es que <strong>el trabajo no se cierra con palabras, se cierra
+con un recibo</strong>: cada turno deja <code>exit 0/10/20</code> por comprobación, un juez distinto del obrero, y
+contabilidad de tokens por request con baseline. <strong>Ninguno de los once harnesses del estudio de referencia
+publica el código de salida de cada criterio como artefacto del trabajo.</strong></p>
+<p><strong>Veredicto sin adornos.</strong></p>
+<table>
+<thead>
+<tr>
+<th>pregunta</th>
+<th>respuesta</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>¿Somos el mejor harness?</td>
+<td><strong>No.</strong> En código puro y orquestación agéntica, Claude Code y Codex están por delante.</td>
+</tr>
+<tr>
+<td>¿En algo somos los mejores?</td>
+<td><strong>Sí, dos ejes: gobernanza/verificación y contabilidad de contexto/coste.</strong> Ahí nadie ha publicado un equivalente.</td>
+</tr>
+<tr>
+<td>¿Un «10/10» global es alcanzable?</td>
+<td><strong>No tal cual.</strong> Nadie lo tiene hoy (el techo real del mercado es ~8). Pero <strong>10/10 en nuestros dos ejes sí es alcanzable y cerrable</strong>, y un <strong>8/10 global sí</strong> con 2–3 meses de la fase P1.</td>
+</tr>
+<tr>
+<td>¿Se puede hacer un release ya?</td>
+<td><strong>Sí, pero honesto: <code>0.x / developer preview</code></strong>, no un 1.0 de marketing. El motor está; el producto alrededor (CI, changelog, sandbox de proceso, ecosistema) no.</td>
+</tr>
+<tr>
+<td>Nota global de hoy</td>
+<td><strong>6.0/10</strong> (media simple) · <strong>7.0/10</strong> ponderado por lo que importa (gobernanza + coste + autonomía).</td>
+</tr>
+</tbody>
+</table>
+<p><strong>La frase de una línea:</strong> <em>las demás herramientas son empleados muy listos; esta es un empleado muy listo
+con un inspector que no cobra de la obra.</em> Y ahora mismo: un inspector excelente, para una obra todavía
+pequeña.</p>
+<hr />
+<h2 id="1-que-se-ha-medido-no-estimado">1. Qué se ha medido (no estimado)</h2>
+<pre><code>$ python tools/verify.py
+lint      exit 0   files=175 findings=0 max_lines=400 ignored_runtime=0
+selftest  exit 0   suites=49 failures=0
+verify: GREEN
+
+$ python -c &quot;from nexus_harness.savings import skill_index; print(skill_index(force=True))&quot;
+{'skills': 180, 'index_tokens': 3561, 'body_tokens': 451606, ...}
+
+$ python -m nexus_harness --help
+run serve chat checkpoint selftest lint models gate relay spec daemon task notify bridge consult
+</code></pre>
+<table>
+<thead>
+<tr>
+<th>dato</th>
+<th>valor</th>
+<th>fuente</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Suites deterministas</td>
+<td><strong>49, 0 fallos, sin red</strong></td>
+<td><code>verify.py</code></td>
+</tr>
+<tr>
+<td>Hallazgos de lint / ficheros &gt; 400 líneas</td>
+<td><strong>0 / 0</strong> en 175 ficheros</td>
+<td><code>verify.py</code></td>
+</tr>
+<tr>
+<td>Dependencias de terceros</td>
+<td><strong>0</strong></td>
+<td><code>pyproject.toml</code></td>
+</tr>
+<tr>
+<td>Líneas de fuente</td>
+<td>~21.300 (motor) · ~27.500 (con tools/apps)</td>
+<td><code>wc -l</code></td>
+</tr>
+<tr>
+<td>Módulo más largo</td>
+<td>399 líneas (techo 400) — <em>en el techo</em></td>
+<td><code>wc -l</code></td>
+</tr>
+<tr>
+<td>Proveedores</td>
+<td>6 (<code>lmstudio</code>, <code>ollama</code>, <code>openai</code>, <code>deepseek</code>, <code>openrouter</code>, <code>anthropic</code>)</td>
+<td><code>providers.py</code></td>
+</tr>
+<tr>
+<td>Wires de transporte</td>
+<td>3 (<code>openai_compat</code>, <code>ollama</code>, <code>anthropic</code>) + <code>http</code></td>
+<td><code>transports/</code></td>
+</tr>
+<tr>
+<td>Herramientas del agente</td>
+<td>~16 nativas + MCP dinámico + <code>delegate_task</code></td>
+<td><code>tools.py</code></td>
+</tr>
+<tr>
+<td>Skills indexadas</td>
+<td><strong>180</strong> → 3.561 tokens como índice / 451.606 como cuerpos</td>
+<td><code>savings.py</code></td>
+</tr>
+<tr>
+<td>Eval de capacidad</td>
+<td><strong>7/7 tareas golden</strong> resueltas (run real, modelo local, temp 0)</td>
+<td><code>docs/EVAL.md</code></td>
+</tr>
+<tr>
+<td>A/B de contexto</td>
+<td><strong>−57,9 % de tokens de prompt</strong> vs harness tradicional (misma tarea)</td>
+<td><code>docs/BENCHMARK_AB.md</code></td>
+</tr>
+<tr>
+<td>Instalador</td>
+<td><code>NexusHarness-Setup-1.0.0.exe</code> (~20 MB, motor congelado)</td>
+<td><code>dist/</code></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Lo que NO está verde, y se dice:</strong> sin CI (<code>.github/</code> no existe), sin <code>CHANGELOG</code>, <strong>sin remoto git</strong>
+(el repo no está publicado), sin sandbox de proceso, sin streaming de tokens, sin LSP, sin sistema de
+plugins/hooks. Y las llamadas en la nube (openai/deepseek/…): <strong>no verificadas en vivo</strong> (no hay clave en
+esta máquina) — solo se prueban su construcción y sus parsers.</p>
+<hr />
+<h2 id="2-la-categoria-donde-jugamos">2. La categoría: dónde jugamos</h2>
+<p>Estudio de referencia: <em>«Harness Engineering: Anatomy, Architecture, and Evolution of Coding Agents»</em>
+(arXiv <strong>2609.00006</strong>), anatomía a nivel de fuente de once sistemas productivos — Claude Code, Codex CLI,
+Gemini CLI, Mistral Vibe, OpenHands, Aider, Mini-SWE-Agent, Hermes, Pi, OpenCode, OpenClaw. No los
+puntúa; los describe. Define <strong>siete subsistemas canónicos</strong> de todo harness:</p>
+<p><strong>bucle del agente · integración LLM · herramientas · memoria/contexto · seguridad/permisos ·
+orquestación · extensibilidad.</strong></p>
+<p>Ese es el mapa. Un «10/10» significa: <strong>sin agujeros en los siete, y líder en al menos uno.</strong> Nadie del
+panel los tiene todos llenos a la vez. Nosotros somos fuertes en dos y tenemos agujeros claros en tres.</p>
+<p>Estado Oct-2026 de los rivales relevantes (fuentes públicas, no opinión):</p>
+<ul>
+<li><strong>Claude Code</strong> — TS, cerrado, ~43 herramientas, prompt-cache con forks, subagentes recursivos con
+  worktrees, 5 modos de permiso, el sistema de extensión más profundo (CLAUDE.md, skills, hooks, MCP,
+  plugins). Sin sandbox de proceso por defecto.</li>
+<li><strong>Codex CLI</strong> — Rust, Apache-2.0, <strong>el único con sandbox a nivel de SO en 3 plataformas</strong> (Seatbelt /
+  bwrap+seccomp / token restringido Windows); red apagada por defecto; guardián-subagente que revisa
+  acciones. ~25 herramientas.</li>
+<li><strong>OpenCode</strong> — MIT, el agente de código dedicado con más estrellas (<strong>~220K</strong>), 75+ proveedores, <strong>LSP
+  como herramienta de primera</strong> (diagnósticos), sesiones en SQLite, cliente/servidor. Permisos por defecto
+  más permisivos; sin sandbox de SO.</li>
+<li><strong>DeepSeek Harness (<code>dsh</code>)</strong> — MIT, developer preview, <strong>«todo es un plugin»</strong> sobre el runtime Cordis
+  (modelos, herramientas, skills, sandboxes, UI). Modelo-agnóstico (OpenAI-compatible). ~264K estrellas.
+  Aviso propio: <em>cambios incompatibles garantizados</em>; riesgo de cadena de suministro de plugins.</li>
+<li><strong>Hermes</strong> (el harness sobre el que corre este proyecto) — Python, el de crecimiento más rápido;
+  bucle con presupuesto, skills auto-mejorables, verify-on-stop, 6 backends.</li>
+<li><strong>Aider</strong> — Python, el veterano de edición polimórfica; <strong>modo mantenimiento</strong>; mono-agente por diseño.</li>
+<li><strong>OpenHands / Mini-SWE-Agent / Pi / OpenClaw</strong> — el framework event-sourced, el suelo de 100 líneas, el
+  «todo es extensión» minimalista, y el gateway multi-canal.</li>
+</ul>
+<p>Dos ausencias que el paper destaca sobre ~4 M de líneas: <strong>ningún runtime usa un framework agéntico
+genérico</strong>, y <strong>ninguno recupera código con embeddings vectoriales</strong> — todos van de loop a mano y
+recuperación determinista (ripgrep, tree-sitter, glob). Estamos alineados con el estado del arte, no
+contracorriente, con nuestro mapa AST + rg y sin vector DB.</p>
+<hr />
+<h2 id="3-la-matriz-rubrica-por-eje-110">3. La matriz: rúbrica por eje (1–10)</h2>
+<p>Escala: 1 = no existe · 5 = funcional pero con agujeros · 8 = competitivo · 10 = estado del arte hoy.
+Las notas de terceros salen de sus fuentes públicas; las nuestras, de lo medido arriba. <strong>Ponderación:
+contexto y gobernanza pesan ×1,5</strong> (es donde se decide el coste y la confianza).</p>
+<table>
+<thead>
+<tr>
+<th>eje (peso)</th>
+<th style="text-align: center;"><strong>Nexus</strong></th>
+<th style="text-align: center;">Claude Code</th>
+<th style="text-align: center;">Codex CLI</th>
+<th style="text-align: center;">OpenCode</th>
+<th style="text-align: center;">DeepSeek <code>dsh</code></th>
+<th style="text-align: center;">Hermes</th>
+<th style="text-align: center;">Aider</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Código</strong> (edición fina, diffs, LSP) ×1,5</td>
+<td style="text-align: center;">6</td>
+<td style="text-align: center;"><strong>9</strong></td>
+<td style="text-align: center;">9</td>
+<td style="text-align: center;">8</td>
+<td style="text-align: center;">7</td>
+<td style="text-align: center;">7</td>
+<td style="text-align: center;">7</td>
+</tr>
+<tr>
+<td><strong>Tareas</strong> (resolver end-to-end) ×1,5</td>
+<td style="text-align: center;">6</td>
+<td style="text-align: center;"><strong>9</strong></td>
+<td style="text-align: center;">8</td>
+<td style="text-align: center;">8</td>
+<td style="text-align: center;">8</td>
+<td style="text-align: center;">8</td>
+<td style="text-align: center;">6</td>
+</tr>
+<tr>
+<td><strong>Agéntico</strong> (loop, subagentes, paralelo, streaming) ×1,5</td>
+<td style="text-align: center;">5</td>
+<td style="text-align: center;"><strong>10</strong></td>
+<td style="text-align: center;">9</td>
+<td style="text-align: center;">7</td>
+<td style="text-align: center;">8</td>
+<td style="text-align: center;">8</td>
+<td style="text-align: center;">4</td>
+</tr>
+<tr>
+<td><strong>Autonomía</strong> (background, triggers, sin humano) ×1,5</td>
+<td style="text-align: center;">7</td>
+<td style="text-align: center;">7</td>
+<td style="text-align: center;">7</td>
+<td style="text-align: center;">5</td>
+<td style="text-align: center;">6</td>
+<td style="text-align: center;"><strong>8</strong></td>
+<td style="text-align: center;">3</td>
+</tr>
+<tr>
+<td><strong>Gobernanza/verificación</strong> (evidencia, gate, juez) ×1,5</td>
+<td style="text-align: center;"><strong>9</strong></td>
+<td style="text-align: center;">5</td>
+<td style="text-align: center;">4</td>
+<td style="text-align: center;">3</td>
+<td style="text-align: center;">3</td>
+<td style="text-align: center;">6</td>
+<td style="text-align: center;">3</td>
+</tr>
+<tr>
+<td><strong>Contexto/coste</strong> (compaction, caché, ahorro) ×1,5</td>
+<td style="text-align: center;"><strong>8</strong></td>
+<td style="text-align: center;">9</td>
+<td style="text-align: center;">9</td>
+<td style="text-align: center;">7</td>
+<td style="text-align: center;">7</td>
+<td style="text-align: center;">8</td>
+<td style="text-align: center;">6</td>
+</tr>
+<tr>
+<td><strong>Seguridad/aislamiento</strong> ×1,0</td>
+<td style="text-align: center;">4</td>
+<td style="text-align: center;">5</td>
+<td style="text-align: center;"><strong>10</strong></td>
+<td style="text-align: center;">3</td>
+<td style="text-align: center;">4</td>
+<td style="text-align: center;">4</td>
+<td style="text-align: center;">2</td>
+</tr>
+<tr>
+<td><strong>Extensibilidad</strong> (plugins, hooks, MCP, skills) ×1,0</td>
+<td style="text-align: center;">5</td>
+<td style="text-align: center;"><strong>10</strong></td>
+<td style="text-align: center;">8</td>
+<td style="text-align: center;">8</td>
+<td style="text-align: center;"><strong>10</strong></td>
+<td style="text-align: center;">9</td>
+<td style="text-align: center;">4</td>
+</tr>
+<tr>
+<td><strong>Ecosistema/madurez</strong> ×1,0</td>
+<td style="text-align: center;">2</td>
+<td style="text-align: center;"><strong>10</strong></td>
+<td style="text-align: center;">8</td>
+<td style="text-align: center;">9</td>
+<td style="text-align: center;">8</td>
+<td style="text-align: center;">9</td>
+<td style="text-align: center;">7</td>
+</tr>
+<tr>
+<td><strong>Portabilidad/DX</strong> (instalar, 0 deps, superficies) ×1,0</td>
+<td style="text-align: center;">7</td>
+<td style="text-align: center;">8</td>
+<td style="text-align: center;">8</td>
+<td style="text-align: center;">8</td>
+<td style="text-align: center;">7</td>
+<td style="text-align: center;">7</td>
+<td style="text-align: center;">8</td>
+</tr>
+<tr>
+<td><strong>Media simple</strong></td>
+<td style="text-align: center;"><strong>6,0</strong></td>
+<td style="text-align: center;">8,2</td>
+<td style="text-align: center;">8,0</td>
+<td style="text-align: center;">6,6</td>
+<td style="text-align: center;">6,8</td>
+<td style="text-align: center;">7,4</td>
+<td style="text-align: center;">5,0</td>
+</tr>
+<tr>
+<td><strong>Media ponderada</strong></td>
+<td style="text-align: center;"><strong>7,0</strong></td>
+<td style="text-align: center;">8,1</td>
+<td style="text-align: center;">8,0</td>
+<td style="text-align: center;">6,5</td>
+<td style="text-align: center;">6,8</td>
+<td style="text-align: center;">7,5</td>
+<td style="text-align: center;">5,0</td>
+</tr>
+</tbody>
+</table>
+<p>Lectura: <strong>el podio del mercado está en ~8</strong>, no en 10. El único que se acerca al 10 en un eje somos
+nosotros, y por partida doble (gobernanza y coste). Nuestro arrastre es un solo número: <strong>ecosistema = 2</strong>.</p>
+<h3 id="quien-es-mejor-en-que-respuesta-directa">Quién es mejor en qué (respuesta directa)</h3>
+<table>
+<thead>
+<tr>
+<th>pregunta</th>
+<th>ganador</th>
+<th>por qué</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>¿Mejor en <strong>código</strong>?</td>
+<td><strong>Claude Code / Codex</strong> (empate técnico)</td>
+<td>LSP + edición por diff + 40 herramientas tipadas; OpenCode cerca por su tool de diagnóstico LSP.</td>
+</tr>
+<tr>
+<td>¿Mejor en <strong>tareas</strong> (resolver de punta a punta)?</td>
+<td><strong>Claude Code</strong>, luego Codex / DeepSeek</td>
+<td>mayor inventario de herramientas y mejor gestión de contexto multi-estrategia.</td>
+</tr>
+<tr>
+<td>¿Mejor <strong>agéntico</strong> (loop, subagentes, paralelismo, streaming)?</td>
+<td><strong>Claude Code</strong></td>
+<td>batching de herramientas por seguridad de concurrencia, subagentes recursivos con worktree, fork sin contaminar contexto.</td>
+</tr>
+<tr>
+<td>¿Más <strong>autónomo</strong> (sin humano)?</td>
+<td><strong>Hermes</strong>, con Nexus y Claude Code detrás</td>
+<td>daemon residente, triggers, presupuestos; nosotros añadimos cola + spec sintetizada + consult bidireccional.</td>
+</tr>
+<tr>
+<td>¿Mejor <strong>gobernanza/evidencia</strong>?</td>
+<td><strong>Nexus-Harness</strong> — único</td>
+<td><code>exit</code> por criterio como artefacto, juez distinto obligado, fail-closed, libro por turno.</td>
+</tr>
+<tr>
+<td>¿Mejor en <strong>contexto/coste</strong>?</td>
+<td><strong>Claude Code</strong>, con Nexus al lado</td>
+<td>ellos tienen prompt-cache de primera; nosotros <strong>medimos</strong> el ahorro por request con baseline.</td>
+</tr>
+<tr>
+<td>¿Mejor en <strong>seguridad</strong>?</td>
+<td><strong>Codex CLI</strong></td>
+<td>único con sandbox de SO multiplataforma y red off por defecto.</td>
+</tr>
+<tr>
+<td>¿Mejor <strong>extensibilidad</strong>?</td>
+<td><strong>DeepSeek <code>dsh</code> / Claude Code</strong></td>
+<td>«todo es plugin» vs hooks/plugins/MCP profundos.</td>
+</tr>
+<tr>
+<td>¿Mejor para <strong>modelo libre / local</strong>?</td>
+<td><strong>OpenCode</strong></td>
+<td>75+ proveedores, ruta local limpia; nosotros 6 y locales primero.</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="4-donde-ganamos-nuestro-foso-dicho-sin-marketing">4. Dónde ganamos (nuestro foso, dicho sin marketing)</h2>
+<ol>
+<li><strong>Cierre determinista con recibo.</strong> El gate corre <strong>antes</strong> del juez, devuelve <code>0/10/20</code>, y su veredicto
+   queda escrito. Un turno que «hizo algo» sin <code>exit</code> no puede decir que terminó.</li>
+<li><strong>Dos inteligencias que no se creen la una a la otra.</strong> El juez es un modelo distinto del obrero, por
+   diseño y por configuración; ve el contenido tocado, no solo la promesa.</li>
+<li><strong>Fail-closed de verdad.</strong> Sin backup no se edita; rojo no se promociona; «no puedo probar» es <strong>20</strong>, no
+   verde. (El falso verde está tipado como el fallo más caro y atacado explícitamente.)</li>
+<li><strong>Contabilidad de ahorro por request.</strong> Baseline, poda con recibo reconstruible, skills dormidas
+   (180 → 3.561 tokens de índice en vez de 451.606 de cuerpos), caché medida. <strong>−57,9 %</strong> medido en A/B.</li>
+<li><strong>Autonomía que pregunta en vez de inventar.</strong> Cola (<code>task add</code>), spec sintetizada a criterios
+   ejecutables, parada <strong>por criterios y no por reloj</strong>, y un canal de consulta bidireccional real
+   (Telegram/Discord) con <strong>default declarado</strong> al expirar el plazo.</li>
+<li><strong>0 dependencias y 400 líneas.</strong> Portabilidad extrema y auditabilidad total (la ley de tamaño se cumple
+   sola: 0 infracciones en 175 ficheros).</li>
+</ol>
+<h2 id="5-donde-perdemos-honestidad-sin-adornos">5. Dónde perdemos (honestidad, sin adornos)</h2>
+<ol>
+<li><strong>Aislamiento del proceso — el agujero nº1.</strong> Aislamos el <em>árbol</em> (git worktree); el <em>proceso</em> corre en
+   el host. Dentro de una política abierta, un comando hostil es el riesgo más grande. Codex lo tiene a
+   nivel de kernel; nosotros, una lista de denegaciones.</li>
+<li><strong>Sin streaming ni cancelación parcial.</strong> <code>stream: False</code> en los transportes. Un turno largo con modelo
+   local es una espera opaca; solo se corta entre pasos.</li>
+<li><strong>Sin LSP.</strong> El modelo descubre el código con <code>grep</code> + mapa AST. OpenCode y Claude Code preguntan al
+   servidor de lenguaje (definición, referencias, diagnósticos). Es la diferencia entre «explorar» y «saber».</li>
+<li><strong>Ecosistema = 2.</strong> Un autor, un ordenador, <strong>sin remoto git publicado, sin CI, sin CHANGELOG</strong>. En un
+   sector donde OpenCode tiene 220K estrellas y <code>dsh</code> 264K, «open-code no es open-source» hasta que otro
+   pueda clonar en verde.</li>
+<li><strong>Sin plugins/hooks.</strong> Terceros no pueden extender sin tocar el core. Es lo que convierte una herramienta
+   en plataforma.</li>
+<li><strong>Eval de capacidad corto.</strong> 7 tareas golden es un instrumento, no un benchmark. La propia auditoría dice:
+   hacen falta ~20 con dificultad graduada para comparar modelos con rigor.</li>
+<li><strong>Techo arquitectónico a la vista.</strong> Cuatro módulos a 395–399/400 líneas. La ley funciona, pero la
+   próxima feature obliga a dividir <em>antes</em> de añadir.</li>
+</ol>
+<hr />
+<h2 id="6-se-puede-abordar-un-10-de-10">6. ¿Se puede abordar un «10 de 10»?</h2>
+<p>Distingamos tres «10» distintos, porque confundirlos es lo que hace mentir al marketing.</p>
+<h3 id="6a-1010-absoluto-mejor-en-los-siete-subsistemas-no-no-hoy">6a. 10/10 absoluto (mejor en los siete subsistemas): <strong>no, no hoy.</strong></h3>
+<p>Nadie lo tiene: Claude Code no tiene sandbox de SO; Codex no tiene la extensibilidad de Claude; OpenCode
+no tiene aislamiento; <code>dsh</code> es <em>developer preview</em> con breaking changes. <strong>El techo real del mercado es ~8.</strong>
+Perseguir un 10 absoluto desde un autor único es vender una promesa que el propio mercado no cumple.</p>
+<h3 id="6b-1010-en-nuestros-dos-ejes-gobernanza-y-coste-si-y-es-cerrable-en-2-meses">6b. 10/10 en nuestros dos ejes (gobernanza y coste): <strong>sí, y es cerrable en ~2 meses.</strong></h3>
+<ul>
+<li>Gobernanza 9→10: autodetección obligatoria de runner (el gate <strong>nunca</strong> 0 sin comportamiento ejecutado),
+  test de humo generado, matriz de transición rojo→verde, y <code>mutation smoke</code> (mutar 3 líneas y exigir que
+  algún test se ponga rojo — si no, el verde no vale nada).</li>
+<li>Coste 8→10: tokenizer real por familia de modelo (hoy cae a <code>chars/4</code> como <em>fallback declarado</em>), y el
+  A/B reproducido contra un modelo en la nube con clave, no solo local.</li>
+</ul>
+<h3 id="6c-1010-global-no-por-esfuerzo-pero-810-si-y-es-lo-que-deberia-venderse">6c. 10/10 global: <strong>no por esfuerzo, pero 8/10 sí — y es lo que debería venderse.</strong></h3>
+<p>Para pasar de 6,0/7,0 a ~8 hay que cerrar cuatro agujeros, todos de ingeniería, ninguno de talento:</p>
+<table>
+<thead>
+<tr>
+<th>palanca</th>
+<th>eje que sube</th>
+<th>de → a</th>
+<th>coste</th>
+<th>¿cerrable?</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>LSP</strong> (definition/references/diagnostics como 3 tools)</td>
+<td>Código</td>
+<td>6 → 8</td>
+<td>P1.4, ~2 semanas</td>
+<td><strong>sí</strong></td>
+</tr>
+<tr>
+<td><strong>Streaming + cancelación</strong> por paso</td>
+<td>Agéntico</td>
+<td>5 → 7</td>
+<td>~1 semana</td>
+<td><strong>sí</strong></td>
+</tr>
+<tr>
+<td><strong>Sandbox de proceso</strong> (Job Object/AppContainer en Windows, bwrap en Linux)</td>
+<td>Seguridad</td>
+<td>4 → 7</td>
+<td>~3–4 semanas</td>
+<td><strong>sí</strong>, con trabajo</td>
+</tr>
+<tr>
+<td><strong>Plugins/hooks</strong> (<code>nexus_harness.toml</code> + puntos <code>before_turn</code>/<code>after_tool</code>/<code>before_commit</code>)</td>
+<td>Extensibilidad</td>
+<td>5 → 8</td>
+<td>~2 semanas</td>
+<td><strong>sí</strong></td>
+</tr>
+<tr>
+<td><strong>CI + CHANGELOG + remote + releases etiquetadas</strong></td>
+<td>Ecosistema</td>
+<td>2 → 5</td>
+<td>~1 semana</td>
+<td><strong>sí, y es lo primero</strong></td>
+</tr>
+<tr>
+<td><strong>Eval a ~20 tareas golden en 3 lenguajes</strong></td>
+<td>Tareas (credibilidad)</td>
+<td>6 → 8</td>
+<td>~2 semanas</td>
+<td><strong>sí</strong></td>
+</tr>
+<tr>
+<td><strong>Flota paralela con best-of-N</strong> (worktree por rama, gate por rama)</td>
+<td>Agéntico</td>
+<td>—</td>
+<td>~3 semanas</td>
+<td><strong>sí</strong></td>
+</tr>
+</tbody>
+</table>
+<h3 id="6d-lo-que-no-se-cierra-programando-y-hay-que-decir-en-el-release">6d. Lo que <strong>no</strong> se cierra programando (y hay que decir en el release)</h3>
+<ul>
+<li><strong>Ecosistema/comunidad 2 → 10:</strong> depende de adopción, no de código. Ni con diez años de desarrollo
+  solitario se compra una comunidad de 220K. Lo realista: 2 → 5–6 con un release público honesto + CI verde</li>
+<li>un proyecto de ejemplo que se rompe y se arregla delante del usuario.</li>
+<li><strong>Calidad del modelo:</strong> no es nuestra; un harness es el multiplicador, el modelo es el motor. Nuestro
+  argumento es que <strong>medimos</strong> cuál multiplica, no que tengamos el mejor motor.</li>
+<li><strong>Sandbox multiplataforma a la altura de Codex:</strong> alcanzable en Windows (Job Objects) pero Linux/macOS a
+  nivel kernel es un proyecto en sí.</li>
+</ul>
+<p><strong>Conclusión del apartado:</strong> el «10/10» honesto es <strong>«10/10 en lo que nos diferencia, 8/10 global, y
+declaramos por escrito los tres ejes donde no lo somos»</strong>. Eso vende más que un 10/10 falso, en un sector
+donde el propio paper demuestra que <strong>nadie</strong> tiene los siete subsistemas llenos.</p>
+<hr />
+<h2 id="7-simulacion-de-release-como-lo-sacaria-si-fuera-hoy">7. Simulación de release (cómo lo sacaría, si fuera hoy)</h2>
+<p><strong>Nivel:</strong> <code>1.2.0 · developer preview</code> (no 2.0). Alineado con <code>dsh</code>, que se autodeclara igual.</p>
+<p><strong>Mensaje principal (una frase):</strong></p>
+<blockquote>
+<p><em>Nexus-Harness no te promete el mejor agente. Te promete el único que te enseña el recibo: código de
+salida por criterio, juez distinto del obrero, y cuánto contexto y dinero costó cada turno.</em></p>
+</blockquote>
+<p><strong>Los cuatro argumentos del release (todos medibles, todos reproducibles):</strong>
+1. <code>verify: GREEN</code> — 49 suites, 0 hallazgos, 0 ficheros &gt; 400 líneas, <strong>0 dependencias</strong>.
+2. <strong>−57,9 %</strong> de tokens vs harness tradicional (A/B, misma tarea, mismo modelo).
+3. <strong>El recibo</strong>: cada turno con su <code>exit</code>, su juez y su coste, archivado.
+4. <strong>Autonomía que pregunta</strong>: deja tareas, el daemon las convierte en criterios, trabaja, verifica y te
+   consulta por Telegram/Discord cuando duda — con default declarado.</p>
+<p><strong>Sección obligatoria de honestidad (la que da credibilidad, no la que la quita):</strong>
+- Sandbox de proceso: <strong>pendiente</strong> (hoy aislamos el árbol, no el proceso).
+- Sin LSP, sin streaming, sin plugins/hooks: <strong>en el roadmap P1/P2</strong>, con nombres y módulos.
+- Ecosistema: <strong>proyecto de un autor</strong>, sin comunidad todavía. El release busca los primeros usuarios, no
+  fingir masa crítica.
+- Cloud: probado en construcción y parsers; <strong>llamada en vivo, no verificada</strong> (no hay clave en la máquina
+  de medición).</p>
+<p><strong>Qué NO decir en el release (anti-features de marketing):</strong>
+- «IA que programa sola y tú te vas». No: es IA que trabaja <strong>y rinde cuentas</strong>; tú decides el encargo.
+- «Mejor que Claude Code / Codex». Falso en código y orquestación. Lo honesto: <em>complementario y
+  especializado en verificación y coste</em>.
+- «Open-source» sin remoto, CI ni changelog. Arreglar esos tres <strong>antes</strong> de decir la palabra.</p>
+<hr />
+<h2 id="8-veredicto-final-el-que-pondria-en-la-portada-del-dossier-interno">8. Veredicto final (el que pondría en la portada del dossier interno)</h2>
+<p><strong>El motor está terminado y es, en su especialidad, mejor que cualquier harness del estado del arte. Lo que
+falta no es motor: es producto alrededor y — sobre todo — cerrar el agujero de aislamiento.</strong> Hoy somos un
+<strong>6,0/10 simple, 7,0/10 ponderado</strong>: excelente en dos ejes, flojo en ecosistema, con un agujero de
+seguridad claro. Un <strong>8/10 global es realista</strong> con la fase P1 y una semana más de CI/changelog/release.
+Un <strong>10/10 absoluto no lo tiene nadie</strong> —y decir lo contrario sería, precisamente, el tipo de mentira que
+este harness existe para no tolerar.</p>
+<blockquote>
+<p>Próximos tres pasos, en orden, sin negociar el orden:
+<strong>1.</strong> Publicar (remoto + CI + CHANGELOG + LICENSE) → deja de ser «open-code».
+<strong>2.</strong> Sandbox de proceso → cierra el agujero nº1.
+<strong>3.</strong> LSP + streaming → sube Código y Agéntico a competitivo.</p>
+</blockquote>
+<hr />
+<p><em>Dossier generado el 2026-10-29. Cifras propias reproducibles con <code>python tools/verify.py</code>, <code>docs/EVAL.md</code>,
+<code>docs/BENCHMARK_AB.md</code> y <code>docs/VERIFICATION.md</code>. Notas de terceros: fuentes públicas citadas en §2 y en
+<code>docs/COMPETITIVE.md</code>.</em></p></body></html>

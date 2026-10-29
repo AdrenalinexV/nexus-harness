@@ -90,7 +90,9 @@ def _dims(data):
 # -- normalising -----------------------------------------------------------------------------
 def _optional(module):
     """Import an optional dependency, or `None`. Pillow and PyMuPDF are extras, not requirements."""
-    import importlib  # noqa: PLC0415 - only needed on this path
+    # `importlib.util` es un SUBmodulo: no existe como atributo hasta que alguien lo importa, asi que
+    # `import importlib` a secas revienta con AttributeError y la rama opcional nunca corre.
+    import importlib.util  # noqa: PLC0415 - only needed on this path
 
     if importlib.util.find_spec(module) is None:
         return None

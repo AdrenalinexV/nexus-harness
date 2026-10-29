@@ -8,6 +8,7 @@ import sys
 import tempfile
 from pathlib import Path
 
+from . import Skip
 from .fakes import TempProject
 from ..config import HarnessConfig
 from ..toolbox import browser
@@ -118,7 +119,12 @@ def run():
     if declared:
         return list(declared)
     if getattr(sys, "frozen", False) and not browser.available():
+        # El .exe no lleva motor y `_frozen_without_engine` ya exigio que lo dijera: aqui se lee la
+        # ausencia declarada, no se finge una medicion.
         return []
+    if not browser.available():
+        raise Skip("no hay motor de navegador en esta maquina (Edge/Chrome del sistema o "
+                   "`playwright install chromium`): la fontaneria no se puede medir aqui")
     failures = []
     test_the_module_selftest(failures)
     test_a_real_page_becomes_text(failures)

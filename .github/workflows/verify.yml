@@ -1,0 +1,87 @@
+name: verify
+
+# The repo's own gate, run where it has never run before: a machine that is not the one it was
+# written on. Three questions, three jobs:
+#   verify  -- does the law hold and do all 49 suites pass on Windows and Linux, 3.11 and 3.13?
+#   wheel   -- does `pip install .` ship something that actually runs (the cockpit's assets included)?
+#   extras  -- with the OPTIONAL engines installed, do the suites that SKIP turn into real coverage?
+# A skip is printed, counted and allowed; a failure never is.
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: verify-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    name: verify / ${{ matrix.os }} / py${{ matrix.python }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+        python: ["3.11", "3.13"]
+    env:
+      # Bytecode cacheado hace que un fichero arreglado parezca roto: prefijo fresco por combinacion.
+      PYTHONPYCACHEPREFIX: ${{ runner.temp }}/pycache-${{ matrix.python }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+      - name: Lint (line law) + every deterministic suite
+        run: python tools/verify.py
+
+  wheel:
+    name: wheel / ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install the package as a user would
+        run: python -m pip install .
+      - name: The cockpit's assets must travel inside the wheel
+        shell: bash
+        run: |
+          python -c "import pathlib,sys,nexus_harness as n; web=pathlib.Path(n.__file__).parent/'web'; print('package:', pathlib.Path(n.__file__).parent); print('assets:', sorted(p.name for p in web.iterdir()) if web.is_dir() else 'MISSING'); sys.exit(0 if (web/'index.html').is_file() else 'the wheel shipped without web/index.html: pip install . gives a dead cockpit')"
+      - name: Run the shipped entry point from outside the repository
+        shell: bash
+        run: |
+          mkdir -p "$RUNNER_TEMP/elsewhere"
+          cd "$RUNNER_TEMP/elsewhere"
+          nexus-harness --version
+          nexus-harness selftest
+
+  extras:
+    name: extras / ubuntu
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install the optional engines the suites declare as SKIP
+        run: |
+          python -m pip install ".[media,browser]"
+          python -m playwright install --with-deps chromium
+      - name: With the engines present, SKIP must become coverage
+        run: |
+          python -m nexus_harness selftest 2>&1 | tee /tmp/selftest.log
+          grep -q "skipped=0" /tmp/selftest.log || {
+            echo "::error::con Pillow y Playwright instalados no deberia quedar ningun SKIP"
+            exit 1
+          }

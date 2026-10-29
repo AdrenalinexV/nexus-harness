@@ -6,6 +6,7 @@ preview that leaks the full image into the transcript.
 """
 import base64
 import importlib
+import importlib.util
 import io
 
 from .fakes import TempProject
@@ -88,6 +89,20 @@ def test_text_and_pdf_rules(failures, root):
 
 
 def test_content_shape(failures, root):
+    if Image is None:
+        # Sin Pillow no hay re-codificacion: el contrato es "cabe, luego viaja tal cual; no cabe, se
+        # niega con motivo", y la preview queda VACIA en vez de fingir un recorte que nadie hizo.
+        payload = base64.b64encode(png_bytes_raw(40, 40)).decode()
+        blocks, _notes = attachments.ingest(root, [{"name": "small.png", "data": payload}])
+        check("without Pillow a small image travels untouched", len(blocks), 1, failures)
+        check("kept as its own mime, not re-encoded", blocks[0]["mime"], "image/png", failures)
+        check("and the preview is honestly empty", blocks[0]["preview"], "", failures)
+        content = attachments.as_content(blocks, "¿qué ves aquí?")
+        check("the turn is still multimodal", [part["type"] for part in content],
+              ["text", "image_url"], failures)
+        check("the chip carries no base64", "uri" in attachments.chips(blocks)[0], False, failures)
+        check("a plain turn stays a string", attachments.as_content([], "hola"), "hola", failures)
+        return
     payload = base64.b64encode(png_bytes(40, 40)).decode()
     blocks, _notes = attachments.ingest(root, [{"name": "small.png", "data": payload}])
     content = attachments.as_content(blocks, "¿qué ves aquí?")

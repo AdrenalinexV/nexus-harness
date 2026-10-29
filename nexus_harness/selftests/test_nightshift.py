@@ -3,6 +3,8 @@ import importlib.util
 import sys
 from pathlib import Path
 
+from . import Skip
+
 ROOT = Path(__file__).resolve().parents[2]
 # En el motor congelado este modulo vive dentro del desempaquetado de PyInstaller, asi que la raiz
 # del repositorio no esta donde el fuente la deja. `engine.spec` empaqueta el fichero para que la
@@ -24,7 +26,10 @@ def run():
     """Carga `tools/nightshift.py` como modulo y ejecuta su propio selftest."""
     path = source_file()
     if path is None:
-        return ["no encuentro tools/nightshift.py: ni en %s ni en %s" % (ROOT, FROZEN_ROOT)]
+        # `tools/nightshift.py` es un script del REPOSITORIO, no un modulo del paquete: en una
+        # instalacion desde PyPI no existe y esta suite no puede medir nada. Se declara, no se finge.
+        raise Skip("tools/nightshift.py no viaja en el paquete: la suite necesita el arbol del repo "
+                   "(buscado en %s y %s)" % (ROOT, FROZEN_ROOT))
     spec = importlib.util.spec_from_file_location("nightshift", path)
     module = importlib.util.module_from_spec(spec)
     sys.modules.setdefault("nightshift", module)

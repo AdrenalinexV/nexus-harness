@@ -1,9 +1,42 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
 [project]
 name = "nexus-harness"
 version = "1.1.0"
 description = "Autonomous engineering harness with the Nexus Protocol as its turn loop"
+readme = "README.md"
+license = { text = "MIT" }
 requires-python = ">=3.11"
 dependencies = []
+keywords = ["agent", "harness", "llm", "governance", "verification"]
+classifiers = [
+  "Programming Language :: Python :: 3",
+  "License :: OSI Approved :: MIT License",
+  "Operating System :: OS Independent",
+]
+
+[project.urls]
+Homepage = "https://github.com/AdrenalinexV/nexus-harness"
+
+[project.scripts]
+# `pip install .` gives the same entry point as `python -m nexus_harness`.
+nexus-harness = "nexus_harness.cli:main"
+
+[tool.setuptools.packages.find]
+include = ["nexus_harness*"]
+
+[tool.setuptools.package-data]
+# Sin esto el wheel se instala SIN la cabina: `ui.py` revienta en `do_GET` al leer index.html y el
+# cockpit queda muerto en un `pip install .` que decia haber ido bien.
+nexus_harness = ["web/*"]
+
+[project.optional-dependencies]
+# Nada de esto hace falta para el motor: son las capacidades que las suites declaran como SKIP si faltan.
+media = ["pillow>=10"]
+browser = ["playwright>=1.40"]
+
 
 [tool.nexus-harness]
 # Read by config.py when ~/.nexus/harness.json is absent.
