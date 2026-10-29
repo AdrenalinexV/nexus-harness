@@ -1,9 +1,9 @@
 # Cabina — rework de UI y correcciones U1–U5 (2026-10-29)
 
-> Repo `C:\Proyectos\Nexus-Harness` · partida `d9be74a` · entrega `14c4019` · versión `1.1.0`.
+> Repo `C:\Proyectos\Nexus-Harness` · partida `d9be74a` · HEAD `174a65f` · versión `1.1.0`.
 > Commits: `534f9df` (U1/U2/U3/U5 + prueba), `6886bd9` (sistema visual + chat + configuración),
-> `14c4019` (gobernanza), `465c1c7` (este documento y sus capturas). Nada de esto toca el motor, el
-> gate ni la lógica de turno.
+> `14c4019` (gobernanza), `174a65f` (iconos dibujados, estado honesto en reposo) y los de este
+> documento con sus capturas. Nada de esto toca el motor, el gate ni la lógica de turno.
 >
 > Todo lo que dice este documento se midió. Donde no se pudo medir, se dice **no medido** y con qué
 > comando se cerraría.
