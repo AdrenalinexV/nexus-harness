@@ -9,9 +9,10 @@ import shutil
 import tempfile
 from pathlib import Path
 
-from .. import autonomy, ledger, projects
+from ..platform import ledger
+from .. import autonomy, projects
 from ..config import HarnessConfig
-from ..events import Bus
+from ..platform.events import Bus
 
 
 def check(name, got, expect, failures):

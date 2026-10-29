@@ -202,7 +202,8 @@ def segments(roles, hardware):
 
 def apply(cockpit, ready=None):
     """Aplica el plan al config vivo. Devuelve `(nota, ok)`."""
-    from . import hardware_probe, onboarding
+    from .platform import hardware_probe
+    from . import onboarding
     state = onboarding.status(cockpit.config, root=cockpit.config.default_root)
     hardware = hardware_probe.report()
     plan = optimize(cockpit.config, state, hardware, ready)

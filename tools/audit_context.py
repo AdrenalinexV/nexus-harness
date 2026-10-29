@@ -22,7 +22,7 @@ ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from nexus_harness import ledger  # noqa: E402
+from nexus_harness.platform import ledger  # noqa: E402
 from nexus_harness.compaction import estimate  # noqa: E402
 from nexus_harness.config import HarnessConfig  # noqa: E402
 from nexus_harness.message import Message, ToolCall  # noqa: E402

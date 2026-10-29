@@ -23,14 +23,14 @@ from .bridge import Bridge
 from .chat import Chat
 from .config import HarnessConfig
 from .skill_router import library
-from .events import Bus
+from .platform.events import Bus
 from .gate import Gate
 from .judge import judge_for
 from .mcp_client import McpManager
 from .memory import Memory
 from .providers import Router
 from .tools import default_registry
-from .transcripts import Transcripts
+from .platform.transcripts import Transcripts
 
 
 def _dirs(workspace):

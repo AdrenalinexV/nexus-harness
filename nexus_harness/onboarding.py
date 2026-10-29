@@ -20,7 +20,7 @@ import urllib.error
 import urllib.request
 from pathlib import Path
 
-from . import vault
+from .platform import vault
 from .config import CONFIG_FILE, DEFAULT_ROLES, HarnessConfig, WORKSPACE_DEFAULT
 from .providers import VENDORS, SpecError, parse_spec
 
@@ -172,7 +172,7 @@ def save_settings(changes):
     fichero de configuracion que el no escribio. Lo que no este aqui (`secrets`, `secrets_file`) no lo
     escribe un formulario, punto.
     """
-    from . import policy
+    from .platform import policy
     typed = {"budget_limit": int, "relay_threshold": float, "compact_threshold": float,
              "cost_limit": float, "max_steps": int, "max_repairs": int, "max_children": int,
              "subagent_steps": int, "subagent_depth": int, "tool_workers": int,

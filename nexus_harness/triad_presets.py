@@ -305,7 +305,7 @@ def presets(cockpit, hardware=None, state=None):
     `state` se inyecta cuando el llamante ya lo tiene: sondear dos veces los mismos servidores para
     pintar una pantalla es pagar dos veces por el mismo dato.
     """
-    from . import hardware_probe
+    from .platform import hardware_probe
     state = state if state is not None else onboarding.status(cockpit.config,
                                                               root=cockpit.config.default_root)
     hardware = hardware or hardware_probe.report()

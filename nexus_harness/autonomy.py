@@ -23,7 +23,8 @@ import threading
 import time
 from pathlib import Path
 
-from . import backup, ledger, plan_graph, projects, spec_synth
+from .platform import backup, ledger
+from . import plan_graph, projects, spec_synth
 from . import autonomy_ask
 from .reflection import lessons_block
 from .repo_map import RepoMap

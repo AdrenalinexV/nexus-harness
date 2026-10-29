@@ -14,11 +14,11 @@ from .fakes import FakeGate, FakeRouter, ScriptedProvider, ScriptedSkills, TempP
 from ..budget import CostBudget, cost_of, price_of
 from ..chat import Chat
 from ..config import HarnessConfig
-from ..events import Bus
+from ..platform.events import Bus
 from ..judge import Judge
 from ..message import Usage
 from ..tools import default_registry
-from ..transcripts import Transcripts
+from ..platform.transcripts import Transcripts
 from ..triad_loop import Triad
 
 CARO = 1_000_000          # un millon de tokens de entrada: el coste sale en USD legibles

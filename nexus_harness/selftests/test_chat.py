@@ -7,12 +7,12 @@ from .fakes import FakeRouter, FakeGate, ScriptedProvider, ScriptedSkills, TempP
 from .. import checkpoint
 from ..chat import Chat
 from ..config import HarnessConfig
-from ..events import Bus
+from ..platform.events import Bus
 from ..gate import Check, Verdict
 from ..memory import Memory
 from ..toolbox import file_ops as files
 from ..tools import default_registry
-from ..transcripts import Transcripts
+from ..platform.transcripts import Transcripts
 from ..judge import Judge
 
 

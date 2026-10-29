@@ -22,7 +22,7 @@ import hashlib
 from dataclasses import dataclass, field
 
 from .message import Message
-from .tokenizer import count
+from .platform.tokenizer import count
 
 DELTA_MARKER = "## Contexto actualizado (NEXUS)"
 DEFAULT_MAX_DELTAS = 8

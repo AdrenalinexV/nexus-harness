@@ -19,13 +19,13 @@ El bucle se mide con la puerta REAL (lint + ley de lineas + el comando de test) 
 from .fakes import FakeGate, FakeRouter, ScriptedProvider, ScriptedSkills, TempProject, reply
 from ..chat import Chat
 from ..config import HarnessConfig
-from ..events import Bus
+from ..platform.events import Bus
 from ..gate import Gate
 from ..judge import Judge
 from ..message import Reply, ToolCall, Usage, as_text
 from ..tools import Observation, default_registry
 from ..triad_loop import Triad
-from ..transcripts import Transcripts
+from ..platform.transcripts import Transcripts
 
 TEST_COMMAND = 'python -c "import calc, sys; sys.exit(0 if calc.add(2, 3) == 5 else 1)"'
 PATCH = reply(tools=[("c1", "patch_replace", {

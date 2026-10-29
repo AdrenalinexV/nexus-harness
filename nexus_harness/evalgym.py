@@ -18,7 +18,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 
 from .eval_tasks import TASKS, Task, selected
-from .events import Bus
+from .platform.events import Bus
 from .gate import Gate
 from .judge import judge_for
 from .providers import Router

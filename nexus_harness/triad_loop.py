@@ -17,11 +17,12 @@ import time
 from dataclasses import dataclass, field
 from pathlib import Path
 
-from . import ledger, triad_brief
+from .platform import ledger
+from . import triad_brief
 from .budget import CostBudget
 from .compaction import Compactor
 from .context_compiler import build_prefix
-from .tokenizer import calibration, count_messages
+from .platform.tokenizer import calibration, count_messages
 from .turn_context import apply_budget, build_turn_prefix, inject_skills
 from .turn_engine import TurnEngine
 from .gate import EXIT_GREEN, EXIT_UNAVAILABLE, Gate
@@ -376,15 +377,14 @@ class Triad:
         return result
 
     def _record(self, result):
-        """El run tambien se mide: UNA linea en el libro, la escriba quien la escriba.
+        """Una linea en el libro por run, la escriba quien la escriba.
 
-        `recorded` viaja en el resultado porque hay dos llamantes (el chat y el bucle autonomo) y una
-        sola fila: el que la escribio lo declara, y el otro no la repite. Contarla dos veces inflaba el
-        consumo medido al doble (medido: 411.886 en vez de 205.943 en el libro del arnes).
+        `recorded` viaja en el resultado porque hay dos llamantes (chat y bucle autonomo) y una sola
+        fila: contarla dos veces inflo el consumo medido al doble (411.886 en vez de 205.943).
         """
-        result.recorded = ledger.TurnLedger(self.config.default_root).append(
-            ledger.from_turn(result.as_dict(), str(self.config.default_root),
-                             (result.sessions or [""])[-1], "run"))
+        root = str(self.config.default_root)
+        result.recorded = ledger.TurnLedger(root).append(
+            ledger.from_turn(result.as_dict(), root, (result.sessions or [""])[-1], "run"))
 
     def _checkpoint(self, phase, verdict):
         if phase is None or self.relay is None:

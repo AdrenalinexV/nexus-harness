@@ -3,7 +3,7 @@
 El presupuesto del arnes (poda al 55 %, relevo al 70 %) depende de este numero. Si miente, el arnes
 decide tarde o temprano, y en los dos casos paga.
 """
-from .. import tokenizer
+from ..platform import tokenizer
 
 
 def check(name, got, expected, failures):

@@ -13,7 +13,7 @@ import subprocess
 
 from .. import repair_guard, repo_map, worktree_sandbox
 from ..config import HarnessConfig
-from ..events import Bus
+from ..platform.events import Bus
 from ..gate import Gate
 from ..judge import Judge
 from ..tools import default_registry

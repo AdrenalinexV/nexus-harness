@@ -22,8 +22,15 @@ answered); the rest are the ones a reviewer checks.
 
 ## Layout contract
 
-- `nexus_harness/` — the harness. `providers.py` and `tools.py` are the two deep interfaces: every
-  model and every action enters through them.
+- `nexus_harness/platform/` — la capa de abajo: `events`, `ledger`, `tokenizer`, `transcripts`,
+  `vault`, `policy`, `hardware_probe`, `backup`. **No importa nada de fuera de si misma**, y
+  `selftests/test_layers.py` lo comprueba (se puso roja a proposito antes de darla por buena).
+- El orden de capas, de abajo arriba: `platform → core → llm → tools → context → verify → autonomy →
+  spec → learning`. Una capa puede importar las de su izquierda; nunca las de su derecha. El resto del
+  arbol sigue plano mientras se migra, y la suite solo exige lo que ya esta migrado: un invariante que
+  se pone rojo durante semanas acaba desactivado.
+- `nexus_harness/` — el harness. `providers.py` y `tools.py` son las dos interfaces profundas: todo
+  modelo y toda accion entran por ahi.
 - `nexus_harness/selftests/` — deterministic tests. No network, no key, no clock: a fake transport
   stands in for the model, so a green run means the logic is right, not that the network was up.
 - `tools/` — repository tooling (lint wrapper, verification script).

@@ -20,7 +20,8 @@ ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from nexus_harness import autonomy, backup, projects, runner  # noqa: E402
+from nexus_harness.platform import backup
+from nexus_harness import autonomy, projects, runner  # noqa: E402
 from nexus_harness.config import HarnessConfig  # noqa: E402
 from nexus_harness.events import Bus  # noqa: E402
 from nexus_harness.providers import Router  # noqa: E402

@@ -65,7 +65,7 @@ def block(cockpit=None):
 
 def _save_keys(body):
     """Guarda host/usuario/puerto/clave en la boveda. Devuelve las notas (nunca los valores)."""
-    from . import vault
+    from .platform import vault
     updates = {}
     for field, name in (("host", "VPS_HOST"), ("user", "VPS_USER"), ("port", "VPS_PORT"),
                         ("key", "VPS_SSH_KEY")):

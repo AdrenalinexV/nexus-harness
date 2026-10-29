@@ -175,7 +175,7 @@ class Compactor:
 
     def counter(self, model=None):
         """El contador calibrado de `model` (o del de este compactor)."""
-        from .tokenizer import count_messages
+        from .platform.tokenizer import count_messages
         name = str(model if model is not None else self.model or "")
         return lambda rows: count_messages(rows, name)
 

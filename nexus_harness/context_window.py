@@ -192,7 +192,7 @@ def shrink(messages, budget, model=""):
     varias pasadas: primero los cuerpos mas grandes que la media, y el tope baja a la mitad si aun no
     cabe, asi que termina siempre.
     """
-    from .tokenizer import count_messages
+    from .platform.tokenizer import count_messages
 
     body = list(messages or ())
     budget = _digits(budget)
@@ -261,7 +261,7 @@ def selftest():
     big = [Message(role="system", content="reglas " * 100),
            Message(role="user", content="hazlo"),
            Message(role="tool", content="x" * 40000, tool_call_id="c1", name="read_file")]
-    from .tokenizer import count_messages
+    from .platform.tokenizer import count_messages
     before = count_messages(big, "")
     shrunk = shrink(big, 3000, "")
     check("recorta hasta caber", count_messages(shrunk, "") <= 3000, True)

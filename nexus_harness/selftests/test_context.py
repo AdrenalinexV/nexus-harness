@@ -13,8 +13,8 @@ from .fakes import FakeGate, FakeRouter, ScriptedProvider, TempProject, reply
 from ..chat import Chat
 from ..config import HarnessConfig
 from ..context_compiler import DELTA_MARKER, TurnWindow, build_prefix
-from ..events import Bus
-from ..tokenizer import Calibration, count, estimate
+from ..platform.events import Bus
+from ..platform.tokenizer import Calibration, count, estimate
 from ..tools import default_registry
 
 

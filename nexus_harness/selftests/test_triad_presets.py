@@ -13,7 +13,8 @@ Lo que esta suite defiende, y por qué cada cosa:
 
 Determinista: sin red, sin GPU y sin LM Studio. El hardware y el sondeo local entran inyectados.
 """
-from .. import hardware_probe, settings_models, triad_presets, triad_recommend
+from ..platform import hardware_probe
+from .. import settings_models, triad_presets, triad_recommend
 from ..config import HarnessConfig
 from ..judge import ADVERSARY, NullJudge, judge_for
 from ..message import Message

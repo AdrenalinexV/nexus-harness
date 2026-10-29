@@ -26,7 +26,7 @@ import tempfile
 import time
 from pathlib import Path
 
-from . import vault
+from .platform import vault
 
 PROTOCOL_DEPLOY = Path(r"C:\Proyectos\NexusProtocol\deploy")
 REMOTE_ROOT = "/opt/nexus"

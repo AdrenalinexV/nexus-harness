@@ -5,9 +5,10 @@ panel: la poda corta tokens de entrada de verdad, el baseline incluye lo que un 
 habria mandado (indice de skills dormidas), el mapa AST se cuenta como COSTE (no como ahorro) y la
 reparacion aislada no engorda el hilo principal.
 """
-from .. import context_pruner, ledger, savings, stats_savings, triad_brief
+from ..platform import ledger
+from .. import context_pruner, savings, stats_savings, triad_brief
 from ..config import HarnessConfig
-from ..events import Bus
+from ..platform.events import Bus
 from ..gate import Gate
 from ..judge import Judge
 from ..tools import default_registry

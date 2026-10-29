@@ -15,7 +15,8 @@ import sys
 from html import escape
 from pathlib import Path
 
-from . import onboarding, vault
+from .platform import vault
+from . import onboarding
 
 NEXUS_SOURCE = Path(os.environ.get("NEXUS_PROTOCOL") or r"C:\Proyectos\NexusProtocol")
 

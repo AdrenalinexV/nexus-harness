@@ -17,9 +17,9 @@ from .. import context_window
 from ..compaction import Compactor
 from ..config import HarnessConfig
 from ..context_window import fit, overflow, shrink
-from ..events import Bus
+from ..platform.events import Bus
 from ..message import Message, Reply
-from ..tokenizer import count_messages
+from ..platform.tokenizer import count_messages
 from ..transports import http
 from ..turn_engine import TurnEngine
 

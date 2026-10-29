@@ -178,7 +178,7 @@ def test_the_loop_asks_before_giving_up(failures):
     import shutil
     from .. import autonomy, autonomy_ask
     from ..config import HarnessConfig as _Config
-    from ..events import Bus
+    from ..platform.events import Bus
 
     workspace = Path(tempfile.mkdtemp(prefix="consult-loop-"))
     try:

@@ -12,7 +12,7 @@ The suite measures the real module (`nexus_harness.compaction`), never a stand-i
 from .fakes import FakeGate, FakeRouter, ScriptedProvider, ScriptedSkills, TempProject, reply
 from ..compaction import DIGEST_HEADER, Compactor, compact, estimate
 from ..config import HarnessConfig
-from ..events import Bus
+from ..platform.events import Bus
 from ..judge import Judge
 from ..message import Message, ToolCall
 from ..tools import default_registry
@@ -156,7 +156,7 @@ def test_triad_compacts_before_the_relay(failures):
 def test_chat_compacts_its_history(failures):
     """The conversation loop is the other place a window fills; it compacts the same way."""
     from ..chat import Chat
-    from ..transcripts import Transcripts
+    from ..platform.transcripts import Transcripts
     with TempProject({"notas.txt": BIG, "calc.py": "def add(a, b):\n    return a + b\n"}) as root:
         config = HarnessConfig(default_root=root, test_command="python -c \"pass\"", max_steps=6,
                                max_repairs=1, budget_limit=600, compact_threshold=0.55,

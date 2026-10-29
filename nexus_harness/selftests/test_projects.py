@@ -14,7 +14,8 @@ import subprocess
 import tempfile
 from pathlib import Path
 
-from .. import backup, onboarding, projects
+from ..platform import backup
+from .. import onboarding, projects
 from ..config import HarnessConfig
 
 # `creationflags` is a Windows-only kwarg: on POSIX, Python raises ValueError even for a plain flag

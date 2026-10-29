@@ -22,7 +22,7 @@ import shutil
 import subprocess
 import threading
 
-from .. import policy
+from ..platform import policy
 from . import output_clip, process_manager
 
 DEFAULT_TIMEOUT = 180

@@ -13,7 +13,7 @@ No human, no restart, same run.
 from . import require_protocol
 from .fakes import FakeRouter, ScriptedProvider, ScriptedSkills, TempProject, reply
 from ..config import HarnessConfig
-from ..events import Bus
+from ..platform.events import Bus
 from ..gate import Gate
 from ..judge import Judge
 from ..session_relay import BudgetMeter, SessionRelay, SessionStore

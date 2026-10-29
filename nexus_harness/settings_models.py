@@ -15,7 +15,8 @@ Las tarjetas mantienen el `<select>` real: los locales se listan en vivo y marca
 cargados en VRAM; los de nube, el catálogo curado del rol con su aviso si falta la clave. Un campo de
 texto al lado acepta cualquier id escrito a mano, porque un catálogo no es una jaula.
 """
-from . import hardware_probe, onboarding, panels, provider_discovery, triad_balance, triad_presets
+from .platform import hardware_probe
+from . import onboarding, panels, provider_discovery, triad_balance, triad_presets
 from . import settings_kit as kit
 
 # (rol interno, ancla, titulo, que es)

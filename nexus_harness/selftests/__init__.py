@@ -28,7 +28,7 @@ def require_protocol(module):
                    % (module, type(exc).__name__, exc))
 
 
-SUITES = ("providers", "retry", "repair", "tools", "linelaw", "edit_v4a", "shell_session", "shell_policy", "checkpoint", "subagents", "attachments",
+SUITES = ("providers", "retry", "repair", "tools", "linelaw", "layers", "edit_v4a", "shell_session", "shell_policy", "checkpoint", "subagents", "attachments",
           "onboarding", "mcp_client", "sidecar", "nightshift", "context", "triad_loop", "session_relay", "relay_state", "savings", "skills", "worktree", "deploy", "judge_repair", "compaction", "chat",
           "memory", "ui", "bridge", "budget", "charts", "activity", "projects", "autonomy", "ux",
           "learning", "oracle", "tokenizer", "spec", "plan_graph", "portfolio", "eval", "daemon", "notify", "browser", "recall",

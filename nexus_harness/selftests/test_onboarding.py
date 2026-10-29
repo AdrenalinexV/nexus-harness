@@ -7,7 +7,8 @@ throwaway project, because that is the part most likely to drift.
 from pathlib import Path
 
 from .fakes import TempProject
-from .. import onboarding, vault
+from ..platform import vault
+from .. import onboarding
 
 
 def check(name, got, expect, failures=None):

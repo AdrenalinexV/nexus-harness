@@ -14,7 +14,7 @@ Cinco propiedades, cada una con una falsificacion posible:
 import os
 
 from .fakes import TempProject
-from .. import policy
+from ..platform import policy
 from ..config import HarnessConfig
 from ..toolbox import shell_session
 from ..tools import Registry

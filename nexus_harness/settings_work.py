@@ -3,7 +3,7 @@
 Los dos tienen la misma forma: se enseña lo que HAY (medido, no recordado), se cambia lo que se puede
 cambiar, y lo que no se puede cambiar desde aquí se dice con su motivo en vez de esconderse.
 """
-from . import vault
+from .platform import vault
 from . import settings_kit as kit
 
 KEY_NAMES = ("OPENAI_API_KEY", "ANTHROPIC_API_KEY", "DEEPSEEK_API_KEY", "OPENROUTER_API_KEY",

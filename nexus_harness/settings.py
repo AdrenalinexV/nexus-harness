@@ -13,7 +13,8 @@ import subprocess
 import sys
 from html import escape
 
-from . import gov, onboarding, panels, triad_balance, vault
+from .platform import vault
+from . import gov, onboarding, panels, triad_balance
 from . import settings_kit as kit
 from . import (settings_models, settings_projects, settings_skills, settings_tools, settings_vps,
                settings_work)

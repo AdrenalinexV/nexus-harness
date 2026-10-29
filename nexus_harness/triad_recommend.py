@@ -15,7 +15,8 @@ peor que un aviso honesto.
 
 Vive aparte de `triad_presets` por la ley de 400: aquel decide QUE cabe, este decide QUE HACER.
 """
-from . import hardware_probe, onboarding
+from .platform import hardware_probe
+from . import onboarding
 from .triad_presets import PRESETS, plan
 
 

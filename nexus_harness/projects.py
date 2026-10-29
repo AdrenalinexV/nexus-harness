@@ -20,7 +20,8 @@ import shutil
 import subprocess
 from pathlib import Path
 
-from . import backup, onboarding
+from .platform import backup
+from . import onboarding
 
 SPEC_REL = Path(".ai") / "CURRENT_SPEC.json"
 RULES_REL = Path(".ai") / "PROJECT_RULES.md"

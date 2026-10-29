@@ -10,7 +10,8 @@ skills (`settings_api.py`, que tiene su propia validacion de rutas).
 """
 from pathlib import Path
 
-from . import __version__, activity, gov, ledger, projects
+from .platform import ledger
+from . import __version__, activity, gov, projects
 
 API_VERSION = 3
 NAME = "Nexus-Harness"

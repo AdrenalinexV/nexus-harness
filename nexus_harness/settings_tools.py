@@ -11,7 +11,8 @@ Las estadisticas llevan tres graficos, y son SVG escritos por `charts.py`: el mo
 descarga nada, asi que una libreria de graficos seria una pantalla en blanco en cuanto no hubiera red.
 Cada grafico declara su fuente; si no hay medida, se dice con palabras en el mismo hueco.
 """
-from . import charts, gov, ledger, panels, projects, stats_savings
+from .platform import ledger
+from . import charts, gov, panels, projects, stats_savings
 from . import settings_kit as kit
 
 # La ultima respuesta de una accion (el arquitecto, el doctor). Vive en memoria del motor a proposito:
