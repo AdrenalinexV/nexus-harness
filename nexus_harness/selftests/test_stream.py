@@ -148,6 +148,78 @@ def test_stop_cuts_the_live_stream(failures):
     check("olvidar un handle que no estaba no rompe", streaming.in_flight(), 0, failures)
 
 
+def test_a_hung_stream_is_cut_by_close_all(failures):
+    """El criterio del paso 10: 3 deltas, el modelo se cuelga, Detener corta de verdad en <=1 s.
+
+    Un servidor local entrega tres lineas SSE y despues espera. El lector esta bloqueado dentro de
+    `readline()`: si `close_all()` solo pusiera una bandera, seguiria ahi. Se mide el tiempo real y que
+    el SERVIDOR vea caer la conexion -- sin eso, "cortado" seria una palabra nuestra, no un hecho.
+    """
+    import http.server
+    import threading
+    import time
+
+    from ..llm.transports import http as transport_http
+
+    class Hung(http.server.BaseHTTPRequestHandler):
+        protocol_version = "HTTP/1.1"
+        timeout = 10
+        seen = []
+
+        def log_message(self, *args):  # el servidor de prueba no ensucia la salida del gate
+            return None
+
+        def do_POST(self):
+            length = int(self.headers.get("Content-Length") or 0)
+            self.rfile.read(length)
+            self.send_response(200)
+            self.send_header("Content-Type", "text/event-stream")
+            self.send_header("Connection", "close")
+            self.end_headers()
+            for index in range(3):
+                self.wfile.write(b'data: {"choices": [{"delta": {"content": "%d"}}]}\n' % index)
+                self.wfile.flush()
+            Hung.seen.append("sent")
+            try:
+                while self.rfile.read(1):
+                    continue
+            except OSError:
+                Hung.seen.append("client-gone")
+            else:
+                Hung.seen.append("client-gone")
+
+    server = http.server.ThreadingHTTPServer(("127.0.0.1", 0), Hung)
+    threading.Thread(target=server.serve_forever, daemon=True).start()
+    url = "http://127.0.0.1:%d/v1/chat/completions" % server.server_address[1]
+    received, finished = [], threading.Event()
+
+    def read():
+        try:
+            for line in transport_http.stream_lines(url, {"model": "prueba"}, timeout=10):
+                received.append(line)
+        except Exception as exc:  # noqa: BLE001 -- el hallazgo ES la excepcion
+            received.append("EXC:%s" % type(exc).__name__)
+        finally:
+            finished.set()
+
+    threading.Thread(target=read, daemon=True).start()
+    deadline = time.time() + 5
+    while len(received) < 3 and time.time() < deadline:
+        time.sleep(0.02)
+    check("el stream entrega las tres lineas antes de que el modelo termine",
+          len(received) >= 3, True, failures)
+    started = time.time()
+    streaming.close_all()
+    finished.wait(2.0)
+    elapsed = time.time() - started
+    check("cortar el socket termina el iterador en menos de 1 s", elapsed < 1.0, True, failures)
+    check("el iterador no mintio con una excepcion", [r for r in received if r.startswith("EXC:")], [], failures)
+    check("el servidor ve caer la conexion", "client-gone" in Hung.seen, True, failures)
+    check("el registro queda vacio", streaming.in_flight(), 0, failures)
+    server.shutdown()
+    server.server_close()
+
+
 def run():
     failures = []
     test_fold_rebuilds_the_same_reply(failures)
@@ -157,4 +229,5 @@ def run():
     test_lines_survive_a_split_json(failures)
     test_an_event_serializes_flat(failures)
     test_stop_cuts_the_live_stream(failures)
+    test_a_hung_stream_is_cut_by_close_all(failures)
     return failures
