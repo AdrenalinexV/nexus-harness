@@ -20,6 +20,11 @@ SOURCE = Path(os.environ.get("NEXUS_PROTOCOL") or r"C:\Proyectos\NexusProtocol")
 
 
 def run():
+    # `.git` distingue el checkout del wheel instalado (`site-packages/nexus_harness/../`). En el wheel
+    # el puntero no existe y no tiene sentido: fuera del repo no hay cwd al que apuntar. En el checkout,
+    # un puntero que falta es ROJO: alguien lo borró y diez imports dejan de resolver.
+    if not (ROOT / ".git").exists():
+        raise Skip("no es un checkout (%s sin .git): el puntero nexus/ solo existe en el repo" % ROOT)
     if not SHIM.is_file():
         return ["falta nexus/__init__.py: los diez `from nexus.… import` del repo dejan de resolver"]
     # Sin gobernador esta suite no puede medir: eso es un SKIP. Con el gobernador presente, un puntero

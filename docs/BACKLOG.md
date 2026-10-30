@@ -10,7 +10,7 @@
 > (3) Ninguna cifra se teclea: `python tools/doc_truth.py` la compara con el motor y pone el build rojo.
 > (4) Lo que no se pudo medir se escribe **no medido** con el comando que lo cerraría.
 
-Medido hoy: 59 suites · 203 ficheros · 0 hallazgos de lint · 0 ficheros > 400 líneas.
+Medido hoy: 59 suites · 204 ficheros · 0 hallazgos de lint · 0 ficheros > 400 líneas.
 
 ---
 

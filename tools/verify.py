@@ -16,6 +16,8 @@ import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
+if str(ROOT) not in sys.path:  # el propio paquete, para `platform.console` sin instalar nada
+    sys.path.insert(0, str(ROOT))
 FROZEN = ROOT / "dist" / "nexus-harness-engine.exe"
 DOC = ROOT / "docs" / "VERIFICATION.md"
 
@@ -118,6 +120,8 @@ def main(argv=None):
     parser.add_argument("--write-doc", action="store_true",
                         help="regenerate docs/VERIFICATION.md (off by default: el gate no edita lo que juzga)")
     args = parser.parse_args(argv)
+    from nexus_harness.platform.console import enable_utf8
+    enable_utf8()
     rows = []
     code, output = run([sys.executable, str(ROOT / "tools" / "lint_harness.py")])
     rows.append(("lint", code, summary(output)))

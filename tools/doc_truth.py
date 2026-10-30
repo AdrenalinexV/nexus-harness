@@ -27,6 +27,8 @@ import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
+if str(ROOT) not in sys.path:  # el propio paquete, para `platform.console` sin instalar nada
+    sys.path.insert(0, str(ROOT))
 MARK = "Congelado en `%s`"
 
 # --- documentos que hablan del árbol de HOY ------------------------------------------------------
@@ -57,6 +59,8 @@ DATED = re.compile(r"\d{4}-\d{2}-\d{2}|\b[0-9a-f]{7}\b")
 
 # Shas que no se pudieron comprobar porque el clon es superficial (CI con fetch-depth 1).
 SHALLOW = []
+# Claves cuya fuente no está en esta máquina (el ahorro vive en un artefacto local, gitignored).
+UNMEASURED = set()
 
 # Una cifra medida se detecta con estos patrones: si un doc las cita, tiene que estar clasificado.
 SMELL = re.compile(r"\b\d+ suites\b|\bfiles=\d+|\bsuites=\d+|\b\d+ ficheros\b|\b\d+ módulos\b")
@@ -74,9 +78,19 @@ def measured():
     lint = _sh([sys.executable, str(ROOT / "tools" / "lint_harness.py")])
     line = (lint.stdout or "").strip().splitlines()[-1] if lint.stdout.strip() else ""
     counts = dict(chunk.split("=") for chunk in line.split() if "=" in chunk and chunk.split("=")[0].isalpha())
+    # El ahorro sale de un artefacto LOCAL (`.nexus/harness/benchmark_ab.json`, gitignored): en un clon
+    # limpio no existe. Eso no es «0 %» ni un verde: es **no medido**, y se dice con esas palabras.
     ab = _sh([sys.executable, str(ROOT / "tools" / "benchmark_ab_savings.py"), "--doc-only"])
     import json
-    savings = json.loads(ab.stdout.strip().splitlines()[-1]) if ab.returncode == 0 else {}
+    note = ""
+    savings = {}
+    if ab.returncode == 0 and ab.stdout.strip():
+        try:
+            savings = json.loads(ab.stdout.strip().splitlines()[-1])
+        except ValueError:
+            note = "benchmark_ab_savings no devolvio JSON"
+    if not savings:
+        note = note or "falta .nexus/harness/benchmark_ab.json en esta maquina (artefacto local)"
     subdirs = [p for p in (ROOT / "nexus_harness").iterdir()
                if p.is_dir() and not p.name.startswith((".", "__"))]
     engine = [p for p in (ROOT / "nexus_harness").rglob("*.py")
@@ -88,8 +102,9 @@ def measured():
         "flat": len(list((ROOT / "nexus_harness").glob("*.py"))),
         "dirs": len(subdirs),
         "loc": sum(len(p.read_text(encoding="utf-8", errors="replace").splitlines()) for p in engine),
-        "savings": float(savings.get("savings_pct", 0.0)),
-        "multiplier": float(savings.get("window_life_multiplier", 0.0)),
+        "savings": float(savings["savings_pct"]) if "savings_pct" in savings else None,
+        "multiplier": float(savings["window_life_multiplier"]) if "window_life_multiplier" in savings else None,
+        "note": note,
     }
 
 
@@ -142,6 +157,10 @@ def check_current(values):
             problems.append("%s: la regla /%s/ ya no casa con nada — la frase cambió, actualiza RULES" % (doc, pattern))
             continue
         covered.add(doc)
+        if values.get(key) is None:
+            # No medido no es rojo ni verde: se dice y se sigue. El ahorro vive en un artefacto local.
+            UNMEASURED.add(key)
+            continue
         for stated in hits:
             if not _same(stated, values[key]):
                 problems.append("%s: publica %r en /%s/ y la fuente mide %s=%s"
@@ -273,6 +292,8 @@ def classify():
 def write(values):
     changed = []
     for doc, pattern, key in RULES:
+        if values.get(key) is None:
+            continue  # no medido: reescribir con 0 seria inventar la cifra, justo lo que se persigue
         path = ROOT / doc
         text = path.read_text(encoding="utf-8")
 
@@ -296,6 +317,9 @@ def check():
 
 
 def main(argv=None):
+    # Un diagnostico en UTF-8 no puede morir en una consola cp1252: el hallazgo no es el glifo.
+    from nexus_harness.platform.console import enable_utf8
+    enable_utf8()
     parser = argparse.ArgumentParser(prog="doc_truth")
     group = parser.add_mutually_exclusive_group()
     group.add_argument("--check", action="store_true", help="falla si un doc contradice al motor (por defecto)")
@@ -308,10 +332,15 @@ def main(argv=None):
     problems, values, covered = check()
     for problem in problems:
         print("- %s" % problem)
-    print("doc_truth: %s — suites=%d files=%d flat=%d dirs=%d loc=%d savings=%.1f%% reglas=%d docs=%d%s"
+    pending = ""
+    if UNMEASURED:
+        pending = " (no medido: %s — %s)" % (", ".join(sorted(UNMEASURED)), values.get("note") or "sin fuente")
+    print("doc_truth: %s — suites=%d files=%d flat=%d dirs=%d loc=%d savings=%s reglas=%d docs=%d%s%s"
           % ("GREEN" if not problems else "RED (%d)" % len(problems), values["suites"], values["files"],
-             values["flat"], values["dirs"], values["loc"], values["savings"], len(RULES), len(covered),
-             "" if not SHALLOW else " (sha no comprobado: clon superficial)"))
+             values["flat"], values["dirs"], values["loc"],
+             "no medido" if values["savings"] is None else "%.1f%%" % values["savings"],
+             len(RULES), len(covered),
+             "" if not SHALLOW else " (sha no comprobado: clon superficial)", pending))
     return 0 if not problems else 1
 
 

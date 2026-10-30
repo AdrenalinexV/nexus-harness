@@ -11,11 +11,16 @@ import importlib
 import sys
 from pathlib import Path
 
+from . import Skip
+
 ROOT = Path(__file__).resolve().parent.parent.parent
 TOOLS = str(ROOT / "tools")
 
 
 def run():
+    if not (ROOT / "tools" / "doc_truth.py").is_file():
+        # Wheel instalado: el medidor vive en el checkout, no en el paquete. SKIP con razón, no rojo.
+        raise Skip("no hay tools/doc_truth.py en %s: esta suite solo mide el checkout" % ROOT)
     if TOOLS not in sys.path:
         sys.path.insert(0, TOOLS)
     try:

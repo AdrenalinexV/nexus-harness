@@ -21,6 +21,7 @@ from .platform.events import Bus
 from .verify.gate import Gate
 from .llm.judge import judge_for
 from .llm.providers import Router, SpecError
+from .platform.console import enable_utf8
 from .session_relay import SessionRelay
 from .tools import default_registry
 from .cli_ops import cmd_daemon, cmd_notify, cmd_task
@@ -372,6 +373,9 @@ def build_parser():
 
 
 def main(argv=None):
+    # La consola del runner (cp1252) mataba el gate con UnicodeEncodeError al imprimir un hallazgo:
+    # un diagnostico que no se puede escribir no es un diagnostico. Ver `platform/console.py`.
+    enable_utf8()
     args = build_parser().parse_args(argv)
     try:
         return int(args.func(args))

@@ -12,6 +12,8 @@ import importlib
 import sys
 from pathlib import Path
 
+from . import Skip
+
 ROOT = Path(__file__).resolve().parent.parent.parent
 TOOLS = str(ROOT / "tools")
 SCRIPTS = ("audit_context", "benchmark_ab_savings", "prove_repair_cycle", "adversary_audit", "dogfood")
@@ -19,6 +21,10 @@ SCRIPTS = ("audit_context", "benchmark_ab_savings", "prove_repair_cycle", "adver
 
 def run():
     problems = []
+    if not Path(TOOLS).is_dir():
+        # En un wheel instalado no hay `tools/`: los scripts viven en el repo, no en el paquete. No es
+        # un rojo (no hay nada roto) ni un verde (no se midió): es un SKIP con su razón.
+        raise Skip("no hay tools/ junto al paquete (%s): esta suite solo mide el checkout" % TOOLS)
     if TOOLS not in sys.path:
         sys.path.insert(0, TOOLS)
     for name in SCRIPTS:
