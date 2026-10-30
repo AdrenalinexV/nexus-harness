@@ -38,9 +38,16 @@
   0 emojis / 0 azul de corpus y el botón aporta 0 cajas con relleno. Hecho en `2f563a2`.
   *Verificado creando el Blob de verdad y leyendo sus primeros 80 caracteres.*
 
-- [ ] **U-04 · Sección «Acerca de»** (`§11`, `settings_about.py`) — versión, `api`, host:puerto, raíz,
-  uptime y un botón `Comprobar` que llama a `/api/health` y pinta el resultado. Aceptación: 200 con `h1`
-  propio y `test_ui_contract` sigue verde (el índice pasa a 16 destinos). Verificación: curl + suite.
+- [x] **U-04 · Sección «Acerca de»** (`§12`, `settings_about.py`) — versión, `api`, host:puerto, raíz,
+  uptime y un botón `Comprobar` que llama a `/api/health` y deja su resultado en la nota. Las seis
+  cifras salen en vivo de `cockpit.state()` y `/api/health` (que ahora publica `uptime`), sin ninguna
+  escrita a mano; el botón es un `<form>` de verdad, así que funciona con el script bloqueado. Medido
+  en navegador real (motor aislado `:53899` con `NEXUS_HOME` en scratch): `GET /settings?section=about`
+  → **200** con `<h1><span class="folio">§12</span>Acerca de</h1>`, host y raíz reales, y **0 radius>2 /
+  0 sombras / 0 pills / 0 emojis / 0 azul de corpus / 0 enlaces sin token**; clic real en `Comprobar` →
+  303 a `…&note=salud%3A%20responde…&token=…` y la fila `uptime` pasa de 3 s a 9 s. El índice queda en
+  12 destinos (§01–§12) / 15 entradas navegables. Hecho en `aa1d4b9`.
+  *Verificado con clic real en el navegador y el 303 leído sin seguirlo.*
 
 - [x] **U-05 · Hoja de atajos** — `?` abre un `<dialog>` con Ctrl+Enter, Esc, Ctrl+K, `?` y los ejes de
   apariencia; sin dependencias. Aceptación: pulsar `?` (tecla real) abre `dialog[open]`. Verificación:
