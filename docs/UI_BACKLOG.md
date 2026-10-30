@@ -29,10 +29,14 @@
   relanzado → banda oculta y `failures=0`. Hecho en `f502424` (`showOffline`/`markReachable` en
   `app.js`). *Verificado con apagar/encender el servidor.*
 
-- [ ] **U-03 · Exportar el hilo a Markdown** — botón `Exportar` en `.doc-head`; genera un `.md` con
-  `## folio NN · ROL`, el texto y las herramientas, y lo descarga con `Blob`. Aceptación: el blob
-  empieza por `# ` + título y contiene `folio 01`. Verificación: JS (crear el blob y leer los primeros
-  80 caracteres).
+- [x] **U-03 · Exportar el hilo a Markdown** — botón `Exportar` en `.doc-head`; genera un `.md` con
+  `## folio NN · ROL`, el texto y las herramientas, y lo descarga con `Blob`. El modelo del documento
+  vive en `state.doc` (lo llena `chat_stream.js` al pintar, para que los folios del `.md` sean los
+  mismos que los de pantalla) y lo vuelca `export.js`. Medido en navegador real (CDP, motor aislado con
+  una conversación sembrada): clic real → descarga `exportar-el-hilo.md`, el blob empieza por
+  `# Exportar el hilo` (el `h1` servido) y contiene `folio 01`; sonda 0 radius>2 / 0 sombras / 0 pills /
+  0 emojis / 0 azul de corpus y el botón aporta 0 cajas con relleno. Hecho en `2f563a2`.
+  *Verificado creando el Blob de verdad y leyendo sus primeros 80 caracteres.*
 
 - [ ] **U-04 · Sección «Acerca de»** (`§11`, `settings_about.py`) — versión, `api`, host:puerto, raíz,
   uptime y un botón `Comprobar` que llama a `/api/health` y pinta el resultado. Aceptación: 200 con `h1`
