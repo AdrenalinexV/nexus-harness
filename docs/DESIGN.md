@@ -27,10 +27,10 @@ Consecuencias que son decisiones, no gustos:
    glifo. Verde = decisión tomada · ámbar = espera humana o *no verificable* · rojo = detectado/roto ·
    gris = sin registro.
 
-## Cuatro ejes: papel, composición, color y voz
+## Cinco ejes: papel, composición, color, voz y aire
 
 Aprendido de cómo lo resuelven otros: **Hermes** separa *skin* de *personalidad*; **OpenCode** guarda
-temas como tokens; **Crush** expone el layout aparte del color. De ahí, cuatro ejes que se eligen por
+temas como tokens; **Crush** expone el layout aparte del color. De ahí, cinco ejes que se eligen por
 separado — y mezclar dos ejes en uno es lo que produce «el mismo diseño con otro pantón».
 
 | eje | clave | fichero | cuántos |
@@ -39,10 +39,14 @@ separado — y mezclar dos ejes en uno es lo que produce «el mismo diseño con 
 | **composición** (diseño) | `ui_skin` | `skins.css` + `skins-special.css` | 6 en 3 grupos |
 | **color** (pantón) | `ui_theme` | `themes.css` (`[data-accent]`) | 6 |
 | **voz** (tipografía) | `ui_font` | `skins.css` | 4 |
+| **aire** (densidad) | `ui_density` | `density.css` | 2: `normal`, `compacta` |
 
 El modo **no** depende del sistema: lo elige el operador (un cockpit que cambia de color porque
 Windows cambió de tema no es una decisión). 2 × 6 = **12 juegos de color** con contraste medido, más
-6 composiciones y 4 voces.
+6 composiciones, 4 voces y 2 densidades. La densidad mueve **padding y gap** (`--pad`, `--gap` y los
+huecos del hilo, el mensaje y el compositor), nunca el tipo: si un bloque de densidades declara
+`font-family` o `font-size`, no es densidad y `test_density_moves_air_not_type` lo dice. Se carga la
+última, así que se aplica igual sobre los seis diseños sin subir especificidad ni tocar su CSS.
 
 ### Diseños
 

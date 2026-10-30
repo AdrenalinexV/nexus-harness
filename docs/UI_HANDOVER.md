@@ -7,6 +7,7 @@ Escrito al cerrar la sesión del 2026-10-30 antes de dejar el bucle trabajando.
 | pieza | estado | cómo se comprueba |
 |---|---|---|
 | Cuatro ejes de aspecto: papel (`ui_mode`), composición (`ui_skin`), color (`ui_theme`), voz (`ui_font`) | listo | `python -c "…ui_theme…"` → `2 5 6 4` |
+| Quinto eje de AIRE (`ui_density`: `normal`, `compacta`) — padding y gap, nunca el tipo | listo | `run(['themes'])` (`test_density_moves_air_not_type`) + `density.css` |
 | 5 diseños: `main`, `editorial` (cinta + columna centrada, Sitka), `terminal`, `matrix`, `glossy` | listo | `run(['themes'])` OK |
 | 12 juegos de color (6 pantones × 2 modos) con contraste WCAG medido | listo | `run(['themes'])` → `12/12` |
 | `web/themes.css` generado desde `ui_theme.tokens` | listo | `python tools/gen_themes.py --check` |

@@ -53,9 +53,16 @@
   apariencia; sin dependencias. Aceptación: pulsar `?` (tecla real) abre `dialog[open]`. Verificación:
   CDP `Input.dispatchKeyEvent`.
 
-- [ ] **U-06 · Densidad** — eje `ui_density` (`normal` | `compacta`): la compacta reduce aire (padding y
+- [x] **U-06 · Densidad** — eje `ui_density` (`normal` | `compacta`): la compacta reduce aire (padding y
   gap) sin cambiar tipos. Aceptación: `data-density` servido y altura del hilo distinta ≥10 %.
-  Verificación: navegador (medir `#thread` en ambas).
+  Verificación: navegador (medir `#thread` en ambas). Medido en motor aislado `:52812` con una
+  conversación sembrada de 12 mensajes: `#thread.scrollHeight` **1621 px** (`normal`) → **1247 px**
+  (`compacta`) = **−23,1 %**, con `.bubble` `font-size` idéntico (14,5 px) en las dos; `data-density`
+  servido por el chat y por `/settings`, y clic real en el radio `compacta` + `Aplicar densidad` → 303
+  con la nota `densidad → compacta` y `harness.json` con `"ui_density": "compacta"`. Sonda 0 radius>2 /
+  0 sombras / 0 pills / 0 emojis / 0 azul de corpus / 0 enlaces sin token. `density.css` no declara
+  `font-family` ni `font-size` (lo exige `test_density_moves_air_not_type`). Hecho en `c5a079d`.
+  *Verificado con dos medidas reales del hilo en el navegador y capturas en `docs/ui/density-*.png`.*
 
 - [ ] **U-07 · Teclado en el índice** — las conversaciones son `role="option"` en un `listbox` con
   flechas y Enter. Aceptación: ArrowDown mueve el foco y Enter abre. Verificación: CDP.

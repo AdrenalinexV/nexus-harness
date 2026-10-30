@@ -303,3 +303,25 @@ escrito.
 
 Capturas: `axes-main-dark.png`, `axes-main-light.png`, `axes-matrix.png`, `axes-glossy.png`,
 `axes-panel.png`, `axes-sheet.png` (las cuatro en una hoja).
+
+## 10. Quinto eje: el aire (`ui_density`)
+
+El quinto eje no es un tipo ni un color: es **aire**. `normal` es el aire con el que se pensó cada
+composición; `compacta` mueve `--pad`, `--gap` y los huecos del hilo, el mensaje, el compositor y el
+manual. Vive en `web/density.css`, que se carga **la última** para mandar sobre `app.css` y sobre los
+seis diseños sin subir la especificidad (mismo selector que `skins.css`, más abajo en la cascada) y sin
+tocar una línea de su CSS.
+
+| criterio | medida real (motor aislado `:52812`, `NEXUS_HOME` en scratch, `NEXUS_HARNESS_TOKEN`) |
+|---|---|
+| `data-density` servido | `curl '…/?token=…' \| grep -o 'data-density="[a-z]*"'` → `normal` (defecto) y `compacta` tras guardar |
+| altura del hilo (12 mensajes sembrados) | `#thread.scrollHeight` **1621 px** `normal` → **1247 px** `compacta` = **−23,1 %** (el criterio pedía ≥10 %) |
+| el eje NO toca el tipo | `.bubble` `font-size: 14.5px` y cuerpo `"Segoe UI Variable Text"` idénticos en las dos densidades |
+| el aire sí cambia | `#thread` padding `6,4/22,4 px` → `1,6/9,6 px`; `.msg` padding `12,8` → `4,8 px` |
+| selector | `§ Apariencia` pasa a **05 · Densidad**; `input[name^="ui_"]` = **19** (18 + 2 radios, uno marcado) |
+| guardado | clic real en el radio `compacta` + `Aplicar densidad` → **303** a `…&note=densidad%20%E2%86%92%20compacta&token=…`, y `harness.json` queda con `"ui_density": "compacta"` |
+| sonda anti-slop (chat y `/settings`) | 0 radius>2 · 0 sombras · 0 pills · 0 azul de corpus · 0 emojis · 0 enlaces sin token |
+| prueba | `test_density_moves_air_not_type`: cada densidad con su bloque, ≥10 reglas, toca `.thread/.msg/.composer/.settings-panel`, **cero** `font-family`/`font-size` en el fichero, y una errata (`apretada`) no se guarda |
+
+Capturas del par: `density-normal-chat.png` y `density-compacta-chat.png` (misma conversación, mismo
+motor, misma pestaña), más `density-panel.png` con el selector `05 · Densidad`.
