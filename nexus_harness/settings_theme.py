@@ -1,10 +1,10 @@
-"""Panel de apariencia: cuatro ejes, cuatro selectores, un solo sitio.
+"""Panel de apariencia: cinco ejes, cinco selectores, un solo sitio.
 
-    modo (papel) · diseño (composición) · pantón (color) · tipografía (voz)
+    modo (papel) · diseño (composición) · pantón (color) · tipografía (voz) · densidad (aire)
 
 Cada eje se elige por separado, con su formulario y su 303, y se guarda en su clave (`ui_mode`,
-`ui_skin`, `ui_theme`, `ui_font`) que valida `onboarding`. El diseño se presenta agrupado: uno
-principal, dos especiales que cambian el esqueleto, y los alternativos.
+`ui_skin`, `ui_theme`, `ui_font`, `ui_density`) que valida `onboarding`. El diseño se presenta agrupado:
+uno principal, dos especiales que cambian el esqueleto, y los alternativos.
 """
 from html import escape
 
@@ -12,8 +12,8 @@ from . import settings_kit as kit
 from . import ui_theme
 
 TITLE = "Apariencia"
-SUBTITLE = ("Cuatro ejes independientes: el papel (oscuro o claro), la composición, el color y la voz. "
-            "Cambiar uno no toca los otros.")
+SUBTITLE = ("Cinco ejes independientes: el papel (oscuro o claro), la composición, el color, la voz y "
+            "el aire. Cambiar uno no toca los otros.")
 GROUP_LABELS = (("main", "Principal"), ("special", "Especiales"), ("alt", "Alternativos"))
 
 
@@ -67,17 +67,27 @@ def _fonts(current):
     return _form(rows, "Aplicar tipografía")
 
 
+def _densities(current):
+    rows = [_option("ui_density", key, label, note, "", current)
+            for key, label, note in ui_theme.DENSITIES]
+    return _form(rows, "Aplicar densidad")
+
+
 def panel(cockpit):
     config = cockpit.config
     skin = ui_theme.resolve_skin(config.ui_skin)
     mode = ui_theme.resolve_mode(config.ui_mode)
     accent = ui_theme.resolve(config.ui_theme)
     font = ui_theme.resolve_font(config.ui_font)
+    density = ui_theme.resolve_density(config.ui_density)
     body = ('<h3 class="ssub">01 · Diseño</h3>%s'
             '<h3 class="ssub">02 · Modo</h3>%s'
             '<h3 class="ssub">03 · Pantón</h3>%s'
             '<h3 class="ssub">04 · Tipografía</h3>%s'
+            '<h3 class="ssub">05 · Densidad</h3>%s'
             '<p class="shint">Se guardan por separado: cambiar el pantón no toca el diseño ni la voz. '
-            'El modo no depende del sistema: lo eliges tú.</p>'
-            % (_skins(skin), _modes(mode), _accents(accent, mode), _fonts(font)))
+            'El modo no depende del sistema: lo eliges tú. La densidad mueve el aire (padding y gap), '
+            'nunca el tipo.</p>'
+            % (_skins(skin), _modes(mode), _accents(accent, mode), _fonts(font),
+               _densities(density)))
     return (TITLE, SUBTITLE, body)

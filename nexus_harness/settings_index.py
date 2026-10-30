@@ -55,7 +55,7 @@ SEARCH_TERMS = {
     "stats": "estadisticas auditoria ledger graficos ahorro coste",
     "about": "acerca de version api uptime contrato salud motor informacion comprobar",
     "apariencia": "apariencia tema color panton paleta neon cyberpunk retro fosforo synthwave "
-                  "ambar riso contraste",
+                  "ambar riso contraste densidad compacta aire espacio tipografia modo",
 }
 
 

@@ -120,12 +120,50 @@ def test_choice_is_validated(failures):
             onboarding.CONFIG_FILE = original
 
 
+def test_density_moves_air_not_type(failures):
+    """El quinto eje (`ui_density`) mueve padding y gap; si toca el tipo, no es densidad.
+
+    Se comprueba sobre el CSS servido: cada densidad con su bloque, el bloque tocando las cuatro piezas
+    del documento (hilo, mensaje, compositor y manual) con al menos diez reglas, y CERO declaraciones de
+    `font-family`/`font-size` dentro de él. Y la errata no se guarda, igual que en los otros ejes.
+    """
+    css = (WEB / "density.css").read_text(encoding="utf-8")
+    for key in ui_theme.DENSITY_KEYS:
+        if key == ui_theme.DEFAULT_DENSITY:
+            continue
+        block = '[data-density="%s"]' % key
+        check("%s tiene su bloque" % key, block in css, True, failures)
+        check("%s toca al menos 10 reglas" % key, css.count(block) >= 10, True, failures)
+        for selector in (".thread", ".msg", ".composer", ".settings-panel"):
+            check("%s ajusta %s" % (key, selector), block + " " + selector in css, True, failures)
+    # El fichero del eje no declara tipo en NINGUNA parte: si lo declarara, no sería densidad.
+    for forbidden in ("font-family", "font-size"):
+        check("density.css no declara %s (el eje es aire, no tipo)" % forbidden,
+              forbidden in css, False, failures)
+    check("la densidad por defecto no tiene bloque (es el aire de cada diseño)",
+          css.count('[data-density="%s"]' % ui_theme.DEFAULT_DENSITY), 0, failures)
+    check("densidad desconocida -> defecto", ui_theme.resolve_density("apretada"),
+          ui_theme.DEFAULT_DENSITY, failures)
+    original = onboarding.CONFIG_FILE
+    with tempfile.TemporaryDirectory() as root:
+        onboarding.CONFIG_FILE = Path(root) / "harness.json"
+        try:
+            _saved, notes = onboarding.save_settings({"ui_density": "apretada"})
+            check("ui_density con errata no se guarda", len(notes), 1, failures)
+            check("y no se escribe el fichero", onboarding.CONFIG_FILE.is_file(), False, failures)
+            saved, _notes = onboarding.save_settings({"ui_density": "compacta"})
+            check("densidad válida se guarda", saved.get("ui_density"), "compacta", failures)
+        finally:
+            onboarding.CONFIG_FILE = original
+
+
 def run():
     failures = []
     test_every_game_reads(failures)
     test_css_is_generated(failures)
     test_skins_are_structural(failures)
     test_fonts_change_the_voice(failures)
+    test_density_moves_air_not_type(failures)
     test_stacks_name_a_real_family_first(failures)
     test_choice_is_validated(failures)
     return failures

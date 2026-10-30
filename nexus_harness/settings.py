@@ -55,7 +55,7 @@ def _render(name, cockpit, sub, item, query):
     return settings_tools.stats(cockpit)
 
 
-def screen(cockpit, query, token="", accent="", skin="", mode="", font=""):
+def screen(cockpit, query, token="", accent="", skin="", mode="", font="", density=""):
     """El HTML de la pantalla entera, con la sección pedida ya pintada."""
     section, sub = resolve((query.get("section") or [""])[0], (query.get("sub") or [""])[0])
     item = str((query.get("item") or [""])[0])
@@ -73,6 +73,7 @@ def screen(cockpit, query, token="", accent="", skin="", mode="", font=""):
         "skin": escape(str(skin or ""), quote=True),
         "mode": escape(str(mode or ""), quote=True),
         "font": escape(str(font or ""), quote=True),
+        "density": escape(str(density or ""), quote=True),
         "sprite": ui_icons.sprite(),
         "close_icon": ui_icons.icon("close"),
         "palette": palette(token),
@@ -87,7 +88,7 @@ def screen(cockpit, query, token="", accent="", skin="", mode="", font=""):
 
 
 LAYOUT = """<!doctype html>
-<html lang="es" data-mode="%(mode)s" data-accent="%(accent)s" data-skin="%(skin)s" data-font="%(font)s">
+<html lang="es" data-mode="%(mode)s" data-accent="%(accent)s" data-skin="%(skin)s" data-font="%(font)s" data-density="%(density)s">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
@@ -101,6 +102,7 @@ LAYOUT = """<!doctype html>
 <link rel="stylesheet" href="skins-special.css">
 <link rel="stylesheet" href="app.css">
 <link rel="stylesheet" href="settings.css">
+<link rel="stylesheet" href="density.css">
 </head>
 <body class="settings-body">
 %(sprite)s
@@ -231,10 +233,11 @@ def save(cockpit, body):
             notes.append("contexto guardado")
         cockpit.reload_config()
     elif section == "apariencia":
-        # Dos ejes con la misma tubería: diseño (`ui_skin`) y pantón (`ui_theme`). El formulario manda
-        # solo el que se pulsó, así que se guarda lo que venga y se dice cuál cambió.
+        # Los cinco ejes del aspecto con la misma tubería: diseño (`ui_skin`), pantón (`ui_theme`),
+        # papel (`ui_mode`), voz (`ui_font`) y aire (`ui_density`). El formulario manda solo el que se
+        # pulsó, así que se guarda lo que venga y se dice cuál cambió.
         axes = (("ui_skin", "diseño"), ("ui_theme", "pantón"), ("ui_mode", "modo"),
-                ("ui_font", "tipografía"))
+                ("ui_font", "tipografía"), ("ui_density", "densidad"))
         changes = {key: body[key] for key, _label in axes if body.get(key)}
         saved, problems = onboarding.save_settings(changes)
         notes += problems

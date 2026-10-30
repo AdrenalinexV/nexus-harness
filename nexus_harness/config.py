@@ -86,6 +86,7 @@ DEFAULTS = {
     "ui_mode": "dark",
     "ui_font": "system",
     "ui_skin": "document",
+    "ui_density": "normal",
     # El juez de la triada: `gate` (solo gate determinista, $0 y 0 ms), `fast` (una llamada corta) o
     # `adversary` (el mismo contrato con la instruccion de buscar el fallo). Un juez puede ser el mismo
     # modelo que el director, pero entonces no audita: el panel lo avisa y `gate` es la opcion honesta.
@@ -179,13 +180,15 @@ class HarnessConfig:
     browser_headless: bool = True
     recall_enabled: bool = True
     lang: str = "es"
-    # Aspecto de la cabina: pantón (`ui_theme.ACCENTS`), modo, diseño y tipografía. Cuatro ejes.
+    # Aspecto de la cabina: pantón (`ui_theme.ACCENTS`), modo, diseño, tipografía y densidad. Cinco ejes.
     ui_theme: str = "paper"
     # Modo (papel) y tipografía: ejes independientes del pantón y del diseño.
     ui_mode: str = "dark"
     ui_font: str = "system"
     # Diseño (composición) — independiente del pantón: `ui_theme.SKINS`.
     ui_skin: str = "document"
+    # Densidad (aire: padding y gap, sin tocar el tipo) — `ui_theme.DENSITIES`.
+    ui_density: str = "normal"
     judge_mode: str = "fast"
     consult_enabled: bool = True
     ask_deadline: int = 900

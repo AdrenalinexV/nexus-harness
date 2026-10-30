@@ -1,12 +1,13 @@
-"""El aspecto de la cabina: cuatro ejes independientes, no un catálogo de combinaciones.
+"""El aspecto de la cabina: cinco ejes independientes, no un catálogo de combinaciones.
 
 Lo que se aprendió mirando a los demás: Hermes separa *skin* de *personalidad*; OpenCode guarda temas
-como tokens; Crush separa layout de color. De ahí, cuatro ejes que se eligen por separado:
+como tokens; Crush separa layout de color. De ahí, cinco ejes que se eligen por separado:
 
     modo      dark | light      (el papel: oscuro o claro — NO depende del sistema)
     diseño    main | matrix | glossy | terminal | minimal | neon   (la composición)
     pantón    neon | crt | synth | amber | riso | paper             (el color)
-    tipografía system | serif | mono | condensed                    (la voz)
+    tipografía default | sans | mono | large                        (la voz)
+    densidad  normal | compacta                                     (el aire: padding y gap)
 
 `main` es el diseño de la casa y el único que se anuncia como principal; `matrix` y `glossy` son
 especiales (cambian el esqueleto de verdad); `terminal`, `minimal` y `neon` quedan como alternativos.
@@ -29,6 +30,16 @@ FONTS = (
 )
 FONT_KEYS = tuple(row[0] for row in FONTS)
 DEFAULT_FONT = "default"
+
+# La densidad es un eje de AIRE, no de tipo: mueve `--pad`, `--gap` y los huecos de la composición
+# (padding y gap), y no toca ni una familia ni un tamaño de letra. Por eso vive fuera de `themes.css`
+# (que es color) y de los diseños (que son estructura): se aplica sobre cualquiera de los dos.
+DENSITIES = (
+    ("normal", "Normal", "el aire con el que se pensó cada composición"),
+    ("compacta", "Compacta", "menos aire: más mensajes por pantalla, los mismos tipos"),
+)
+DENSITY_KEYS = tuple(row[0] for row in DENSITIES)
+DEFAULT_DENSITY = "normal"
 
 # (clave, nombre, intención, par recomendado) — `group`: main | special | alt
 SKINS = (
@@ -194,6 +205,16 @@ def resolve_font(value):
 def resolve_skin(value):
     key = str(value or "").strip().lower()
     return key if key in SKIN_KEYS else DEFAULT_SKIN
+
+
+def resolve_density(value):
+    key = str(value or "").strip().lower()
+    return key if key in DENSITY_KEYS else DEFAULT_DENSITY
+
+
+def density_label(key):
+    wanted = resolve_density(key)
+    return next(row for row in DENSITIES if row[0] == wanted)[1]
 
 
 def skin_meta(key):

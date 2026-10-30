@@ -178,6 +178,7 @@ def save_settings(changes):
              "subagent_steps": int, "subagent_depth": int, "tool_workers": int,
              "shell_timeout": int, "request_timeout": int, "max_tokens": int,
              "temperature": float, "lang": str, "workspace": str, "ui_theme": str, "ui_skin": str, "ui_mode": str, "ui_font": str,
+             "ui_density": str,
              "worker_resident": bool, "hardware_ceiling": int, "triad_auto_adapt": bool,
              "triad_bias": str, "ask_deadline": int, "consult_enabled": bool}
     out, saved, notes = {}, {}, []
@@ -197,10 +198,11 @@ def save_settings(changes):
                 notes.append("ui_skin: %r no es uno de %s" % (value, ", ".join(ui_theme.SKIN_KEYS)))
                 continue
             out[name] = saved[name] = key
-        elif name in ("ui_mode", "ui_font"):
+        elif name in ("ui_mode", "ui_font", "ui_density"):
             # Ejes hermanos del pantón y del diseño: se validan contra su catálogo y se dice el error.
             from . import ui_theme
-            catalog = ui_theme.MODE_KEYS if name == "ui_mode" else ui_theme.FONT_KEYS
+            catalog = {"ui_mode": ui_theme.MODE_KEYS, "ui_font": ui_theme.FONT_KEYS,
+                       "ui_density": ui_theme.DENSITY_KEYS}[name]
             key = str(value or "").strip().lower()
             if key not in catalog:
                 notes.append("%s: %r no es uno de %s" % (name, value, ", ".join(catalog)))

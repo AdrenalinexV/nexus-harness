@@ -137,6 +137,7 @@ class Handler(BaseHTTPRequestHandler):
         html = html.replace("{{mode}}", ui_theme.resolve_mode(config.ui_mode))
         html = html.replace("{{font}}", ui_theme.resolve_font(config.ui_font))
         html = html.replace("{{skin}}", ui_theme.resolve_skin(config.ui_skin))
+        html = html.replace("{{density}}", ui_theme.resolve_density(config.ui_density))
         return html.replace("<!--NEXUS_SPRITE-->", ui_icons.sprite()).encode("utf-8")
 
     def _static(self, name):
@@ -164,7 +165,8 @@ class Handler(BaseHTTPRequestHandler):
             config = self.cockpit.config
             return self._page(settings.screen(self.cockpit, query, self.server.token,
                                               accent=config.ui_theme, skin=config.ui_skin,
-                                              mode=config.ui_mode, font=config.ui_font))
+                                              mode=config.ui_mode, font=config.ui_font,
+                                              density=config.ui_density))
         if path.startswith("/api/settings/"):
             from . import settings_api
             answer = settings_api.handle(self.cockpit, "GET", path, query, {})
