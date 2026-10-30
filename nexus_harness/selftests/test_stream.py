@@ -192,6 +192,95 @@ def test_the_cockpit_sees_text_before_the_answer(failures):
               kinds.index("worker.delta") < kinds.index("chat.assistant"), True, failures)
 
 
+def _cut(text, size):
+    """El fixture incómodo: fragmentos arbitrarios, no líneas. Así llega un TCP de verdad."""
+    return [text[i:i + size] for i in range(0, len(text), size)]
+
+
+def test_every_parser_survives_a_split_json(failures):
+    """Cada transporte lee SU forma y da el mismo `Reply` que su `parse()` del cuerpo entero.
+
+    Es el criterio 2 del paso 10, en una sola batería: se parte el fixture cada 23/37 caracteres y se
+    compara texto, razon, tool_calls y usage contra la respuesta sin streaming equivalente. Un parser
+    que se apoye en «el chunk trae una línea» falla aquí, que es donde tiene que fallar.
+    """
+    from ..llm.transports.anthropic import Anthropic
+    from ..llm.transports.ollama import Ollama
+    from ..llm.transports.openai_compat import OpenAICompatible
+
+    openai = OpenAICompatible("kat", "http://127.0.0.1:1/v1", name="lmstudio", requires_key=False)
+    sse = (
+        'data: {"model": "kat", "choices": [{"index": 0, "delta": {"content": "Hola"}}]}\n\n'
+        'data: {"model": "kat", "choices": [{"index": 0, "delta": {"content": " mundo"}}]}\n\n'
+        'data: {"model": "kat", "choices": [{"index": 0, "delta": {"reasoning_content": "penso"}}]}\n\n'
+        'data: {"choices": [{"index": 0, "delta": {"tool_calls": [{"index": 0, "id": "c1", '
+        '"function": {"name": "read_file", "arguments": "{\\"path\\": \\"a"}}]}}]}\n\n'
+        'data: {"choices": [{"index": 0, "delta": {"tool_calls": [{"index": 0, '
+        '"function": {"arguments": ".py\\"}"}}]}}]}\n\n'
+        'data: {"choices": [{"index": 0, "finish_reason": "tool_calls"}], '
+        '"usage": {"prompt_tokens": 12, "completion_tokens": 7}}\n\n'
+        'data: [DONE]\n\n')
+    whole = {"model": "kat", "choices": [{"message": {
+        "content": "Hola mundo", "reasoning_content": "penso",
+        "tool_calls": [{"id": "c1", "function": {"name": "read_file",
+                                               "arguments": '{"path": "a.py"}'}}]}}],
+        "usage": {"prompt_tokens": 12, "completion_tokens": 7}}
+    streamed = streaming.fold(openai.iter_events(_cut(sse, 37)))
+    same_reply("openai SSE partido", streamed, openai.parse(whole), failures)
+    check("openai: el trozo partido no se pierde", streamed.text, "Hola mundo", failures)
+
+    ollama = Ollama("tev1")
+    ndjson = (
+        '{"model": "tev1", "message": {"content": "Ho"}, "done": false}\n'
+        '{"model": "tev1", "message": {"content": "la"}, "done": false}\n'
+        '{"model": "tev1", "message": {"content": "", "thinking": "dudo"}, "done": false}\n'
+        '{"model": "tev1", "message": {"tool_calls": [{"id": "c1", "function": {"name": "search", '
+        '"arguments": {"pattern": "x"}}}]}, "done": false}\n'
+        '{"model": "tev1", "message": {"content": ""}, "done": true, "prompt_eval_count": 7, '
+        '"eval_count": 2}\n')
+    whole = {"model": "tev1", "message": {
+        "content": "Hola", "thinking": "dudo",
+        "tool_calls": [{"id": "c1", "function": {"name": "search",
+                                                "arguments": {"pattern": "x"}}}]},
+        "prompt_eval_count": 7, "eval_count": 2}
+    streamed = streaming.fold(ollama.iter_events(_cut(ndjson, 23)))
+    same_reply("ollama NDJSON partido", streamed, ollama.parse(whole), failures)
+
+    anthropic = Anthropic("claude", api_key="k")
+    sse = (
+        'event: message_start\ndata: {"type": "message_start", "message": {"model": "claude", '
+        '"usage": {"input_tokens": 10, "cache_read_input_tokens": 4}}}\n\n'
+        'event: content_block_start\ndata: {"type": "content_block_start", "index": 0, '
+        '"content_block": {"type": "text", "text": ""}}\n\n'
+        'event: content_block_delta\ndata: {"type": "content_block_delta", "index": 0, '
+        '"delta": {"type": "text_delta", "text": "Hola"}}\n\n'
+        'event: content_block_delta\ndata: {"type": "content_block_delta", "index": 0, '
+        '"delta": {"type": "thinking_delta", "thinking": "dudo"}}\n\n'
+        'event: content_block_stop\ndata: {"type": "content_block_stop", "index": 0}\n\n'
+        'event: content_block_start\ndata: {"type": "content_block_start", "index": 1, '
+        '"content_block": {"type": "text", "text": ""}}\n\n'
+        'event: content_block_delta\ndata: {"type": "content_block_delta", "index": 1, '
+        '"delta": {"type": "text_delta", "text": "mundo"}}\n\n'
+        'event: content_block_stop\ndata: {"type": "content_block_stop", "index": 1}\n\n'
+        'event: content_block_start\ndata: {"type": "content_block_start", "index": 2, '
+        '"content_block": {"type": "tool_use", "id": "t1", "name": "read_file", "input": {}}}\n\n'
+        'event: content_block_delta\ndata: {"type": "content_block_delta", "index": 2, '
+        '"delta": {"type": "input_json_delta", "partial_json": "{\\"path\\": \\"a.py\\"}"}}\n\n'
+        'event: content_block_stop\ndata: {"type": "content_block_stop", "index": 2}\n\n'
+        'event: message_delta\ndata: {"type": "message_delta", "delta": {"stop_reason": "tool_use"}, '
+        '"usage": {"output_tokens": 42}}\n\n'
+        'event: message_stop\ndata: {"type": "message_stop"}\n\n')
+    whole = {"model": "claude", "content": [
+        {"type": "text", "text": "Hola"}, {"type": "thinking", "thinking": "dudo"},
+        {"type": "text", "text": "mundo"},
+        {"type": "tool_use", "id": "t1", "name": "read_file", "input": {"path": "a.py"}}],
+        "usage": {"input_tokens": 10, "output_tokens": 42, "cache_read_input_tokens": 4}}
+    streamed = streaming.fold(anthropic.iter_events(_cut(sse, 23)))
+    same_reply("anthropic SSE partido", streamed, anthropic.parse(whole), failures)
+    check("anthropic: dos bloques de texto se unen con salto, como en parse()",
+          streamed.text, "Hola\nmundo", failures)
+
+
 def run():
     failures = []
     test_fold_rebuilds_the_same_reply(failures)
@@ -201,6 +290,7 @@ def run():
     test_lines_survive_a_split_json(failures)
     test_an_event_serializes_flat(failures)
     test_stop_cuts_the_live_stream(failures)
+    test_every_parser_survives_a_split_json(failures)
     test_the_cockpit_sees_text_before_the_answer(failures)
     run_wire(failures)
     return failures
