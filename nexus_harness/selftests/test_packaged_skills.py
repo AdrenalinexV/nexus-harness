@@ -11,7 +11,7 @@ from ..context import skill_router
 
 # Igual que `web/`: en el .exe las skills viajan en `_MEIPASS/skills`.
 PACKAGED = Path(getattr(sys, "_MEIPASS", Path(__file__).resolve().parents[1])) / "skills"
-SHIPPED = ("nexus-visual-identity", "nexus-layout-skins")
+SHIPPED = ("nexus-ui-surgeon", "nexus-visual-identity", "nexus-layout-skins")
 
 
 def check(name, got, expect, failures):
@@ -24,7 +24,8 @@ def run():
     check("el paquete trae su carpeta de skills", PACKAGED.is_dir(), True, failures)
     check("y es una raiz de enrutado", PACKAGED in skill_router.protocol_roots(), True, failures)
     entries = {entry["name"]: entry for entry in skill_router.scan(PACKAGED)}
-    references = {"nexus-visual-identity": ("palettes.md", "theme-system.md"),
+    references = {"nexus-ui-surgeon": ("document-direction.md", "anti-slop.md"),
+                  "nexus-visual-identity": ("palettes.md", "theme-system.md"),
                   "nexus-layout-skins": ("skins.md",)}
     for name in SHIPPED:
         check("%s viaja en el paquete" % name, name in entries, True, failures)
