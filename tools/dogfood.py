@@ -23,7 +23,7 @@ if str(ROOT) not in sys.path:
 from nexus_harness.platform import backup
 from nexus_harness import autonomy, projects, runner  # noqa: E402
 from nexus_harness.config import HarnessConfig  # noqa: E402
-from nexus_harness.events import Bus  # noqa: E402
+from nexus_harness.platform.events import Bus  # noqa: E402
 from nexus_harness.llm.providers import Router  # noqa: E402
 
 PROJECT = "Nexus-Harness"

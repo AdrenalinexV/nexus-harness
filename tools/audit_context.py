@@ -23,9 +23,9 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 from nexus_harness.platform import ledger  # noqa: E402
-from nexus_harness.compaction import estimate  # noqa: E402
+from nexus_harness.context.compaction import estimate  # noqa: E402
 from nexus_harness.config import HarnessConfig  # noqa: E402
-from nexus_harness.message import Message, ToolCall  # noqa: E402
+from nexus_harness.core.message import Message, ToolCall  # noqa: E402
 from nexus_harness.relay_state import prune_tool_outputs  # noqa: E402
 
 BIG = ("def funcion_%d(a, b):\n    return a + b  # relleno de una lectura realista\n" * 40)
@@ -106,7 +106,7 @@ def q3(steps=8):
 
 
 def skills_baseline():
-    from nexus_harness.skill_router import skill_entry
+    from nexus_harness.context.skill_router import skill_entry
     roots = [Path.home() / "AppData/Local/hermes/profiles/nexus-harness/skills",
              Path.home() / "AppData/Local/hermes/skills",
              Path("C:/Proyectos/NexusProtocol/skills")]

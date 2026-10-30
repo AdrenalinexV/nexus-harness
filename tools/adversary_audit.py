@@ -18,7 +18,7 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 from nexus_harness.config import HarnessConfig  # noqa: E402
-from nexus_harness.message import Message  # noqa: E402
+from nexus_harness.core.message import Message  # noqa: E402
 from nexus_harness.llm.providers import Router, SpecError  # noqa: E402
 
 SYSTEM = """Eres un auditor adversarial de código Python. Te dan UN módulo y su contrato.
@@ -89,11 +89,15 @@ def main(argv=None):
         return 20
     print(json.dumps({"reviewer": info.model, "files": args.files}))
     findings_total = 0
+    unread = 0
     for name in args.files:
         try:
             text, reply = audit(router, name, args.role)
         except (SpecError, OSError) as exc:
+            # Un fichero que no se pudo leer NO es un fichero limpio: sale 20 (no medido), no 0. Un
+            # auditor que devuelve verde ante un `No such file` es el falso verde que este repo caza.
             print(json.dumps({"file": name, "ok": False, "reason": str(exc)}))
+            unread += 1
             continue
         except Exception as exc:  # a transport failure is reported, never swallowed
             print(json.dumps({"file": name, "ok": False,
@@ -105,6 +109,8 @@ def main(argv=None):
                           "raw": None if rows is not None else text[:600],
                           "usage": reply.usage.total}, ensure_ascii=False))
         findings_total += len(rows or [])
+    if unread:
+        return 20
     return 0 if findings_total == 0 else 10
 
 
