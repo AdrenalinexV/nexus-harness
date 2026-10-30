@@ -1,5 +1,7 @@
 # Forensic read of the engines already on this machine
 
+> Congelado en `5e83a9a`: las cifras de este documento retratan ese árbol, no el de hoy.
+
 Read-only inspection, 2026-10-24. Three sources: the active Hermes installation
 (`%LOCALAPPDATA%\hermes\hermes-agent`), `aider` as installed in the Python 3.11 site-packages, and
 the Nexus Protocol repository that governs this one. Every claim below names the file that carries it,

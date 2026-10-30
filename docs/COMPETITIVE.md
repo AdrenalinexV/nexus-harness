@@ -1,5 +1,7 @@
 # Dónde está la competencia (y qué copiamos)
 
+> Congelado en `5e83a9a`: las cifras de este documento retratan ese árbol, no el de hoy.
+
 Revisión hecha el 2026-10-28. No es un informe de marketing: cada fila dice **qué se adopta** y qué se
 descarta, con la fuente delante. El criterio es el de siempre: si no se puede verificar con un comando,
 no entra.

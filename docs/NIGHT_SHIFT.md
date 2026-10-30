@@ -1,5 +1,7 @@
 # Turno de noche — el megaprompt iterativo
 
+> Congelado en `5e83a9a`: las cifras de este documento retratan ese árbol, no el de hoy.
+
 Este documento **es** el prompt. Se copia entero en una sesión nueva, se ejecuta hasta que la rúbrica
 esté verde o hasta que el reloj diga basta, y deja el estado en disco para que la siguiente sesión
 continúe donde se quedó. Nada de lo que hay aquí depende de la conversación que lo creó.

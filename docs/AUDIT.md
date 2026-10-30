@@ -1,5 +1,7 @@
 # Adversarial audit — findings and what was done with each
 
+> Congelado en `5e83a9a`: las cifras de este documento retratan ese árbol, no el de hoy.
+
 Reviewer: `kat-coder-v2.5-dev-35b-a3b` (LM Studio, `127.0.0.1:1234`), through
 `python tools/adversary_audit.py <modules>`. The reviewer is told to return only defects it can point
 at, in JSON, and to return `[]` when a module is clean. Its answers arrive in prose more often than in

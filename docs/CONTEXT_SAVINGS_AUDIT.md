@@ -1,5 +1,7 @@
 # Auditoría del ahorro de contexto y activación de los 4 motores
 
+> Congelado en `5e83a9a`: las cifras de este documento retratan ese árbol, no el de hoy.
+
 Fecha: 2026-10-27 · Base: `e652097` (v1.0.0) · Todo lo de este documento está **medido hoy** con
 `tools/audit_context.py`, `python -m nexus_harness selftest` y `tools/benchmark_ab_savings.py`.
 Ninguna cifra viene de la interfaz ni de una estimación: cada una tiene su comando detrás.

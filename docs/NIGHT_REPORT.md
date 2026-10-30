@@ -1,5 +1,7 @@
 # Turno de noche — evidencia
 
+> Congelado en `5e83a9a`: las cifras de este documento retratan ese árbol, no el de hoy.
+
 Generado por `tools/nightshift.py report` (no se escribe a mano).
 
 - fecha: 2026-10-27T22:08:35Z

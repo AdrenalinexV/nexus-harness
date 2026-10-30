@@ -1,5 +1,7 @@
 # Parte del turno autónomo (2026-10-28)
 
+> Congelado en `5e83a9a`: las cifras de este documento retratan ese árbol, no el de hoy.
+
 Trabajo hecho sin intervención, con verificación real al final de cada pieza. Estado del árbol:
 `verify.py --frozen` → **GREEN** (lint 0 hallazgos, 158 ficheros, 45 suites en fuente **y** en el motor
 congelado).

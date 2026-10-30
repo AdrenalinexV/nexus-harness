@@ -13,7 +13,7 @@ with the command that would install them instead of failing:
 ```
 pip install .                        # engine + cockpit, standard library only
 pip install ".[media,browser]"       # + attachments/vision and the native browser tool
-nexus-harness selftest               # the same 50 suites as `python -m nexus_harness selftest`
+nexus-harness selftest               # the same 59 suites as `python -m nexus_harness selftest`
 ```
 
 CI runs the gate on a machine that is not the one it was written on — Windows and Linux, Python 3.11
@@ -26,7 +26,7 @@ frozen inside (no Python on the target machine). See [docs/DESKTOP.md](docs/DESK
 ```
 python -m nexus_harness run "make the login endpoint reject empty passwords" --project C:/Proyectos/x
 python -m nexus_harness serve            # cockpit on http://127.0.0.1:8765
-python -m nexus_harness selftest         # 49 deterministic suites, no network
+python -m nexus_harness selftest         # 59 deterministic suites, no network
 python -m nexus_harness models           # what LM Studio / Ollama actually offer
 python -m nexus_harness gate --project .  # lint + line law + tests, exit 0/10/20
 python -m nexus_harness bridge --tick     # run one /task queued from the phone

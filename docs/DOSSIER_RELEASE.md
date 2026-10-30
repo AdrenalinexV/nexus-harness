@@ -37,8 +37,8 @@ pequeña.
 
 ```
 $ python tools/verify.py
-lint      exit 0   files=175 findings=0 max_lines=400 ignored_runtime=0
-selftest  exit 0   suites=49 failures=0
+lint      exit 0   files=203 findings=0 max_lines=400 ignored_runtime=0
+selftest  exit 0   suites=59 failures=0
 verify: GREEN
 
 $ python -c "from nexus_harness.savings import skill_index; print(skill_index(force=True))"
@@ -50,8 +50,8 @@ run serve chat checkpoint selftest lint models gate relay spec daemon task notif
 
 | dato | valor | fuente |
 |---|---|---|
-| Suites deterministas | **49, 0 fallos, sin red** | `verify.py` |
-| Hallazgos de lint / ficheros > 400 líneas | **0 / 0** en 175 ficheros | `verify.py` |
+| Suites deterministas | **59, 0 fallos, sin red** | `verify.py` |
+| Hallazgos de lint / ficheros > 400 líneas | **0 / 0** en 203 ficheros | `verify.py` |
 | Dependencias de terceros | **0** | `pyproject.toml` |
 | Líneas de fuente | ~21.300 (motor) · ~27.500 (con tools/apps) | `wc -l` |
 | Módulo más largo | 399 líneas (techo 400) — *en el techo* | `wc -l` |
@@ -63,10 +63,14 @@ run serve chat checkpoint selftest lint models gate relay spec daemon task notif
 | A/B de contexto | **−57,9 % de tokens de prompt** vs harness tradicional (misma tarea) | `docs/BENCHMARK_AB.md` |
 | Instalador | `NexusHarness-Setup-1.0.0.exe` (~20 MB, motor congelado) | `dist/` |
 
-**Lo que NO está verde, y se dice:** sin CI (`.github/` no existe), sin `CHANGELOG`, **sin remoto git**
-(el repo no está publicado), sin sandbox de proceso, sin streaming de tokens, sin LSP, sin sistema de
-plugins/hooks. Y las llamadas en la nube (openai/deepseek/…): **no verificadas en vivo** (no hay clave en
-esta máquina) — solo se prueban su construcción y sus parsers.
+**Lo que NO está verde, y se dice:** sin sandbox de proceso, sin streaming de tokens, sin LSP, sin
+sistema de plugins/hooks. Y las llamadas en la nube (openai/deepseek/…): **no verificadas en vivo** (no
+hay clave en esta máquina) — solo se prueban su construcción y sus parsers.
+
+**Lo que sí está y esta edición corrige:** CI en Windows y Linux (`.github/workflows/verify.yml`),
+`CHANGELOG.md` y remoto público (`AdrenalinexV/nexus-harness`) existen desde la publicación; las tres
+frases que decían lo contrario se quedaron de la instantánea anterior. Y la media de §3 se publicaba
+6,0/7,0 mientras su propia matriz daba otra cosa: ahora la escriben las filas, no la mano.
 
 ---
 
@@ -128,8 +132,8 @@ contexto y gobernanza pesan ×1,5** (es donde se decide el coste y la confianza)
 | **Extensibilidad** (plugins, hooks, MCP, skills) ×1,0 | 5 | **10** | 8 | 8 | **10** | 9 | 4 |
 | **Ecosistema/madurez** ×1,0 | 2 | **10** | 8 | 9 | 8 | 9 | 7 |
 | **Portabilidad/DX** (instalar, 0 deps, superficies) ×1,0 | 7 | 8 | 8 | 8 | 7 | 7 | 8 |
-| **Media simple** | **6,0** | 8,2 | 8,0 | 6,6 | 6,8 | 7,4 | 5,0 |
-| **Media ponderada** | **7,0** | 8,1 | 8,0 | 6,5 | 6,8 | 7,5 | 5,0 |
+| **Media simple** | **5,9** | 8,2 | 8,0 | 6,6 | 6,8 | 7,4 | 5,0 |
+| **Media ponderada** | **6,1** | 8,2 | 7,9 | 6,5 | 6,7 | 7,4 | 5,0 |
 
 Lectura: **el podio del mercado está en ~8**, no en 10. El único que se acerca al 10 en un eje somos
 nosotros, y por partida doble (gobernanza y coste). Nuestro arrastre es un solo número: **ecosistema = 2**.
@@ -164,7 +168,7 @@ nosotros, y por partida doble (gobernanza y coste). Nuestro arrastre es un solo 
    ejecutables, parada **por criterios y no por reloj**, y un canal de consulta bidireccional real
    (Telegram/Discord) con **default declarado** al expirar el plazo.
 6. **0 dependencias y 400 líneas.** Portabilidad extrema y auditabilidad total (la ley de tamaño se cumple
-   sola: 0 infracciones en 175 ficheros).
+   sola: 0 infracciones en 203 ficheros).
 
 ## 5. Dónde perdemos (honestidad, sin adornos)
 
@@ -240,7 +244,7 @@ donde el propio paper demuestra que **nadie** tiene los siete subsistemas llenos
 > salida por criterio, juez distinto del obrero, y cuánto contexto y dinero costó cada turno.*
 
 **Los cuatro argumentos del release (todos medibles, todos reproducibles):**
-1. `verify: GREEN` — 49 suites, 0 hallazgos, 0 ficheros > 400 líneas, **0 dependencias**.
+1. `verify: GREEN` — 59 suites, 0 hallazgos, 0 ficheros > 400 líneas, **0 dependencias**.
 2. **−57,9 %** de tokens vs harness tradicional (A/B, misma tarea, mismo modelo).
 3. **El recibo**: cada turno con su `exit`, su juez y su coste, archivado.
 4. **Autonomía que pregunta**: deja tareas, el daemon las convierte en criterios, trabaja, verifica y te

@@ -1,10 +1,14 @@
 """One command that proves the repository: the line law, then every deterministic suite.
 
-    python tools/verify.py [--audit] [--frozen]
+    python tools/verify.py [--audit] [--frozen] [--write-doc]
 
 Exit 0 only when both are green. `--audit` adds the model review, which needs a local server and is
 therefore reported as its own result instead of quietly passing. `--frozen` adds the frozen engine,
 measured against the source instead of against a number written down here.
+
+`--write-doc` regenerates `docs/VERIFICATION.md`. It is NOT the default: the gate used to rewrite a
+versioned document on every run, so every green left the tree dirty and an audit commit carried 40 lines
+of noise that nobody had decided to commit. A gate that edits what it grades is not a gate.
 """
 import argparse
 import subprocess
@@ -111,6 +115,8 @@ def main(argv=None):
     parser.add_argument("--audit", action="store_true", help="also run the adversarial audit")
     parser.add_argument("--frozen", action="store_true",
                         help="also measure the frozen engine against the source suite")
+    parser.add_argument("--write-doc", action="store_true",
+                        help="regenerate docs/VERIFICATION.md (off by default: el gate no edita lo que juzga)")
     args = parser.parse_args(argv)
     rows = []
     code, output = run([sys.executable, str(ROOT / "tools" / "lint_harness.py")])
@@ -127,9 +133,10 @@ def main(argv=None):
     lines, failed = report_lines(rows)
     for line in lines:
         print(line)
-    command = "python tools/verify.py" + (" --frozen" if args.frozen else "") + \
-              (" --audit" if args.audit else "")
-    print(sync_doc(lines, command, suites))
+    if args.write_doc:
+        command = "python tools/verify.py --write-doc" + (" --frozen" if args.frozen else "") + \
+                  (" --audit" if args.audit else "")
+        print(sync_doc(lines, command, suites))
     return 0 if not failed else 1
 
 

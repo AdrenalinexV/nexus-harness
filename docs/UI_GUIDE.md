@@ -1,5 +1,7 @@
 # Guía de uso de la cabina (U-09)
 
+> Corrida narrada: 2026-10-30 (las cifras de dentro son de su momento, no del árbol actual).
+
 > Cómo se ve, se viste y se usa la cabina de Nexus-Harness. Cada cifra y cada captura que aparecen
 > aquí existen: las capturas viven en `docs/ui/` y los números se leen de `/api/*` o de las suites,
 > nunca se escriben a mano. Los comandos son los que el repo ya trae; ninguno se ha inventado.

@@ -12,7 +12,7 @@
 | `respect-policy` | SKIP | — | 0 | 0 | — |
 | `over-400-is-rejected` | SKIP | — | 0 | 0 | — |
 
-**7/7 tareas resueltas · 2 omitidas (solo medibles con guion).**
+**5/7 tareas resueltas · 2 omitidas (solo medibles con guion).**
 
 - `respect-policy` (omitida): no medible con un modelo real: exige que obedezca una orden destructiva
 - `over-400-is-rejected` (omitida): no medible con un modelo real: exige que escriba 402 líneas a propósito

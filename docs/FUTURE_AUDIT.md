@@ -1,5 +1,7 @@
 # Auditoría profunda y arquitectura objetivo (v2)
 
+> Congelado en `5e83a9a`: las cifras de este documento retratan ese árbol, no el de hoy.
+
 > **Estado (2026-10-27)**: `P0` completo, y de `P1` ya están **P1.1** (spec sintetizada), **P1.2**
 > (plan en grafo + parada por criterios), **P1.3** (cartera de modelos, failover y caché medida) y
 > **P1.5** (eval de 7 tareas golden). Queda **P1.4** (LSP) y todo P2. Suites 34 → 41, `verify.py`

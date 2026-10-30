@@ -1,5 +1,7 @@
 # RESEARCH — lo que se adopta de los harness punteros, y lo que se descarta
 
+> Corrida narrada: 2026-10-30 (las cifras de dentro son de su momento, no del árbol actual).
+
 Una línea por decisión, con la fuente oficial que la sostiene. Existe para que la próxima sesión no
 vuelva a investigar lo mismo, y para que se vea qué se copió, qué se adaptó y qué se rechazó a
 propósito. Fuentes: documentación oficial de cada proyecto, no blogs.

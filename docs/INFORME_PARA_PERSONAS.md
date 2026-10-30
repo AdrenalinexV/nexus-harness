@@ -1,5 +1,7 @@
 # Nexus-Harness, explicado para personas normales
 
+> Congelado en `5e83a9a`: las cifras de este documento retratan ese árbol, no el de hoy.
+
 *Qué es, por qué existe, en qué se diferencia y qué le falta. Escrito para quien no programa.*
 
 ---

@@ -1,5 +1,7 @@
 # Cola de trabajo — cabina (UI/UX/GUI)
 
+> Corrida narrada: 2026-10-30 (las cifras de dentro son de su momento, no del árbol actual).
+
 > Cola determinista para el bucle autónomo. **Una tarea por pasada.** Cada tarea trae su criterio de
 > aceptación y el comando que lo demuestra; una tarea sin comando no entra en la cola.
 >

@@ -2,7 +2,7 @@ name: verify
 
 # The repo's own gate, run where it has never run before: a machine that is not the one it was
 # written on. Three questions, three jobs:
-#   verify  -- does the law hold and do all 49 suites pass on Windows and Linux, 3.11 and 3.13?
+#   verify  -- does the law hold and do all 59 suites pass on Windows and Linux, 3.11 and 3.13?
 #   wheel   -- does `pip install .` ship something that actually runs (the cockpit's assets included)?
 #   extras  -- with the OPTIONAL engines installed, do the suites that SKIP turn into real coverage?
 # A skip is printed, counted and allowed; a failure never is.
@@ -30,7 +30,12 @@ jobs:
         os: [ubuntu-latest, windows-latest]
         python: ["3.11", "3.13"]
     steps:
+      # Historial completo: la suite `doc_truth` comprueba que cada documento «congelado» nombra un
+      # commit que existe. Con fetch-depth 1 ese check no puede responder, y una comprobación que no
+      # puede correr no es una comprobación.
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python }}
@@ -66,6 +71,22 @@ jobs:
           cd "$RUNNER_TEMP/elsewhere"
           nexus-harness --version
           nexus-harness selftest
+
+  docs:
+    name: docs / las cifras publicadas cuadran
+    runs-on: ubuntu-latest
+    steps:
+      # Historial completo: `doc_truth` exige que el sha de cada documento congelado exista de verdad.
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      # El job que impide que un número viejo sobreviva a la sesión que lo iba a desmentir. La suite
+      # `doc_truth` ya corre dentro de `verify`; este job existe para que el rojo se llame por su nombre.
+      - name: Ningun documento puede contradecir al motor
+        run: python tools/doc_truth.py
 
   extras:
     name: extras / ubuntu

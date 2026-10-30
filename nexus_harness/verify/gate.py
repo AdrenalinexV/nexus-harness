@@ -9,8 +9,16 @@ checks, in increasing cost, and all of them deterministic:
    report names which one answered: a weaker law may never pass itself off as the full one.
 2. **The line law** on the files the turn touched, because "no file over 400 lines" is the one rule
    the model can break the moment it writes.
-3. **The project's own tests**, when the project declares a command. A project that declares none is
-   reported as *not configured* -- never as green, because an absent check is not a passed check.
+3. **Behaviour, in three steps from most to least specific** -- and the report says which one answered:
+   the command the project *declares*; failing that, the runner `oracle.detect` finds in the tree; and
+   failing that, an **import smoke** of the `.py` files the turn touched, run in a real subprocess.
+
+   A green from the smoke is a green **for imports only**, and it is labelled as such
+   (`behavior ... humo de importacion: smoke: N/N`): it proves the files parse and their module-level
+   code runs, not that the project's behaviour is intact. It is green because *something was executed*,
+   never because a check was skipped -- an absent check still never passes. When even the smoke cannot
+   run (the touched `.py` files no longer exist, or the subprocess cannot start) the verdict is `20`,
+   *not verifiable*.
 
 A gate that cannot run at all returns exit `20` and says so. Fail-closed means it refuses to be green,
 not that it invents a verdict.

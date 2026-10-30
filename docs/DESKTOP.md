@@ -1,5 +1,7 @@
 # Nexus Harness Desktop — la app instalable
 
+> Corrida narrada: 2026-10-30 (las cifras de dentro son de su momento, no del árbol actual).
+
 Lo que se instala es un programa de escritorio con su icono, su ventana y su desinstalador. Dentro
 corre el motor de este repositorio, congelado, y el protocolo Nexus vive en él: no es un hook, no es un
 plugin, no depende de tener Python en el equipo destino.
