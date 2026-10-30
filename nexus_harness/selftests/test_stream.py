@@ -263,6 +263,60 @@ def test_the_cockpit_sees_text_before_the_answer(failures):
               kinds.index("worker.delta") < kinds.index("chat.assistant"), True, failures)
 
 
+def test_the_sse_endpoint_serves_the_bus(failures):
+    """La decision (b) del operador: el bus por `/api/events/stream`, con token y con `id:`.
+
+    Un evento tiene que llegar con su `seq` como id -- es lo que permite que el navegador reanude con
+    `Last-Event-ID` sin repetir ni perder -- y la ruta tiene que negarse sin credencial como el resto
+    de `/api/*`.
+    """
+    import threading
+    import urllib.error
+    import urllib.request
+
+    from .fakes import FakeRouter, ScriptedProvider, TempProject, reply
+    from ..cockpit import Cockpit
+    from ..config import HarnessConfig
+    from ..ui import build
+
+    with TempProject() as root:
+        config = HarnessConfig(default_root=root, workspace=root, test_command=None,
+                               roles={"director": "fake:d", "worker": "fake:w", "judge": "fake:j"},
+                               host="127.0.0.1", port=0, lang="es", secrets={})
+        cockpit = Cockpit(config)
+        cockpit.router = FakeRouter(workers=ScriptedProvider([reply("hola")]))
+        event = cockpit.bus.emit("worker.delta", "Hola", step=0)
+        server = build(cockpit, port=0, token="t0k")
+        threading.Thread(target=server.serve_forever, daemon=True).start()
+        base = "http://127.0.0.1:%d" % server.server_address[1]
+        try:
+            request = urllib.request.Request(
+                base + "/api/events/stream?since=%d" % (event.seq - 1),
+                headers={"X-Nexus-Token": "t0k"})
+            with urllib.request.urlopen(request, timeout=10) as response:
+                check("el content-type es SSE",
+                      response.headers.get("Content-Type", "").startswith("text/event-stream"),
+                      True, failures)
+                block = []
+                for _ in range(8):
+                    line = response.readline().decode("utf-8")
+                    block.append(line)
+                    if not line.strip() and any(row.startswith("id: ") for row in block):
+                        break
+                text = "".join(block)
+                check("el evento viaja con su seq como id", ("id: %d" % event.seq) in text, True,
+                      failures)
+                check("y con su payload", '"kind": "worker.delta"' in text, True, failures)
+            try:
+                urllib.request.urlopen(base + "/api/events/stream", timeout=5)
+                failures.append("la ruta SSE sin token deberia dar 401")
+            except urllib.error.HTTPError as exc:
+                check("sin token es 401", exc.code, 401, failures)
+        finally:
+            server.shutdown()
+            server.server_close()
+
+
 def run():
     failures = []
     test_fold_rebuilds_the_same_reply(failures)
@@ -274,4 +328,5 @@ def run():
     test_stop_cuts_the_live_stream(failures)
     test_a_hung_stream_is_cut_by_close_all(failures)
     test_the_cockpit_sees_text_before_the_answer(failures)
+    test_the_sse_endpoint_serves_the_bus(failures)
     return failures

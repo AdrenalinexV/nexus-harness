@@ -7,11 +7,11 @@
    Reglas: toda interpolación pasa por `esc()`; el estado se pinta desde `/api/*` y nunca se estima. */
 const $ = (id) => document.getElementById(id);
 const TOKEN = window.NexusToken || '';
-// Contrato con el motor (`api.API_VERSION`). 3 = barra en vivo, cola de proyectos y bucle autonomo.
-const API_VERSION = 3;
+// Contrato con el motor (`api.API_VERSION`). 4 = SSE en /api/events/stream y `worker.delta`.
+const API_VERSION = 4;
 
 const state = {
-  since: 0, session: null, feed: [], sessions: [], polling: false, last: null,
+  since: 0, session: null, feed: [], sessions: [], polling: false, last: null, engineApi: 0,
   failures: 0, offline: false,
   // El hilo como documento: `{folio, role, text, tools, attachments}`. Lo llena `chat_stream.js` y lo
   // lee `export.js`, para que el .md salga con los MISMOS folios que están en pantalla.
@@ -79,7 +79,9 @@ async function checkEngine() {
     warn('El motor no contesta a /api/health (' + (status || 'sin respuesta') + '). Si acabas de actualizar el código, cierra esta ventana y vuelve a lanzar Nexus-Harness.bat.');
     return;
   }
-  if ((data.api || 0) < API_VERSION) {
+  // Lo que el motor dice de si mismo. `chat_stream` solo abre SSE contra un motor que lo sirve.
+  state.engineApi = data.api || 0;
+  if (state.engineApi < API_VERSION) {
     warn(`El motor en marcha es más viejo que esta interfaz (api ${data.api || 0} < ${API_VERSION}): por eso los botones no hacen nada. Cierra esta ventana y vuelve a lanzar Nexus-Harness.bat.`);
   }
 }
@@ -254,7 +256,7 @@ async function boot() {
   await window.NexusSessions.refreshSessions();
   const wanted = new URLSearchParams(location.search).get('project') || '';
   if (wanted) await window.NexusSessions.openProject(wanted);
-  window.setInterval(() => window.NexusStream.pollEvents(), 800);
+  window.NexusStream.startEvents();
   window.setInterval(refreshState, 2500);
   window.setInterval(() => window.NexusStream.refreshChat(), 2500);
 }

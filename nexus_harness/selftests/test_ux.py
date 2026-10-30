@@ -253,7 +253,8 @@ def run():
         test_skills_panel(base, failures)
         test_stats_charts(base, failures)
         test_autonomy_over_http(base, failures)
-        check("the api version moved", json.loads(_call(base, "/api/health")[1])["api"], 3, failures)
+        # 4 = SSE (`/api/events/stream`) y `worker.delta`: el bump es deliberado, y este numero lo fija.
+        check("the api version moved", json.loads(_call(base, "/api/health")[1])["api"], 4, failures)
         check("no job is left in flight", cockpit.busy, False, failures)
     finally:
         server.shutdown()

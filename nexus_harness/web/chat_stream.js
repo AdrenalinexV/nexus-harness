@@ -240,6 +240,7 @@ window.NexusStream = (function () {
     inline.className = 'inline-feed';
     thread.appendChild(inline);
     paintFeed();
+    paintDraft();
     thread.scrollTop = thread.scrollHeight;
   }
 
@@ -267,6 +268,47 @@ window.NexusStream = (function () {
     renderThread(messages);
   }
 
+  /* El borrador del turno: los deltas se pintan aqui y el `chat.assistant` final los sustituye. Un
+     elemento, no un asiento por trozo: el folio se gasta una vez, al mensaje de verdad. */
+  let draftEl = null;
+  let draftText = '';
+
+  function clearDraft() {
+    draftText = '';
+    if (draftEl) { draftEl.remove(); draftEl = null; }
+  }
+
+  function paintDraft() {
+    if (!draftText) return;
+    if (!draftEl || !draftEl.isConnected) {
+      draftEl = document.createElement('article');
+      draftEl.className = 'msg assistant draft';
+      draftEl.innerHTML = '<div class="folio">··</div><div class="body"><div class="who">NEXUS</div>' +
+                          '<div class="bubble"></div></div>';
+      $('thread').appendChild(draftEl);
+    }
+    fillBubble(draftEl.querySelector('.bubble'), draftText);
+    $('thread').scrollTop = $('thread').scrollHeight;
+  }
+
+  /* Un evento del bus, venga por SSE o por sondeo: un solo camino, dos transportes. */
+  function handle(event) {
+    if (event.kind === 'worker.delta') {
+      draftText += String(event.detail || '');
+      paintDraft();
+      return;
+    }
+    if (event.kind === 'chat.assistant' || event.kind === 'chat.turn' || event.kind === 'tool.call' ||
+        event.kind === 'worker.error' || event.kind === 'chat.stopped' ||
+        event.kind === 'chat.stopping') {
+      // El turno cerro o paso a otra cosa: el borrador ya no es cierto.
+      clearDraft();
+    }
+    if (!LABEL[event.kind]) return;
+    state.feed.push({kind: event.kind, detail: event.detail || ''});
+    paintFeed();
+  }
+
   async function pollEvents() {
     if (state.polling) return;
     state.polling = true;
@@ -274,12 +316,36 @@ window.NexusStream = (function () {
       const {ok, data} = await api('/api/events?since=' + state.since);
       if (!ok) return;
       for (const event of data.events || []) {
-        state.since = Math.max(state.since, event.seq);
-        if (!LABEL[event.kind]) continue;
-        state.feed.push({kind: event.kind, detail: event.detail || ''});
+        state.since = Math.max(state.since, Number(event.seq) || 0);
+        handle(event);
       }
-      if ((data.events || []).length) paintFeed();
     } finally { state.polling = false; }
+  }
+
+  /* SSE cuando el motor lo sirve (api >= 4); sondeo de 800 ms cuando no. El navegador reanuda con
+     Last-Event-ID; si la ruta no existe, EventSource cierra y se cae al sondeo sin ruido. */
+  let source = null;
+
+  function startEvents() {
+    if (!(state.engineApi >= 4) || !window.EventSource) {
+      window.setInterval(pollEvents, 800);
+      return;
+    }
+    const token = window.NexusToken ? '&token=' + encodeURIComponent(window.NexusToken) : '';
+    source = new EventSource('/api/events/stream?since=' + state.since + token);
+    source.onmessage = (message) => {
+      let event;
+      try { event = JSON.parse(message.data); } catch (error) { return; }
+      state.since = Math.max(state.since, Number(event.seq) || 0);
+      handle(event);
+    };
+    source.onerror = () => {
+      if (source && source.readyState === EventSource.CLOSED) {
+        source.close();
+        source = null;
+        window.setInterval(pollEvents, 800);
+      }
+    };
   }
 
   function noteSkills(skills) {
@@ -291,8 +357,9 @@ window.NexusStream = (function () {
   function reset() {
     state.feed = [];
     state.since = 0;
+    clearDraft();
     renderThread([]);
   }
 
-  return {addMessage, renderThread, refreshChat, pollEvents, noteSkills, reset};
+  return {addMessage, renderThread, refreshChat, pollEvents, startEvents, noteSkills, reset};
 }());

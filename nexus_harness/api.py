@@ -14,7 +14,10 @@ from pathlib import Path
 from .platform import ledger
 from . import __version__, activity, gov, projects
 
-API_VERSION = 3
+# 4 = `/api/events/stream` (SSE) y `worker.delta` en el bus: la cabina pide deltas mientras el modelo
+# habla en vez de esperar al sondeo. Un motor 3 y una interfaz 4 siguen hablando por sondeo; al reves,
+# la interfaz avisa de que el motor es viejo en vez de fingir que hay streaming.
+API_VERSION = 4
 NAME = "Nexus-Harness"
 # Cuando arranco este proceso. `/api/health` lo publica como `uptime`, que es la unica forma honesta de
 # que un panel diga «este motor lleva encendido X»: leerlo del reloj del navegador seria inventarlo.

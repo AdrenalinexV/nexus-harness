@@ -172,6 +172,11 @@ class Handler(BaseHTTPRequestHandler):
             answer = settings_api.handle(self.cockpit, "GET", path, query, {})
             if answer is not None:
                 return self._json(*answer)
+        if path == "/api/events/stream":
+            # SSE: se queda con el hilo hasta que el cliente se va. Va ANTES de `api.get` porque su
+            # respuesta no es un `(status, payload)` que se pueda serializar de una vez.
+            from . import sse
+            return sse.stream(self, self.cockpit, query)
         answer = api.get(self.cockpit, path, query)
         if answer is not None:
             return self._json(*answer)
