@@ -6,6 +6,7 @@ la ley de 400 apretando comentarios, sino porque son otra cosa: `Triad` decide q
 `_emit`, `cost`, `tokens`, `relay`, `config`), así que el cambio es de sitio, no de contrato.
 """
 import time
+import uuid
 from dataclasses import dataclass, field
 
 from .message import Message
@@ -35,9 +36,10 @@ class ChatTurn:
     budget: dict = field(default_factory=dict)
     tokens: dict = field(default_factory=dict)
     savings: dict = field(default_factory=dict)
+    id: str = field(default_factory=lambda: uuid.uuid4().hex)
 
     def as_dict(self):
-        return {"reply": self.reply, "exit": self.exit, "steps": self.steps,
+        return {"id": self.id, "reply": self.reply, "exit": self.exit, "steps": self.steps,
                 "repairs": self.repairs, "touched": self.touched, "skills": self.skills,
                 "verdict": self.verdict, "judgement": self.judgement, "stopped": self.stopped,
                 "attachments": self.attachments, "checkpoint": self.checkpoint,
@@ -112,6 +114,9 @@ class RunResult:
     recorded: bool = False
     started: str = ""
     finished: str = ""
+    # Identidad de la corrida: dos escritores (runner y autonomia) anotan el mismo id; dos corridas
+    # distintas, aunque caigan en el mismo segundo, no se confunden (que era el hueco de B6).
+    id: str = field(default_factory=lambda: uuid.uuid4().hex)
 
     def as_dict(self):
         return {"goal": self.goal, "root": self.root, "ok": self.ok, "exit": self.exit,
@@ -119,7 +124,8 @@ class RunResult:
                 "touched": self.touched, "sessions": self.sessions, "phases": self.phases,
                 "verdict": self.verdict, "judgement": self.judgement, "budget": self.budget,
                 "cost": self.cost, "tokens": self.tokens, "savings": self.savings,
-                "recorded": self.recorded, "started": self.started, "finished": self.finished}
+                "recorded": self.recorded, "started": self.started, "finished": self.finished,
+                "id": self.id}
 
 
 def now():

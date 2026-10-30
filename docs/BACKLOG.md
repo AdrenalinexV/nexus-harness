@@ -47,7 +47,7 @@ Medido hoy: 63 suites · 224 ficheros · 0 hallazgos de lint · 0 ficheros > 400
 | **D** | **Sandbox**: `unrestricted` sin jaula de ficheros se niega con motivo; matriz 3 modos × 3 jaulas; Job Object con kill-on-close y tope de memoria medidos | `a5f79eb` | `selftest sandbox` → OK (6 casos); `verify` GREEN en los dos modos |
 | **B** | **LSP**: cliente JSON-RPC 2.0 por stdio, `definition` (LSP → AST con la razón impresa) y diagnósticos en el resultado de cada `patch`/`write_file` | `3ba9c5d` | `selftest lsp` → OK (5 casos); `definition(symbol=build_prefix)` → `context_compiler.py:81` |
 | **H** | **Evals**: 20 tareas (10 Python, 5 JavaScript, 5 Bash) y mutation smoke — 3 mutaciones por tarea y ninguna sobrevive | `e19fd2c` | `selftest eval` → OK (9,3 s); `over-400-is-rejected` → exit 10 |
-| **I** | **Release**: versión 1.2.0 en paquete y app, motor y instalador reconstruidos, instalación real actualizada por sha256, `--frozen` contra el fuente | `(esta fase)` | `verify.py --frozen` → `frozen exit 0 suites=63 failures=0 skipped=7`; `installer_verify --verify` → 0 |
+| **I** | **Release**: versión 1.2.0 en paquete y app, motor y instalador reconstruidos, instalación real actualizada por sha256, `--frozen` contra el fuente | `f181119` | `verify.py --frozen` → `frozen exit 0 suites=63 failures=0 skipped=7`; `installer_verify --verify` → 0 |
 
 ## 3. Decisiones cerradas por el operador (no se reabren)
 

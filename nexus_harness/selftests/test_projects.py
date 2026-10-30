@@ -234,6 +234,23 @@ def test_backup_git(failures):
         shutil.rmtree(root, ignore_errors=True)
 
 
+def test_the_ledger_counts_a_run_once(failures):
+    """B6: dos escritores anotan la MISMA corrida; el libro tiene que devolver una fila, no dos."""
+    from ..platform import ledger
+
+    with TempProject() as root:
+        book = ledger.TurnLedger(root)
+        turn = {"started": "2026-10-30T10:00:00Z", "steps": 3, "exit": 0, "repairs": 0,
+                "tokens": {"prompt": 100, "completion": 20}, "touched": ["a.py"]}
+        book.append(ledger.from_turn(turn, root, "s1", "run"))
+        book.append(ledger.from_turn(turn, root, "s1", "autonomy"))
+        rows = book.rows()
+        check("dos escritores, una corrida", len(rows), 1, failures)
+        check("y los tokens no se doblan", sum(row["tokens"] for row in rows), 120, failures)
+        book.append(ledger.from_turn(dict(turn, started="2026-10-30T11:00:00Z"), root, "s2", "run"))
+        check("otra corrida si cuenta", len(book.rows()), 2, failures)
+
+
 def run():
     failures = []
     test_order(failures)

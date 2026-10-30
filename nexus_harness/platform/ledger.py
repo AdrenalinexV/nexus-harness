@@ -12,6 +12,7 @@ Un cero no es una medida: `aggregate()` devuelve `{"turns": 0}` y la pantalla lo
 vez de dibujar un anillo vacio.
 """
 import json
+import uuid
 import time
 from pathlib import Path
 
@@ -59,7 +60,9 @@ class TurnLedger:
                 continue
             if isinstance(row, dict):
                 out.append(row)
-        return out
+        # Lo que se lee es lo que se suma: `improve.py` consume `rows()` directo, y una corrida anotada
+        # por dos escritores inflaba el consumo medido casi al doble (medido: 411.886 vs 205.943).
+        return dedupe(out)
 
 
 SAVINGS_FIELDS = ("tokens_sent", "tokens_baseline", "tokens_saved", "cached_tokens", "dormant_tokens", "pruned_tokens",
@@ -95,7 +98,12 @@ def from_turn(turn, project="", session="", source="chat"):
     completion = (_int(direct.get("completion")) or _int(nested.get("completion"))
                   or _int(budget.get("completion")))
     exit_code = turn.get("exit")
+    # La identidad de la CORRIDA, no del apunte: dos escritores (runner y bucle autonomo) anotan la
+    # misma con el mismo `id`/`started`/checkpoint aunque escriban en segundos distintos. Sin identidad
+    # declarada, esta escritura ES la corrida: dos ciclos seguidos no pueden colapsar en uno.
+    identity = str(turn.get("id") or turn.get("started") or turn.get("checkpoint") or "")
     return {"project": _name(project), "session": session or "", "source": source,
+            "run": identity or uuid.uuid4().hex,
             "exit": None if exit_code is None else _int(exit_code),
             "gate": bool(verdict.get("ok")) if verdict else None,
             "judge": (judgement or {}).get("verdict") or "",
@@ -182,8 +190,11 @@ def dedupe(rows):
     """
     seen, out = set(), []
     for row in rows or []:
-        key = (row.get("at"), row.get("project"), row.get("tokens"), row.get("prompt_tokens"),
-               row.get("steps"), row.get("touched"), row.get("exit"))
+        run = str(row.get("run") or "")
+        key = ((run,) + (row.get("tokens"), row.get("steps"), row.get("touched"), row.get("exit"))
+               if run else
+               (row.get("at"), row.get("project"), row.get("tokens"), row.get("prompt_tokens"),
+                row.get("steps"), row.get("touched"), row.get("exit")))
         if key in seen:
             continue
         seen.add(key)
