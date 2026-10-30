@@ -132,6 +132,10 @@ body.chat-only > .app { flex: 1 1 auto; min-height: 0; }
 }
 .sessions li:hover { color: var(--ink); background: var(--paper-2); }
 .sessions li.active { color: var(--ink); border-left-color: var(--seal); }
+/* La fila enfocada con teclado se marca con una regla de 1px, como cualquier veredicto: el mismo
+   lenguaje que el resto del cuaderno, sin sombras ni halos. */
+.sessions li:focus-visible { outline: 1px solid var(--seal); outline-offset: -1px;
+  background: var(--paper-2); color: var(--ink); }
 .sessions li .folio { padding-top: .15rem; }
 .sessions li.active .folio { color: var(--seal); }
 .sessions li .name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }

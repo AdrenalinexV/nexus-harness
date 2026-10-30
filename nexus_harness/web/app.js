@@ -198,6 +198,7 @@ const SHORTCUTS = [
   ['Esc', 'cerrar el panel de estado o este cuadro'],
   ['Ctrl + K', 'buscar en la configuración (allí)'],
   ['?', 'esta lista'],
+  ['↑ ↓', 'recorrer el índice · Enter abre'],
   ['Tab', 'saltar al hilo (primer Tab)'],
 ];
 

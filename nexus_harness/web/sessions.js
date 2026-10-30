@@ -9,6 +9,43 @@ window.NexusSessions = (function () {
     return !needle || `${row.title || ''} ${row.id || ''}`.toLowerCase().includes(needle);
   }
 
+  /* El índice es un `listbox`: el foco entra por UNA fila (tabindex móvil, no un `tabindex=0` en
+     cada una) y las flechas lo recorren. Sin esto la lista era ratón-only: las `li` no eran
+     enfocables y un operador de teclado no podía abrir una conversación. */
+  function optionItems() {
+    const list = $('sessions');
+    return list ? Array.from(list.querySelectorAll('[role="option"]')) : [];
+  }
+
+  function setRoving(items, index) {
+    items.forEach((item, position) => { item.tabIndex = position === index ? 0 : -1; });
+  }
+
+  function wireKeys() {
+    const list = $('sessions');
+    if (!list || list.dataset.keys === 'on') return;
+    list.dataset.keys = 'on';
+    list.addEventListener('keydown', (event) => {
+      const items = optionItems();
+      if (!items.length) return;
+      const at = items.indexOf(document.activeElement);
+      if ((event.key === 'Enter' || event.key === ' ') && at >= 0) {
+        event.preventDefault();
+        loadSession(items[at].dataset.id);
+        return;
+      }
+      let next = null;
+      if (event.key === 'ArrowDown') next = at < 0 ? 0 : (at + 1) % items.length;
+      else if (event.key === 'ArrowUp') next = at < 0 ? items.length - 1 : (at - 1 + items.length) % items.length;
+      else if (event.key === 'Home') next = 0;
+      else if (event.key === 'End') next = items.length - 1;
+      if (next === null) return;
+      event.preventDefault();
+      setRoving(items, next);
+      items[next].focus();
+    });
+  }
+
   function paintSessions(rows) {
     state.sessions = rows || [];
     const needle = String($('session-search').value || '').trim().toLowerCase();
@@ -22,13 +59,21 @@ window.NexusSessions = (function () {
       list.appendChild(empty);
       return;
     }
+    const active = visible.findIndex((row) => row.id === state.session);
     for (const row of visible) {
       const item = document.createElement('li');
+      const position = visible.indexOf(row);
       if (row.id === state.session) item.className = 'active';
+      // Contrato de `listbox`: una opción enfocable por Tab (la activa, o la primera si no hay) y el
+      // resto alcanzable con las flechas.
+      item.setAttribute('role', 'option');
+      item.setAttribute('aria-selected', String(row.id === state.session));
+      item.dataset.id = row.id;
+      item.tabIndex = position === (active >= 0 ? active : 0) ? 0 : -1;
       // El folio del índice es el mismo número con el que se cita la conversación.
       const folio = document.createElement('span');
       folio.className = 'folio';
-      folio.textContent = String(visible.indexOf(row) + 1).padStart(2, '0');
+      folio.textContent = String(position + 1).padStart(2, '0');
       const name = document.createElement('span');
       name.className = 'name';
       name.textContent = row.title || row.id;
@@ -51,6 +96,7 @@ window.NexusSessions = (function () {
       item.append(folio, name, acts);
       list.appendChild(item);
     }
+    wireKeys();
   }
 
   async function refreshSessions() {
