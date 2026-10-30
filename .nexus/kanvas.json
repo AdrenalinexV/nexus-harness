@@ -1,7 +1,7 @@
 {
   "format": 1,
   "project": "Nexus-Harness",
-  "updated_at": "2026-10-30T20:32:36Z",
+  "updated_at": "2026-10-30T21:15:10Z",
   "tracks": [
     {
       "id": "core",
@@ -537,12 +537,15 @@
       "id": "TK-12",
       "title": "Kanvas: tablero DAG, yolo gobernado por Gate+Juez y vista SVG",
       "track": "ui",
-      "status": "doing",
+      "status": "done",
       "depends_on": [],
       "yolo": false,
       "verify_cmd": "",
       "assigned_to": "obrero",
-      "commits": [],
+      "commits": [
+        "5df79b4",
+        "38731e5"
+      ],
       "notes": [
         {
           "at": "2026-10-30T20:32:36Z",
@@ -553,9 +556,29 @@
           "at": "2026-10-30T20:32:36Z",
           "by": "obrero",
           "text": "-> doing"
+        },
+        {
+          "at": "2026-10-30T21:15:10Z",
+          "by": "obrero",
+          "text": "-> review"
+        },
+        {
+          "at": "2026-10-30T21:15:10Z",
+          "by": "human",
+          "text": "-> done"
         }
       ],
-      "evidence": {}
+      "evidence": {
+        "gate": 0,
+        "judge": "approve",
+        "commits": [
+          "5df79b4",
+          "38731e5"
+        ],
+        "touched": [],
+        "at": "2026-10-30T21:15:10Z",
+        "by": "human"
+      }
     },
     {
       "id": "TK-13",

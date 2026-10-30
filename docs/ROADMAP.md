@@ -109,7 +109,7 @@ normal es quién firma el `done`.
 
 | # | paso | criterio rojo → verde |
 |---|---|---|
-| **16** | **Kanvas** — carriles, tareas y DAG con `proposed/blocked/todo/doing/review/done` | **cumplido**: el estado de una tarea no se escribe a mano (`blocked` se calcula); `review` exige commit/diff y gate 0; `done` exige gate 0 y, con Juez, su aprobación; la cadena ⚡ cierra pasando por `review` igual que un humano y **para** con el gate rojo. Vista `/kanvas` con resumen, filtro y flechas bezier SVG en vivo por SSE. Suite `kanvas`, 9 casos |
+| **16** | **Kanvas** — carriles, tareas y DAG con `proposed/blocked/todo/doing/review/done` | **cumplido**: el estado de una tarea no se escribe a mano (`blocked` se calcula); `review` exige commit/diff y gate 0; `done` exige gate 0 y, con Juez, su aprobación; la cadena ⚡ cierra pasando por `review` igual que un humano y **para** con el gate rojo. Vista `/kanvas` con resumen, filtro y flechas bezier SVG en vivo por SSE. Suite `kanvas`, 9 casos. **Cabina ordenada**: una sola puerta (Configuración) en el chat, árbol de trece secciones planas —sin submenús anidados— y el tablero por proyecto con la cola general del autopilot a la izquierda |
 
 Reglas que no se negocian, escritas en el motor y probadas: `done` es final (reabrir es otra tarea con
 nota); el agente **no** tiene `approve` (solo el operador por la cabina/CLI, o el ejecutor con Gate+Juez);
