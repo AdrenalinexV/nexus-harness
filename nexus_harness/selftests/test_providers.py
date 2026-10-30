@@ -1,9 +1,9 @@
 """Providers: spec parsing, the three parsers, and a router that refuses what it cannot build."""
 from ..config import HarnessConfig
 from ..llm.providers import Router, SpecError, parse_spec
-from ..transports.anthropic import Anthropic
-from ..transports.ollama import Ollama
-from ..transports.openai_compat import OpenAICompatible
+from ..llm.transports.anthropic import Anthropic
+from ..llm.transports.ollama import Ollama
+from ..llm.transports.openai_compat import OpenAICompatible
 
 
 def check(name, got, expected, failures):

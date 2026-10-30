@@ -107,7 +107,7 @@ def test_a_transport_failure_keeps_its_type(failures):
     arregla podando, un 401 no. Un `RuntimeError` agregado convierte un fallo reparable en un turno
     perdido, y eso era parte del fallo original: el chat recibia "ningun modelo respondio" y moria.
     """
-    from ..transports.http import TransportError
+    from ..llm.transports.http import TransportError
 
     class Gordo:
         model = "fake:gordo"

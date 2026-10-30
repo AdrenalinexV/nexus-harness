@@ -11,7 +11,7 @@ Three differences the conversion must absorb, or the loop breaks on the first to
 `thinking` blocks are kept in `Reply.reasoning` but never replayed: a signature-less thinking block
 is rejected by the API on the next turn.
 """
-from ..core.message import Reply, ToolCall, Usage
+from ...core.message import Reply, ToolCall, Usage
 from . import http
 
 API_VERSION = "2023-06-01"

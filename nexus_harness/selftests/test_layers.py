@@ -30,7 +30,7 @@ DECLARED = {
     "platform": ("backup", "console", "digest", "events", "hardware_probe", "ledger", "policy",
                  "skillfiles", "tokenizer", "transcripts", "vault"),
     "core": ("budget", "message", "outcomes", "tasks"),
-    "llm": ("context_window", "judge", "portfolio", "provider_discovery", "providers"),
+    "llm": ("context_window", "judge", "portfolio", "provider_discovery", "providers", "transports"),
     "tools": ("attachments", "mcp_client", "recall", "repair_hint", "registry", "sidecar",
               "skill_forge", "subagents", "toolbox"),
     "context": ("compaction", "context_compiler", "context_pruner", "memory", "repo_map",

@@ -20,7 +20,7 @@ from ..llm.context_window import fit, overflow, shrink
 from ..platform.events import Bus
 from ..core.message import Message, Reply
 from ..platform.tokenizer import count_messages
-from ..transports import http
+from ..llm.transports import http
 from ..turn_engine import TurnEngine
 
 OVERFLOW_BODY = ('{"error":"Engine protocol predict request returned 400: {\\"error\\":{\\"code\\":400,'

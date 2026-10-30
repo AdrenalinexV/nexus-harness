@@ -128,6 +128,8 @@ RULES = (
     ("docs/BACKLOG.md", r"· (\d+) ficheros ·", "files"),
     ("docs/ROADMAP.md", r"Medido hoy: (\d+) suites", "suites"),
     ("docs/ROADMAP.md", r"· (\d+) ficheros ·", "files"),
+    ("docs/ROADMAP.md", r"· (\d+) carpetas ·", "dirs"),
+    ("docs/ARCHITECTURE_V2_PROPOSAL.md", r"y (\d+) carpetas", "dirs"),
 )
 
 

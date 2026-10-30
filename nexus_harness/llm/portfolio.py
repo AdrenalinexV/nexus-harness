@@ -21,7 +21,7 @@ La cartera no llama a nadie por su cuenta: es politica (que spec toca) y transpo
 """
 from dataclasses import dataclass, field
 
-from ..transports.http import TransportError
+from .transports.http import TransportError
 
 
 @dataclass

@@ -10,7 +10,7 @@
 > motor y pone el build rojo. (3) El orden no se reordena por vistosidad: se reordena solo si un dato
 > medido lo obliga, y entonces se dice en el commit.
 
-Medido hoy: 59 suites · 204 ficheros · 57 módulos planos · 10 carpetas · 0 ficheros > 400 líneas.
+Medido hoy: 59 suites · 205 ficheros · 57 módulos planos · 9 carpetas · 0 ficheros > 400 líneas.
 
 ---
 

@@ -16,7 +16,7 @@ mide es la politica, que es exactamente lo que no se puede medir esperando de ve
 """
 import types
 
-from ..transports import http
+from ..llm.transports import http
 
 
 def check(name, got, expected, failures):

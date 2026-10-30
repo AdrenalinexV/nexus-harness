@@ -10,7 +10,7 @@ optional for this harness:
 * **Local servers answer 404 on `/models` and 400 on unknown fields.** `models()` therefore tolerates
   a failure, and no field except `model` and `messages` is guaranteed to survive.
 """
-from ..core.message import Message, Reply, ToolCall, Usage
+from ...core.message import Message, Reply, ToolCall, Usage
 from . import http
 
 

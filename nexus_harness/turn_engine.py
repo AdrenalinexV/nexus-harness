@@ -17,7 +17,7 @@ El modulo no conoce el bucle: recibe el prompt, lo reescribe si hace falta y avi
 para que el llamante vuelva a separar historia de deltas.
 """
 from .llm import context_window
-from .transports import http
+from .llm.transports import http
 
 
 class TurnEngine:

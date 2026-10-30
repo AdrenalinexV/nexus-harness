@@ -25,7 +25,7 @@ Ninguna de estas funciones levanta: un motor apagado es `0`, no una excepcion en
 import json
 import re
 
-from ..transports import http
+from .transports import http
 
 LMSTUDIO_MODELS = "/api/v0/models"
 OLLAMA_PS = "/api/ps"

@@ -20,10 +20,10 @@
 
 ## 1. El defecto estructural nº1: el espacio de nombres es plano
 
-`nexus_harness/` tiene 57 módulos planos y 10 carpetas (`context/`, `core/`, `llm/`, `platform/`,
-`selftests/`, `skills/`, `tools/`, `transports/`, `verify/`, `web/`), así que el espacio de nombres sigue
-siendo mayoritariamente plano. Eso es lo que hace que el techo de 400 líneas **duela**: `triad_loop.py` a
-399 no es «un módulo grande», es **una capa entera sin casa**.
+`nexus_harness/` tiene 57 módulos planos y 9 carpetas (`context/`, `core/`, `llm/`, `platform/`,
+`selftests/`, `skills/`, `tools/`, `verify/`, `web/`; `llm/transports/` ya cuelga de su capa), así que el
+espacio de nombres sigue siendo mayoritariamente plano. Eso es lo que hace que el techo de 400 líneas
+**duela**: `triad_loop.py` a 399 no es «un módulo grande», es **una capa entera sin casa**.
 
 **Decisión:** organizar por **capa**, con invariante de dependencia (nada importa hacia arriba):
 
