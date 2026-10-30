@@ -7,7 +7,7 @@ notice until a model has already written outside the project.
 from .fakes import TempProject
 from ..tools import default_registry
 
-EXPECTED_TOOLS = 17
+EXPECTED_TOOLS = 18
 
 
 def check(name, got, expected, failures):

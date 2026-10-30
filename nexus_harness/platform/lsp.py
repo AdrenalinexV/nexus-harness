@@ -200,6 +200,15 @@ class Client:
             timeout=timeout)
         return _locations(result)
 
+    def references(self, path, line, character, text=None, timeout=8.0):
+        """Dónde se usa el símbolo de esa posición (incluida su declaración)."""
+        uri = self.open(path, text)
+        result = self._request("textDocument/references", {
+            "textDocument": {"uri": uri},
+            "position": {"line": max(0, int(line) - 1), "character": max(0, int(character) - 1)},
+            "context": {"includeDeclaration": True}}, timeout=timeout)
+        return _locations(result)
+
     def close(self):
         """Cierra el servidor. Devuelve los fallos: un cierre que se traga un error no es un cierre."""
         errors = []
@@ -257,6 +266,17 @@ def diagnose(root, path, timeout=DEFAULT_TIMEOUT):
         return client.diagnostics(path, timeout=timeout), ""
     except (LspError, TimeoutError, OSError) as exc:
         return None, "%s: %s" % (type(exc).__name__, exc)
+
+
+def references(root, path, line, character, timeout=8.0):
+    """`(usos, motivo)`. Sin servidor, el llamante cae a la busqueda por nombre en el AST."""
+    client, reason = client_for(root, path)
+    if client is None:
+        return [], reason
+    try:
+        return client.references(path, line, character, timeout=timeout), ""
+    except (LspError, TimeoutError, OSError) as exc:
+        return [], "%s: %s" % (type(exc).__name__, exc)
 
 
 def resolve(root, path, line, character, timeout=8.0):

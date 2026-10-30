@@ -50,6 +50,13 @@ while True:
         send({"jsonrpc": "2.0", "id": mid, "result": [
             {"uri": pathlib.Path(target).as_uri(),
              "range": {"start": {"line": 2, "character": 4}, "end": {"line": 2, "character": 9}}}]})
+    elif method == "textDocument/references":
+        root_uri = pathlib.Path(root).as_uri().rstrip("/")
+        send({"jsonrpc": "2.0", "id": mid, "result": [
+            {"uri": pathlib.Path(target).as_uri(),
+             "range": {"start": {"line": 2, "character": 4}, "end": {"line": 2, "character": 9}}},
+            {"uri": root_uri + "/usos.py",
+             "range": {"start": {"line": 7, "character": 0}, "end": {"line": 7, "character": 4}}}]})
     elif method == "shutdown":
         send({"jsonrpc": "2.0", "id": mid, "result": None})
     elif method == "exit":
@@ -133,6 +140,35 @@ def test_a_write_leaves_the_verdict_in_the_observation(failures):
         check("con su linea", (result.meta.get("lsp") or [{}])[0].get("line"), 3, failures)
 
 
+def test_references_finds_every_use(failures):
+    """`references`: el servidor dice dónde se usa; sin servidor, usos por nombre con su motivo."""
+    from .fakes import TempProject as Project
+
+    with Project({"a.py": "def target():\n    return 1\n"}) as root:
+        fake = Path(root) / "fake_lsp.py"
+        fake.write_text(FAKE, encoding="utf-8")
+        target = str((Path(root) / "a.py").resolve())
+        client = lsp.Client(root, [sys.executable, str(fake), str(root), target], "python")
+        try:
+            found = client.references(str(Path(root) / "a.py"), 3, 1, timeout=5)
+            check("references devuelve los usos", len(found), 2, failures)
+            check("con fichero y linea", (Path(found[0]["path"]).name, found[0]["line"]),
+                  ("a.py", 3), failures)
+            check("y el segundo en otro fichero", Path(found[1]["path"]).name, "usos.py", failures)
+        finally:
+            client.close()
+
+    text, meta = lsp_tools.references(".", {"symbol": "check"}, None)
+    check("el fallback por nombre encuentra usos", meta.get("source"), "ast", failures)
+    check("y lo dice en la respuesta", text.startswith("[mapa AST"), True, failures)
+    try:
+        lsp_tools.references(".", {"symbol": "no_existe_jamas_123"}, None)
+        raised = ""
+    except ValueError as exc:
+        raised = str(exc)
+    check("sin coincidencias se dice", "no references" in raised, True, failures)
+
+
 def run():
     if getattr(sys, "frozen", False):
         raise Skip("arranca el servidor de prueba con `sys.executable`: en el .exe eso es el motor")
@@ -140,6 +176,7 @@ def run():
     test_the_protocol_with_a_fake_server(failures)
     test_without_a_server_it_says_why(failures)
     test_the_ast_fallback_finds_a_definition(failures)
+    test_references_finds_every_use(failures)
     test_locations_normalize_both_shapes(failures)
     test_a_write_leaves_the_verdict_in_the_observation(failures)
     return failures

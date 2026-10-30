@@ -52,6 +52,15 @@ SCHEMAS = [
              "file_glob": {"type": "string", "description": "e.g. *.py"},
              "context": {"type": "integer", "description": "Lines of context around a match"},
              "limit": {"type": "integer"}}, ["pattern"]),
+    _schema("references",
+            "Every use of a symbol, as file:line. Asks the language server when one is installed and "
+            "falls back to a name search over the AST (saying so) when it is not: that fallback is not "
+            "symbol resolution and can match a same-named local.",
+            {"symbol": {"type": "string", "description": "Name to look for, e.g. build_prefix"},
+             "path": {"type": "string", "description": "File to ask LSP about"},
+             "line": {"type": "integer", "description": "1-based line of the reference"},
+             "character": {"type": "integer", "description": "1-based column of the reference"}},
+            []),
     _schema("kanvas_board",
             "El tablero del proyecto: carriles y tareas con dependencias (DAG). actions: status, "
             "propose, decompose, claim, note, submit_for_gate, toggle_yolo. No hay `approve`: el cierre "
