@@ -32,7 +32,8 @@ SUITES = ("providers", "retry", "repair", "tools", "linelaw", "layers", "edit_v4
           "onboarding", "mcp_client", "sidecar", "nightshift", "context", "triad_loop", "session_relay", "relay_state", "savings", "skills", "worktree", "deploy", "judge_repair", "compaction", "chat",
           "memory", "ui", "bridge", "budget", "charts", "activity", "projects", "autonomy", "ux",
           "learning", "oracle", "tokenizer", "spec", "plan_graph", "portfolio", "eval", "daemon", "notify", "browser", "recall", "ui_contract", "themes", "packaged_skills",
-          "context_window", "triad_presets", "triad_balance", "consult", "empty_states", "fonts", "repo_scripts", "doc_truth", "protocol_pointer", "hooks")
+          "context_window", "triad_presets", "triad_balance", "consult", "empty_states", "fonts", "repo_scripts", "doc_truth", "protocol_pointer", "hooks",
+          "stream")
 
 
 def run(names=None, stream=None):
