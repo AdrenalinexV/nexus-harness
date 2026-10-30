@@ -4,7 +4,13 @@ A claim without a command is a promise. This file records the commands and the e
 this machine, as they were observed. It is regenerated **deliberately**, with
 `python tools/verify.py --write-doc` — never by editing the numbers, and not as a side effect of a plain
 `verify` run: a gate that rewrites the document it grades leaves the tree dirty and lets a stale figure
-ride along in an unrelated commit. **Qué corrida es esta, exactamente.** La de abajo se hizo CON el gobernador en disco: `NEXUS_PROTOCOL=C:\Proyectos\NexusProtocol python tools/verify.py --write-doc`. El CI no lo tiene y publica otra cosa, que es la correcta para el CI: `linter=builtin(R0,R1,R2)`, `skipped=3` y ninguna suite roja. Por eso `verify.py --frozen` compara el binario contra ESTA corrida y no contra una cifra suelta.
+ride along in an unrelated commit. 
+
+**Qué corrida es esta, exactamente.** La de abajo se hizo CON el gobernador en disco:
+`NEXUS_PROTOCOL=C:\Proyectos\NexusProtocol python tools/verify.py --write-doc`. El CI no lo tiene
+y publica otra cosa, que es la correcta para el CI: `linter=builtin(R0,R1,R2)`, `skipped=3` y
+ninguna suite roja. Por eso `verify.py --frozen` compara el binario contra ESTA corrida y no
+contra una cifra suelta.
 
 ## The one command
 
