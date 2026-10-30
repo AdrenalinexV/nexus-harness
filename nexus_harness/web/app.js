@@ -113,6 +113,8 @@ function paintState(s) {
 }
 
 async function refreshState() {
+  // Con la pestaña oculta no se sondea: gastar bateria/CPU por un panel que nadie mira es ruido.
+  if (document.hidden) return;
   const {ok, data} = await api('/api/state');
   if (ok) paintState(data);
 }

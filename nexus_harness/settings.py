@@ -88,6 +88,8 @@ LAYOUT = """<!doctype html>
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="color-scheme" content="dark light">
+<link rel="icon" href="data:image/svg+xml,%%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%%3E%%3Crect width='24' height='24' fill='%%23121110'/%%3E%%3Cpath d='M12 4l7 4v8l-7 4-7-4V8z' fill='none' stroke='%%23d4502e' stroke-width='1.6'/%%3E%%3C/svg%%3E">
 <meta name="nexus-token" content="%(token)s">
 <title>Nexus Harness · Configuración</title>
 <link rel="stylesheet" href="tokens.css">

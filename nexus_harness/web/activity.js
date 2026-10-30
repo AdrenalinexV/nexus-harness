@@ -185,6 +185,9 @@
   /* `tick` pregunta UNA vez y devuelve si hay trabajo; `loop` es el unico que programa la siguiente.
      Se separan para que refrescar a mano (tras arrancar el Autopilot) no abra un segundo bucle. */
   async function tick() {
+    // Igual que el estado: sin ventana visible no hay nada que enseñar. Se reanuda al volver
+    // (`visibilitychange`) porque el bucle sigue programado.
+    if (document.hidden) return false;
     const {ok, data} = await api('/api/activity');
     if (!ok) {
       failures += 1;

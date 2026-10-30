@@ -238,3 +238,16 @@ body.chat-only > .app { flex: 1 1 auto; min-height: 0; }
   color: var(--ink-3); font-family: var(--mono); letter-spacing: .12em; text-transform: uppercase; }
 .quick select { max-width: 20rem; font-size: var(--fs-xs); padding: .15rem .3rem; border-color: var(--rule);
   font-family: var(--mono); letter-spacing: 0; text-transform: none; }
+
+/* ---------- accesibilidad: sin movimiento si el sistema lo pide ---------- */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { transition: none !important; animation: none !important; }
+}
+
+/* Enlace de salto: invisible hasta que alguien tabula (teclado, lector de pantalla). */
+.skip {
+  position: absolute; left: -9999px; top: 0; z-index: 999;
+  background: var(--paper); color: var(--ink); border: 1px solid var(--seal);
+  padding: .5rem .8rem; font-size: var(--fs-sm); text-decoration: none;
+}
+.skip:focus { left: .5rem; top: .5rem; }

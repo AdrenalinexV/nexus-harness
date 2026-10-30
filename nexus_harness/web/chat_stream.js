@@ -143,13 +143,28 @@ window.NexusStream = (function () {
     thread.scrollTop = thread.scrollHeight;
   }
 
+  /* Firma de lo pintado: sesión, número de mensajes y tamaño del último. Repintar el hilo entero cada
+     2,5 s rompía la selección de texto y el scroll: el operador seleccionaba una línea y el sondeo se
+     la llevaba por delante. Con la firma, solo se repinta cuando de verdad cambió algo. */
+  let painted = '';
+  function signature(session, messages) {
+    const last = messages[messages.length - 1];
+    return [session, messages.length, last ? String(last.content || last.role || '').length : 0,
+            last ? (last.role || '') : ''].join('|');
+  }
+
   async function refreshChat() {
+    if (document.hidden) return;
     const {ok, data} = await api('/api/chat');
     if (!ok) return;
     const next = data.session ? data.session.id : null;
-    if (next !== state.session) { state.since = 0; state.feed = []; }
+    if (next !== state.session) { state.since = 0; state.feed = []; painted = ''; }
     state.session = next;
-    renderThread(data.messages || []);
+    const messages = data.messages || [];
+    const current = signature(next, messages);
+    if (current === painted) { paintFeed(); return; }
+    painted = current;
+    renderThread(messages);
   }
 
   async function pollEvents() {

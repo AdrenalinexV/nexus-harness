@@ -158,3 +158,22 @@
 [data-skin="glossy"] .themeopt { border: 1px solid var(--rule-2); border-radius: 6px;
   padding: .55rem .6rem; background: linear-gradient(180deg, var(--paper-2), var(--paper)); }
 
+
+/* ---------- pantallas estrechas ----------
+   Va aquí, en la ÚLTIMA hoja, y con la especificidad de una skin (`[data-skin] .app`): cada diseño
+   declara su propia rejilla y una regla suelta en `app.css` perdía contra ellas. */
+@media (max-width: 900px) {
+  [data-skin] .app { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto minmax(0, 1fr); }
+  [data-skin] .sidebar {
+    border-right: 0; border-bottom: 1px solid var(--rule); max-height: 42vh; padding: .7rem .9rem;
+  }
+  [data-skin] .sidebar .spacer { display: none; }
+  [data-skin] .doc-head, [data-skin] .thread, [data-skin] .composer {
+    padding-left: .9rem; padding-right: .9rem;
+  }
+  [data-skin] .msg { grid-template-columns: 2.1rem minmax(0, 1fr); gap: .45rem; }
+  [data-skin] .settings-app { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto minmax(0, 1fr); }
+  [data-skin] .settings-tree { border-right: 0; border-bottom: 1px solid var(--rule); max-height: 38vh; }
+  [data-skin] .settings-panel { padding: 1rem .9rem 2rem; }
+  [data-skin] .themegrid { grid-template-columns: 1fr; }
+}

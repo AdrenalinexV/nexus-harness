@@ -3,6 +3,9 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="color-scheme" content="dark light">
+<!-- Favicon SVG inline: sin peticion extra y sin red. -->
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Crect width='24' height='24' fill='%23121110'/%3E%3Cpath d='M12 4l7 4v8l-7 4-7-4V8z' fill='none' stroke='%23d4502e' stroke-width='1.6'/%3E%3C/svg%3E">
 <meta name="nexus-token" content="{{token}}">
 <title>Nexus Harness</title>
 <link rel="stylesheet" href="tokens.css">
@@ -12,6 +15,7 @@
 <link rel="stylesheet" href="app.css">
 </head>
 <body class="chat-only">
+<a class="skip" href="#thread">Saltar al hilo</a>
 <!--NEXUS_SPRITE-->
 
 <!-- El cuaderno de obra: masthead de una línea, índice a la izquierda y el hilo como documento.
@@ -22,7 +26,7 @@
   <span class="meta">motor <b id="engine"></b> · v<span id="version"></span></span>
   <div class="top-right">
     <button id="activity" class="activity idle" type="button" aria-expanded="false"
-            aria-controls="activity-pop" title="Estado del motor en vivo">
+            aria-controls="activity-pop" role="status" title="Estado del motor en vivo">
       <span id="activity-glyph" class="aglyph" aria-hidden="true"></span>
       <span id="activity-label" class="alabel">conectando…</span>
       <span id="activity-bar" class="abar" hidden aria-hidden="true"><i></i></span>
@@ -83,7 +87,7 @@
       <span id="doc-meta" class="meta"></span>
     </header>
 
-    <section id="thread" class="thread" aria-live="polite"></section>
+    <section id="thread" class="thread" aria-live="polite" tabindex="-1"></section>
 
     <section class="composer">
       <div id="pending" class="pending"></div>
