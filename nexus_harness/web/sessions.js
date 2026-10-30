@@ -152,6 +152,69 @@ window.NexusSessions = (function () {
     if (!state.session) await newChat();
   }
 
+
+  /* Dos vistas en la misma columna, como en Hermes: los HILOS de este proyecto, o los PROYECTOS del
+     espacio de trabajo. Elegir un proyecto cambia de espacio y vuelve a los hilos: una columna, un
+     trabajo. La lista de proyectos es la misma cola priorizada del autopilot (no una copia). */
+  const view = {name: 'threads'};
+
+  function setView(name) {
+    view.name = name === 'projects' ? 'projects' : 'threads';
+    for (const button of document.querySelectorAll('.side-switch button')) {
+      const on = button.dataset.view === view.name;
+      button.classList.toggle('on', on);
+      button.setAttribute('aria-selected', String(on));
+    }
+    $('sessions').hidden = view.name !== 'threads';
+    $('session-search').hidden = view.name !== 'threads';
+    const list = $('projects-list');
+    if (list) list.hidden = view.name !== 'projects';
+    if (view.name === 'projects') paintProjects();
+  }
+
+  async function paintProjects() {
+    const list = $('projects-list');
+    if (!list) return;
+    const {ok, data} = await api('/api/projects/queue');
+    if (!ok) return;
+    list.innerHTML = '';
+    const current = String(($('project') || {}).value || '').trim();
+    const rows = data.queue || [];
+    if (!rows.length) {
+      const empty = document.createElement('li');
+      empty.className = 'dim';
+      empty.textContent = 'ningún proyecto gobernado: crea uno en Configuración → Espacio de trabajo';
+      list.appendChild(empty);
+      return;
+    }
+    for (const row of rows) {
+      const item = document.createElement('li');
+      item.setAttribute('role', 'option');
+      item.setAttribute('aria-selected', String(row.name === current));
+      if (row.name === current) item.className = 'active';
+      const folio = document.createElement('span');
+      folio.className = 'folio';
+      folio.textContent = String(row.position || 0).padStart(2, '0');
+      const name = document.createElement('span');
+      name.className = 'name';
+      name.textContent = row.name;
+      name.title = row.root || row.name;
+      const meta = document.createElement('span');
+      meta.className = 'act';
+      meta.textContent = row.spec && row.spec.criteria ? row.spec.criteria + ' CA' : '';
+      item.onclick = async () => {
+        await openProject(row.name);
+        setView('threads');
+      };
+      item.append(folio, name, meta);
+      list.appendChild(item);
+    }
+  }
+
+  for (const button of document.querySelectorAll('.side-switch button')) {
+    button.addEventListener('click', () => setView(button.dataset.view));
+  }
+
   return {refreshSessions, paintSessions, repaint: () => paintSessions(state.sessions),
-          newChat, loadSession, openProject};
+          newChat, loadSession, openProject, setView, paintProjects};
 }());

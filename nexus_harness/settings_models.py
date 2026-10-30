@@ -196,6 +196,33 @@ def _role_card(cockpit, role, anchor, title, what, info, focused, state, roles):
                kit.hidden("section", "modelos") + kit.hidden("role", role) + kit.hidden("back", anchor)))
 
 
+def _guide(cockpit, state, hardware):
+    """Lo recomendado por ROL, con su razón y un clic. No elige: ordena lo que hay y dice por qué."""
+    from . import model_guide
+    director = str((cockpit.config.roles or {}).get("director") or "")
+    cards = []
+    for role, title in (("director", "Director"), ("worker", "Obrero"), ("judge", "Juez")):
+        rows = model_guide.options(role, state, hardware, cockpit.config, director)
+        items = []
+        for row in rows:
+            chip = {"local": "local", "cloud": "nube", "gate": "gate"}.get(row["kind"], row["kind"])
+            size = ("%.1f GB" % row["size"]) if row["size"] else ("$0" if row["kind"] == "gate" else "")
+            label = "%s · %s%s" % (row["spec"], chip, (" · " + size) if size else "")
+            items.append(
+                '<li class="kgrow%s"><form method="post" action="/api/settings/do">%s%s%s'
+                '<span class="kgname">%s</span><button class="kact">Aplicar</button></form>'
+                '<span class="kgwhy">%s</span></li>'
+                % ("" if row["ok"] else " off", kit.hidden("what", "role_spec"),
+                   kit.hidden("role", role), kit.hidden("spec", row["spec"]),
+                   kit.esc(label), kit.esc(row["why"])))
+        cards.append('<div class="kgcol"><h4>%s</h4><ul class="kglist">%s</ul></div>'
+                     % (kit.esc(title), "".join(items)))
+    return ('<h3 class="ssub">Recomendados por rol <span class="tag">ordena lo que hay, no inventa</span></h3>'
+            '<p class="dim">Un modelo que no cabe en la VRAM declarada se lista apagado y con el motivo. '
+            'El Juez nunca se recomienda de la misma familia que el Director: juzgarse a sí mismo no audita.</p>'
+            '<div class="kguide">%s</div>' % "".join(cards))
+
+
 def _subagent_card(cockpit):
     """Los subagentes no tienen modelo propio: usan el del obrero. Se dice, no se disimula."""
     config = cockpit.config
@@ -325,13 +352,14 @@ def panel(cockpit, sub="", state=None, hardware=None):
             '<h3 class="ssub">Recomendación para esta máquina</h3>%s'
             '<h3 class="ssub">Perfiles recomendados de la tríada (1 clic)</h3>%s'
             '<h3 class="ssub">Servidores y proveedores</h3>%s%s'
+            '%s'
             '<div class="rolegrid2">%s</div>'
             '<h3 class="ssub">Números del turno</h3>%s'
             % (_hardware_bar(hardware, info), _swap_alert(info), _ceiling_form(cockpit),
                _plan_card(plan),
                _recommend_card(cockpit, hardware, state),
                _preset_bar(triad_presets.presets(cockpit, hardware, state)), _live_badge(state),
-               _providers_bar(cockpit), cards,
+               _providers_bar(cockpit), _guide(cockpit, state, hardware), cards,
                kit.form("/api/settings", "modelos", '<div class="sgrid">%s</div>'
                         % kit.context_fields(cockpit.config, _worker_window(cockpit), "obrero"),
                         submit="Guardar números")))

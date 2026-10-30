@@ -374,3 +374,54 @@
 .kbar-mini { display: block; height: 2px; margin-top: 5px; background: var(--rule); }
 .kbar-mini i { display: block; height: 2px; background: var(--ok); }
 .kanvas-row.bad { color: var(--seal); }
+
+/* Recomendados por rol: una columna por rol, filas de 1px y la razón en pequeño. El boton aplica. */
+.kguide { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 18px; }
+.kgcol h4 { margin: 0 0 6px; font-family: var(--font-mono); font-size: var(--fs-micro);
+  letter-spacing: .08em; text-transform: uppercase; color: var(--muted); font-weight: 400; }
+.kglist { list-style: none; margin: 0; padding: 0; }
+.kgrow { padding: 7px 0; border-bottom: 1px solid var(--rule); }
+.kgrow form { display: flex; align-items: baseline; gap: 8px; justify-content: space-between; }
+.kgrow form .kact { flex: 0 0 auto; }
+.kgrow.off { opacity: .55; }
+.kgwhy { display: block; margin-top: 2px; font-size: var(--fs-micro); color: var(--muted); }
+
+/* Apariencia como tarjetas: cada opcion ensena una muestra y se aplica al pulsarla (un form por
+   tarjeta, sin script). La marca OK es la unica senal de "esto es lo que hay ahora". */
+.themecard {
+  display: block; position: relative; margin: 0; cursor: pointer; text-align: left;
+  border: 1px solid var(--rule); background: var(--paper); padding: 8px 9px 9px;
+}
+.themecard:hover { border-color: var(--ink); }
+.themecard.on { border-color: var(--seal); }
+.themecard .tprev { display: flex; align-items: center; gap: 6px; height: 42px; margin-bottom: 7px; }
+.themecard .tname { display: block; font-family: var(--font-text); font-size: 13px; color: var(--ink); }
+.themecard .tnote { display: block; margin-top: 2px; font-size: var(--fs-micro); color: var(--muted); }
+.themecard .tmark {
+  position: absolute; top: 6px; right: 8px; font-family: var(--font-mono);
+  font-size: var(--fs-micro); letter-spacing: .08em; color: var(--seal);
+}
+.tsheet { display: block; width: 100%; height: 42px; padding: 6px; border: 1px solid var(--rule); }
+.tsheet i { display: block; height: 2px; margin-bottom: 3px; background: var(--muted); opacity: .55; }
+.tsheet i:nth-child(1) { width: 62%; }
+.tsheet i:nth-child(2) { width: 88%; }
+.tsheet i:nth-child(3) { width: 45%; }
+.tsheet-mode { display: flex; align-items: center; justify-content: center; font-family: var(--font-display); font-size: 19px; }
+.tsheet-mode[data-preview="dark"] { background: #121110; color: #ece7dd; border-color: #2a2622; }
+.tsheet-mode[data-preview="light"] { background: #f4efe4; color: #1a1714; border-color: #d8d0c0; }
+.tsheet-editorial { border-top-width: 3px; }
+.tsheet-terminal { font-family: var(--font-mono); }
+.tsheet-matrix { border-left: 3px solid #1d3b22; }
+.tsheet-glossy { border-radius: 6px; box-shadow: inset 0 1px 0 rgba(255, 255, 255, .22); }
+.tfont { font-family: var(--font-text); font-size: 17px; color: var(--ink); }
+.tfont-default { font-family: var(--font-display); }
+.tfont-sans { font-family: var(--sans); }
+.tfont-mono { font-family: var(--font-mono); font-size: 15px; }
+.tfont-large { font-size: 22px; }
+.tdense { display: flex; flex-direction: column; gap: 3px; width: 100%; }
+.tdense i { display: block; height: 3px; background: var(--muted); opacity: .5; }
+.tdense-normal i:nth-child(1) { width: 80%; }
+.tdense-normal i:nth-child(2) { width: 65%; }
+.tdense-normal i:nth-child(3) { width: 72%; }
+.tdense-compacta { gap: 1px; }
+.tdense-compacta i { height: 2px; }

@@ -90,15 +90,23 @@ def _serve(root):
 
 
 def test_live_ticker(base, failures):
+    """La cabina ya no lleva píldora ni popover de estado: una sola puerta, Configuración.
+
+    El operador marcó esa píldora como ruido en la cabecera. El endpoint sigue midiendo (lo usan el
+    panel y las gráficas) y el control del autopilot vive en Configuración → Espacio de trabajo.
+    """
     status, body = _call(base, "/")
     check("the chat is served", status, 200, failures)
     check("the dead badge is gone", "en reposo" in body, False, failures)
-    check("the live pill is there", 'id="activity"' in body, True, failures)
-    check("with its popover", 'id="activity-pop"' in body, True, failures)
-    check("and its autopilot control", "Modo Autónomo Iterativo" in body, True, failures)
-    check("activity.js is loaded", "activity.js" in body, True, failures)
+    check("the chat has no activity pill", 'id="activity"' in body, False, failures)
+    check("nor its popover", 'id="activity-pop"' in body, False, failures)
+    check("and one single door", body.count('class="navlink'), 1, failures)
+    check("the composer has no model selector", 'id="quick-director"' in body, False, failures)
+    status, panel = _call(base, "/settings?section=espacio")
+    check("the autopilot control lives in settings", 'value="autonomy_start"' in panel, True,
+          failures)
     status, js = _call(base, "/activity.js")
-    check("activity.js is served", status, 200, failures)
+    check("activity.js is still served (inert without the pill)", status, 200, failures)
     check("and polls the engine", "/api/activity" in js, True, failures)
     status, data = _call(base, "/api/activity")
     payload = json.loads(data)

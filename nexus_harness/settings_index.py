@@ -122,11 +122,12 @@ def tree(active, sub, needle, state, token=""):
     config = state.get("config") or {}
     version = state.get("version") or "?"
     source = config.get("source") or "defaults"
-    gov_link = ('<a class="tree-gov" href="/gov?tab=setup%s">'
-                '<span class="sigil" aria-hidden="true">◇</span>Gobernanza (protocolo)</a>' % gt)
-    return ('<nav class="settings-tree">%s%s<p class="tree-foot">'
+    # La gobernanza del protocolo NO se enlaza aqui: es otra aplicacion (su propia GUI, su propio
+    # diseno) y un enlace cruzado en el indice hacia una pantalla que no sigue estas leyes es lo que
+    # hacia preguntar "esto que es". La ruta /gov sigue existiendo para quien la conozca.
+    return ('<nav class="settings-tree">%s<p class="tree-foot">'
             'motor v%s · conectado<br><code>%s</code></p></nav>'
-            % ("".join(blocks), gov_link, escape(version), escape(source)))
+            % ("".join(blocks), escape(version), escape(source)))
 
 
 def palette(token=""):

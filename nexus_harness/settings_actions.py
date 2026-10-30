@@ -58,6 +58,10 @@ def action(cockpit, body):
         from . import triad_presets
         note, ok = triad_presets.apply(cockpit, str(body.get("preset") or ""))
         return (note, ok, "modelos")
+    if what == "role_spec":
+        from . import model_guide
+        note, ok = model_guide.apply(cockpit, body.get("role"), body.get("spec"))
+        return (note, ok, "modelos")
     if what == "detect_models":
         found = onboarding.probe_local()
         live = {vendor: len(row.get("models") or [])

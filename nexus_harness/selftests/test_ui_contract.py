@@ -219,6 +219,13 @@ def test_the_navigation_has_one_door(base, failures):
     check("sin submenus anidados", "<details" in page, False, failures)
     check("con el tablero como seccion propia", "Tablero (Kanvas)" in page, True, failures)
     check("y las trece secciones planas", page.count('class="scat-leaf'), 13, failures)
+    check("sin enlace a la gobernanza del protocolo (es otra app)", "/gov" in page, False, failures)
+    status, look = _get(base, "/settings?section=apariencia")
+    check("apariencia se sirve", status, 200, failures)
+    check("como tarjetas con vista previa", look.count('class="themecard') >= 10, True, failures)
+    check("sin botones «Aplicar» por eje", "Aplicar diseño" in look, False, failures)
+    status, models = _get(base, "/settings?section=modelos")
+    check("los modelos traen recomendados por rol", "Recomendados por rol" in models, True, failures)
 
 
 def run():

@@ -113,9 +113,6 @@ function paintState(s) {
   $('title').textContent = session ? (session.title || session.id) : '';
   $('doc-meta').textContent = session ? `${session.id} · ${session.turns || 0} turnos` : '';
   const config = s.config || {};
-  $('engine').textContent = `${config.host}:${config.port}`;
-  $('version').textContent = s.version || '?';
-  $('engine-root').textContent = config.root || '';
   if (last.skills && last.skills.length) window.NexusStream.noteSkills(last.skills);
   const projects = (s.models || {}).projects || [];
   // El proyecto de la conversación manda; la raíz del motor solo es el punto de partida.
@@ -125,9 +122,6 @@ function paintState(s) {
   const placeholder = '— elige un proyecto —';
   fillSelect($('project'), known ? projects : [placeholder].concat(projects),
              known ? current : placeholder);
-  const options = (s.models || {}).options || [];
-  const director = ((s.roles || {}).director) || {};
-  fillSelect($('quick-director'), options.length ? options : [director.spec || ''], director.spec);
 }
 
 /* ---------- la banda de reintento ----------
@@ -186,12 +180,6 @@ async function refreshState() {
   markReachable(result.ok || result.status === 401 || result.status === 403);
 }
 
-async function swapDirector(spec) {
-  if (!spec) return;
-  const {ok, data} = await api('/api/roles', {method: 'POST', body: JSON.stringify({role: 'director', spec})});
-  if (!ok) warn(data.reason || 'modelo rechazado');
-  refreshState();
-}
 
 
 /* ---------- la hoja de atajos (`?`) ----------
@@ -243,7 +231,6 @@ function wire() {
   $('stop').onclick = () => window.NexusComposer.stopTurn();
   $('new-chat').onclick = () => window.NexusSessions.newChat();
   $('session-search').addEventListener('input', () => window.NexusSessions.repaint());
-  $('quick-director').addEventListener('change', (event) => swapDirector(event.target.value));
   $('project').addEventListener('change', () => window.NexusSessions.newChat());
   $('input').addEventListener('keydown', (event) => {
     if ((event.ctrlKey || event.metaKey) && event.key === 'Enter') window.NexusComposer.send();

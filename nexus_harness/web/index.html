@@ -25,43 +25,9 @@
      La línea de estado la pinta `activity.js` desde `/api/activity`. -->
 <header class="masthead chat-top">
   <a class="brand" href="/?token={{token}}">NEXUS<span>·</span>HARNESS</a>
-  <span class="meta">motor <b id="engine"></b> · v<span id="version"></span></span>
   <div class="top-right">
     <a id="settings" class="navlink top-link" href="/settings?token={{token}}"
        title="Modelos, claves, memoria, skills, autonomía, tablero y el resto del manual">Configuración</a>
-    <button id="activity" class="activity idle" type="button" aria-expanded="false"
-            aria-controls="activity-pop" role="status" title="Estado del motor en vivo">
-      <span id="activity-glyph" class="aglyph" aria-hidden="true"></span>
-      <span id="activity-label" class="alabel">conectando…</span>
-      <span id="activity-bar" class="abar" hidden aria-hidden="true"><i></i></span>
-    </button>
-    <div id="activity-pop" class="popover" role="dialog" aria-label="Último turno y Autopilot" hidden>
-      <header class="pophead">
-        <strong>Último turno</strong>
-        <span id="pop-when" class="dim mono"></span>
-      </header>
-      <p id="pop-summary" class="dim">todavía sin turnos en este proyecto</p>
-      <div id="pop-files" class="chips"></div>
-      <div id="pop-gate" class="poprows"></div>
-      <!-- La ley del color, donde se lee un veredicto: cuatro estados, un significado cada uno. -->
-      <p class="legend" aria-label="Leyenda de veredictos">
-        <span class="t-ok"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-check"/></svg>decisión tomada</span>
-        <span class="t-warn"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-alert"/></svg>espera a una persona / no verificable</span>
-        <span class="t-bad"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-xcircle"/></svg>detectado</span>
-        <span class="t-idle"><span class="dot"></span>sin registro</span>
-      </p>
-      <footer class="popfoot">
-        <label class="quick">Iteraciones
-          <input id="auto-iterations" type="number" value="3" min="1" max="50"
-                 title="cuántos ciclos hace el bucle antes de parar">
-        </label>
-        <button id="auto-start" class="primary"
-                title="Backup, planifica, ejecuta, verifica y avanza hasta terminar o agotar ciclos">
-          Modo Autónomo Iterativo</button>
-        <button id="auto-stop" class="ghost" hidden>Detener bucle</button>
-      </footer>
-      <p id="pop-note" class="dim popnote"></p>
-    </div>
   </div>
 </header>
 
@@ -72,12 +38,16 @@
     <div class="volume"><span class="label">Proyecto</span><select id="project"
       aria-label="Proyecto"></select></div>
     <button id="new-chat" class="wide">+ Nueva conversación</button>
-    <div class="side-title">Índice</div>
+    <nav class="side-switch" role="tablist" aria-label="Vista de la columna">
+      <button type="button" role="tab" data-view="threads" class="on" aria-selected="true">Hilos</button>
+      <button type="button" role="tab" data-view="projects" aria-selected="false">Proyectos</button>
+    </nav>
     <input id="session-search" class="search" type="search" placeholder="buscar folio…"
            aria-label="Buscar conversación">
     <ul id="sessions" class="sessions" role="listbox" aria-label="Conversaciones"></ul>
+    <ul id="projects-list" class="sessions projects-list" role="listbox"
+        aria-label="Proyectos del workspace" hidden></ul>
     <div class="spacer"></div>
-    <div class="foot mono"><span id="engine-root"></span></div>
   </aside>
 
   <main class="main">
@@ -101,12 +71,6 @@
           <button id="stop" type="button" disabled>Detener</button>
           <button id="send" class="primary" type="button">Enviar ⏎</button>
         </div>
-      </div>
-      <div class="composer-foot">
-        <label class="quick">Director
-          <select id="quick-director" title="Modelo del Director para los próximos turnos"></select>
-        </label>
-        <span>Ctrl+Enter envía · arrastra un fichero</span>
       </div>
       <input id="file" type="file" multiple hidden
         accept=".png,.jpg,.jpeg,.webp,.gif,.txt,.md,.json,.py,.pdf">
