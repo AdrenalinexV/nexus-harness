@@ -1,12 +1,14 @@
 """El eval se examina a si mismo: si una tarea rota pasara, la tabla no valdria nada.
 
 Lo que se mide:
-* las siete tareas golden pasan con el modelo guionizado (y la negativa cierra en rojo, como debe);
+* las veinte tareas golden pasan con el modelo guionizado (y la negativa cierra en rojo, como debe);
 * una tarea cuyo guion no hace nada FALLA, y el motivo nombra el exit;
 * una tarea que exige un contenido que no esta FALLA, y lo dice;
 * la tabla markdown se puede pegar y no oculta un fallo.
 """
-from .. import evalgym
+import shutil
+
+from .. import evalgym, eval_mutation
 from ..eval_tasks import TASKS, Task, selected
 
 
@@ -22,6 +24,38 @@ def test_the_whole_suite_passes_deterministically(failures):
     check("el agregado dice ok", payload["ok"], True, failures)
     failed = [(row["id"], row["reasons"]) for row in payload["rows"] if not row["ok"]]
     check("sin fallos escondidos", failed, [], failures)
+
+
+def test_every_task_can_fail(failures):
+    """Mutation smoke: se rompe el estado correcto en tres sitios y el test tiene que verlo.
+
+    Un test que sale 0 con el codigo roto no mide la tarea: mide que el test existe. Aqui se cazan.
+    """
+    weak, measured = [], 0
+    for task in TASKS:
+        if not task.fixed or (task.needs and not shutil.which(task.needs)):
+            continue
+        rows = eval_mutation.run(task)
+        if not rows:
+            continue
+        measured += 1
+        if all(code == 0 for _label, code in rows):
+            weak.append(task.id)
+    check("hay tareas a las que mutar", measured >= 15, True, failures)
+    check("ninguna tarea sobrevive a sus tres mutaciones", weak, [], failures)
+
+
+def test_a_vacuous_test_is_caught(failures):
+    """El caso que el smoke tiene que cazar: un `test` que siempre sale 0."""
+    vacuous = Task(id="vacio", goal="da igual", files={"calc.py": "x = 1\n"},
+                   test='python -c "print(1)"', script=[], fixed={"calc.py": "x = 2\n"})
+    check("un test vacio se declara superviviente", len(eval_mutation.survivors(vacuous)), 3,
+          failures)
+    honest = Task(id="honesto", goal="da igual", files={"calc.py": "x = 1\n"},
+                  test='python -c "import calc; assert calc.x == 2"', script=[],
+                  fixed={"calc.py": "x = 2\n"})
+    check("uno de verdad no sobrevive a todas", len(eval_mutation.survivors(honesto)) < 3, True,
+          failures)
 
 
 def test_the_negative_task_really_ends_red(failures):

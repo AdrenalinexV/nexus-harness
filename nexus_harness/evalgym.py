@@ -13,6 +13,7 @@ Dos modos, y el deterministico no es un juguete:
 
 Se ejecuta con el MISMO `Triad` que produccion: Director, Obrero, gate, Juez y reparaciones.
 """
+import shutil
 import time
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -137,6 +138,12 @@ def run_task(task, model=None, attempt=1):
         row.skipped = True
         row.ok = True
         row.reasons = ["no medible con un modelo real: exige que obedezca una orden destructiva"]
+        return row
+    if task.needs and not shutil.which(task.needs):
+        # Una tarea de JavaScript sin `node` no se puede medir, y contarla como verde seria mentir.
+        row.skipped = True
+        row.ok = True
+        row.reasons = ["no medible: falta %r en el PATH" % task.needs]
         return row
     try:
         with TempProject(dict(task.files)) as root:

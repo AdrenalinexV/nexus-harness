@@ -13,7 +13,7 @@
 > (3) Ninguna cifra se teclea: `python tools/doc_truth.py` la compara con el motor y pone el build rojo.
 > (4) Lo que no se pudo medir se escribe **no medido** con el comando que lo cerraría.
 
-Medido hoy: 63 suites · 223 ficheros · 0 hallazgos de lint · 0 ficheros > 400 líneas.
+Medido hoy: 63 suites · 224 ficheros · 0 hallazgos de lint · 0 ficheros > 400 líneas.
 
 ---
 
@@ -30,7 +30,7 @@ Medido hoy: 63 suites · 223 ficheros · 0 hallazgos de lint · 0 ficheros > 400
 | **C · Streaming** | ~~AUSENTE~~ **CERRADA** en la fase 3: los cuatro transportes devuelven eventos, `chat()` = `fold(stream())` y Detener corta el socket en vuelo | `2627150` · `41de9b8` · `d88be86` | — | `selftest stream` → OK (12 casos); `verify` GREEN en los dos modos |
 | **B · LSP** | ~~AUSENTE~~ **CERRADA** en la fase 3: cliente JSON-RPC por stdio, `definition` y diagnósticos tras cada escritura; `references` queda como siguiente (no estaba en el criterio del paso 12) | `3ba9c5d` | — | `selftest lsp` → OK (5 casos, con un servidor falso que habla el protocolo) |
 | **G · Hooks** | ~~AUSENTE~~ **CERRADA** en la fase 3: 4 puntos, contrato 0/10/20/30, fail-closed | `88c8018` | — | `selftest hooks` → OK (9 casos) |
-| **H · Evals** | 7 tareas y **1 solo lenguaje**; sin mutation smoke | `eval_tasks.py`; `tools/eval.py` | mide capacidad, no autoestima | ~20 tareas en 3 lenguajes + mutar 3 líneas pone ≥1 test rojo; la negativa sigue en 10/10 |
+| **H · Evals** | ~~PARCIAL~~ **CERRADA** en la fase 3: 20 tareas en 3 lenguajes (Python, JavaScript, Bash) y mutation smoke sobre 18 de ellas | `(esta fase)` | — | `selftest eval` → OK (20 tareas + 54 mutaciones); la negativa `over-400` sigue en 10/10 |
 
 ## 2. Cerrado en esta sesión (con su comando)
 
@@ -46,6 +46,7 @@ Medido hoy: 63 suites · 223 ficheros · 0 hallazgos de lint · 0 ficheros > 400
 | **C** | **Streaming**: eventos `delta/reasoning/tool_call/done`, `Reply` por `fold`, failover solo antes del primer evento, Detener cierra el socket, cabina por SSE | `2627150` · `41de9b8` · `5873cfd` | `selftest stream` → OK (12 casos): JSON partido, servidor que se cuelga (0,52 s) y turno entero por el cable |
 | **D** | **Sandbox**: `unrestricted` sin jaula de ficheros se niega con motivo; matriz 3 modos × 3 jaulas; Job Object con kill-on-close y tope de memoria medidos | `a5f79eb` | `selftest sandbox` → OK (6 casos); `verify` GREEN en los dos modos |
 | **B** | **LSP**: cliente JSON-RPC 2.0 por stdio, `definition` (LSP → AST con la razón impresa) y diagnósticos en el resultado de cada `patch`/`write_file` | `3ba9c5d` | `selftest lsp` → OK (5 casos); `definition(symbol=build_prefix)` → `context_compiler.py:81` |
+| **H** | **Evals**: 20 tareas (10 Python, 5 JavaScript, 5 Bash) y mutation smoke — 3 mutaciones por tarea y ninguna sobrevive | `(esta fase)` | `selftest eval` → OK (9,3 s); `over-400-is-rejected` → exit 10 |
 
 ## 3. Decisiones cerradas por el operador (no se reabren)
 
