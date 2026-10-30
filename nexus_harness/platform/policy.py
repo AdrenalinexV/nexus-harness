@@ -14,6 +14,12 @@ repo and an operator shipping a fix, so there are three levels:
 * **mutating** -- refused only in `read_only`: any write to the tree (`rm`, `mv`, `mkdir`, a
   redirection, a package install, a commit). That mode is for auditing a repository without touching it.
 
+Y un cuarto porton, que no es una lista de palabras sino una capacidad del SO: **`unrestricted` sin
+jaula se niega**. Un comando `reckless` (`rm -rf`, `git push --force`) en `unrestricted` solo pasa si
+esta maquina tiene una jaula que contenga escrituras de ficheros (`sandbox.Cage.holds_filesystem`).
+En Windows no la hay -- el Job Object contiene procesos y memoria, no el sistema de ficheros -- asi que
+el default niega con el motivo escrito. El operador puede asumirlo con `NEXUS_UNSANDBOXED=1`.
+
 Matching is on the command **as written**, lowercased -- the same stance Claude Code documents for its
 `Bash` deny rules -- which keeps every rule readable and testable. The limit is written down instead of
 hidden: a model that obfuscates a command (`$(printf 'rm -rf /')`) is not caught here; the gate and the
@@ -92,23 +98,45 @@ def mode_of(config):
     return normalise(getattr(config, CONFIG_FIELD, None) if config is not None else None)
 
 
-def classify(command, mode=DEFAULT_MODE):
-    """Classify one command. Pure: the same command and mode always give the same verdict."""
+def _holds_filesystem(cage):
+    """La unica capacidad que convierte `unrestricted` en una promesa. Sin dato, no la hay."""
+    if cage is None:
+        from . import sandbox
+        cage = sandbox.current()
+    return bool(getattr(cage, "holds_filesystem", False))
+
+
+def classify(command, mode=DEFAULT_MODE, cage=None, allow_unsandboxed=False):
+    """Classify one command. Pura salvo la jaula: mismo comando + modo + jaula, mismo veredicto.
+
+    `cage` se pregunta a `sandbox.current()` si no se pasa. `allow_unsandboxed` es la firma del
+    operador (`NEXUS_UNSANDBOXED=1`), no un default: con ella el riesgo es suyo y esta escrito.
+    """
     mode = normalise(mode)
     text = " ".join(str(command or "").lower().split())
     if not text:
         return Verdict(False, mode, "empty", "comando vacio")
     for level, table, allowed_in in LEVELS:
-        if mode in allowed_in:
-            continue
         for pattern, reason in table:
-            if re.search(pattern, text):
-                return Verdict(False, mode, level, reason)
+            if not re.search(pattern, text):
+                continue
+            if mode in allowed_in:
+                # Permitido en este modo, salvo que sea destructivo y no haya jaula que lo contenga.
+                if level == "reckless" and mode == "unrestricted" and not allow_unsandboxed \
+                        and not _holds_filesystem(cage):
+                    return Verdict(False, mode, "sandbox",
+                                   "%s, pero esta maquina no tiene jaula de sistema de ficheros "
+                                   "(un Job Object contiene procesos, no escrituras)" % reason)
+                continue
+            return Verdict(False, mode, level, reason)
     return Verdict(True, mode)
 
 
 def refusal(verdict):
     """The text the model reads: what was refused, why, and how to lift it on purpose."""
+    if verdict.level == "sandbox":
+        return ("refused [%s/sandbox]: %s -- define NEXUS_UNSANDBOXED=1 si asumes el riesgo, o corre "
+                "esto en una maquina con bubblewrap/sandbox-exec" % (verdict.mode, verdict.reason))
     return ("refused [%s/%s]: %s -- sube la politica (%s en ~/.nexus/harness.json: %s) "
             "solo si de verdad lo quieres" % (verdict.mode, verdict.level, verdict.reason,
                                               CONFIG_FIELD, "|".join(MODES)))

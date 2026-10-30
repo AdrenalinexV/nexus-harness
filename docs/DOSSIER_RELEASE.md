@@ -37,8 +37,8 @@ pequeña.
 
 ```
 $ python tools/verify.py
-lint      exit 0   files=218 findings=0 max_lines=400 ignored_runtime=0
-selftest  exit 0   suites=61 failures=0
+lint      exit 0   files=220 findings=0 max_lines=400 ignored_runtime=0
+selftest  exit 0   suites=62 failures=0
 verify: GREEN
 
 $ python -c "from nexus_harness.savings import skill_index; print(skill_index(force=True))"
@@ -50,8 +50,8 @@ run serve chat checkpoint selftest lint models gate relay spec daemon task notif
 
 | dato | valor | fuente |
 |---|---|---|
-| Suites deterministas | **61, 0 fallos, sin red** | `verify.py` |
-| Hallazgos de lint / ficheros > 400 líneas | **0 / 0** en 218 ficheros | `verify.py` |
+| Suites deterministas | **62, 0 fallos, sin red** | `verify.py` |
+| Hallazgos de lint / ficheros > 400 líneas | **0 / 0** en 220 ficheros | `verify.py` |
 | Dependencias de terceros | **0** | `pyproject.toml` |
 | Líneas de fuente | ~21.300 (motor) · ~27.500 (con tools/apps) | `wc -l` |
 | Módulo más largo | 399 líneas (techo 400) — *en el techo* | `wc -l` |
@@ -168,7 +168,7 @@ nosotros, y por partida doble (gobernanza y coste). Nuestro arrastre es un solo 
    ejecutables, parada **por criterios y no por reloj**, y un canal de consulta bidireccional real
    (Telegram/Discord) con **default declarado** al expirar el plazo.
 6. **0 dependencias y 400 líneas.** Portabilidad extrema y auditabilidad total (la ley de tamaño se cumple
-   sola: 0 infracciones en 218 ficheros).
+   sola: 0 infracciones en 220 ficheros).
 
 ## 5. Dónde perdemos (honestidad, sin adornos)
 
@@ -244,7 +244,7 @@ donde el propio paper demuestra que **nadie** tiene los siete subsistemas llenos
 > salida por criterio, juez distinto del obrero, y cuánto contexto y dinero costó cada turno.*
 
 **Los cuatro argumentos del release (todos medibles, todos reproducibles):**
-1. `verify: GREEN` — 61 suites, 0 hallazgos, 0 ficheros > 400 líneas, **0 dependencias**.
+1. `verify: GREEN` — 62 suites, 0 hallazgos, 0 ficheros > 400 líneas, **0 dependencias**.
 2. **−57,9 %** de tokens vs harness tradicional (A/B, misma tarea, mismo modelo).
 3. **El recibo**: cada turno con su `exit`, su juez y su coste, archivado.
 4. **Autonomía que pregunta**: deja tareas, el daemon las convierte en criterios, trabaja, verifica y te

@@ -22,7 +22,7 @@ import shutil
 import subprocess
 import threading
 
-from ...platform import policy
+from ...platform import policy, sandbox
 from . import output_clip, process_manager
 
 DEFAULT_TIMEOUT = 180
@@ -109,7 +109,8 @@ class ShellSession:
         command = str(command or "").strip()
         if not command:
             raise ValueError("empty command")
-        verdict = policy.classify(command, policy.normalise(mode))
+        verdict = policy.classify(command, policy.normalise(mode), cage=sandbox.current(),
+                                  allow_unsandboxed=sandbox.operator_override())
         if not verdict.allowed:
             raise ValueError(policy.refusal(verdict))
         script, _shell = self._absorb_exports(command)
@@ -117,17 +118,21 @@ class ShellSession:
             text, meta = process_manager.manager_for(self.root).spawn(script, label or "shell")
             meta["cwd"] = self.cwd
             return text, meta
-        return self._foreground(script, timeout or DEFAULT_TIMEOUT, label)
+        # La jaula de ficheros solo se pide en `unrestricted`: es el modo donde el SO tiene que
+        # sostener la promesa. En standard/read_only manda la lista de denegacion.
+        cage = sandbox.current() if verdict.mode == "unrestricted" else None
+        return self._foreground(script, timeout or DEFAULT_TIMEOUT, label, cage)
 
-    def _foreground(self, script, timeout, label):
+    def _foreground(self, script, timeout, label, cage=None):
         argv, _shell = self._wrap(script)
+        if cage is not None and cage.holds_filesystem:
+            argv = sandbox.wrap(argv, self.root, cage)
         kwargs = {"creationflags": WINDOWS_FLAGS} if os.name == "nt" else {}
         environment = dict(os.environ, **self.env)
         try:
-            completed = subprocess.run(
-                argv, shell=isinstance(argv, str), cwd=self.cwd, capture_output=True,
-                text=True, encoding="utf-8", errors="replace", timeout=timeout,
-                env=environment, **kwargs)
+            completed = sandbox.run(
+                argv, shell=isinstance(argv, str), cwd=self.cwd,
+                timeout=timeout, env=environment, **kwargs)
         except subprocess.TimeoutExpired:
             raise ValueError("command timed out after %ss in %s" % (timeout, self.cwd))
         except OSError as exc:

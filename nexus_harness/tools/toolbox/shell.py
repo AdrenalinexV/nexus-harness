@@ -6,8 +6,9 @@ not commands that are merely risky): this is an autonomous harness, and a harnes
 before every build is not autonomous.
 """
 import re
-import subprocess
 from pathlib import Path
+
+from ...platform import policy, sandbox
 
 MAX_OUTPUT = 12000
 TAIL = 4000
@@ -44,12 +45,17 @@ def run(root, command, timeout=None, config=None):
     reason = refused(command)
     if reason:
         raise ValueError("refused: %s" % reason)
+    # La segunda red: la politica de siempre (modos, jaula y firma del operador). `refused()` de arriba
+    # solo nombra lo catastrofico; esto decide lo demas y lo hace ANTES de crear el subproceso.
+    verdict = policy.classify(command, policy.mode_of(config), cage=sandbox.current(),
+                              allow_unsandboxed=sandbox.operator_override())
+    if not verdict.allowed:
+        raise ValueError(policy.refusal(verdict))
     limit = int(timeout or getattr(config, "shell_timeout", 180))
     # `shell=True` is the feature, not an oversight: this tool exists so a model can run `pytest -k x |
     # tail -20` in somebody's own repository. The injection surface is bounded by the refusal list
     # above and by the fact that the command comes from the operator's session, not from a web page.
-    completed = subprocess.run(command, shell=True, cwd=str(Path(root)), capture_output=True,
-                               text=True, errors="replace", timeout=limit)
+    completed = sandbox.run(command, shell=True, cwd=str(Path(root)), timeout=limit)
     output = (completed.stdout or "") + (("\n[stderr]\n" + completed.stderr)
                                          if (completed.stderr or "").strip() else "")
     return clipped(output).strip() or "(no output)", {"exit": completed.returncode,

@@ -1,7 +1,7 @@
 # Arquitectura v2 · Propuesta desde cero
 
 > Revisión de arquitecto sobre Nexus-Harness v1.1.0 (`f8a2491`), 2026-10-29.
-> Estado medido: `verify: GREEN` — 61 suites, 0 hallazgos, 0 ficheros > 400 líneas, 0 dependencias.
+> Estado medido: `verify: GREEN` — 62 suites, 0 hallazgos, 0 ficheros > 400 líneas, 0 dependencias.
 > Este documento es una **crítica**, no un plan aprobado. Cada decisión lleva problema → decisión →
 > invariante → migración → coste. Ordenado por **coste de hacerlo tarde**, no por vistosidad.
 

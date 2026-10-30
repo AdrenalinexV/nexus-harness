@@ -25,7 +25,7 @@ one inherits.
 ## Module map and line budget
 
 Measured on 2026-10-28 (`python tools/verify.py`): **174 graded files, 0 findings, longest module 400
-lines**, 61 deterministic suites in green.
+lines**, 62 deterministic suites in green.
 
 Every module answers one question. The budget column is the ceiling enforced by
 `tools/lint_harness.py` (R2, 400 lines) reduced on purpose: a file that reaches 250 here is already

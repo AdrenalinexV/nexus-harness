@@ -15,6 +15,8 @@ Three things are not negotiable on Windows:
 """
 import os
 import subprocess
+
+from ...platform import sandbox
 import threading
 import time
 import uuid
@@ -41,6 +43,7 @@ class ProcessSession:
     _buffer: list = field(default_factory=list)
     _lock: object = field(default_factory=threading.Lock)
     _thread: object = None
+    guard: object = None
 
     @property
     def running(self):
@@ -79,11 +82,15 @@ class ProcessManager:
         session.log = str(output_clip.log_path(self.root, label or self.log_label))
         handle = open(session.log, "w", encoding="utf-8", errors="replace", newline="")
         kwargs = {"creationflags": WINDOWS_FLAGS} if os.name == "nt" else {"start_new_session": True}
+        # El proceso de fondo es el que mas facil se queda huerfano: entra en el Job al nacer.
+        guard = sandbox.Guard(memory_mb=2048, max_processes=32)
         try:
             session.process = subprocess.Popen(
                 command, shell=True, cwd=self.root, stdin=subprocess.PIPE, stdout=subprocess.PIPE,
                 stderr=subprocess.STDOUT, text=True, encoding="utf-8", errors="replace",
                 bufsize=1, env=dict(os.environ), **kwargs)
+            guard.assign(session.process)
+            session.guard = guard
         except OSError as exc:
             handle.close()
             raise ValueError("could not start %r: %s" % (command, exc))
@@ -175,6 +182,8 @@ class ProcessManager:
                      "exit_code": session.exit_code})
         pid = session.process.pid
         self._terminate(pid)
+        if session.guard is not None:
+            session.guard.close()
         try:
             session.process.wait(timeout=timeout)
         except subprocess.TimeoutExpired:

@@ -4,8 +4,9 @@ Cinco propiedades, cada una con una falsificacion posible:
 
 * lo **catastrofico** se niega en los tres modos -- incluido `unrestricted`, porque ese modo es un
   permiso para ser temerario, no para formatear un disco;
-* lo **temerario** se niega en `read_only` y `standard` y solo pasa si el operador lo pide por su
-  nombre (`unrestricted`), asi que la config se mide por su efecto y no por su texto;
+* lo **temerario** se niega en `read_only` y `standard`, y en `unrestricted` solo pasa si esta
+  maquina tiene una jaula de sistema de ficheros (o el operador firma `NEXUS_UNSANDBOXED=1`): la
+  politica se mide por su efecto y no por el texto de la config;
 * `read_only` **no escribe**: niega cualquier mutacion y sigue dejando leer;
 * la negativa es una **observacion** (`ok=False`, empieza por `refused`) y **no ejecuta nada**: se
   decide antes de que exista un subproceso, y eso se comprueba con el arbol de verdad;
@@ -14,7 +15,7 @@ Cinco propiedades, cada una con una falsificacion posible:
 import os
 
 from .fakes import TempProject
-from ..platform import policy
+from ..platform import policy, sandbox
 from ..config import HarnessConfig
 from ..tools.toolbox import shell_session
 from ..tools import Registry
@@ -48,8 +49,15 @@ def test_levels(failures):
     check("y su regla es 'reckless'", policy.classify("git push --force origin main").level,
           "reckless", failures)
     check("un rm -rf se niega en standard", policy.classify("rm -rf build").allowed, False, failures)
-    check("pero se permite cuando el operador lo pide",
-          policy.classify("git push --force origin main", "unrestricted").allowed, True, failures)
+    cage = sandbox.Cage("bwrap", "linux", filesystem=True, processes=True)
+    check("con jaula de ficheros, el operador lo pide y pasa",
+          policy.classify("git push --force origin main", "unrestricted", cage=cage).allowed, True,
+          failures)
+    check("sin jaula, unrestricted se niega con motivo",
+          policy.classify("git push --force origin main", "unrestricted").allowed, False, failures)
+    check("y la firma del operador lo levanta",
+          policy.classify("git push --force origin main", "unrestricted",
+                          allow_unsandboxed=True).allowed, True, failures)
     check("un borrado simple pasa en standard", policy.classify("rm build/old.log").allowed, True, failures)
     check("en read_only no se borra", policy.classify("rm build/old.log", "read_only").allowed,
           False, failures)
@@ -97,9 +105,19 @@ def test_the_normal_work_still_runs(failures, root):
                                       HarnessConfig(shell_policy="standard"))
     check("mkdir pasa en standard", meta.get("exit"), 0, failures)
     check("y el directorio existe", os.path.isdir(str(root / "probe_dir")), True, failures)
-    _text, meta = shell_session.shell(root, "rm -rf probe_dir", None,
-                                      HarnessConfig(shell_policy="unrestricted"))
-    check("rm -rf pasa en unrestricted", meta.get("exit"), 0, failures)
+    # En una maquina sin jaula de ficheros, `unrestricted` exige la firma del operador: es la misma
+    # regla que `classify` mide arriba, aqui por la via real del shell.
+    previous = os.environ.get(sandbox.OVERRIDE_ENV)
+    os.environ[sandbox.OVERRIDE_ENV] = "1"
+    try:
+        _text, meta = shell_session.shell(root, "rm -rf probe_dir", None,
+                                          HarnessConfig(shell_policy="unrestricted"))
+    finally:
+        if previous is None:
+            os.environ.pop(sandbox.OVERRIDE_ENV, None)
+        else:
+            os.environ[sandbox.OVERRIDE_ENV] = previous
+    check("rm -rf pasa en unrestricted con la firma del operador", meta.get("exit"), 0, failures)
     check("y borra de verdad", os.path.exists(str(root / "probe_dir")), False, failures)
 
 
