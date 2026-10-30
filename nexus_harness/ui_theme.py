@@ -19,23 +19,26 @@ MODES = (("dark", "Oscuro"), ("light", "Claro"))
 MODE_KEYS = tuple(row[0] for row in MODES)
 DEFAULT_MODE = "dark"
 
+# La tríada tipográfica es DEL DISEÑO (es lo que hace distintos a los diseños). Este eje es un
+# MODIFICADOR de accesibilidad, no un catálogo de fuentes.
 FONTS = (
-    ("system", "Sistema", "sans del escritorio; neutra y rápida"),
-    ("serif", "Editorial", "serif del sistema para títulos y prosa"),
-    ("mono", "Técnica", "monoespaciada en todo; cifras y códigos"),
-    ("condensed", "Condensada", "estrecha y alta; más texto por línea"),
+    ("default", "Del diseño", "la tríada con la que se pensó cada composición"),
+    ("sans", "Sans", "fuerza la sans de la interfaz en títulos y cuerpo"),
+    ("mono", "Mono", "cuerpo técnico monoespaciado; cifras y rutas alineadas"),
+    ("large", "Grande", "cuerpo a 16px y más aire: lectura larga o vista cansada"),
 )
 FONT_KEYS = tuple(row[0] for row in FONTS)
-DEFAULT_FONT = "system"
+DEFAULT_FONT = "default"
 
 # (clave, nombre, intención, par recomendado) — `group`: main | special | alt
 SKINS = (
-    ("main", "Principal", "cuaderno de obra: serif en títulos, folios, reglas de 1px", "paper", "main"),
-    ("matrix", "Matrix", "terminal retro: verde fósforo, barrido, columna estrecha, sin tarjetas", "crt", "special"),
-    ("glossy", "Glossy", "años 2000: barra con degradado, botones con brillo y relieve", "paper", "special"),
-    ("terminal", "Terminal", "TUI densa: todo mono, línea de estado, prefijos › y ·", "crt", "alt"),
-    ("minimal", "Minimal", "swiss: aire, una regla, cero adornos, sans", "riso", "alt"),
-    ("neon", "HUD neón", "cyberpunk: mayúsculas, esquinas cortadas, brillo", "neon", "alt"),
+    ("main", "Principal", "escritorio moderno: sans variable, folios, reglas de 1px, densidad media",
+     "paper", "main"),
+    ("editorial", "Editorial", "índice en cinta superior y columna centrada; display en Sitka",
+     "riso", "special"),
+    ("terminal", "Terminal", "TUI densa: todo mono, línea de estado, prefijos › y ·", "crt", "special"),
+    ("matrix", "Matrix", "terminal retro: fósforo, barrido, columna estrecha, 0x en el folio", "crt", "alt"),
+    ("glossy", "Glossy", "años 2000: barra con degradado, botones con brillo y relieve", "neon", "alt"),
 )
 SKIN_KEYS = tuple(row[0] for row in SKINS)
 DEFAULT_SKIN = "main"

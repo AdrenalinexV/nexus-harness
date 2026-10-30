@@ -195,7 +195,8 @@ body.chat-only > .app { flex: 1 1 auto; min-height: 0; }
   font-size: var(--fs-xs); }
 
 /* Portada del cuaderno: la única vez que hay un titular grande. */
-.empty { margin: auto 0; max-width: 44rem; padding: 1rem 0 2rem; }
+/* `margin: auto 0` NO centra en vertical: pone 0 arriba y abajo. `auto` es lo que centra. */
+.empty { margin: auto; max-width: 46rem; padding: 1rem 0 2rem; }
 .empty h1 { font-family: var(--serif); font-size: var(--fs-display); font-weight: 600;
   margin: 0 0 .8rem; letter-spacing: -.01em; }
 .empty p { color: var(--ink-2); margin: 0 0 .5rem; max-width: var(--measure); font-size: var(--fs); }

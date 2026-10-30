@@ -70,7 +70,26 @@ def test_fonts_change_the_voice(failures):
     for key in ui_theme.FONT_KEYS:
         if key == ui_theme.DEFAULT_FONT:
             continue
-        check("la tipografía %s tiene su regla" % key, '[data-font="%s"]' % key in css, True, failures)
+        check("la voz %s tiene su regla" % key, '[data-font="%s"]' % key in css, True, failures)
+
+
+GENERIC = {"ui-serif", "ui-monospace", "ui-sans-serif", "system-ui", "sans-serif", "serif",
+           "monospace", "cursive", "fantasy"}
+
+
+def test_stacks_name_a_real_family_first(failures):
+    """Una pila que empieza por `ui-serif` deja la elección al navegador: en Windows eso es Times.
+
+    Se exige que la PRIMERA familia de `--font-ui`, `--font-display` y `--font-mono` sea un nombre
+    concreto (un nombre propio entre comillas), no una palabra genérica de CSS.
+    """
+    tokens = (WEB / "tokens.css").read_text(encoding="utf-8")
+    for name in ("--font-ui", "--font-display", "--font-mono"):
+        start = tokens.find(name + ":")
+        stack = tokens[start:tokens.find(";", start)].split(":", 1)[1].strip()
+        first = stack.split(",")[0].strip().strip('"\'')
+        check("%s empieza por familia concreta (%r)" % (name, first), first.lower() in GENERIC,
+              False, failures)
 
 
 def test_choice_is_validated(failures):
@@ -107,5 +126,6 @@ def run():
     test_css_is_generated(failures)
     test_skins_are_structural(failures)
     test_fonts_change_the_voice(failures)
+    test_stacks_name_a_real_family_first(failures)
     test_choice_is_validated(failures)
     return failures

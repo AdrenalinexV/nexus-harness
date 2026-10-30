@@ -30,9 +30,15 @@
   --radius: 0; --radius-sm: 0;
   --fs-micro: 10.5px; --fs-xs: 11.5px; --fs-sm: 13px; --fs: 14.5px; --fs-lg: 17px;
   --fs-xl: 21px; --fs-display: 30px;
-  --sans: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-  --serif: ui-serif, Georgia, "Iowan Old Style", "Palatino Linotype", "Times New Roman", serif;
-  --mono: ui-monospace, "Cascadia Mono", "SF Mono", Consolas, monospace;
+  /* Tipografía: pilas EXPLÍCITAS, con una familia real delante. `ui-serif`/`ui-monospace` como primera
+     opción dejan la elección al navegador y en Windows eso cae en Times New Roman: por eso el stack
+     nombra primero lo que de verdad existe (Segoe UI Variable, Sitka, Palatino, Bahnschrift, Consolas).
+     Cada DISEÑO elige su tríada; `data-font` solo la modifica (accesibilidad), no la sustituye. */
+  --font-ui: "Segoe UI Variable Text", "Segoe UI", -apple-system, "Inter var", Roboto, sans-serif;
+  --font-display: "Segoe UI Variable Display", "Segoe UI", -apple-system, Roboto, sans-serif;
+  --font-text: var(--font-ui);
+  --font-mono: "Cascadia Mono", Consolas, "SF Mono", ui-monospace, monospace;
+  --sans: var(--font-text); --serif: var(--font-display); --mono: var(--font-mono);
   --gap: 16px; --pad: 1.35rem; --rule-1: 1px solid var(--rule); --measure: 68ch;
 }
 @media (prefers-color-scheme: light) {

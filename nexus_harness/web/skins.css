@@ -7,6 +7,73 @@
    Regla: un skin no puede cambiar el significado de nada (los cuatro tonos siguen siendo los cuatro
    tonos) ni esconder información (folio, gate, juez). Cambia el traje, no el contrato. */
 
+
+/* =====================================================================================
+   01 · main — la casa: escritorio moderno. Regla tipográfica: SANS para la voz (marca, menú,
+   nombres, acciones) y MONO solo para cifras, folios y etiquetas. Un display, una escala.
+   ===================================================================================== */
+[data-skin="main"] { --pad: 1.5rem; }
+[data-skin="main"] .brand {
+  font-family: var(--font-ui); font-size: 12px; font-weight: 600; letter-spacing: .18em;
+  padding: .5rem 1.2rem .5rem 0;
+}
+[data-skin="main"] .masthead .meta { font-size: 11px; letter-spacing: .01em; }
+[data-skin="main"] .activity { font-family: var(--font-ui); text-transform: none; letter-spacing: 0;
+  font-size: 12px; }
+[data-skin="main"] .side-title {
+  font-family: var(--font-ui); font-size: 10px; letter-spacing: .16em; font-weight: 600;
+}
+[data-skin="main"] .volume .label { font-family: var(--font-ui); letter-spacing: .14em; }
+[data-skin="main"] .volume select { font-family: var(--font-ui); font-size: 12.5px; }
+[data-skin="main"] #new-chat {
+  font-family: var(--font-ui); font-size: 12px; letter-spacing: .04em; text-transform: none;
+  color: var(--ink); font-weight: 500;
+}
+[data-skin="main"] #new-chat:hover { color: var(--seal); }
+[data-skin="main"] #session-search { font-family: var(--font-ui); font-size: 12.5px; }
+[data-skin="main"] .sessions li { font-family: var(--font-ui); font-size: 13px; }
+[data-skin="main"] .sessions li .folio { font-family: var(--font-mono); font-size: 10px; }
+[data-skin="main"] .navlink { font-family: var(--font-ui); font-size: 13px; }
+[data-skin="main"] .navlink .sigil { font-family: var(--font-mono); }
+[data-skin="main"] .foot { font-family: var(--font-mono); font-size: 10px; }
+[data-skin="main"] .doc-head { padding: 1.5rem var(--pad) .7rem; }
+[data-skin="main"] .title {
+  font-family: var(--font-display); font-size: 25px; font-weight: 600; letter-spacing: -.022em;
+  line-height: 1.2;
+}
+[data-skin="main"] .doc-head .meta { font-family: var(--font-mono); font-size: 10.5px; }
+[data-skin="main"] .thread { padding: .4rem var(--pad) 1.4rem; gap: 1.1rem; }
+[data-skin="main"] .msg { grid-template-columns: 2.6rem minmax(0, 1fr); gap: .8rem; padding: .8rem 0; }
+[data-skin="main"] .who { font-family: var(--font-ui); font-size: 10px; letter-spacing: .16em;
+  font-weight: 600; }
+[data-skin="main"] .bubble { font-size: 14.5px; line-height: 1.66; max-width: 66ch; }
+[data-skin="main"] .empty { max-width: 52ch; margin: auto; }
+[data-skin="main"] .empty h1 {
+  font-family: var(--font-display); font-size: 30px; font-weight: 600; letter-spacing: -.022em;
+  line-height: 1.16; margin-bottom: 1rem;
+}
+[data-skin="main"] .empty p { font-size: 14.5px; line-height: 1.65; max-width: 50ch; }
+[data-skin="main"] .empty .dim { font-size: 12.5px; }
+[data-skin="main"] .composer { padding: .9rem var(--pad) 1rem; }
+[data-skin="main"] .composer-box textarea {
+  font-family: var(--font-text); font-size: 15px; line-height: 1.55; padding: .3rem 0 .8rem;
+}
+[data-skin="main"] .composer-tools button {
+  font-family: var(--font-ui); font-size: 10.5px; letter-spacing: .12em; text-transform: uppercase;
+  font-weight: 600;
+}
+[data-skin="main"] .composer-tools button.primary { font-weight: 700; }
+[data-skin="main"] .composer-foot, [data-skin="main"] .quick {
+  font-family: var(--font-ui); font-size: 10.5px; letter-spacing: .02em;
+}
+[data-skin="main"] .quick select { font-family: var(--font-ui); font-size: 11.5px; }
+[data-skin="main"] .settings-panel > h1 { font-family: var(--font-display); font-size: 24px;
+  letter-spacing: -.02em; }
+[data-skin="main"] .settings-tree,
+[data-skin="main"] .settings-panel { font-family: var(--font-text); }
+[data-skin="main"] .sgroup { font-family: var(--font-ui); font-size: 9.5px; }
+[data-skin="main"] .sfield .slabel { font-family: var(--font-ui); font-size: 10.5px; }
+[data-skin="main"] .themeopt .tname { font-family: var(--font-ui); font-size: 14px; font-weight: 600; }
 /* =====================================================================================
    01 · main — cuaderno de obra (el diseño de la casa)
    Serif en los títulos, folios, reglas de 1px, compositor reglado. Sin overrides: es la base.
@@ -108,100 +175,87 @@
 }
 
 /* =====================================================================================
-   03 · minimal — swiss: aire, una regla, cero adornos, sans en todo
+   03 · editorial — la distribución cambia: el índice pasa a una cinta superior y el hilo se
+   centra con medida de libro. Display en Sitka (serif de lectura), cuerpo en Segoe UI.
    ===================================================================================== */
-[data-skin="minimal"] { --pad: 2.4rem; }
-[data-skin="minimal"] body { line-height: 1.7; }
-[data-skin="minimal"] .masthead {
-  min-height: 60px; border-bottom: 0; padding: 0 var(--pad); background: transparent;
+[data-skin="editorial"] {
+  --font-display: "Sitka Display", "Sitka Text", "Palatino Linotype", Cambria, Georgia, serif;
+  --font-text: "Segoe UI Variable Text", "Segoe UI", -apple-system, Roboto, sans-serif;
+  --pad: 2.2rem;
 }
-[data-skin="minimal"] .brand {
-  font-size: 12px; font-weight: 600; letter-spacing: .12em; color: var(--ink-2); border: 0;
+[data-skin="editorial"] .app { display: flex; flex-direction: column; min-height: 0; }
+[data-skin="editorial"] .sidebar {
+  flex-direction: row; flex-wrap: wrap; align-items: baseline; gap: .4rem 1.4rem;
+  border-right: 0; border-bottom: 1px solid var(--rule); padding: .55rem 2.2rem; overflow: visible;
 }
-[data-skin="minimal"] .brand span { color: var(--ink-3); }
-[data-skin="minimal"] .masthead .meta { border: 0; color: var(--ink-3); padding-left: 0; }
-[data-skin="minimal"] .activity { font-family: var(--sans); text-transform: none;
-  letter-spacing: 0; font-size: 12px; }
-[data-skin="minimal"] .app { grid-template-columns: 232px minmax(0, 1fr); }
-[data-skin="minimal"] .sidebar { border-right: 0; padding: 1.8rem 1.2rem; gap: .7rem; }
-[data-skin="minimal"] .side-title {
-  border: 0; margin: 1.6rem 0 .2rem; font-size: 11px; letter-spacing: .06em;
-  text-transform: none; color: var(--ink-3);
+[data-skin="editorial"] .sidebar > .spacer { display: none; }
+[data-skin="editorial"] .volume { flex: 0 0 auto; }
+[data-skin="editorial"] .volume select { border-bottom: 0; max-width: 11rem; }
+[data-skin="editorial"] #new-chat {
+  flex: 0 0 auto; border-bottom: 0; padding: 0; font-family: var(--font-ui); font-size: 11px;
+  letter-spacing: .12em;
 }
-[data-skin="minimal"] .volume .label { text-transform: none; letter-spacing: 0; font-size: 11px; }
-[data-skin="minimal"] .volume select { border-bottom: 0; }
-[data-skin="minimal"] #new-chat {
-  border-bottom: 0; text-transform: none; letter-spacing: 0; font-family: var(--sans);
-  font-size: 13px; color: var(--ink-2);
+[data-skin="editorial"] .side-title {
+  flex: 0 0 auto; border: 0; margin: 0; padding: 0; font-size: 9.5px; letter-spacing: .22em;
 }
-[data-skin="minimal"] .navlink .sigil { display: none; }
-[data-skin="minimal"] .sessions li {
-  /* Sin folio no hay primera columna: si se deja la rejilla de tres, el NOMBRE cae en la columna de
-     1.6rem y se queda en «ch...». La rejilla se redefine con la misma intención. */
-  grid-template-columns: minmax(0, 1fr) auto;
-  border-left: 0; padding: .25rem 0; font-size: 13px; color: var(--ink-3);
+[data-skin="editorial"] #session-search { flex: 0 1 12rem; border: 0; border-bottom: 1px solid var(--rule); }
+[data-skin="editorial"] .sessions {
+  flex: 1 1 100%; flex-direction: row; overflow-x: auto; gap: 1.3rem; margin: 0; padding-bottom: .2rem;
 }
-[data-skin="minimal"] .sessions li .folio { display: none; }
-[data-skin="minimal"] .sessions li.active { border-left: 0; background: none; color: var(--ink);
-  font-weight: 500; }
-[data-skin="minimal"] .sessions li.active .name::before {
-  content: ""; display: inline-block; width: 5px; height: 5px; background: var(--seal);
-  margin-right: .45rem; vertical-align: middle;
+[data-skin="editorial"] .sessions li {
+  grid-template-columns: minmax(0, auto) auto; border-left: 0; padding: .1rem 0; white-space: nowrap;
+  font-size: 12px;
 }
-[data-skin="minimal"] .doc-head { padding: 2rem var(--pad) 1rem; }
-[data-skin="minimal"] .doc-head::after { border-bottom: 0; }
-[data-skin="minimal"] .title {
-  font-family: var(--sans); font-size: 21px; font-weight: 600; letter-spacing: -.02em;
+[data-skin="editorial"] .sessions li .folio { display: none; }
+[data-skin="editorial"] .sessions li.active { border-left: 0; box-shadow: inset 0 -2px 0 var(--seal);
+  background: none; }
+[data-skin="editorial"] .navlink { flex: 0 0 auto; padding: 0; }
+[data-skin="editorial"] .navlink .sigil { display: none; }
+[data-skin="editorial"] .foot { display: none; }
+[data-skin="editorial"] .doc-head {
+  display: block; padding: 2.4rem 0 1.2rem; max-width: 68ch; margin: 0 auto; width: 100%;
 }
-[data-skin="minimal"] .thread { padding: 1rem var(--pad) 2rem; gap: 1.8rem; }
-[data-skin="minimal"] .msg { grid-template-columns: minmax(0, 1fr); border-bottom: 0; }
-[data-skin="minimal"] .msg .folio { display: none; }
-[data-skin="minimal"] .msg.assistant { border-left: 0; padding-left: 0; }
-[data-skin="minimal"] .who { text-transform: none; letter-spacing: .02em; font-size: 11px;
-  color: var(--ink-3); }
-[data-skin="minimal"] .msg.user .who { color: var(--ink-3); }
-[data-skin="minimal"] .bubble { max-width: 62ch; }
-[data-skin="minimal"] .msg.user .bubble {
-  background: none; border: 0; padding: 0; color: var(--ink-2);
+[data-skin="editorial"] .doc-head::after { border-bottom: 0; }
+[data-skin="editorial"] .title {
+  font-family: var(--font-display); font-size: 31px; font-weight: 600; line-height: 1.12;
+  letter-spacing: -.015em;
 }
-[data-skin="minimal"] .empty h1 { font-size: 34px; font-weight: 500; letter-spacing: -.02em; }
-[data-skin="minimal"] .empty p { font-size: 15px; }
-[data-skin="minimal"] .composer {
-  border-top: 1px solid var(--rule); background: transparent; padding: 1.1rem var(--pad) 1.6rem;
+[data-skin="editorial"] .doc-head .meta { display: block; margin: .5rem 0 0; }
+[data-skin="editorial"] .thread { padding: 0 2.2rem 1.6rem; gap: 1.6rem; }
+[data-skin="editorial"] .msg { grid-template-columns: minmax(0, 1fr); width: 100%; max-width: 68ch;
+  margin: 0 auto; border-bottom: 0; }
+[data-skin="editorial"] .msg .folio { display: none; }
+[data-skin="editorial"] .msg.assistant { border-left: 0; padding-left: 0; }
+[data-skin="editorial"] .who {
+  font-family: var(--font-ui); text-transform: none; letter-spacing: .04em; font-size: 10.5px;
+  color: var(--ink-3);
 }
-[data-skin="minimal"] .composer-box textarea {
-  border: 1px solid var(--rule-2); border-radius: 8px; background: var(--paper-2);
-  padding: .7rem .9rem; font-size: 14px; min-height: 3rem;
+[data-skin="editorial"] .bubble { font-size: 15.5px; line-height: 1.72; max-width: 68ch; }
+[data-skin="editorial"] .msg.user .bubble {
+  background: none; border: 0; padding: 0; color: var(--ink-2); font-style: italic;
 }
-[data-skin="minimal"] .composer-box textarea:focus { border-color: var(--seal); }
-[data-skin="minimal"] .composer-tools button { text-transform: none; letter-spacing: 0;
-  font-family: var(--sans); font-size: 12px; }
-[data-skin="minimal"] .composer-tools button.primary { color: var(--seal); }
-[data-skin="minimal"] .composer-foot { font-family: var(--sans); letter-spacing: 0; }
-[data-skin="minimal"] .settings-app { grid-template-columns: 260px minmax(0, 1fr); }
-[data-skin="minimal"] .settings-tree { border-right: 0; padding: 1.6rem 1.2rem; }
-[data-skin="minimal"] .sgroup { border: 0; text-transform: none; letter-spacing: .04em;
-  margin: 1.4rem 0 .2rem; }
-[data-skin="minimal"] .settings-panel { padding: 2rem 2.4rem 4rem; }
-[data-skin="minimal"] .settings-panel > h1 { font-family: var(--sans); font-size: 22px;
-  font-weight: 600; letter-spacing: -.02em; }
-[data-skin="minimal"] .settings-panel > h1 .folio { display: none; }
-[data-skin="minimal"] .settings-panel > .dim { border-bottom: 0; }
-[data-skin="minimal"] .sfield {
-  grid-template-columns: 14rem minmax(0, 1fr); padding: .8rem 0; border-bottom: 0;
+[data-skin="editorial"] .empty { max-width: 60ch; margin: 12vh auto 0; text-align: left; }
+[data-skin="editorial"] .empty h1 { font-family: var(--font-display); font-size: 40px; font-weight: 600; }
+[data-skin="editorial"] .composer { border-top: 1px solid var(--rule); background: transparent; }
+[data-skin="editorial"] .composer-box { max-width: 68ch; margin: 0 auto; }
+[data-skin="editorial"] .composer-box textarea {
+  font-family: var(--font-text); font-size: 15px; border-bottom: 1px solid var(--rule-2);
 }
-[data-skin="minimal"] .sfield .slabel { text-transform: none; letter-spacing: 0; font-size: 12.5px;
-  color: var(--ink-2); }
-[data-skin="minimal"] .themeopt { border-left: 0; padding-left: 0; }
+[data-skin="editorial"] .composer-foot { max-width: 68ch; margin: .5rem auto 0; }
+[data-skin="editorial"] .settings-app { grid-template-columns: 250px minmax(0, 1fr); }
+[data-skin="editorial"] .settings-panel > h1 { font-family: var(--font-display); font-size: 27px; }
+[data-skin="editorial"] .sfield {
+  grid-template-columns: 15rem minmax(0, 1fr); padding: .65rem 0; border-bottom: 1px solid var(--rule);
+}
+[data-skin="editorial"] .sfield .slabel { text-transform: none; letter-spacing: .01em; font-size: 12.5px; }
 
 /* =====================================================================================
-   TIPOGRAFÍA (eje propio): se cambia la VOZ del documento, no su composición.
+   VOZ (modificador de accesibilidad, no un catálogo de fuentes): la tríada es del diseño.
+   `default` no toca nada · `sans` fuerza la UI · `mono` cuerpo técnico · `large` sube cuerpo y aire.
    ===================================================================================== */
-[data-font="serif"] { --sans: var(--serif); }
-[data-font="mono"] body { font-family: var(--mono); }
-[data-font="mono"] { --sans: var(--mono); --serif: var(--mono); }
-[data-font="condensed"] body {
-  font-family: "Bahnschrift", "Segoe UI Semibold", "Arial Narrow", var(--sans);
-}
-[data-font="condensed"] { --serif: "Bahnschrift", "Arial Narrow", var(--serif); }
-[data-font="condensed"] .brand, [data-font="condensed"] .title { letter-spacing: .02em; }
+[data-font="sans"] { --font-text: var(--font-ui); --font-display: var(--font-ui); }
+[data-font="mono"] { --font-text: var(--font-mono); --font-display: var(--font-mono); }
+[data-font="mono"] .who, [data-font="mono"] .label { letter-spacing: .04em; }
+[data-font="large"] body { font-size: 16px; line-height: 1.75; }
+[data-font="large"] .bubble { font-size: 16px; }
+[data-font="large"] .title { font-size: 1.25em; }
