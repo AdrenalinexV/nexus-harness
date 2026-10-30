@@ -11,9 +11,20 @@
    Sin azul: es el acento por defecto del corpus shadcn/Tailwind, y por eso no distingue nada.
    Sin tarjetas, sin sombras, sin degradados, sin píldoras. La estructura la hacen las reglas de 1px.
 
-   Tipografía: tres familias DEL SISTEMA y tres trabajos. `ui-serif` (Georgia) para títulos y números
-   de sección; `system-ui` para prosa; `ui-monospace` para toda cifra, folio, ruta y etiqueta técnica.
-   Cero webfonts: una página que necesita la red para verse bien está rota en un avión. */
+   Tipografía: dos familias VIAJAN CON EL PAQUETE (`nexus-sans.woff2`, `nexus-mono.woff2`, OFL en
+   `OFL.txt`) y tres trabajos. La sans para prosa y títulos; la mono para toda cifra, folio, ruta y
+   etiqueta técnica. Son ficheros locales: cero recursos externos, así que la cabina se ve igual sin red
+   y en el runner de CI. `font-display: swap` y la pila de sistema detrás: si un `.woff2` faltara, la
+   página se ve peor, nunca se rompe. */
+
+@font-face {
+  font-family: "Nexus Sans"; font-style: normal; font-weight: 100 900; font-display: swap;
+  src: url("nexus-sans.woff2") format("woff2");
+}
+@font-face {
+  font-family: "Nexus Mono"; font-style: normal; font-weight: 100 800; font-display: swap;
+  src: url("nexus-mono.woff2") format("woff2");
+}
 
 :root {
   color-scheme: dark light;
@@ -30,14 +41,15 @@
   --radius: 0; --radius-sm: 0;
   --fs-micro: 10.5px; --fs-xs: 11.5px; --fs-sm: 13px; --fs: 14.5px; --fs-lg: 17px;
   --fs-xl: 21px; --fs-display: 30px;
-  /* Tipografía: pilas EXPLÍCITAS, con una familia real delante. `ui-serif`/`ui-monospace` como primera
-     opción dejan la elección al navegador y en Windows eso cae en Times New Roman: por eso el stack
-     nombra primero lo que de verdad existe (Segoe UI Variable, Sitka, Palatino, Bahnschrift, Consolas).
+  /* Tipografía: pilas EXPLÍCITAS, con la familia empaquetada delante y el sistema detrás como respaldo
+     medido (Segoe UI Variable en Windows, SF en macOS, DejaVu en el runner Linux). `ui-serif`/
+     `ui-monospace` como primera opción dejarían la elección al navegador y en Windows eso cae en Times
+     New Roman: por eso el stack nombra primero lo que de verdad existe.
      Cada DISEÑO elige su tríada; `data-font` solo la modifica (accesibilidad), no la sustituye. */
-  --font-ui: "Segoe UI Variable Text", "Segoe UI", -apple-system, "Inter var", Roboto, sans-serif;
-  --font-display: "Segoe UI Variable Display", "Segoe UI", -apple-system, Roboto, sans-serif;
+  --font-ui: "Nexus Sans", "Segoe UI Variable Text", "Segoe UI", -apple-system, Roboto, "DejaVu Sans", sans-serif;
+  --font-display: "Nexus Sans", "Segoe UI Variable Display", "Segoe UI", -apple-system, Roboto, "DejaVu Sans", sans-serif;
   --font-text: var(--font-ui);
-  --font-mono: "Cascadia Mono", Consolas, "SF Mono", ui-monospace, monospace;
+  --font-mono: "Nexus Mono", "Cascadia Mono", Consolas, "SF Mono", "DejaVu Sans Mono", ui-monospace, monospace;
   --sans: var(--font-text); --serif: var(--font-display); --mono: var(--font-mono);
   --gap: 16px; --pad: 1.35rem; --rule-1: 1px solid var(--rule); --measure: 68ch;
 }

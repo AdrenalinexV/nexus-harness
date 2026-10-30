@@ -106,6 +106,10 @@
 
 ## Fuera de la cola (necesitan decisión humana)
 
-- Tipografía empaquetada (woff2 con licencia OFL) — implica añadir binarios al repo.
-- Traducción EN/ES de la cabina (`lang` ya existe en config).
-- Rediseño de `/gov` (es HTML del protocolo; solo se puede maquillar lo inyectado).
+- ~~Tipografía empaquetada (woff2 con licencia OFL)~~ **DECIDIDA y hecha**: dos familias OFL subseted a
+  latino+español en `nexus_harness/web/*.woff2` (88 KB las dos) con `web/OFL.txt`; `tokens.css` lidera
+  las pilas con ellas y el sistema queda de respaldo. Criterio: `href|src` con `^https?` → 0.
+- Traducción EN/ES de la cabina (`lang` ya existe en config). **Decidida: NO ahora** — se hará como
+  catálogo `ui_strings.py` con test de claves simétricas, nunca inline.
+- Rediseño de `/gov` (es HTML del protocolo; solo se puede maquillar lo inyectado). **Decidida: NO** —
+  es pantalla ajena servida por proxy; se arregla en su repo.

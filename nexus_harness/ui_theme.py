@@ -21,11 +21,13 @@ MODE_KEYS = tuple(row[0] for row in MODES)
 DEFAULT_MODE = "dark"
 
 # La tríada tipográfica es DEL DISEÑO (es lo que hace distintos a los diseños). Este eje es un
-# MODIFICADOR de accesibilidad, no un catálogo de fuentes.
+# MODIFICADOR de accesibilidad, no un catálogo de fuentes. Las dos familias que nombra (`Nexus Sans` y
+# `Nexus Mono`) viajan empaquetadas en `web/*.woff2` con su OFL: el eje apunta a ficheros locales, y el
+# sistema queda detrás como respaldo si el wheel perdiera los `.woff2`.
 FONTS = (
-    ("default", "Del diseño", "la tríada con la que se pensó cada composición"),
-    ("sans", "Sans", "fuerza la sans de la interfaz en títulos y cuerpo"),
-    ("mono", "Mono", "cuerpo técnico monoespaciado; cifras y rutas alineadas"),
+    ("default", "Del diseño", "la tríada empaquetada con la que se pensó cada composición"),
+    ("sans", "Sans", "fuerza Nexus Sans (empaquetada) en títulos y cuerpo"),
+    ("mono", "Mono", "Nexus Mono (empaquetada): cuerpo técnico, cifras y rutas alineadas"),
     ("large", "Grande", "cuerpo a 16px y más aire: lectura larga o vista cansada"),
 )
 FONT_KEYS = tuple(row[0] for row in FONTS)

@@ -20,9 +20,11 @@ Consecuencias que son decisiones, no gustos:
    (#0b0d10 / #e9eef5) es el tell de "dark mode por defecto".
 4. **La página se abre en el trabajo.** Sin hero, sin banner de bienvenida: masthead, índice y el
    hilo. La primera cosa que se lee es la conversación, no la marca.
-5. **Tres familias del sistema, tres trabajos.** `ui-serif` (Georgia) para títulos y números de
-   sección; `system-ui` para prosa; `ui-monospace` para TODA cifra, folio, ruta, token y etiqueta
-   técnica. Sin webfonts: una página que necesita red para verse bien está rota.
+5. **Dos familias empaquetadas, tres trabajos.** `Nexus Sans` para títulos y prosa; `Nexus Mono` para
+   TODA cifra, folio, ruta, token y etiqueta técnica. Viajan en el paquete (`web/*.woff2`, OFL en
+   `web/OFL.txt`) y el sistema queda detrás como respaldo: **0 recursos externos**, porque una página
+   que necesita red para verse bien está rota. Si un `.woff2` faltara, `font-display: swap` y la pila
+   de sistema la sustituyen — se ve peor, no se rompe.
 6. **El estado se escribe.** Un color nunca va solo: va con su palabra y, si hay veredicto, con su
    glifo. Verde = decisión tomada · ámbar = espera humana o *no verificable* · rojo = detectado/roto ·
    gris = sin registro.
@@ -153,7 +155,7 @@ los campos de formulario llevan 2px. Sin sombras, sin degradados, sin `border-ra
 | píldoras | elementos con `border-radius >= 100px` → 0 |
 | azul de acento | `grep -c '#3b82f6\\|#5b8def\\|#2563eb' web/*.css` → 0 |
 | emojis | `/[\u{1F300}-\u{1FAFF}]/u` en `document.body.innerText` → 0 |
-| webfonts / CDN | `getAttribute('href'\|'src')` con `^https?` → 0 |
+| recursos externos (CDN, webfont remota, icon set) | `getAttribute('href'\|'src')` con `^https?` → 0. Las fuentes son locales (`web/*.woff2`): local no es externo |
 | más de un acento | un solo `--seal`; los demás son tonos de estado |
 | movimiento decorativo | `transition`/`animation` solo en `.abar i` (progreso) |
 
