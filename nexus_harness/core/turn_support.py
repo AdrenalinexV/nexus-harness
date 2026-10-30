@@ -6,9 +6,42 @@ la ley de 400 apretando comentarios, sino porque son otra cosa: `Triad` decide q
 `_emit`, `cost`, `tokens`, `relay`, `config`), así que el cambio es de sitio, no de contrato.
 """
 import time
+from dataclasses import dataclass, field
 
 from .message import Message
 from ..platform import hooks as hooks_mod
+
+
+@dataclass
+class ChatTurn:
+    """Lo que un turno de conversacion dejo: respuesta, veredicto, coste y a quien toco.
+
+    Vivia dentro de `chat.py`, que llego a 398 lineas justo cuando había que anadirle la cancelacion
+    real del transporte. Se mueve aqui por la misma razon que `TurnSupport`: es el acta del turno, no
+    el bucle que la escribe.
+    """
+
+    reply: str = ""
+    exit: int = 0
+    steps: int = 0
+    repairs: int = 0
+    touched: list = field(default_factory=list)
+    skills: list = field(default_factory=list)
+    verdict: dict = field(default_factory=dict)
+    judgement: dict = field(default_factory=dict)
+    stopped: bool = False
+    attachments: list = field(default_factory=list)
+    checkpoint: str = ""
+    budget: dict = field(default_factory=dict)
+    tokens: dict = field(default_factory=dict)
+    savings: dict = field(default_factory=dict)
+
+    def as_dict(self):
+        return {"reply": self.reply, "exit": self.exit, "steps": self.steps,
+                "repairs": self.repairs, "touched": self.touched, "skills": self.skills,
+                "verdict": self.verdict, "judgement": self.judgement, "stopped": self.stopped,
+                "attachments": self.attachments, "checkpoint": self.checkpoint,
+                "budget": self.budget, "tokens": self.tokens, "savings": self.savings}
 
 
 class TurnSupport:

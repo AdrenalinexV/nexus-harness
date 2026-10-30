@@ -15,7 +15,6 @@ cannot interrupt is a harness that owns your afternoon.
 """
 import threading
 from pathlib import Path
-from dataclasses import dataclass, field
 
 from .tools import attachments as attachment_tools
 from .platform import ledger
@@ -24,6 +23,7 @@ from .core.budget import CostBudget
 from .context.compaction import Compactor
 from .context.context_compiler import TurnWindow
 from .core.message import Message, as_text
+from .core.turn_support import ChatTurn
 from .llm.portfolio import maybe_escalate
 from .learning.reflection import learn
 from .platform.tokenizer import calibration, count_messages
@@ -52,31 +52,6 @@ REPAIR = """El gate ha devuelto ROJO (exit 10). Hallazgos observados:
 Repara exactamente eso. No expliques: actúa."""
 
 
-@dataclass
-class Turn:
-    reply: str = ""
-    exit: int = 0
-    steps: int = 0
-    repairs: int = 0
-    touched: list = field(default_factory=list)
-    skills: list = field(default_factory=list)
-    verdict: dict = field(default_factory=dict)
-    judgement: dict = field(default_factory=dict)
-    stopped: bool = False
-    attachments: list = field(default_factory=list)
-    checkpoint: str = ""
-    budget: dict = field(default_factory=dict)
-    tokens: dict = field(default_factory=dict)
-    savings: dict = field(default_factory=dict)
-
-    def as_dict(self):
-        return {"reply": self.reply, "exit": self.exit, "steps": self.steps,
-                "repairs": self.repairs, "touched": self.touched, "skills": self.skills,
-                "verdict": self.verdict, "judgement": self.judgement, "stopped": self.stopped,
-                "attachments": self.attachments, "checkpoint": self.checkpoint,
-                "budget": self.budget, "tokens": self.tokens, "savings": self.savings}
-
-
 class Chat:
     """One conversation, many turns, one gate at the end of any turn that changed something."""
 
@@ -96,7 +71,7 @@ class Chat:
         self.history = []
         self.touched = set()
         self._stop = threading.Event()
-        self.last_turn = Turn()
+        self.last_turn = ChatTurn()
         self.checkpoint = None
         self.turn_tokens = {"prompt": 0, "completion": 0}
         self.used = 0
@@ -304,7 +279,7 @@ class Chat:
         if rejected:
             self._emit("attachments.rejected", "; ".join(rejected)[:600], notes=rejected)
         if not text and not blocks:
-            return Turn(reply="", exit=0).as_dict()
+            return ChatTurn(reply="", exit=0).as_dict()
         if self.session is None:
             self.new(text[:60] or (blocks[0].get("name") if blocks else "adjuntos"))
         self._stop.clear()
@@ -313,7 +288,7 @@ class Chat:
         self._emit("chat.user", text[:1500] or attachment_tools.summary(blocks),
                    attachments=attachment_tools.chips(blocks), notes=rejected)
         self.history.append(Message(role="user", content=content))
-        turn = Turn(attachments=attachment_tools.chips(blocks))
+        turn = ChatTurn(attachments=attachment_tools.chips(blocks))
         self.checkpoint = checkpoint.begin(self.config.default_root, self.session.get("id", "turno"))
         checkpoint.set_active(self.checkpoint)
         turn.checkpoint = self.checkpoint.name
