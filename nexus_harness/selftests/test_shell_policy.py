@@ -54,7 +54,9 @@ def test_levels(failures):
           policy.classify("git push --force origin main", "unrestricted", cage=cage).allowed, True,
           failures)
     check("sin jaula, unrestricted se niega con motivo",
-          policy.classify("git push --force origin main", "unrestricted").allowed, False, failures)
+          policy.classify("git push --force origin main", "unrestricted",
+                          cage=sandbox.Cage("none", "prueba", reason="prueba")).allowed, False,
+          failures)
     check("y la firma del operador lo levanta",
           policy.classify("git push --force origin main", "unrestricted",
                           allow_unsandboxed=True).allowed, True, failures)

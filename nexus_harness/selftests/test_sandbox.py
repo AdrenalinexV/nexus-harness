@@ -34,7 +34,7 @@ def test_the_module_selftest(failures):
 
 
 def test_unrestricted_without_a_cage_is_refused(failures):
-    verdict = policy.classify("rm -rf build", "unrestricted")
+    verdict = policy.classify("rm -rf build", "unrestricted", cage=NO_CAGE)
     check("sin jaula, unrestricted niega rm -rf", verdict.allowed, False, failures)
     check("y la regla se llama 'sandbox'", verdict.level, "sandbox", failures)
     check("y el motivo nombra la falta", "jaula de sistema de ficheros" in verdict.reason, True,

@@ -60,6 +60,19 @@ class Cage:
                 "processes": self.processes, "memory": self.memory, "reason": self.reason}
 
 
+def _probe(argv, timeout=6):
+    """`(ok, motivo)`: la jaula funciona en ESTA maquina, medido con un comando de verdad."""
+    try:
+        done = subprocess.run(argv, capture_output=True, text=True, errors="replace",
+                              timeout=timeout)
+    except (OSError, subprocess.SubprocessError) as exc:
+        return False, "%s: %s" % (type(exc).__name__, exc)
+    if done.returncode == 0:
+        return True, ""
+    text = ((done.stderr or "") + (done.stdout or "")).strip().splitlines()
+    return False, (text[-1][:160] if text else "exit %s" % done.returncode)
+
+
 def _here():
     return platform.system().lower()
 
@@ -71,14 +84,23 @@ def detect(os_name=None):
         return _detect_job()
     if name == "linux":
         path = shutil.which("bwrap")
-        if path:
+        if not path:
+            return Cage("none", "linux", reason="falta bubblewrap: `apt install bubblewrap`")
+        # Tener el binario no es poder usarlo: Ubuntu 24 restringe los namespaces sin privilegios y
+        # bwrap falla al crear el suyo. Se prueba de verdad antes de prometer una jaula.
+        ok, why = _probe([path, "--unshare-all", "--die-with-parent", "--ro-bind", "/", "/", "--",
+                          "true"])
+        if ok:
             return Cage("bwrap", "linux", filesystem=True, processes=True)
-        return Cage("none", "linux", reason="falta bubblewrap: `apt install bubblewrap`")
+        return Cage("none", "linux", reason="bwrap no puede crear su namespace: %s" % why)
     if name == "darwin":
         path = shutil.which("sandbox-exec")
-        if path:
+        if not path:
+            return Cage("none", "darwin", reason="falta `sandbox-exec` (viene con macOS)")
+        ok, why = _probe([path, "-p", "(version 1)(allow default)", "true"])
+        if ok:
             return Cage("seatbelt", "darwin", filesystem=True, processes=True)
-        return Cage("none", "darwin", reason="falta `sandbox-exec` (viene con macOS)")
+        return Cage("none", "darwin", reason="sandbox-exec no arranca: %s" % why)
     return Cage("none", name, reason="sistema no soportado")
 
 
@@ -259,9 +281,13 @@ def wrap(argv, root, cage=None):
     cage = cage or current()
     text = str(root)
     if cage.kind == "bwrap":
-        return ["bwrap", "--unshare-all", "--share-net", "--die-with-parent", "--ro-bind", "/", "/",
-                "--dev", "/dev", "--proc", "/proc", "--tmpfs", "/tmp", "--bind", text, text,
-                "--chdir", text, "--", *list(argv)]
+        base = ["bwrap", "--unshare-all", "--share-net", "--die-with-parent", "--ro-bind", "/", "/",
+                "--dev", "/dev", "--proc", "/proc"]
+        # `--tmpfs /tmp` tapa el proyecto cuando el proyecto VIVE en /tmp (los TempProject de las
+        # suites, y cualquier repo en un tmpfs): se monta el bind del proyecto despues y sin taparlo.
+        if not str(Path(text).resolve()).lower().startswith(("/tmp", "/private/tmp")):
+            base += ["--tmpfs", "/tmp"]
+        return base + ["--bind", text, text, "--chdir", text, "--", *list(argv)]
     if cage.kind == "seatbelt":
         return ["sandbox-exec", "-p", SEATBELT_PROFILE % text, *list(argv)]
     return list(argv)
