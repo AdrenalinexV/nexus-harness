@@ -4,11 +4,13 @@ Una skill que solo existe en el perfil de Hermes no es del producto: en otra maq
 arnes se queda sin ella. Esta suite comprueba que la carpeta del paquete es una raiz de enrutado y que
 su contenido tiene lo minimo para competir en un turno (nombre, descripcion, palabras y referencias).
 """
+import sys
 from pathlib import Path
 
 from ..context import skill_router
 
-PACKAGED = Path(__file__).resolve().parents[1] / "skills"
+# Igual que `web/`: en el .exe las skills viajan en `_MEIPASS/skills`.
+PACKAGED = Path(getattr(sys, "_MEIPASS", Path(__file__).resolve().parents[1])) / "skills"
 SHIPPED = ("nexus-visual-identity", "nexus-layout-skins")
 
 

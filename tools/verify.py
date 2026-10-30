@@ -41,10 +41,21 @@ def frozen_row(source_summary):
     frozen = summary(output)
     if not frozen.startswith("suites="):
         return "frozen", 10, "the frozen engine reported no summary: %s" % (frozen[-160:] or "nothing")
-    if frozen != source_summary:
+    # El congelado puede saltarse MAS suites que el checkout (las que miden el arbol del repo no tienen
+    # nada que medir dentro de un .exe), pero no puede correr MENOS suites ni fallar ninguna.
+    def counts(line):
+        return {key: int(value) for key, value in
+                (chunk.split("=") for chunk in line.split() if "=" in chunk)}
+
+    source, binary = counts(source_summary), counts(frozen)
+    if binary.get("suites") != source.get("suites"):
         return "frozen", 10, "the frozen engine runs ANOTHER suite: source=%r frozen=%r" % (
             source_summary, frozen)
-    return "frozen", 0, "%s (same as the source)" % frozen
+    if binary.get("failures"):
+        return "frozen", 10, "the frozen engine FAILS: %r" % frozen
+    if binary.get("skipped", 0) < source.get("skipped", 0):
+        return "frozen", 10, "el congelado salta menos suites que el checkout: %r" % frozen
+    return "frozen", 0, "%s (skips de checkout permitidos)" % frozen
 
 
 

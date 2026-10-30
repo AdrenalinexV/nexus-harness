@@ -17,7 +17,10 @@ que quedan se cuentan en el plan, no se afirman aqui.
 """
 import ast
 import importlib
+import sys
 from pathlib import Path
+
+from . import Skip
 
 PKG = Path(__file__).resolve().parents[1]
 
@@ -129,6 +132,10 @@ def test_every_layer_loads(failures):
 
 
 def run():
+    if getattr(sys, "frozen", False):
+        # La suite mide CARPETAS del checkout (`nexus_harness/platform`, `context`...). En el binario
+        # congelado no hay carpetas: no es un fallo del producto, es que aqui no se puede medir.
+        raise Skip("mide el arbol del checkout: el binario congelado no tiene carpetas")
     failures = []
     test_declared_is_real(failures)
     test_nobody_imports_upwards(failures)

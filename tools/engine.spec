@@ -42,6 +42,9 @@ a = Analysis(
     # congelado pasa LA MISMA suite, y esa suite mide la maquina del turno de noche. Un dato que la
     # suite necesita y el .exe no lleva es una suite que solo puede pasar en la maquina del build.
     datas=[(str(REPO / "nexus_harness" / "web"), "web"),
+           # Las skills del producto viajan en el binario: sin esto, `skill_router` no encuentra la
+           # coleccion de diseño en un `pip install` ni en el .exe (y el paquete queda mudo).
+           (str(REPO / "nexus_harness" / "skills"), "skills"),
            # El turno de noche y su cerrojo: los dos, porque el segundo es un modulo que el primero
            # importa. Medido: con solo `nightshift.py` dentro, la suite congelada moria con
            # "No module named 'nightshift_lock'" -- una suite que solo pasa en la maquina del build.

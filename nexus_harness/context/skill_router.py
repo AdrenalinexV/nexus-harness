@@ -18,6 +18,7 @@ concurso que las del protocolo. Una skill forjada que nunca gana un turno es una
 """
 import json
 import re
+import sys
 from dataclasses import dataclass, field
 from pathlib import Path
 
@@ -89,7 +90,7 @@ def protocol_roots(project_root=None):
     roots = [Path(project_root) / FORGED_REL] if project_root else []
     # Las skills que el arnes TRAE (paquete) van primero: una instalacion sin protocolo ni perfil de
     # Hermes sigue teniendo su propio catalogo, y una skill del producto no depende de la maquina.
-    packaged = Path(__file__).resolve().parents[1] / "skills"
+    packaged = Path(getattr(sys, "_MEIPASS", Path(__file__).resolve().parents[1])) / "skills"
     for candidate in (packaged, NEXUS_SOURCE / "skills", NEXUS_SOURCE / "nexus" / "skills") + HERMES_ROOTS:
         if candidate.is_dir():
             roots.append(candidate)

@@ -14,6 +14,9 @@ from ..verify.gate import Gate
 from ..llm.judge import Judge
 from ..tools import default_registry
 from ..triad_loop import Triad
+import sys
+
+from . import Skip
 from .fakes import FakeRouter, ScriptedProvider, ScriptedSkills, TempProject, reply
 
 TEST_COMMAND = 'python -c "import calc, sys; sys.exit(0 if calc.add(2, 3) == 5 else 1)"'
@@ -126,6 +129,10 @@ def test_a_real_run_prunes_and_reports_it(failures):
 
 
 def run():
+    if getattr(sys, "frozen", False):
+        # `triad_brief` cachea el mapa AST del REPOSITORIO: en el binario no hay repositorio que
+        # mapear, asi que la cifra no mide lo que la suite dice medir.
+        raise Skip("el mapa AST se mide sobre el checkout; el binario congelado no lo tiene")
     failures = []
     test_module_selftests(failures)
     test_the_ledger_records_the_savings(failures)

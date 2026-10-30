@@ -6,6 +6,7 @@ de las 12 parejas se lee (WCAG), que `web/themes.css` es exactamente lo que gene
 cualquiera de las cuatro claves (`ui_mode`, `ui_skin`, `ui_theme`, `ui_font`) no se guarda.
 """
 import json
+import sys
 import tempfile
 from pathlib import Path
 
@@ -13,7 +14,11 @@ from .. import onboarding, ui_theme
 
 # Umbrales: tinta AAA (7:1), secundaria AA (4.5:1), sellos y estados AA no textual (3:1).
 MIN_TEXT, MIN_SECOND, MIN_STATE = 7.0, 4.5, 3.0
-WEB = Path(__file__).resolve().parents[1] / "web"
+# En un checkout `web/` vive junto al paquete; en el binario congelado, PyInstaller lo descomprime en
+# `_MEIPASS/web`. Asumir la ruta del checkout hacia que la suite fallara SOLO en el .exe que usa el
+# operador (y el .exe es justo lo que hay que poder probar).
+ROOT = Path(getattr(sys, "_MEIPASS", Path(__file__).resolve().parents[1]))
+WEB = ROOT / "web"
 CSS = WEB / "themes.css"
 SKIN_FILES = (WEB / "skins.css", WEB / "skins-special.css")
 # Un diseño que solo cambia colores no es un diseño: tiene que tocar tipografía, rejilla, mensaje y campo.
