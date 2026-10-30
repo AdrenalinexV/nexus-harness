@@ -262,3 +262,23 @@ body.chat-only > .app { flex: 1 1 auto; min-height: 0; }
 .copy:hover { color: var(--seal); }
 .copy.done { color: var(--ok); opacity: 1; }
 @media (hover: none) { .copy { opacity: .6; } }
+
+/* ---------- hoja de atajos ---------- */
+.helpdlg {
+  width: min(460px, 92vw); padding: 0; border: 1px solid var(--rule-2); border-radius: 0;
+  background: var(--paper-2); color: var(--ink);
+}
+.helpdlg::backdrop { background: rgba(0, 0, 0, .55); }
+.helpdlg header {
+  display: flex; align-items: baseline; justify-content: space-between; gap: 1rem;
+  padding: .6rem .9rem; border-bottom: 1px solid var(--rule);
+}
+.helpdlg header strong { font-family: var(--font-display); font-size: var(--fs); }
+.helpbody { padding: .7rem .9rem .9rem; display: flex; flex-direction: column; gap: .45rem; }
+.helprow { display: grid; grid-template-columns: 8.5rem minmax(0, 1fr); gap: .8rem; align-items: baseline; }
+.helprow kbd {
+  font-family: var(--font-mono); font-size: var(--fs-micro); color: var(--ink);
+  border: 1px solid var(--rule-2); border-bottom-width: 2px; border-radius: 3px;
+  padding: .1rem .35rem; justify-self: start;
+}
+.helprow span { font-size: var(--fs-sm); color: var(--ink-2); }

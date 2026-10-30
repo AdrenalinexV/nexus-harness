@@ -35,7 +35,7 @@
   uptime y un botón `Comprobar` que llama a `/api/health` y pinta el resultado. Aceptación: 200 con `h1`
   propio y `test_ui_contract` sigue verde (el índice pasa a 16 destinos). Verificación: curl + suite.
 
-- [ ] **U-05 · Hoja de atajos** — `?` abre un `<dialog>` con Ctrl+Enter, Esc, Ctrl+K, `?` y los ejes de
+- [x] **U-05 · Hoja de atajos** — `?` abre un `<dialog>` con Ctrl+Enter, Esc, Ctrl+K, `?` y los ejes de
   apariencia; sin dependencias. Aceptación: pulsar `?` (tecla real) abre `dialog[open]`. Verificación:
   CDP `Input.dispatchKeyEvent`.
 

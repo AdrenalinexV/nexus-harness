@@ -126,6 +126,49 @@ async function swapDirector(spec) {
   refreshState();
 }
 
+
+/* ---------- la hoja de atajos (`?`) ----------
+   Sin framework y sin dependencias: un `<dialog>` nativo, marcado fijo (cero interpolación) y se abre
+   con la tecla `?` salvo que el foco esté en un campo de texto. */
+const SHORTCUTS = [
+  ['Ctrl + Enter', 'enviar el mensaje'],
+  ['Esc', 'cerrar el panel de estado o este cuadro'],
+  ['Ctrl + K', 'buscar en la configuración (allí)'],
+  ['?', 'esta lista'],
+  ['Tab', 'saltar al hilo (primer Tab)'],
+];
+
+function buildHelp() {
+  const dialog = document.createElement('dialog');
+  dialog.className = 'helpdlg';
+  dialog.setAttribute('aria-label', 'Atajos de teclado');
+  const rows = SHORTCUTS.map(([key, what]) =>
+    `<div class="helprow"><kbd>${key}</kbd><span>${what}</span></div>`).join('');
+  dialog.innerHTML = `<header><strong>Atajos</strong>
+      <button class="ghost" type="button" data-close>Cerrar</button></header>
+    <div class="helpbody">${rows}</div>`;
+  dialog.addEventListener('click', (event) => {
+    if (event.target === dialog || event.target.closest('[data-close]')) dialog.close();
+  });
+  document.body.appendChild(dialog);
+  return dialog;
+}
+
+let helpDialog = null;
+function toggleHelp() {
+  helpDialog = helpDialog || buildHelp();
+  if (helpDialog.open) { helpDialog.close(); return; }
+  helpDialog.showModal();
+}
+
+document.addEventListener('keydown', (event) => {
+  const typing = /^(INPUT|TEXTAREA|SELECT)$/.test((event.target.tagName || '').toUpperCase());
+  if (event.key === '?' && !typing && !event.ctrlKey && !event.metaKey) {
+    event.preventDefault();
+    toggleHelp();
+  }
+});
+
 /* ---------- cableado y arranque ---------- */
 function wire() {
   $('send').onclick = () => window.NexusComposer.send();
