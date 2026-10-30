@@ -64,8 +64,16 @@
   `font-family` ni `font-size` (lo exige `test_density_moves_air_not_type`). Hecho en `c5a079d`.
   *Verificado con dos medidas reales del hilo en el navegador y capturas en `docs/ui/density-*.png`.*
 
-- [ ] **U-07 · Teclado en el índice** — las conversaciones son `role="option"` en un `listbox` con
-  flechas y Enter. Aceptación: ArrowDown mueve el foco y Enter abre. Verificación: CDP.
+- [x] **U-07 · Teclado en el índice** — las conversaciones son `role="option"` en un `listbox` con
+  flechas y Enter. Aceptación: ArrowDown mueve el foco y Enter abre. Verificación: CDP. Medido con
+  teclas reales en motor aislado `:52931` (tres conversaciones sembradas): `#sessions` `role=listbox`,
+  filas `role=option` con `tabindex` móvil `0,-1,-1`; `Tab` entra en el índice; `ArrowDown` mueve el
+  foco a `…000002` y luego `…000003` (tabindex `-1,0,-1` → `-1,-1,0`), `ArrowUp`/`Home`/`End` también;
+  `Enter` → `POST /api/chat/load` en la traza de `fetch`, la fila queda `.active` con
+  `aria-selected=true` y el título servido cambia al de la conversación; foco visible `1px solid
+  rgb(184,67,31)`; sonda 0 radius>2 / 0 sombras / 0 pills / 0 emojis / 0 azul de corpus / 0 enlaces sin
+  token. La hoja de atajos (`?`) anuncia «↑ ↓ · recorrer el índice · Enter abre». Hecho en `0cd3d6d`.
+  *Verificado con `Input.dispatchKeyEvent` (CDP) sobre el motor aislado.*
 
 - [ ] **U-08 · Copiar código** — bloques `pre`/fences del mensaje con botón copiar y `tab-size: 4`.
   Aceptación: 1 botón por bloque detectado (```...```). Verificación: JS.

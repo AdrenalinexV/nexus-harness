@@ -126,7 +126,8 @@ los campos de formulario llevan 2px. Sin sombras, sin degradados, sin `border-ra
 ```
 
 - Columna izquierda = **índice** del cuaderno (264 px): folios mono, entradas numeradas, puertas al
-  pie. Nunca "tarjetas de navegación".
+  pie. Nunca "tarjetas de navegación". Es un `listbox` de verdad: `tabindex` móvil (un Tab entra en el
+  índice) y `↑ ↓ Home End` recorren las filas, `Enter` abre la conversación enfocada.
 - El hilo lleva **folio por mensaje** en el margen y una regla encima de cada uno: se puede citar
   «folio 07» en vez de "el mensaje de antes".
 - El compositor es una **línea de formulario**: campo sin caja, regla inferior, acciones en una fila

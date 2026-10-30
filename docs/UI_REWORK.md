@@ -325,3 +325,23 @@ tocar una línea de su CSS.
 
 Capturas del par: `density-normal-chat.png` y `density-compacta-chat.png` (misma conversación, mismo
 motor, misma pestaña), más `density-panel.png` con el selector `05 · Densidad`.
+
+## 11. El índice por teclado (U-07)
+
+El índice era **ratón-only**: las `li` no eran enfocables ni tenían rol, así que quien navega con
+teclado no podía abrir una conversación. Ahora `#sessions` es un `role="listbox"` con nombre, y cada
+fila un `role="option"` con `aria-selected` y **`tabindex` móvil** (0 solo en la activa —o en la
+primera si no hay activa—, `-1` en el resto): un Tab entra en el índice, no en cada entrada.
+
+| criterio | medida real (motor aislado `:52931`, `NEXUS_HOME` en scratch, `NEXUS_HARNESS_TOKEN`, tres conversaciones sembradas) |
+|---|---|
+| contrato servido | `#sessions` `role=listbox` + `aria-label="Conversaciones"`, 3 filas `role=option` con `tabindex` `0,-1,-1` |
+| Tab entra en el índice | desde `#session-search`, `Tab` → `activeElement` es la fila activa (no cada `li`) |
+| `ArrowDown` mueve el foco | teclas reales por CDP: `ArrowDown` → `chat-…000002` (`tabindex` `-1,0,-1`), `ArrowDown` → `chat-…000003` (`-1,-1,0`) |
+| `ArrowUp` / `Home` / `End` | `ArrowUp` vuelve a `…000002`; `End` salta a `…000003`; `Home` a `…000001` (ciclo con las flechas) |
+| `Enter` abre | `Enter` sobre `…000002` → `POST /api/chat/load` en la traza de `fetch`, la fila pasa a `.active` con `aria-selected=true`, `NX.state.session=chat-…000002` y el título servido pasa a «densidad y tipografia del cuaderno · 2 turnos» |
+| foco visible | `getComputedStyle(activeElement).outline` = `rgb(184, 67, 31) solid 1px` (el `--seal` del pantón, una regla de 1px; ni sombra ni halo) |
+| sonda anti-slop | 0 radius>2 · 0 sombras · 0 pills · 0 azul de corpus · 0 emojis · 0 enlaces sin token · 0 campos rellenos |
+
+El eje se anuncia en la hoja de atajos (`?`): «↑ ↓ · recorrer el índice · Enter abre».
+Captura: `u07-indice-foco.png` (una fila con el foco de teclado y la regla de 1px).
