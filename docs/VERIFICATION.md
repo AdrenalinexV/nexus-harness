@@ -4,95 +4,99 @@ A claim without a command is a promise. This file records the commands and the e
 this machine, as they were observed. It is regenerated **deliberately**, with
 `python tools/verify.py --write-doc` — never by editing the numbers, and not as a side effect of a plain
 `verify` run: a gate that rewrites the document it grades leaves the tree dirty and lets a stale figure
-ride along in an unrelated commit. La corrida de este fichero es la del gobernador presente; el CI, que
-no lo tiene, publica `linter=builtin(R0,R1,R2)` y dos suites menos.
+ride along in an unrelated commit. **Qué corrida es esta, exactamente.** La de abajo se hizo CON el gobernador en disco: `NEXUS_PROTOCOL=C:\Proyectos\NexusProtocol python tools/verify.py --write-doc`. El CI no lo tiene y publica otra cosa, que es la correcta para el CI: `linter=builtin(R0,R1,R2)`, `skipped=3` y ninguna suite roja. Por eso `verify.py --frozen` compara el binario contra ESTA corrida y no contra una cifra suelta.
 
 ## The one command
 
 ```
 $ python tools/verify.py --write-doc
-lint      exit 0   files=203 findings=0 max_lines=400 ignored_runtime=0 linter=protocol(R0,R1,R2,R3)
-selftest  exit 0   suites=59 failures=0 skipped=0
+lint      exit 0   files=234 findings=0 max_lines=400 ignored_runtime=0 linter=protocol(R0,R1,R2,R3)
+selftest  exit 0   suites=64 failures=0 skipped=0
 verify: GREEN
 ```
 
 ## The suites, individually
 
 ```
-providers        OK    0.08s
+providers        OK    0.09s
 retry            OK    0.00s
-repair           OK    0.35s
-tools            OK    0.13s
-linelaw          OK    0.03s
-layers           OK    0.08s
-edit_v4a         OK    0.05s
-shell_session    OK    1.33s
-shell_policy     OK    0.13s
-checkpoint       OK    0.23s
+repair           OK    0.45s
+tools            OK    0.44s
+linelaw          OK    0.04s
+layers           OK    0.20s
+edit_v4a         OK    0.06s
+shell_session    OK    1.59s
+shell_policy     OK    0.25s
+checkpoint       OK    0.27s
 subagents        OK    0.01s
 warning: The `fitz` API is deprecated and will be removed in future. Use `import pymupdf` instead.
-attachments      OK    0.15s
+attachments      OK    0.16s
 onboarding       OK    0.13s
-mcp_client       OK    0.30s
-sidecar          OK    5.10s
+mcp_client       OK    0.44s
+sidecar          OK    5.08s
 estado listo: 2 criterios (2 pendientes)
 a -> exit 0 (VERDE)
 findings=0
 b -> exit 10 (ROJO)
 b marcado blocked
 criterio desconocido: zzz
-cerrojo ocupado: el turno de noche ya esta en marcha: pid 14476 desde 2026-10-30T14:06:27+00:00 (suite)
-no se toca nada. Si esa sesion ya no corre, el cerrojo se hereda solo; para forzarlo a mano, borra C:\Users\Vexus\AppData\Local\Temp\nightshift-19ezmzb8\.nexus\harness\nightshift.lock
+cerrojo ocupado: el turno de noche ya esta en marcha: pid 23416 desde 2026-10-30T22:48:05+00:00 (suite)
+no se toca nada. Si esa sesion ya no corre, el cerrojo se hereda solo; para forzarlo a mano, borra C:\Users\Vexus\AppData\Local\Temp\nightshift-adife1lm\.nexus\harness\nightshift.lock
 TOCA: b — falla
   prueba: python -c "raise SystemExit(10)"
   estado: blocked (intentos 1)
 a -> exit 0 (VERDE)
 findings=0
-nightshift       OK    0.30s
-context          OK    0.12s
-triad_loop       OK    2.14s
-session_relay    OK    1.07s
-relay_state      OK    0.26s
-savings          OK    0.60s
-skills           OK    0.16s
-worktree         OK    2.37s
-deploy           OK    0.02s
-judge_repair     OK    0.02s
-compaction       OK    0.20s
-chat             OK    0.69s
-memory           OK    0.33s
-ui               OK    1.03s
-bridge           OK    0.05s
-budget           OK    0.38s
+nightshift       OK    0.49s
+context          OK    0.15s
+triad_loop       OK    2.82s
+session_relay    OK    1.48s
+relay_state      OK    0.32s
+savings          OK    0.71s
+skills           OK    0.22s
+worktree         OK    4.32s
+deploy           OK    0.03s
+judge_repair     OK    0.06s
+compaction       OK    0.26s
+chat             OK    0.86s
+memory           OK    0.64s
+ui               OK    1.04s
+bridge           OK    0.06s
+budget           OK    0.44s
 charts           OK    0.00s
 activity         OK    0.00s
-projects         OK    0.54s
-autonomy         OK    0.62s
-ux               OK    1.81s
+projects         OK    0.94s
+autonomy         OK    1.05s
+ux               OK    2.21s
 learning         OK    0.04s
-oracle           OK    0.28s
-tokenizer        OK    0.01s
-spec             OK    0.29s
+oracle           OK    0.39s
+tokenizer        OK    0.02s
+spec             OK    0.46s
 plan_graph       OK    0.00s
-portfolio        OK    0.14s
-eval             OK    4.16s
-daemon           OK    0.27s
+portfolio        OK    0.20s
+eval             OK    9.11s
+daemon           OK    0.44s
 notify           OK    0.00s
-browser          OK    4.35s
-recall           OK    0.22s
-ui_contract      OK    2.76s
+browser          OK    6.24s
+recall           OK    0.26s
+ui_contract      OK    3.96s
 themes           OK    0.01s
 packaged_skills  OK    0.00s
-context_window   OK    0.44s
-triad_presets    OK    0.03s
-triad_balance    OK    0.04s
-consult          OK    0.15s
-empty_states     OK    0.01s
+context_window   OK    0.47s
+triad_presets    OK    0.04s
+triad_balance    OK    0.05s
+consult          OK    0.17s
+empty_states     OK    0.02s
 fonts            OK    0.00s
-repo_scripts     OK    0.00s
-doc_truth        OK    0.83s
+repo_scripts     OK    0.01s
+doc_truth        OK    1.18s
 protocol_pointer OK    0.00s
-suites=59 failures=0 skipped=0
+hooks            OK    8.04s
+stream           OK    1.93s
+sandbox          OK    0.13s
+lsp              OK    0.44s
+kanvas           OK    0.54s
+suites=64 failures=0 skipped=0
 ```
 
 What each one actually proves:
