@@ -30,6 +30,18 @@ def field(label, control, hint=""):
             % (esc(label), control, '<span class="shint">%s</span>' % esc(hint) if hint else ""))
 
 
+def empty(what, next_step):
+    """Un panel sin datos dice QUE HACER, no solo que no hay nada.
+
+    Un «ninguno.» a secas se lee como una pantalla rota. El estado vacio es la primera pantalla de un
+    operador nuevo y la ultima que ve cuando algo falla, asi que va con la accion siguiente en el
+    mismo parrafo: `what` describe el hueco (sin punto final) y `next_step` empieza por un verbo y
+    nombra el boton exacto que lo llena.
+    """
+    return ('<p class="sempty"><span class="swhat">%s</span> '
+            '<span class="snext">%s</span></p>' % (esc(what), esc(next_step)))
+
+
 def text_input(name, value, kind="text", hint=""):
     control = '<input type="%s" name="%s" value="%s">' % (esc(kind), esc(name), esc(value if value is not None else ""))
     return control, hint

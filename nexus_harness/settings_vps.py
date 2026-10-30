@@ -138,9 +138,10 @@ def page(cockpit=None):
     ready = ('<p><span class="chip ok">listo para desplegar</span> '
              '<span class="dim">destino %s</span></p>' % kit.esc(config.target or "-")
              if not missing else
-             '<p><span class="chip warn">faltan %s</span> <span class="dim">rellena el bloque de '
-             'abajo y pulsa Guardar: las credenciales van a la bóveda, no a este documento.</span></p>'
-             % kit.esc(", ".join(missing)))
+             ('<p><span class="chip warn">faltan %s</span></p>' % kit.esc(", ".join(missing))
+              + kit.empty("Faltan credenciales en la bóveda",
+                          "rellena el bloque de abajo (host, usuario y la ruta de la clave SSH) y "
+                          "pulsa Guardar: las credenciales van a la bóveda, no a este documento.")))
     body = ('<p class="dim">El PC se apaga; el nodo no. Este panel levanta el mismo motor en tu VPS '
             'por SSH + Docker Compose, en cuatro pasos y sin escribir un comando a mano.</p>'
             '<h4 class="ssub">Lo que necesitas</h4><ol class="plain">%s</ol>'

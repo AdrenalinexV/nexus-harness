@@ -63,13 +63,16 @@ def mcp(cockpit):
                "Desactivar" if enabled else "Activar",
                kit.hidden("section", "mcp"), kit.hidden("what", "mcp_delete") + kit.hidden("name", name),
                kit.esc(name)))
+    empties = kit.empty("Todavía no hay ningún conector MCP configurado",
+                        "rellena el formulario de abajo (nombre, comando y argumentos) y pulsa "
+                        "«Guardar conector y recargar».")
     body = ('<h3 class="ssub">Conectores <span class="tag">%d</span></h3>'
             '<p class="dim">%s tools en total · fichero: <code>%s</code></p>'
             '<div class="mcpgrid">%s</div>'
             '<h3 class="ssub">Añadir o editar un servidor MCP</h3>'
             '<form class="sform" method="post" action="/api/settings/do">'
             % (len(config.get("servers") or {}), kit.esc(state.get("tools") or 0),
-               kit.esc(str(mcp_client.CONFIG)), "".join(cards) or '<p class="dim">ninguno.</p>'))
+               kit.esc(str(mcp_client.CONFIG)), "".join(cards) or empties))
     body += (kit.hidden("section", "mcp") + kit.hidden("what", "mcp_add")
              + '<div class="sgrid">'
              + kit.field("Nombre", '<input name="name" placeholder="p. ej. filesystem">')

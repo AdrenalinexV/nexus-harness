@@ -263,6 +263,15 @@ def skills(cockpit, query):
     window = shown[(page - 1) * PAGE: page * PAGE]
     cards = "".join(_card(row, active, always, off, str(row.get("name")) in routable)
                     for row in window)
+    # El hueco tambien se explica: un catalogo sin skills y un filtro sin resultados son dos vacios
+    # distintos y cada uno tiene su salida (forjar/mover carpetas frente a limpiar la busqueda).
+    if not rows:
+        cards = kit.empty("Todavía no hay ninguna skill en el catálogo",
+                          "describe abajo la que te falta y pulsa «Diseñar y Forjar Skill», o añade "
+                          "su carpeta en «Espacio de trabajo».")
+    elif not window:
+        cards = kit.empty("Ninguna skill coincide con «%s»" % (needle or chosen),
+                          "borra la búsqueda o vuelve a la pastilla «Todas».")
     # Sin paquete de routing no hay botones de modo, y eso se dice: un boton ausente sin explicacion
     # se lee como una funcionalidad que falta, no como un motor al que le falta el gobernador.
     pack_note = ("" if routable else

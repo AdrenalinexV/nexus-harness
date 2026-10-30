@@ -367,3 +367,28 @@ sin cerrar se trata como bloque hasta el final.
 | sonda anti-slop | 0 radius>2 · 0 sombras · 0 pills · 0 azul de corpus · 0 emojis · 0 enlaces sin token |
 
 Captura: `u08-codigo.png` (el hilo con los dos bloques, sus rótulos y sus botones).
+
+## 13. Estados vacíos que dicen qué hacer (U-10)
+
+Un panel sin datos es la primera pantalla de un operador nuevo y la última que ve cuando algo falla:
+un «ninguno.» a secas se lee como una pantalla rota, no como una pantalla a propósito. Ahora el hueco
+y su salida viajan juntos en `settings_kit.empty(what, next_step)` — un `<p class="sempty">` con una
+regla de 1px a la izquierda (la cita del taller), el hueco en mono y la acción en tinta secundaria.
+`what` describe el vacío y `next_step` empieza por un verbo y nombra el botón exacto que lo llena.
+
+| panel | cuándo sale el vacío | frase servida (medida en navegador real) |
+|---|---|---|
+| Skills | `catalog()` devuelve 0 filas | «Todavía no hay ninguna skill en el catálogo / describe abajo la que te falta y pulsa «Diseñar y Forjar Skill», o añade su carpeta en «Espacio de trabajo».» |
+| Skills (filtro) | hay catálogo pero el filtro no deja filas | «Ninguna skill coincide con «q» / borra la búsqueda o vuelve a la pastilla «Todas».» |
+| Conectores MCP | `mcp.json` sin servidores | «Todavía no hay ningún conector MCP configurado / rellena el formulario de abajo (nombre, comando y argumentos) y pulsa «Guardar conector y recargar».» |
+| VPS 24/7 | faltan claves en la bóveda | «Faltan credenciales en la bóveda / rellena el bloque de abajo (host, usuario y la ruta de la clave SSH) y pulsa Guardar: …» |
+| Memoria / Autonomía | sin hechos / sin preguntas contestadas | «Nada en memoria todavía … pulsa Añadir.» · «Todavía no se ha contestado ninguna pregunta …» |
+
+Medido con motor aislado `:8791` (`NEXUS_HOME` en scratch con un `mcp.json` sin servidores,
+`NEXUS_PROTOCOL=/nonexistent` para que el catálogo de skills salga vacío de verdad): los tres `.sempty`
+aparecen en el DOM con su acción, el `h1` de Skills es `§04 Skills & Skill Architect` (ninguna
+sección cayó al fallback), y la sonda anti-slop da **0 radius>2 · 0 sombras · 0 pills · 0 azul de
+corpus · 0 emojis** en las tres. La suite nueva `empty_states` (registrada en `selftests.SUITES`)
+mide las tres frases sin depender del navegador; `verify.py` pasa a **55 suites**.
+
+Capturas: `empty-skills.png`, `empty-mcp.png`, `empty-vps.png`.

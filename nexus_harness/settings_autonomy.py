@@ -53,7 +53,9 @@ def _question_form(row):
 
 def _recent(rows):
     if not rows:
-        return '<p class="dim">Todavía no se ha contestado ninguna pregunta.</p>'
+        return kit.empty("Todavía no se ha contestado ninguna pregunta",
+                         "las decisiones aparecerán aquí en cuanto la autonomía pregunte algo y lo "
+                         "respondas desde el móvil o desde aquí arriba.")
     body = "".join("<li><strong>%s</strong> <span class=\"dim\">%s · %s · %s</span></li>"
                    % (kit.esc((row.get("text") or "")[:80]), kit.esc(row.get("answer") or "?"),
                       kit.esc(row.get("source") or "?"), kit.esc(row.get("answered_at") or ""))
@@ -66,7 +68,8 @@ def block(cockpit, limit=6):
     config = getattr(cockpit, "config", None)
     root = getattr(cockpit, "root", None)
     if config is None or root is None:
-        return "<p class=\"dim\">Sin motor: no hay preguntas que mostrar.</p>"
+        return kit.empty("Sin motor: no hay preguntas que mostrar",
+                         "arranca el motor y recarga, o comprueba su salud en «Acerca de».")
     enabled = bool(getattr(config, "consult_enabled", True))
     open_rows = consult.pending(root)[:limit]
     recent = [row for row in consult.questions(root).values() if row.get("state") != "pending"]
@@ -78,7 +81,10 @@ def block(cockpit, limit=6):
                _channels_ready(config)))
     body += ('<h4 class="ssub">Preguntas abiertas (%d)</h4>%s'
              % (len(open_rows), "".join(_question_form(row) for row in open_rows)
-                if open_rows else '<p class="dim">Ninguna. El bucle no está esperando nada tuyo.</p>'))
+                if open_rows else kit.empty(
+                    "Ninguna pregunta abierta: el bucle no está esperando nada tuyo",
+                    "cuando la autonomía necesite una decisión aparecerá aquí con su plazo y su "
+                    "defecto; hasta entonces no hay nada que contestar.")))
     body += '<h4 class="ssub">Últimas decisiones</h4>%s' % _recent(recent[:limit])
     body += ('<form class="sform" method="post" action="/api/settings">%s'
              '<label class="check"><input type="checkbox" name="consult_enabled" value="on"%s> '

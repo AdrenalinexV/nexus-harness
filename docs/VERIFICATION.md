@@ -8,29 +8,29 @@ the numbers.
 
 ```
 $ python tools/verify.py
-lint      exit 0   files=197 findings=0 max_lines=400 ignored_runtime=0 linter=protocol(R0,R1,R2,R3)
-selftest  exit 0   suites=54 failures=0 skipped=0
+lint      exit 0   files=198 findings=0 max_lines=400 ignored_runtime=0 linter=protocol(R0,R1,R2,R3)
+selftest  exit 0   suites=55 failures=0 skipped=0
 verify: GREEN
 ```
 
 ## The suites, individually
 
 ```
-providers        OK    0.06s
+providers        OK    0.07s
 retry            OK    0.00s
 repair           OK    0.32s
-tools            OK    0.12s
+tools            OK    0.11s
 linelaw          OK    0.03s
 layers           OK    0.08s
-edit_v4a         OK    0.04s
-shell_session    OK    1.32s
-shell_policy     OK    0.11s
-checkpoint       OK    0.23s
+edit_v4a         OK    0.03s
+shell_session    OK    1.30s
+shell_policy     OK    0.12s
+checkpoint       OK    0.22s
 subagents        OK    0.01s
 warning: The `fitz` API is deprecated and will be removed in future. Use `import pymupdf` instead.
 attachments      OK    0.13s
-onboarding       OK    0.12s
-mcp_client       OK    0.27s
+onboarding       OK    0.17s
+mcp_client       OK    0.28s
 sidecar          OK    5.10s
 estado listo: 2 criterios (2 pendientes)
 a -> exit 0 (VERDE)
@@ -38,53 +38,54 @@ findings=0
 b -> exit 10 (ROJO)
 b marcado blocked
 criterio desconocido: zzz
-cerrojo ocupado: el turno de noche ya esta en marcha: pid 28412 desde 2026-10-30T06:26:26+00:00 (suite)
-no se toca nada. Si esa sesion ya no corre, el cerrojo se hereda solo; para forzarlo a mano, borra C:\Users\Vexus\AppData\Local\Temp\nightshift-gdr80zfz\.nexus\harness\nightshift.lock
+cerrojo ocupado: el turno de noche ya esta en marcha: pid 10936 desde 2026-10-30T07:15:48+00:00 (suite)
+no se toca nada. Si esa sesion ya no corre, el cerrojo se hereda solo; para forzarlo a mano, borra C:\Users\Vexus\AppData\Local\Temp\nightshift-5iw7umgy\.nexus\harness\nightshift.lock
 TOCA: b — falla
   prueba: python -c "raise SystemExit(10)"
   estado: blocked (intentos 1)
 a -> exit 0 (VERDE)
 findings=0
-nightshift       OK    0.28s
+nightshift       OK    0.27s
 context          OK    0.11s
-triad_loop       OK    2.02s
-session_relay    OK    1.03s
+triad_loop       OK    2.01s
+session_relay    OK    1.02s
 relay_state      OK    0.25s
 savings          OK    0.55s
-skills           OK    0.19s
-worktree         OK    2.27s
+skills           OK    0.16s
+worktree         OK    2.24s
 deploy           OK    0.02s
 judge_repair     OK    0.02s
 compaction       OK    0.19s
-chat             OK    0.62s
-memory           OK    0.48s
-ui               OK    1.04s
+chat             OK    0.63s
+memory           OK    0.28s
+ui               OK    0.80s
 bridge           OK    0.05s
-budget           OK    0.36s
+budget           OK    0.35s
 charts           OK    0.00s
 activity         OK    0.00s
-projects         OK    0.49s
-autonomy         OK    0.57s
-ux               OK    1.69s
+projects         OK    0.48s
+autonomy         OK    0.56s
+ux               OK    1.72s
 learning         OK    0.04s
-oracle           OK    0.27s
+oracle           OK    0.25s
 tokenizer        OK    0.01s
-spec             OK    0.25s
+spec             OK    0.28s
 plan_graph       OK    0.00s
-portfolio        OK    0.14s
-eval             OK    4.64s
-daemon           OK    0.28s
+portfolio        OK    0.13s
+eval             OK    3.95s
+daemon           OK    0.26s
 notify           OK    0.00s
-browser          OK    5.11s
-recall           OK    0.21s
-ui_contract      OK    2.75s
-themes           OK    0.01s
+browser          OK    4.05s
+recall           OK    0.20s
+ui_contract      OK    2.74s
+themes           OK    0.00s
 packaged_skills  OK    0.00s
 context_window   OK    0.43s
-triad_presets    OK    0.04s
+triad_presets    OK    0.03s
 triad_balance    OK    0.04s
-consult          OK    0.15s
-suites=54 failures=0 skipped=0
+consult          OK    0.14s
+empty_states     OK    0.01s
+suites=55 failures=0 skipped=0
 ```
 
 What each one actually proves:

@@ -79,7 +79,8 @@ def _memory_rows(cockpit):
     state = cockpit.memory_state()
     entries = state.get("entries") or []
     if not entries:
-        return '<p class="dim">Nada en memoria todavía.</p>'
+        return kit.empty("Nada en memoria todavía",
+                         "escribe arriba el primer hecho que deba viajar en cada prompt y pulsa Añadir.")
     return "".join('<div class="srow"><span>%s</span>'
                    '<button class="ghost" formaction="/api/settings/do" name="what" value="memory_remove">'
                    'Quitar</button><input type="hidden" name="entry" value="%s"></div>'
