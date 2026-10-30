@@ -36,6 +36,7 @@ from .tools.subagents import Delegate
 from .tools.toolbox import process_manager
 from .tools import default_registry
 from .context.triad_brief import CLOSE_PROMPT, JUDGE_REJECT, REPAIR_PROMPT, WORKER_PROMPT
+from .core.turn_support import TurnSupport
 
 @dataclass
 class RunResult:
@@ -72,7 +73,7 @@ def _now():
     return time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
 
 
-class Triad:
+class Triad(TurnSupport):
     def __init__(self, router, config, registry=None, gate=None, judge=None, skills=None,
                  bus=None, relay=None, compactor=None):
         self.router = router
@@ -181,6 +182,11 @@ class Triad:
     def _work(self, messages, max_steps):
         """Run the worker loop until it stops asking for tools. Returns (text, steps)."""
         text, steps = "", 0
+        stop = self._hook("before_turn", {"max_steps": max_steps})
+        if stop is not None:
+            # Un `before_turn` que devuelve 10/20 para el turno ANTES de gastar un token.
+            self._emit("hook.blocked", stop.message or stop.verdict)
+            return text or "hook %s: %s" % (stop.name, stop.message), steps
         for step in range(max_steps):
             if self._stop.is_set():
                 self._emit("worker.stopped", "interrupción pedida en el paso %d" % step)
@@ -223,36 +229,20 @@ class Triad:
                 observation = self.registry.call(call.name, call.arguments) \
                     if not call.parse_error else _bad_arguments(call)
                 self.touched.update(observation.files)
+                after = self._hook("after_tool", {"tool": call.name, "ok": observation.ok,
+                                                  "files": list(observation.files or ())})
+                if after is not None:
+                    # El hook vio lo que la herramienta hizo y para: el turno no sigue a ciegas.
+                    self._emit("hook.blocked", after.message or after.verdict, tool=call.name)
+                    return text or "hook %s: %s" % (after.name, after.message), steps
                 messages.append(Message(role="tool", content=as_text(observation),
                                         tool_call_id=call.id, name=call.name))
                 self._emit("tool.call", call.name, ok=observation.ok, args=call.arguments,
                            result=observation.text[:600])
         else:
             self._emit("worker.limit", "max_steps=%d reached" % max_steps)
-            text = self._closing_summary(messages, text)
+            text = self._closing_summary(messages, text, CLOSE_PROMPT)
         return text, steps
-
-    def _closing_summary(self, messages, fallback):
-        """One last call without tools: a run that ends on a tool call leaves the judge nothing to
-        approve, and an empty summary is a legitimate rejection. Two sentences cost one cheap call."""
-        try:
-            reply = self._ask("worker", list(messages) + [Message(role="user", content=CLOSE_PROMPT)],
-                              tools=None, max_tokens=400)
-        except Exception as exc:  # the summary is a courtesy; its absence is not a crash
-            self._emit("worker.error", "closing summary failed: %s: %s" % (type(exc).__name__, exc))
-            return fallback
-        self._absorb(reply)
-        if reply.text:
-            self._emit("worker.close", reply.text[:400])
-        return reply.text or fallback
-
-    def _absorb(self, reply):
-        self.cost.observe(reply.usage, reply.model)
-        # Los tokens del run viajan en el resultado: el libro los necesita para su propia grafica.
-        self.tokens["prompt"] += int(getattr(reply.usage, "prompt", 0) or 0)
-        self.tokens["completion"] += int(getattr(reply.usage, "completion", 0) or 0)
-        if self.relay is not None:
-            self.relay.observe(reply.usage)
 
     def _maybe_relay(self, messages, text):
         """Replace the conversation with the next session's prompt. True when it happened."""

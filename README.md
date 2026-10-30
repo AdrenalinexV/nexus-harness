@@ -13,7 +13,7 @@ with the command that would install them instead of failing:
 ```
 pip install .                        # engine + cockpit, standard library only
 pip install ".[media,browser]"       # + attachments/vision and the native browser tool
-nexus-harness selftest               # the same 59 suites as `python -m nexus_harness selftest`
+nexus-harness selftest               # the same 60 suites as `python -m nexus_harness selftest`
 ```
 
 CI runs the gate on a machine that is not the one it was written on — Windows and Linux, Python 3.11
@@ -26,7 +26,7 @@ frozen inside (no Python on the target machine). See [docs/DESKTOP.md](docs/DESK
 ```
 python -m nexus_harness run "make the login endpoint reject empty passwords" --project C:/Proyectos/x
 python -m nexus_harness serve            # cockpit on http://127.0.0.1:8765
-python -m nexus_harness selftest         # 59 deterministic suites, no network
+python -m nexus_harness selftest         # 60 deterministic suites, no network
 python -m nexus_harness models           # what LM Studio / Ollama actually offer
 python -m nexus_harness gate --project .  # lint + line law + tests, exit 0/10/20
 python -m nexus_harness bridge --tick     # run one /task queued from the phone
@@ -128,6 +128,7 @@ A spec is `provider:model`, with `lmstudio`, `ollama`, `openai`, `deepseek`, `op
 never from this repository. The judge is deliberately a different model from the worker.
 
 Design and module map: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
+Extend it with hooks (JSON in, message out, 0/10/20/30): [docs/HOOKS.md](docs/HOOKS.md).
 Where this is going and in what order: [docs/ROADMAP.md](docs/ROADMAP.md).
 What is open right now: [docs/BACKLOG.md](docs/BACKLOG.md).
 What was learned from Hermes / Aider / OpenCode: [docs/FORENSICS.md](docs/FORENSICS.md).

@@ -33,6 +33,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 
 from . import linelaw, oracle
+from ..platform import hooks as hooks_mod
 
 EXIT_GREEN = 0
 EXIT_RED = 10
@@ -175,8 +176,25 @@ class Gate:
                      "exit %d (%s): %s" % (completed.returncode, source, tail or "(no output)"),
                      exit=EXIT_GREEN if completed.returncode == 0 else EXIT_RED)
 
+    def hooks(self, touched=None):
+        """`pre_verify`: lo que el proyecto declara en su `nexus_harness.toml`, antes de medir nada.
+
+        Un hook que devuelve 10 pone el gate ROJO con su mensaje; 20 (no se pudo medir) también para;
+        30 se anota y no para. Sin fichero, esto es una lista vacía y el gate se comporta igual que
+        siempre: el motor es inerte cuando no hay configuración, nunca "inerte porque no supe leerla".
+        """
+        declared = hooks_mod.Hooks.load(self.root)
+        checks = []
+        for result in declared.at("pre_verify", {"touched": list(touched or ())}, cwd=self.root):
+            detail = "%s: %s" % (result.verdict, result.message or "(sin mensaje)")
+            checks.append(Check("hook:%s" % result.name, result.ok, detail,
+                                exit=hooks_mod.EXIT_OK if result.ok else
+                                (EXIT_UNAVAILABLE if result.code == hooks_mod.EXIT_UNMEASURED
+                                 else EXIT_RED)))
+        return checks
+
     def run(self, touched=None):
-        checks = [self.lint(), self.line_law(touched), self.tests(touched)]
+        checks = self.hooks(touched) + [self.lint(), self.line_law(touched), self.tests(touched)]
         blocking = [check for check in checks if check.blocking and not check.ok]
         unavailable = any(check.exit == EXIT_UNAVAILABLE for check in blocking)
         failures = "\n".join("%s: %s" % (check.name, check.detail)

@@ -27,9 +27,9 @@ PKG = Path(__file__).resolve().parents[1]
 # El orden es la ley: cada capa puede importar las de su izquierda, nunca las de su derecha.
 ORDER = ("platform", "core", "llm", "tools", "context", "verify", "spec", "learning", "autonomy")
 DECLARED = {
-    "platform": ("backup", "console", "digest", "events", "hardware_probe", "ledger", "policy",
-                 "skillfiles", "tokenizer", "transcripts", "vault"),
-    "core": ("budget", "message", "outcomes", "tasks"),
+    "platform": ("backup", "console", "digest", "events", "gitcommit", "hardware_probe", "hooks",
+                 "ledger", "policy", "skillfiles", "tokenizer", "transcripts", "vault"),
+    "core": ("budget", "message", "outcomes", "tasks", "turn_support"),
     "llm": ("context_window", "judge", "portfolio", "provider_discovery", "providers", "transports"),
     "tools": ("attachments", "mcp_client", "recall", "repair_hint", "registry", "sidecar",
               "skill_forge", "subagents", "toolbox"),

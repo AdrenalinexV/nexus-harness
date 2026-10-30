@@ -23,7 +23,7 @@ import threading
 import time
 from pathlib import Path
 
-from nexus_harness.platform import backup, ledger
+from nexus_harness.platform import backup, gitcommit, ledger
 from nexus_harness.autonomy import plan_graph
 from nexus_harness import projects
 from nexus_harness.spec import spec_synth
@@ -96,20 +96,8 @@ def model_planner(router, config):
 
 
 def _commit(root, message):
-    """Un commit limpio del paso, con identidad local para no depender de la configuracion del usuario."""
-    import os
-    import subprocess
-    flags = 0x08000000 if os.name == "nt" else 0
-    try:
-        done = subprocess.run(["git", "-C", str(root), "-c", "user.name=Nexus Harness",
-                               "-c", "user.email=nexus@localhost", "commit", "-q", "-am", message],
-                              capture_output=True, text=True, errors="replace", timeout=90,
-                              creationflags=flags)
-    except (OSError, subprocess.SubprocessError) as exc:
-        return False, "%s: %s" % (type(exc).__name__, exc)
-    if done.returncode != 0:
-        return False, ((done.stdout or "") + (done.stderr or "")).strip()[:300]
-    return True, ""
+    """Compatibilidad: el commit vive en `platform/gitcommit.py` (y ahí corre `before_commit`)."""
+    return gitcommit.commit(root, message)
 
 
 class Autopilot:

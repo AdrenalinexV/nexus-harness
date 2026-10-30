@@ -2,7 +2,7 @@ name: verify
 
 # The repo's own gate, run where it has never run before: a machine that is not the one it was
 # written on. Three questions, three jobs:
-#   verify  -- does the law hold and do all 59 suites pass on Windows and Linux, 3.11 and 3.13?
+#   verify  -- does the law hold and do all 60 suites pass on Windows and Linux, 3.11 and 3.13?
 #   wheel   -- does `pip install .` ship something that actually runs (the cockpit's assets included)?
 #   extras  -- with the OPTIONAL engines installed, do the suites that SKIP turn into real coverage?
 # A skip is printed, counted and allowed; a failure never is.
