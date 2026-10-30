@@ -73,6 +73,10 @@
 #pop-summary.bad { color: var(--bad); }
 
 /* ---------- reparto: índice + página ---------- */
+/* La banda de reintento (U-02): texto y botón en la misma línea, sin caja. Apunta a `#warn` para no
+   tocar `.snote.warn` de la configuración, que también usa la clase `warn`. */
+#warn { display: flex; align-items: center; gap: .5rem; }
+#warn button { padding: .15rem .5rem; }
 body.chat-only { display: flex; flex-direction: column; height: 100dvh; }
 body.chat-only > .app { flex: 1 1 auto; min-height: 0; }
 .app { display: grid; grid-template-columns: 264px minmax(0, 1fr); min-height: 0; }

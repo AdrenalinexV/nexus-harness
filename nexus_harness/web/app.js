@@ -12,6 +12,7 @@ const API_VERSION = 3;
 
 const state = {
   since: 0, session: null, feed: [], sessions: [], polling: false, last: null,
+  failures: 0, offline: false,
 };
 
 function esc(text) {
@@ -31,6 +32,9 @@ function api(path, options = {}) {
 function warn(message) {
   const box = $('warn');
   if (!box) return;
+  // Un aviso escrito a mano retira la banda de reintento: el texto de `#warn` tiene un solo dueño.
+  state.offline = false;
+  delete box.dataset.kind;
   box.hidden = false;
   box.textContent = message;
 }
@@ -50,7 +54,14 @@ window.NX = {$, api, esc, warn, icon, state, TOKEN, API_VERSION};
 
 /* ---------- el motor que está en marcha ---------- */
 async function checkEngine() {
-  const {ok, status, data} = await api('/api/health');
+  let result;
+  try {
+    result = await api('/api/health');
+  } catch (error) {
+    // Sin motor no hay respuesta que leer: no se aborta el arranque, el sondeo levanta la banda.
+    return;
+  }
+  const {ok, status, data} = result;
   // Un 401 NO es un motor caído y no se arregla relanzando nada: es que a esta página le falta la
   // credencial. Antes las dos cosas se pintaban igual y el consejo mandaba a reiniciar un proceso sano.
   if (status === 401) {
@@ -112,11 +123,60 @@ function paintState(s) {
   fillSelect($('quick-director'), options.length ? options : [director.spec || ''], director.spec);
 }
 
+/* ---------- la banda de reintento ----------
+   Si el motor deja de contestar, el sondeo falla en silencio y la pantalla se queda congelada sin decir
+   por qué. A los tres sondeos seguidos (≈5 s con el intervalo de 2,5 s) se levanta esta banda con un
+   botón que reintenta YA; en cuanto un sondeo vuelve, la banda se retira sola. */
+const OFFLINE_AFTER = 3;
+
+function showOffline() {
+  const box = $('warn');
+  if (!box || state.offline) return;
+  state.offline = true;
+  box.dataset.kind = 'offline';
+  // Marcado fijo, CERO interpolación: la banda no lleva datos del motor, así que no hay nada que
+  // escapar aquí (toda cifra o texto del motor sigue pasando por `esc()`).
+  box.innerHTML = '<span>motor sin respuesta</span> · '
+    + '<button id="retry" type="button">Reintentar</button>';
+  const retry = $('retry');
+  if (retry) retry.onclick = () => { refreshState(); };
+  box.hidden = false;
+}
+
+function hideOffline() {
+  const box = $('warn');
+  if (!box || !state.offline) return;
+  state.offline = false;
+  box.hidden = true;
+  box.innerHTML = '';
+  delete box.dataset.kind;
+}
+
+function markReachable(reachable) {
+  if (reachable) {
+    state.failures = 0;
+    hideOffline();
+    return;
+  }
+  state.failures += 1;
+  if (state.failures >= OFFLINE_AFTER) showOffline();
+}
+
 async function refreshState() {
   // Con la pestaña oculta no se sondea: gastar bateria/CPU por un panel que nadie mira es ruido.
   if (document.hidden) return;
-  const {ok, data} = await api('/api/state');
-  if (ok) paintState(data);
+  let result;
+  try {
+    result = await api('/api/state');
+  } catch (error) {
+    // Red caída: `fetch` rechaza y no hay respuesta que leer. No es un motor lento: no contesta nadie.
+    markReachable(false);
+    return;
+  }
+  if (result.ok) paintState(result.data);
+  // 401/403 dicen que el motor ESTÁ: contesta, lo que falta es la credencial. Eso no es "sin respuesta"
+  // y no debe levantar la banda de reintento.
+  markReachable(result.ok || result.status === 401 || result.status === 403);
 }
 
 async function swapDirector(spec) {
