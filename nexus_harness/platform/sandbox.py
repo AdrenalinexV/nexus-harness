@@ -23,6 +23,7 @@ import shutil
 import subprocess
 import sys
 from dataclasses import dataclass
+from pathlib import Path
 
 OVERRIDE_ENV = "NEXUS_UNSANDBOXED"
 KINDS = ("bwrap", "seatbelt", "job", "none")
@@ -276,6 +277,17 @@ def run(argv, shell=False, cwd=None, env=None, timeout=None, creationflags=0, me
     return subprocess.CompletedProcess(argv, process.returncode, out, err)
 
 
+TEMP_ROOTS = ("/tmp", "/private/tmp", "/var/tmp", "/var/folders")
+
+
+def _under_temp(text):
+    """¿La ruta vive bajo un temporal de unix? Mira la ruta escrita y la resuelta."""
+    seen = {str(text).replace("\\", "/").lower(),
+            str(Path(text).resolve()).replace("\\", "/").lower()}
+    return any(item == root or item.startswith(root + "/")
+               for item in seen for root in TEMP_ROOTS)
+
+
 def wrap(argv, root, cage=None):
     """Envuelve un argv en la jaula del SO. Sin jaula devuelve el argv tal cual, sin adornos."""
     cage = cage or current()
@@ -285,7 +297,9 @@ def wrap(argv, root, cage=None):
                 "--dev", "/dev", "--proc", "/proc"]
         # `--tmpfs /tmp` tapa el proyecto cuando el proyecto VIVE en /tmp (los TempProject de las
         # suites, y cualquier repo en un tmpfs): se monta el bind del proyecto despues y sin taparlo.
-        if not str(Path(text).resolve()).lower().startswith(("/tmp", "/private/tmp")):
+        # Se miran las dos formas de la ruta -- la escrita y la resuelta -- porque `Path("/tmp/x")` en
+        # Windows resuelve a `C:\tmp\x` y ahi el prefijo ya no dice nada.
+        if not _under_temp(text):
             base += ["--tmpfs", "/tmp"]
         return base + ["--bind", text, text, "--chdir", text, "--", *list(argv)]
     if cage.kind == "seatbelt":

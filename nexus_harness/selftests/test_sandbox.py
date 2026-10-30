@@ -78,6 +78,23 @@ def test_the_matrix_has_no_silent_cell(failures):
           len([row for row in rows if row.get("measured")]), 1, failures)
 
 
+def test_wrap_puts_the_project_inside_and_nothing_else(failures):
+    """`wrap` sin host: el argv que se construye para bwrap/seatbelt, medido aqui y no en CI."""
+    inside = sandbox.wrap(["true"], "/tmp/proyecto", BWRAP)
+    check("bwrap al frente", inside[0], "bwrap", failures)
+    check("el proyecto se monta escribible", "--bind" in inside, True, failures)
+    check("y no se tapa con un /tmp vacio cuando el proyecto vive ahi",
+          "--tmpfs" in inside, False, failures)
+    outside = sandbox.wrap(["true"], "/home/operador/repo", BWRAP)
+    check("fuera de /tmp si hay /tmp limpio", "--tmpfs" in outside, True, failures)
+    check("el argv pedido va al final, tras --", outside[-2:], ["--", "true"], failures)
+    mac = sandbox.wrap(["true"], "/Users/op/repo", sandbox.Cage("seatbelt", "darwin", True, True))
+    check("seatbelt lleva su perfil", mac[0], "sandbox-exec", failures)
+    check("y el perfil nombra el proyecto", "/Users/op/repo" in mac[2], True, failures)
+    plain = sandbox.wrap(["true"], "/x", NO_CAGE)
+    check("sin jaula el argv va tal cual", plain, ["true"], failures)
+
+
 def test_the_job_holds_what_it_says(failures):
     """En Windows se mide con procesos de verdad; en otro SO se declara que no hay Job."""
     guard = sandbox.Guard(memory_mb=256, max_processes=8)
@@ -122,6 +139,7 @@ def run():
     test_unrestricted_without_a_cage_is_refused(failures)
     test_a_filesystem_cage_gives_the_permission_back(failures)
     test_the_matrix_has_no_silent_cell(failures)
+    test_wrap_puts_the_project_inside_and_nothing_else(failures)
     test_the_job_holds_what_it_says(failures)
     test_stop_does_not_leave_a_job_open(failures)
     return failures
