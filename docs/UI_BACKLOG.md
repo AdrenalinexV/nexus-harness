@@ -92,9 +92,17 @@
   Las **19** capturas enlazadas existen (`os.path.isfile` sobre `docs/ui/`); 161 líneas < 400.
   *Verificado con `--check` y `verify.py` ambos exit 0.*
 
-- [ ] **U-10 · Revisión de estados vacíos** — cada panel de `/settings` sin datos dice qué hacer; los
+- [x] **U-10 · Revisión de estados vacíos** — cada panel de `/settings` sin datos dice qué hacer; los
   tres peores (skills sin skills, vps sin claves, mcp sin servidores) con texto accionable.
   Aceptación: los tres paneles mencionan la acción siguiente. Verificación: grep de las frases.
+  Hecho en `d857b23`: el helper `settings_kit.empty(what, next_step)` compone `<p class="sempty">` (regla
+  de 1px, hueco en mono, acción en tinta secundaria) y lo usan Skills (catálogo vacío **y** filtro sin
+  resultados, dos vacíos distintos), MCP, VPS (faltan claves), Memoria y Autonomía. Medido con motor
+  aislado `:8791` (`NEXUS_HOME` en scratch con `mcp.json` sin servidores, `NEXUS_PROTOCOL=/nonexistent`):
+  los tres `.sempty` en el DOM con su botón nombrado, `h1` de Skills `§04` (sin fallback), sonda
+  0 radius>2 / 0 sombras / 0 pills / 0 azul de corpus / 0 emojis. Suite nueva `empty_states` en
+  `selftests.SUITES`; `verify.py` **55 suites / 0 fallos**.
+  *Verificado con grep de las frases y navegador real sobre las tres pantallas.*
 
 ## Fuera de la cola (necesitan decisión humana)
 
