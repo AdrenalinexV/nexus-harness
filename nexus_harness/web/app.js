@@ -13,6 +13,9 @@ const API_VERSION = 3;
 const state = {
   since: 0, session: null, feed: [], sessions: [], polling: false, last: null,
   failures: 0, offline: false,
+  // El hilo como documento: `{folio, role, text, tools, attachments}`. Lo llena `chat_stream.js` y lo
+  // lee `export.js`, para que el .md salga con los MISMOS folios que están en pantalla.
+  doc: [],
 };
 
 function esc(text) {

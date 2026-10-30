@@ -59,6 +59,9 @@ window.NexusStream = (function () {
      citar («folio 07») sin describir el mensaje, que es lo que hace un documento de obra. */
   function addMessage(role, text, meta) {
     state.folio = (state.folio || 0) + 1;
+    // El mismo asiento que se pinta queda registrado para el export: folio, rol, texto, herramientas.
+    state.doc.push({folio: state.folio, role, text: String(text || ''),
+                    tools: (meta && meta.tools) || [], attachments: (meta && meta.attachments) || []});
     const wrap = document.createElement('article');
     wrap.className = 'msg ' + role;
     wrap.innerHTML = `<div class="folio">${String(state.folio).padStart(2, '0')}</div>
@@ -144,6 +147,7 @@ window.NexusStream = (function () {
     const thread = $('thread');
     thread.innerHTML = '';
     state.folio = 0;
+    state.doc = [];
     if (!messages.length) {
       thread.innerHTML = `<div class="empty"><h1>¿Qué construimos?</h1>
         <p>Pide una tarea o haz una pregunta. El gate —lint Nexus, ley de 400 líneas, tests— corre en

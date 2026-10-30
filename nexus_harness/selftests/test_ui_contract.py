@@ -196,7 +196,7 @@ def test_iconography_is_svg(base, failures):
         status, page = _get(base, "/settings?section=" + name)
         check("settings/%s se sirve" % name, status, 200, failures)
         check("settings/%s no tiene emojis" % name, _emoji(page), [], failures)
-    for asset in ("app.js", "chat_stream.js", "sessions.js", "composer.js", "activity.js",
+    for asset in ("app.js", "chat_stream.js", "export.js", "sessions.js", "composer.js", "activity.js",
                   "settings.js", "token.js"):
         status, body = _get(base, "/" + asset)
         check("%s se sirve" % asset, status, 200, failures)
