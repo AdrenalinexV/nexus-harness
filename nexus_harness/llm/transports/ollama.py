@@ -7,6 +7,9 @@
 
 Everything else is the same request: model, messages, stream=false, an `options` block for sampling.
 """
+import json
+
+from ...core import streaming
 from ...core.message import Message, Reply, ToolCall, Usage
 from . import http
 
@@ -47,15 +50,86 @@ class Ollama:
                                      for call in message.tool_calls]
         return payload
 
-    def chat(self, messages, tools=None, temperature=0.2, max_tokens=2048):
-        body = {"model": self.model, "stream": False,
+    def payload(self, messages, tools, temperature, max_tokens, stream=True):
+        body = {"model": self.model, "stream": bool(stream),
                 "messages": [self.to_native(message) for message in messages],
                 "options": {"temperature": temperature, "num_predict": max_tokens}}
         if tools:
             body["tools"] = tools
-        data = http.post_json("%s/api/chat" % self.base_url, body, headers=self.headers(),
-                              timeout=self.timeout)
-        return self.parse(data)
+        return body
+
+    def chat(self, messages, tools=None, temperature=0.2, max_tokens=2048):
+        """El mismo `Reply` de siempre, plegado del stream: no hay un segundo camino."""
+        return streaming.fold(self.stream(messages, tools, temperature, max_tokens))
+
+    def stream(self, messages, tools=None, temperature=0.2, max_tokens=2048):
+        """Eventos segun llegan. El NDJSON de Ollama trae el usage en el ultimo chunk."""
+        body = self.payload(messages, tools, temperature, max_tokens)
+        for event in self.iter_events(http.stream_lines(
+                "%s/api/chat" % self.base_url, body, headers=self.headers(),
+                timeout=self.timeout)):
+            yield event
+
+    def iter_events(self, chunks):
+        """El NDJSON de Ollama como eventos. Acepta FRAGMENTOS: un JSON partido no lo rompe."""
+        calls, order = {}, []
+        usage, model, emitted, broken = Usage(), self.model, False, 0
+        for line in streaming.lines(chunks):
+            stripped = line.strip()
+            if not stripped:
+                continue
+            try:
+                data = json.loads(stripped)
+            except ValueError:
+                broken += 1
+                continue
+            if data.get("error"):
+                raise http.TransportError("%s: %s" % (self.name, data["error"]),
+                                          body=str(data["error"]))
+            model = str(data.get("model") or model)
+            message = data.get("message") or {}
+            piece = message.get("content")
+            if piece:
+                emitted = True
+                yield streaming.Event(streaming.DELTA, text=piece)
+            thinking = message.get("thinking")
+            if thinking:
+                emitted = True
+                yield streaming.Event(streaming.REASONING, text=thinking)
+            for index, item in enumerate(message.get("tool_calls") or []):
+                slot = calls.get(index)
+                if slot is None:
+                    slot = {"id": "", "name": "", "arguments": None, "raw": ""}
+                    calls[index] = slot
+                    order.append(index)
+                slot["id"] = str(item.get("id") or slot["id"] or "call_%d" % index)
+                function = item.get("function") or {}
+                slot["name"] = str(function.get("name") or slot["name"])
+                arguments = function.get("arguments")
+                if isinstance(arguments, dict):
+                    slot["arguments"] = arguments
+                elif arguments is not None:
+                    slot["raw"] += str(arguments)
+            if data.get("done"):
+                usage = Usage(prompt=int(data.get("prompt_eval_count") or 0),
+                              completion=int(data.get("eval_count") or 0))
+        if broken and not emitted and not order:
+            raise http.TransportError("%s: %d lineas de stream ilegibles" % (self.name, broken))
+        for index in order:
+            slot = calls[index]
+            arguments = slot["arguments"]
+            if arguments is None:
+                raw = slot["raw"] or "{}"
+                try:
+                    arguments = json.loads(raw)
+                except ValueError:
+                    arguments = {}
+            yield streaming.Event(streaming.TOOL_CALL, call=ToolCall(
+                id=slot["id"], name=slot["name"],
+                arguments=arguments if isinstance(arguments, dict) else {},
+                raw_arguments=str(arguments or "{}")))
+        yield streaming.Event(streaming.DONE, usage=usage, model=model,
+                              raw={"finish": "done", "chunks": len(order)})
 
     def parse(self, data):
         if data.get("error"):

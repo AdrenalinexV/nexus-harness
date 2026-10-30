@@ -93,14 +93,25 @@ def stream_of(transport, messages, tools=None, temperature=0.2, max_tokens=2048)
 
 
 def as_events(reply):
-    """Un `Reply` ya entero como stream: un delta por campo. Sin red y sin estado."""
-    if reply.text:
+    """Un `Reply` ya entero como stream: un delta por campo. Sin red y sin estado.
+
+    Un transporte de terceros puede contestar un `str` donde el contrato pide un `Reply`; se toma como
+    el texto en vez de reventar con un `AttributeError` en mitad del turno. El `Done` sigue llevando
+    `usage` y `model` vacios: no se inventa una medida que el transporte no dio.
+    """
+    if isinstance(reply, str):
+        if reply:
+            yield Event(DELTA, text=reply)
+        yield Event(DONE)
+        return
+    if getattr(reply, "text", ""):
         yield Event(DELTA, text=reply.text)
-    if reply.reasoning:
+    if getattr(reply, "reasoning", ""):
         yield Event(REASONING, text=reply.reasoning)
-    for call in reply.tool_calls or []:
+    for call in getattr(reply, "tool_calls", None) or []:
         yield Event(TOOL_CALL, call=call)
-    yield Event(DONE, usage=reply.usage, model=reply.model, raw=reply.raw or {})
+    yield Event(DONE, usage=getattr(reply, "usage", None), model=getattr(reply, "model", "") or "",
+                raw=getattr(reply, "raw", None) or {})
 
 
 def lines(chunks):

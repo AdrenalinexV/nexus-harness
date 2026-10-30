@@ -220,6 +220,49 @@ def test_a_hung_stream_is_cut_by_close_all(failures):
     server.server_close()
 
 
+def test_the_cockpit_sees_text_before_the_answer(failures):
+    """El criterio de la cabina, medido en el bus: hay texto ANTES del `done`.
+
+    `worker.delta` son los trozos segun llegan; `chat.assistant` es la respuesta entera al final. Si el
+    primero no existe, o sale despues, la cabina no puede pintar nada mientras el modelo habla.
+    """
+    from .fakes import FakeGate, FakeRouter, ScriptedSkills, TempProject
+    from ..chat import Chat
+    from ..config import HarnessConfig
+    from ..platform.events import Bus
+
+    class Streaming:
+        model = "fake:stream"
+
+        def __init__(self):
+            self.calls = 0
+
+        def stream(self, messages, tools=None, temperature=0.2, max_tokens=2048):
+            self.calls += 1
+            for piece in ("Ho", "la", "!"):
+                yield streaming.Event(streaming.DELTA, text=piece)
+            yield streaming.Event(streaming.DONE, usage=Usage(prompt=10, completion=3))
+
+        def chat(self, messages, tools=None, temperature=0.2, max_tokens=2048):
+            return streaming.fold(self.stream(messages, tools, temperature, max_tokens))
+
+    with TempProject() as root:
+        config = HarnessConfig(default_root=root,
+                               roles={"director": "fake:d", "worker": "fake:w", "judge": "fake:j"},
+                               max_steps=2, max_repairs=1, lang="es", temperature=0.0, secrets={})
+        bus = Bus()
+        chat = Chat(FakeRouter(workers=Streaming()), config,
+                    type("R", (), {"schemas": lambda self: []})(), FakeGate(ok=True),
+                    ScriptedSkills(), bus=bus)
+        chat.new("stream")
+        turn = chat.send("saluda")
+        kinds = [event["kind"] for event in bus.all()]
+        check("el turno contesta lo mismo que el stream", turn["reply"], "Hola!", failures)
+        check("los deltas llegan al bus", kinds.count("worker.delta"), 3, failures)
+        check("y llegan antes de la respuesta final",
+              kinds.index("worker.delta") < kinds.index("chat.assistant"), True, failures)
+
+
 def run():
     failures = []
     test_fold_rebuilds_the_same_reply(failures)
@@ -230,4 +273,5 @@ def run():
     test_an_event_serializes_flat(failures)
     test_stop_cuts_the_live_stream(failures)
     test_a_hung_stream_is_cut_by_close_all(failures)
+    test_the_cockpit_sees_text_before_the_answer(failures)
     return failures

@@ -19,6 +19,7 @@ from pathlib import Path
 from .tools import attachments as attachment_tools
 from .platform import ledger
 from .verify import checkpoint
+from .core import streaming
 from .core.budget import CostBudget
 from .context.compaction import Compactor
 from .context.context_compiler import TurnWindow
@@ -120,10 +121,16 @@ class Chat:
         return session
 
     def stop(self):
-        """Detener: the loop, the subagents and every background process this turn started."""
+        """Detener: the loop, the subagents and every background process this turn started.
+
+        Y la request en vuelo: `close_all()` corta el socket del stream, no solo pone la bandera que el
+        bucle mira entre pasos. Sin esto, Detener esperaba a que el proveedor terminara de hablar.
+        """
         self._stop.set()
+        closed = streaming.close_all()
         killed = process_manager.kill_all_managers()
-        self._emit("chat.stopping", "interrupción pedida", processes_killed=killed)
+        self._emit("chat.stopping", "interrupción pedida", processes_killed=killed,
+                   streams_closed=closed["closed"])
 
     @property
     def stopped(self):
@@ -177,8 +184,15 @@ class Chat:
                 # El compactador trabaja sobre la lista completa; se vuelve a separar historia de
                 # deltas por su marca, para no persistir el contexto de turno en el transcript.
                 self.history, window.deltas = split_history(messages, bool(window.prefix.text))
-            reply = self.engine.ask(messages, tools,
-                                    resync=lambda rows: self._resync(rows, window))
+            events = []
+            for event in self.engine.ask_stream(messages, tools,
+                                                resync=lambda rows: self._resync(rows, window)):
+                events.append(event)
+                if event.kind == streaming.DELTA and event.text:
+                    # El borrador de la cabina: el texto llega mientras el modelo habla. El
+                    # `chat.assistant` de abajo lo sustituye por el definitivo cuando termina.
+                    self._emit("worker.delta", event.text, step=step)
+            reply = streaming.fold(events)
             steps += 1
             self.used += int(getattr(reply.usage, "total", 0) or 0)
             self._count(reply.usage)

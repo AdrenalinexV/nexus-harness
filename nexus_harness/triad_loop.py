@@ -19,6 +19,7 @@ from pathlib import Path
 
 from .platform import ledger
 from .context import triad_brief
+from .core import streaming
 from .core.budget import CostBudget
 from .context.compaction import Compactor
 from .context.context_compiler import build_prefix
@@ -103,10 +104,12 @@ class Triad(TurnSupport):
                                               root=config.default_root)
 
     def stop(self):
-        """Same Detener contract as the chat: loop, subagents and background processes."""
+        """Same Detener contract as the chat: loop, subagents, processes -- and the request in flight."""
         self._stop.set()
+        closed = streaming.close_all()
         killed = process_manager.kill_all_managers()
-        self._emit("run.stopping", "interrupción pedida", processes_killed=killed)
+        self._emit("run.stopping", "interrupción pedida", processes_killed=killed,
+                   streams_closed=closed["closed"])
 
     @property
     def stopped(self):

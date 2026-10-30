@@ -21,6 +21,7 @@ La cartera no llama a nadie por su cuenta: es politica (que spec toca) y transpo
 """
 from dataclasses import dataclass, field
 
+from ..core import streaming
 from .transports.http import TransportError
 
 
@@ -170,7 +171,16 @@ class FailoverTransport:
             return None
 
     def chat(self, messages, tools=None, temperature=0.2, max_tokens=2048):
-        """Prueba los peldanos en orden. Devuelve la primera respuesta; si no hay, lanza.
+        """El mismo `Reply` de siempre, plegado del stream: no hay un segundo camino."""
+        return streaming.fold(self.stream(messages, tools, temperature, max_tokens))
+
+    def stream(self, messages, tools=None, temperature=0.2, max_tokens=2048):
+        """Prueba los peldanos en orden. Devuelve el primero que arranca; si no hay, lanza.
+
+        La regla del peldaño: solo se cambia ANTES de que escape el primer evento. Una vez emitido un
+        delta, un fallo a mitad PROPAGA en vez de reintentar en otro modelo -- reintentar duplicaria el
+        texto que el operador ya vio. Es la diferencia con `chat()` de antes, donde el `Reply` no podia
+        existir a medias y por eso el failover era siempre seguro.
 
         Si TODOS los peldanos fallan con el mismo tipo de error, se relanza ese error y no un
         `RuntimeError` resumen: quien llama necesita el tipo para decidir (un 400 de tamano se
@@ -184,16 +194,24 @@ class FailoverTransport:
                 self.errors.append("%s: no listo (%s)" % (
                     spec, getattr(transport, "why_not_ready", "sin transporte")))
                 continue
+            emitted = False
             try:
-                reply = transport.chat(messages, tools=tools, temperature=temperature,
-                                       max_tokens=max_tokens)
+                for event in streaming.stream_of(transport, messages, tools=tools,
+                                                 temperature=temperature, max_tokens=max_tokens):
+                    emitted = True
+                    yield event
             except Exception as exc:  # noqa: BLE001 -- se prueba el siguiente; el error se declara
                 self.errors.append("%s: %s: %s" % (spec, type(exc).__name__, exc))
                 kinds.append(type(exc))
                 first = first or exc
+                if emitted:
+                    # Ya salio texto: otro modelo lo duplicaria. Se propaga con el diagnostico puesto.
+                    if isinstance(exc, TransportError):
+                        exc.ladder = list(self.errors)
+                    raise
                 continue
             self.used = spec
-            return reply
+            return
         if first is not None and isinstance(first, TransportError) and len(set(kinds)) == 1:
             # Un fallo de transporte trae status y cuerpo: quien llama puede actuar sobre el (podar el
             # prompt, reintentar). Se relanza tal cual, con los peldanos anotados al lado para no

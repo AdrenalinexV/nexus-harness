@@ -16,6 +16,7 @@ Dos responsabilidades, y las dos son de tamaño, no de estilo:
 El modulo no conoce el bucle: recibe el prompt, lo reescribe si hace falta y avisa con `resync`
 para que el llamante vuelva a separar historia de deltas.
 """
+from .core import streaming
 from .llm import context_window
 from .llm.transports import http
 
@@ -77,18 +78,33 @@ class TurnEngine:
             return None
         return self.registry.schemas()
 
-    def call(self, messages, tools=None, role=None, max_tokens=None):
-        """Una llamada, sin red. El transporte del rol ya trae la cartera de relevo detras."""
-        return self.router.role(role or self.role).chat(
-            messages, tools=self.tools() if isinstance(tools, bool) else tools,
+    def stream(self, messages, tools=None, role=None, max_tokens=None):
+        """La llamada como stream de eventos. Sin red de ventana: eso lo pone `ask_stream`."""
+        return streaming.stream_of(
+            self.router.role(role or self.role), messages,
+            tools=self.tools() if isinstance(tools, bool) else tools,
             temperature=getattr(self.config, "temperature", 0.2),
             max_tokens=max_tokens or getattr(self.config, "max_tokens", 2048))
 
-    def ask(self, messages, tools=None, resync=None, role=None, max_tokens=None):
-        """La llamada, y si el prompt no cabe: podar hasta que quepa y repetir una vez."""
+    def call(self, messages, tools=None, role=None, max_tokens=None):
+        """Una llamada, sin red. El transporte del rol ya trae la cartera de relevo detras."""
+        return streaming.fold(self.stream(messages, tools, role, max_tokens))
+
+    def ask_stream(self, messages, tools=None, resync=None, role=None, max_tokens=None):
+        """La llamada como stream, con la misma red de seguridad de ventana que `ask`.
+
+        La poda y el reintento solo valen ANTES de que salga el primer evento: repetir con texto ya
+        emitido lo duplicaria. Es la misma regla que el failover de la cartera.
+        """
+        emitted = False
         try:
-            return self.call(messages, tools, role=role, max_tokens=max_tokens)
+            for event in self.stream(messages, tools, role, max_tokens):
+                emitted = True
+                yield event
+            return
         except http.TransportError as exc:
+            if emitted:
+                raise
             n_ctx = context_window.overflow(exc)
             if not n_ctx:
                 raise
@@ -103,7 +119,9 @@ class TurnEngine:
                        "el motor solo tiene %d tokens: presupuesto %d" % (n_ctx, limit),
                        window=n_ctx, limit=limit, compaction=report)
             try:
-                return self.call(messages, tools, role=role, max_tokens=max_tokens)
+                for event in self.stream(messages, tools, role, max_tokens):
+                    yield event
+                return
             except http.TransportError as second:
                 if not context_window.overflow(second):
                     raise
@@ -111,6 +129,10 @@ class TurnEngine:
                     "el prompt sigue sin caber en los %d tokens que el motor declaro: sube la "
                     "ventana del modelo en el servidor (LM Studio: Context Length) o baja el limite "
                     "de contexto" % n_ctx, status=second.status, body=second.body) from second
+
+    def ask(self, messages, tools=None, resync=None, role=None, max_tokens=None):
+        """La llamada, y si el prompt no cabe: podar hasta que quepa y repetir una vez."""
+        return streaming.fold(self.ask_stream(messages, tools, resync, role, max_tokens))
 
 
 BULK = "relleno de una salida de herramienta que ocupa sitio de verdad en la ventana " * 3000
@@ -143,7 +165,8 @@ def selftest():
                              body='{"error":"Engine protocol predict request returned 400: {\\"error'
                                   '\\":{\\"message\\":\\"request (68052 tokens) exceeds the available '
                                   'context size (64256 tokens)\\"}}"}')
-            return "respuesta"
+            from .core.message import Reply
+            return Reply(text="respuesta")
 
     class Router:
         def __init__(self):
@@ -175,7 +198,7 @@ def selftest():
     seen = {}
     before = [Message(role=m.role, content=m.content) for m in late]
     reply = engine.ask(late, True, resync=lambda messages: seen.update(count=len(messages)))
-    check("reintenta y contesta", reply, "respuesta")
+    check("reintenta y contesta", reply.text, "respuesta")
     check("hubo dos llamadas", len(router.motor.calls), 2)
     check("el reintento lleva menos texto",
           sum(len(str(m.content)) for m in router.motor.calls[1])
