@@ -13,7 +13,7 @@
 > (3) Ninguna cifra se teclea: `python tools/doc_truth.py` la compara con el motor y pone el build rojo.
 > (4) Lo que no se pudo medir se escribe **no medido** con el comando que lo cerraría.
 
-Medido hoy: 62 suites · 220 ficheros · 0 hallazgos de lint · 0 ficheros > 400 líneas.
+Medido hoy: 63 suites · 223 ficheros · 0 hallazgos de lint · 0 ficheros > 400 líneas.
 
 ---
 
@@ -26,7 +26,7 @@ Medido hoy: 62 suites · 220 ficheros · 0 hallazgos de lint · 0 ficheros > 400
 | **B13** | `docs/VERIFICATION.md` se commitea con la corrida **sin** gobernador | `docs/VERIFICATION.md` | el CI publicaría otro número que el documento | regenerar con `--write-doc` en modo gobernador y dejar escrito que el CI publica el otro |
 | **B15** | ~~`llm/` a medias~~ **CERRADO** en la fase 2: `transports/` vive en `llm/transports/`, 0 imports hacia arriba | `llm/providers.py` | — | `grep "from \.\.transports" nexus_harness/llm/` → 0 |
 | **Capas** | **9 de 9 paquetes** migrados (fase 2 cerrada). `skill_forge` y `skill_router` se quedan en tools/ y context/ — medido: moverlos invertiría la dependencia | `nexus_harness/*.py` | quedan 50 módulos planos: el techo de 400 sigue doliendo ahí | `selftests/test_layers.py` verde con el invariante intacto |
-| **D · Sandbox** | **AUSENTE**: `policy.classify('rm -rf build','unrestricted')` → `allowed=True` | `shell_policy.py`; `policy.py` | la autonomía es un riesgo declarado, no un módulo | puerto fail-closed (Job Object/AppContainer, bwrap+Landlock, Seatbelt); sin jaula, `unrestricted` se **niega** con razón |
+| **D · Sandbox** | ~~AUSENTE~~ **CERRADA** en la fase 3: `policy` exige jaula de ficheros para `unrestricted`; Job Object (Win), bwrap (Linux) y seatbelt (macOS) se aplican al ejecutar | `a5f79eb` | — | `selftest sandbox` → OK (6 casos, incluido un hijo que muere con tope de 64 MB y el Job que mata el árbol) |
 | **C · Streaming** | ~~AUSENTE~~ **CERRADA** en la fase 3: los cuatro transportes devuelven eventos, `chat()` = `fold(stream())` y Detener corta el socket en vuelo | `2627150` · `41de9b8` · `d88be86` | — | `selftest stream` → OK (12 casos); `verify` GREEN en los dos modos |
 | **B · LSP** | **AUSENTE**: 0 coincidencias; `mcp_client.py` es JSON-RPC **MCP**, no LSP | — | paridad de herramientas con Codex/Claude Code | 3 tools (definition/references/diagnostics) sobre el stdio que ya existe, degradando al mapa AST **con razón impresa** |
 | **G · Hooks** | ~~AUSENTE~~ **CERRADA** en la fase 3: 4 puntos, contrato 0/10/20/30, fail-closed | `88c8018` | — | `selftest hooks` → OK (9 casos) |
@@ -44,6 +44,7 @@ Medido hoy: 62 suites · 220 ficheros · 0 hallazgos de lint · 0 ficheros > 400
 | **B14** | **no reproducible**: `nexus/` no está muerto, es el puntero al gobernador; ahora lo exige la suite `protocol_pointer` | (esta fase) | OK con gobernador · **FAIL** con el puntero roto · SKIP sin gobernador |
 | **B12** | `docs/EVAL.md` contaba las omitidas como resueltas: 7/7 → **5/7 + 2 omitidas** | (esta fase) | `doc_truth` compara el titular con su propia tabla |
 | **C** | **Streaming**: eventos `delta/reasoning/tool_call/done`, `Reply` por `fold`, failover solo antes del primer evento, Detener cierra el socket, cabina por SSE | `2627150` · `41de9b8` · `5873cfd` | `selftest stream` → OK (12 casos): JSON partido, servidor que se cuelga (0,52 s) y turno entero por el cable |
+| **D** | **Sandbox**: `unrestricted` sin jaula de ficheros se niega con motivo; matriz 3 modos × 3 jaulas; Job Object con kill-on-close y tope de memoria medidos | `a5f79eb` | `selftest sandbox` → OK (6 casos); `verify` GREEN en los dos modos |
 
 ## 3. Decisiones cerradas por el operador (no se reabren)
 
@@ -57,4 +58,4 @@ Medido hoy: 62 suites · 220 ficheros · 0 hallazgos de lint · 0 ficheros > 400
 |---|---|---|
 | Ahorro real −57,9 % contra un modelo en la nube | `benchmark_ab_savings.py --doc-only` es determinista y no llama a ningún proveedor | `python tools/benchmark_ab_savings.py --steps 8 --vendor <proveedor>` con clave |
 | Juez real sobre un turno de código | no hay proveedor configurado en esta máquina | `python -m nexus_harness run "<goal>" --project <tmp>` y leer el veredicto |
-| Sandbox / LSP | no existen (0 coincidencias en producción) | sus suites de aceptación, que hay que escribir (arriba, columna derecha) |
+| LSP real (servidor de lenguaje instalado) | la suite mide el protocolo con un servidor falso y el fallback al mapa AST | `python -m nexus_harness selftest lsp` con `pyright`/`clangd` en el PATH |

@@ -17,12 +17,14 @@ from dataclasses import dataclass, field
 from pathlib import Path
 
 from .repair_hint import RepairHints
-from .toolbox import browser, edit, file_ops, memory_tools, patch_v4a, process_manager, repo_search, shell_session, skill_tools, web
+from .toolbox import (browser, edit, file_ops, lsp_tools, memory_tools, patch_v4a, process_manager,
+                      repo_search, shell_session, skill_tools, web)
 
 WRITE_TOOLS = frozenset({"write_file", "patch_replace", "apply_blocks", "apply_patch"})
 ROOT_HANDLERS = (repo_search.HANDLERS, file_ops.HANDLERS, edit.HANDLERS, patch_v4a.HANDLERS,
                  shell_session.HANDLERS, process_manager.HANDLERS, web.HANDLERS,
-                 skill_tools.HANDLERS, browser.HANDLERS, memory_tools.HANDLERS)
+                 skill_tools.HANDLERS, browser.HANDLERS, memory_tools.HANDLERS,
+                 lsp_tools.HANDLERS)
 READ_ONLY = frozenset({"read_file", "search_files", "list_dir"})
 MAX_PARALLEL = 4
 
@@ -50,6 +52,14 @@ SCHEMAS = [
              "file_glob": {"type": "string", "description": "e.g. *.py"},
              "context": {"type": "integer", "description": "Lines of context around a match"},
              "limit": {"type": "integer"}}, ["pattern"]),
+    _schema("definition",
+            "Where a symbol is defined: file:line. Uses the language server when one is installed "
+            "and falls back to the AST map (stating that it did) when it is not.",
+            {"symbol": {"type": "string", "description": "Name to find, e.g. build_prefix"},
+             "path": {"type": "string", "description": "File to ask LSP about"},
+             "line": {"type": "integer", "description": "1-based line of the reference"},
+             "character": {"type": "integer", "description": "1-based column of the reference"}},
+            []),
     _schema("patch_replace",
             "Replace ONE block of text. Tolerates whitespace/indentation drift; refuses when the "
             "match is ambiguous or the result would not parse.",
@@ -205,11 +215,40 @@ class Registry:
         if observation.ok:
             if name in WRITE_TOOLS:
                 self.hints.reset(name, arguments)
+                self._lsp_notes(observation)
             return observation
         hint = self.hints.note(name, arguments, observation.text)
         if hint:
             observation.meta["hint"] = hint
         return observation
+
+    def _lsp_notes(self, observation):
+        """Tras escribir, un vistazo al servidor de lenguaje. Nunca retiene la escritura.
+
+        Presupuesto corto (1,2 s): un servidor lento no da veredicto y la escritura ya esta hecha. Sin
+        servidor instalado no se escribe nada -- una nota "no hay LSP" en cada patch es ruido, no dato.
+        """
+        from ..platform import lsp
+        files = [str(item) for item in (observation.meta.get("files") or []) if str(item).strip()]
+        problems = []
+        for path in files[:3]:
+            found, _reason = lsp.diagnose(self.root, path)
+            for item in found or []:
+                problems.append((path, item))
+        if not problems:
+            return
+        lines = []
+        for path, item in problems[:12]:
+            start = (item.get("range") or {}).get("start") or {}
+            lines.append("%s:%d:%d %s" % (Path(path).name, int(start.get("line", 0)) + 1,
+                                           int(start.get("character", 0)) + 1,
+                                           str(item.get("message") or "").strip()[:160]))
+        observation.text += "\n\n[lsp] %d problema(s) en lo escrito:\n%s" % (
+            len(problems), "\n".join(lines))
+        observation.meta["lsp"] = [
+            {"path": path, "message": str(item.get("message") or ""),
+             "line": int(((item.get("range") or {}).get("start") or {}).get("line", 0)) + 1}
+            for path, item in problems[:12]]
 
     def _dispatch(self, name, arguments):
         arguments = dict(arguments or {})

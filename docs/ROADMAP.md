@@ -10,7 +10,7 @@
 > motor y pone el build rojo. (3) El orden no se reordena por vistosidad: se reordena solo si un dato
 > medido lo obliga, y entonces se dice en el commit.
 
-Medido hoy: 62 suites · 220 ficheros · 57 módulos planos · 12 carpetas · 0 ficheros > 400 líneas.
+Medido hoy: 63 suites · 223 ficheros · 57 módulos planos · 12 carpetas · 0 ficheros > 400 líneas.
 
 ---
 
@@ -21,7 +21,7 @@ Medido hoy: 62 suites · 220 ficheros · 57 módulos planos · 12 carpetas · 0 
 | **0** | Tipografía determinista: 2 familias OFL en el paquete, 0 recursos externos | **HECHA** | `ef36f95` · suite `fonts` · DOM `[href],[src]` con `^https?` → 0 |
 | **1** | Que el repo deje de mentir (B7, B8, B9, B10, B12, B13, B14) | **HECHA** | `40adce5`, `7cfba97`, `5ef6acb`, `d018c64` · `doc_truth` GREEN · CI 8/8 |
 | **2** | Cerrar la arquitectura por capas: de 6/9 a 9/9 | **HECHA** | `cb7a6a4`, `cd3e8de`, `144c526`, `6d8bde2` · 9 paquetes, 50 módulos planos, `test_layers` con el invariante intacto |
-| **3** | Paridad competitiva: G, C, D, B, H | **EN CURSO** — G y C hechas | `88c8018` · suite `hooks` · gate obedece 0/10/20/30 · `41de9b8` · suite `stream` · `chat()` = `fold(stream())` |
+| **3** | Paridad competitiva: G, C, D, B, H | **EN CURSO** — G, C y D hechas | `88c8018` · suite `hooks` · gate obedece 0/10/20/30 · `41de9b8` · suite `stream` · `chat()` = `fold(stream())` · `a5f79eb` · suite `sandbox` · `unrestricted` sin jaula se niega |
 | **4** | Release: `dist/` fresco, versión, B6 | pendiente | — |
 
 **Puntuación de referencia (no re-puntuada):** `AUDIT_2026-10-29.md` §4 midió **media 4,55/10** con estos
@@ -79,7 +79,7 @@ mismo commit que mueve los ficheros. Cierre de fase: **9 paquetes**, `flat` de 5
 |---|---|---|---|---|
 | **9** | **G · Hooks/plugins** — **HECHA** (`88c8018`) | extensibilidad 1,5 → 8 | convierte el producto en ecosistema; reutiliza el contrato 0/10/20/**30** que ya existe | **cumplido**: `nexus_harness.toml` con `pre_verify` 10 → gate rojo · 0 → verde · 30 → no cambia el veredicto · sin fichero, motor inerte. Suite `hooks`, 9 casos, incluido un `before_commit` que impide un commit real |
 | **10** | **C · Streaming** — **HECHA** (`41de9b8`, `d88be86`) | agéntico 5 → 7 | cambia el tipo de retorno y ordena los transportes en uno: se hace una vez | **cumplido**: un proveedor guionizado devuelve el **iterador** de `delta/reasoning/tool_call/done` y `fold()` da el MISMO `Reply`; los cuatro parsers sobreviven a un JSON partido a la mitad; Detener cierra el socket (0,52 s, y el servidor ve caer la conexión); la cabina pide los deltas por `/api/events/stream` (SSE, api 4). Suite `stream`, 12 casos |
-| **11** | **D · Sandbox de proceso** | seguridad 4 → 7 | sin jaula, la autonomía es riesgo declarado | `policy.classify('rm -rf build','unrestricted')` → **negado** con razón; matriz 3 modos × 3 SO con SKIP explícito |
+| **11** | **D · Sandbox de proceso** — **HECHA** (`a5f79eb`) | seguridad 4 → 7 | sin jaula, la autonomía es riesgo declarado | **cumplido**: `classify('rm -rf build','unrestricted')` → negado con nivel `sandbox` y motivo; con jaula de ficheros → permitido; matriz 3 modos × 3 jaulas medida; Job Object con kill-on-close y tope de memoria medidos. Suite `sandbox`, 6 casos |
 | **12** | **B · LSP** | código 6 → 8 | el stdio JSON-RPC ya existe; degrada al mapa AST | tool `definition` sobre un fixture devuelve `fichero:línea`; sin servidor → fallback **con razón impresa** |
 | **13** | **H · Evals** | tareas 6 → 8 | mide capacidad; hoy son 7 tareas en 1 lenguaje | ~20 tareas en 3 lenguajes + mutar 3 líneas pone ≥1 test rojo; la negativa sigue en 10/10 |
 

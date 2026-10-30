@@ -13,7 +13,7 @@
 ## 0. Método
 
 - **Ejes propios medidos:** A/B de ahorro (mismo modelo, misma tarea, 2 modos), eval de capacidad (7
-  tareas golden), `verify` (62 suites).
+  tareas golden), `verify` (63 suites).
 - **Rivales:** no medidos en esta máquina; se comparan por **diseño público documentado** (lo que dicen sus
   papers, docs y repos). Se declara siempre cuándo un número es de ellos y cuándo es nuestro.
 - **Regla:** una ventaja solo cuenta si hay un comando detrás. Lo que no se puede reproducir, se etiqueta
@@ -173,7 +173,7 @@ ingeniería** (sandbox, LSP+streaming) y **una que no se programa** (ecosistema/
 
 ```
 Eres el Arquitecto Principal de Nexus-Harness. Repo: C:\Proyectos\Nexus-Harness (Python, 0 deps,
-v1.1.0, commit f8a2491). Suite verde: `python tools/verify.py` → lint 0 hallazgos / 62 suites / 0
+v1.1.0, commit f8a2491). Suite verde: `python tools/verify.py` → lint 0 hallazgos / 63 suites / 0
 ficheros >400 líneas. Perfil Hermes: nexus-harness.
 
 LEYES: (1) ningún fichero >400 líneas; (2) nada se declara hecho sin un comando que lo pruebe (exit 0);
