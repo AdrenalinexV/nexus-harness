@@ -84,9 +84,13 @@
   0 azul de corpus / 0 enlaces sin token. Hecho en `f3de194`.
   *Verificado con un clic real sobre cada botón y la sonda del portapapeles.*
 
-- [ ] **U-09 · Guía de uso** (`docs/UI_GUIDE.md`) — los cuatro ejes con capturas, atajos, accesibilidad
+- [x] **U-09 · Guía de uso** (`docs/UI_GUIDE.md`) — los cuatro ejes con capturas, atajos, accesibilidad
   (salto, reduced-motion, contraste) y cómo añadir un diseño o un pantón. Aceptación: enlaza capturas
-  existentes y no inventa comandos.
+  existentes y no inventa comandos. Hecho en `132839c`: las tres pantallas, los **cinco** ejes reales
+  (`ui_mode`/`ui_skin`/`ui_theme`/`ui_font`/`ui_density`, leídos de `ui_theme`), la tabla de atajos viva
+  (`SHORTCUTS`) y los comandos que el repo trae (`gen_themes.py --check`, `run(['themes'])`, `verify.py`).
+  Las **19** capturas enlazadas existen (`os.path.isfile` sobre `docs/ui/`); 161 líneas < 400.
+  *Verificado con `--check` y `verify.py` ambos exit 0.*
 
 - [ ] **U-10 · Revisión de estados vacíos** — cada panel de `/settings` sin datos dice qué hacer; los
   tres peores (skills sin skills, vps sin claves, mcp sin servidores) con texto accionable.
