@@ -16,7 +16,7 @@ from pathlib import Path
 from .platform import ledger
 from .core import tasks
 from .verify import oracle
-from .spec_synth import SPEC_REL
+from .spec.spec_synth import SPEC_REL
 
 MAX_FILES = 400
 BIG_FILE = 350

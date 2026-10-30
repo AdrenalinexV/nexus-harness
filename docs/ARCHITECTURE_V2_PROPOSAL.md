@@ -20,7 +20,7 @@
 
 ## 1. El defecto estructural nº1: el espacio de nombres es plano
 
-`nexus_harness/` tiene 53 módulos planos y 10 carpetas (`context/`, `core/`, `llm/`, `platform/`,
+`nexus_harness/` tiene 52 módulos planos y 11 carpetas (`context/`, `core/`, `llm/`, `platform/`,
 `selftests/`, `skills/`, `tools/`, `verify/`, `web/`; `llm/transports/` ya cuelga de su capa), así que el
 espacio de nombres sigue siendo mayoritariamente plano. Eso es lo que hace que el techo de 400 líneas
 **duela**: `triad_loop.py` a 399 no es «un módulo grande», es **una capa entera sin casa**.
@@ -35,7 +35,7 @@ nexus_harness/
   context/     compiler, pruner, compaction, relay_state, repo_map
   verify/      gate, judge, oracle, smoke
   autonomy/    autonomy, daemon, plan_graph, spec_synth
-  spec/        criteria, graph
+  spec/        spec_synth (los criterios viven dentro; `criteria.py` nunca existió)
   learning/    outcomes, reflection, skill_forge, skill_router
   platform/    settings_*, web/, cockpit, vault, vps_deployer
 ```

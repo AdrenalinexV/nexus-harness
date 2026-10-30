@@ -94,6 +94,21 @@ def rewrite(path, mapping, apply_changes):
     lines = text.splitlines()
     edits = []
     for node in ast.walk(tree):
+        if isinstance(node, ast.Call):
+            # `import_module("nexus_harness.lo_que_sea")` es una referencia real a un módulo escrita como
+            # cadena. No se tocan cadenas en general (un docstring no es un import), pero esta forma sí:
+            # dejarla apunta a un módulo que ya no existe y solo revienta en tiempo de ejecución.
+            label = getattr(node.func, "id", "") or getattr(node.func, "attr", "")
+            if label in ("import_module", "__import__") and node.args:
+                argument = node.args[0]
+                if isinstance(argument, ast.Constant) and isinstance(argument.value, str):
+                    target = retarget(argument.value, mapping)
+                    if target != argument.value:
+                        # La cadena puede estar en OTRA línea que la llamada (`import_module(` + salto).
+                        row = argument.lineno - 1
+                        new = lines[row].replace('"%s"' % argument.value, '"%s"' % target)
+                        edits.append((row + 1, row + 1, new))
+            continue
         if isinstance(node, ast.Import):
             for alias in node.names:
                 target = retarget(alias.name, mapping)

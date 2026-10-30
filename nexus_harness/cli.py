@@ -194,7 +194,7 @@ def cmd_gate(args):
 def cmd_spec(args):
     """Objetivo -> criterios ejecutables, validados hoy. Sin `--write` es un plan en seco."""
     from .llm.providers import Router
-    from .spec_synth import synthesize
+    from .spec.spec_synth import synthesize
 
     config = _config(args)
     router = Router(config) if getattr(args, "model", False) else None

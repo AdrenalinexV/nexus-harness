@@ -343,7 +343,7 @@ def test_a_finding_grows_the_spec(failures):
         check("el nuevo entra con su origen", spec["cas"][1]["source"], "director", failures)
         check("y la spec dice quien la amplio", spec.get("grown_by"), "autonomy", failures)
         check("el sha cubre el conjunto", spec["cas_sha256"], __import__(
-            "nexus_harness.spec_synth", fromlist=["_sha"])._sha(spec["cas"]), failures)
+            "nexus_harness.spec.spec_synth", fromlist=["_sha"])._sha(spec["cas"]), failures)
     finally:
         shutil.rmtree(workspace, ignore_errors=True)
 

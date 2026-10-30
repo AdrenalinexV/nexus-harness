@@ -37,6 +37,7 @@ DECLARED = {
                 "savings", "skill_router", "triad_brief"),
     "verify": ("checkpoint", "gate", "linelaw", "oracle", "repair_guard", "worktree_sandbox"),
     "autonomy": ("autonomy", "autonomy_ask", "daemon", "plan_graph"),
+    "spec": ("spec_synth",),
 }
 
 

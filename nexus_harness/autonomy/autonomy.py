@@ -25,7 +25,8 @@ from pathlib import Path
 
 from nexus_harness.platform import backup, ledger
 from nexus_harness.autonomy import plan_graph
-from nexus_harness import projects, spec_synth
+from nexus_harness import projects
+from nexus_harness.spec import spec_synth
 from nexus_harness.autonomy import autonomy_ask
 from nexus_harness.reflection import lessons_block
 from nexus_harness.context.repo_map import RepoMap

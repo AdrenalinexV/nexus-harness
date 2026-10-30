@@ -24,8 +24,8 @@ import time
 from dataclasses import dataclass
 from pathlib import Path
 
-from .platform import policy
-from .verify import oracle
+from nexus_harness.platform import policy
+from nexus_harness.verify import oracle
 
 SPEC_REL = Path(".ai") / "CURRENT_SPEC.json"
 MAX_CAS = 8
@@ -96,7 +96,7 @@ def _object(text):
 
 def director_candidates(router, root, goal, config=None):
     """El Director propone criterios; el arnes los valida. Su opinion no basta para congelarlos."""
-    from .core.message import Message
+    from nexus_harness.core.message import Message
 
     prompt = ("Proyecto: %s\nObjetivo: %s\n\nPropone entre 2 y %d criterios de aceptacion "
               "EJECUTABLES: cada uno con un comando de shell que salga 0 cuando el objetivo este "

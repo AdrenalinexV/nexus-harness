@@ -9,7 +9,7 @@ Lo que se mide aqui:
 import json
 
 from .fakes import FakeRouter, ScriptedProvider, TempProject, reply
-from .. import spec_synth
+from ..spec import spec_synth
 from ..config import HarnessConfig
 from ..projects import spec_of
 
