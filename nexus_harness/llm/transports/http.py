@@ -100,9 +100,9 @@ class Live:
         """Shutdown + close. Un socket ya muerto es el estado que buscabamos, no un fallo."""
         self.closed = True
         if self.sock is not None:
-            with contextlib.suppress(OSError):
+            with contextlib.suppress(OSError, ValueError):
                 self.sock.shutdown(socket.SHUT_RDWR)
-            with contextlib.suppress(OSError):
+            with contextlib.suppress(OSError, ValueError):
                 self.sock.close()
         with contextlib.suppress(Exception):
             self.conn.close()
@@ -153,8 +153,10 @@ def stream_lines(url, payload=None, headers=None, timeout=240, method=None):
         while True:
             try:
                 line = response.readline()
-            except (OSError, http.client.HTTPException) as exc:
-                if live.closed:  # lo corto Detener: es la salida esperada, no un fallo del turno
+            except (OSError, ValueError, http.client.HTTPException) as exc:
+                # ValueError entra aqui por 3.13: leer de un file object ya cerrado por Detener lanza
+                # "I/O operation on closed file" en vez de un OSError del socket. Es la salida esperada.
+                if live.closed:
                     return
                 raise TransportError("%s se corto a mitad: %s" % (url, exc)) from exc
             if not line:

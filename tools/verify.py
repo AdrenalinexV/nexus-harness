@@ -65,6 +65,21 @@ def frozen_row(source_summary):
 
 
 
+def failing_detail(output):
+    """Las lineas de las suites en FAIL, con sus motivos, tal cual las imprimio el selftest."""
+    keep, inside = [], False
+    for line in str(output or "").splitlines():
+        if " FAIL " in line:
+            inside = True
+            keep.append(line.rstrip())
+            continue
+        if inside and line.lstrip().startswith("- "):
+            keep.append("  " + line.strip())
+            continue
+        inside = False
+    return keep
+
+
 def report_lines(rows):
     """Las lineas que se imprimen Y las que se escriben en el registro: una sola fuente.
 
@@ -137,6 +152,11 @@ def main(argv=None):
     lines, failed = report_lines(rows)
     for line in lines:
         print(line)
+    if "selftest" in failed:
+        # Un rojo que solo dice "failing=stream" obliga a repetir la corrida entera para saber QUE
+        # comprobacion fallo -- en CI eso es otro par de minutos y un log que no ensena nada.
+        for line in failing_detail(suites):
+            print(line)
     if args.write_doc:
         command = "python tools/verify.py --write-doc" + (" --frozen" if args.frozen else "") + \
                   (" --audit" if args.audit else "")
