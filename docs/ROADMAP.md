@@ -20,8 +20,8 @@ Medido hoy: 59 suites · 208 ficheros · 57 módulos planos · 12 carpetas · 0 
 |---|---|---|---|
 | **0** | Tipografía determinista: 2 familias OFL en el paquete, 0 recursos externos | **HECHA** | `ef36f95` · suite `fonts` · DOM `[href],[src]` con `^https?` → 0 |
 | **1** | Que el repo deje de mentir (B7, B8, B9, B10, B12, B13, B14) | **HECHA** | `40adce5`, `7cfba97`, `5ef6acb`, `d018c64` · `doc_truth` GREEN · CI 8/8 |
-| **2** | Cerrar la arquitectura por capas: de 6/9 a 9/9 | **SIGUIENTE** | — |
-| **3** | Paridad competitiva: G, C, D, B, H | pendiente | — |
+| **2** | Cerrar la arquitectura por capas: de 6/9 a 9/9 | **HECHA** | `cb7a6a4`, `cd3e8de`, `144c526`, `6d8bde2` · 9 paquetes, 50 módulos planos, `test_layers` con el invariante intacto |
+| **3** | Paridad competitiva: G, C, D, B, H | **SIGUIENTE** | — |
 | **4** | Release: `dist/` fresco, versión, B6 | pendiente | — |
 
 **Puntuación de referencia (no re-puntuada):** `AUDIT_2026-10-29.md` §4 midió **media 4,55/10** con estos
@@ -34,23 +34,38 @@ subirá en la fase 3, que es donde están los cuatro subsistemas ausentes.
 
 ---
 
-## 2. Siguiente paso concreto (fase 2, pasos 7–8)
+## 2. Fase 2, cerrada — y lo que enseñó el código
 
-**Por qué ahora y no hooks primero.** Hooks (G) es el eje de más valor, pero toca `before_turn`,
-`after_tool`, `before_commit` y `pre_verify` — cuatro puntos del bucle. Añadirlos con el espacio de
-nombres plano obliga a reabrir el bucle otra vez cuando se muevan `autonomy`, `spec` y `learning`. Es
-el mismo argumento que la propuesta V2 hace para streaming: **se ordena una vez, antes de más
-superficie**.
+**Por qué fue antes que hooks.** Hooks (G) toca `before_turn`, `after_tool`, `before_commit` y
+`pre_verify` — cuatro puntos del bucle. Añadirlos con el espacio de nombres plano obliga a reabrir el
+bucle otra vez cuando se muevan `autonomy`, `spec` y `learning`. Se ordena una vez, antes de más
+superficie.
 
-| # | paso | criterio de cierre (comando → exit) |
+| # | paso | resultado medido |
 |---|---|---|
-| **7** | **B15**: mover `nexus_harness/transports/` a `llm/transports/` y reescribir los 5 imports hacia arriba | `test_layers` verde con `llm` conteniendo `transports/`; 0 imports `llm → ..transports` |
-| **8a** | `autonomy/`: autonomy, autonomy_ask, daemon, plan_graph | `verify` GREEN en los dos modos, `wc -l` de cada fichero tocado < 400 |
-| **8b** | `spec/`: spec_synth — **`criteria` no existe**: `Candidate`/`GREEN` viven dentro de `spec_synth.py`, y no se inventa un fichero para que el dibujo cuadre | ídem |
-| **8c** | `learning/`: reflection, improve. **`skill_forge` y `skill_router` NO vienen** (medido): los usa `tools/toolbox/skill_tools.py` y `context/savings.py`, así que moverlos haría que tools y context importaran hacia arriba | `test_layers` verde; `ORDER` pasa a `… verify, spec, learning, autonomy` porque el código manda: `autonomy` importa `spec_synth` e `improve`, y `improve` importa `spec` |
+| **7** | **B15**: `transports/` a `llm/transports/` | `cb7a6a4` · 15 imports reescritos, 0 `llm → ..transports` |
+| **8a** | `autonomy/`: autonomy, autonomy_ask, daemon, plan_graph | `cd3e8de` · 110 módulos importan, 0 rotos |
+| **8b** | `spec/`: spec_synth — **`criteria` no existe** (`Candidate`/`GREEN` viven dentro) | `144c526` |
+| **8c** | `learning/`: reflection, improve | `6d8bde2` · 9/9 paquetes |
+
+**Lo que la fase corrigió del plan, con la medición delante:**
+
+1. `criteria.py` **nunca existió**: la propuesta v2 lo dibujó y la auditoría lo copió. Se mueve lo que
+   hay; inventar un fichero para que el dibujo cuadre es justo lo que este repo persigue.
+2. `skill_forge` y `skill_router` **no pueden venir** a `learning/`: los consume `tools/toolbox/
+   skill_tools.py` y `context/savings.py`, así que traerlos invertiría la dependencia (el defecto que
+   esta fase cierra, del revés). Se quedan donde su consumidor los necesita.
+3. `ORDER` cambia porque el código manda: `autonomy` importa `spec_synth` e `improve`, e `improve`
+   importa `spec`. El orden real es `… verify, spec, learning, autonomy`.
+4. El rewriter aprendió tres trampas nuevas (sangría, `from pkg import a, b` con solo `a` movido, y
+   nombres que son clases y no módulos) más la idempotencia y `import_module("…")` como cadena.
+
+**Anti-regresión añadida al gate:** `test_layers` ahora exige que **cada módulo del paquete importe**
+(`walk_packages`, 110 módulos, ~1 s). Al mover `autonomy` rompieron cuatro imports y ninguna suite los
+tocaba.
 
 Un paquete por commit, imports reescritos con AST (no `sed`), y `test_layers.DECLARED` actualizado en el
-mismo commit que mueve los ficheros. Cierre de fase: **9 paquetes**, `flat` baja de 57, y
+mismo commit que mueve los ficheros. Cierre de fase: **9 paquetes**, `flat` de 57 a **50**, y
 `python tools/doc_truth.py --write` deja los docs cuadrando.
 
 **Riesgo declarado:** cada movimiento puede engordar un fichero al rewiring mecánico. Un 399 acaba en
