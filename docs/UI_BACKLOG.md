@@ -22,9 +22,12 @@
   caída a `execCommand`; feedback `copiado` y vuelta a `copiar` a los 1,6 s. Hecho en `123a424`+ (ver
   `chat_stream.js`, `.copy` en `app.css`). *Verificado con clic real (CDP): label `copiado`.*
 
-- [ ] **U-02 · Banda de reintento** — si `/api/state` falla 3 veces seguidas, mostrar la banda `#warn`
-  con el texto «motor sin respuesta · Reintentar» y un botón que reintente ya. Aceptación: con el motor
-  apagado aparece en ≤8 s; al volver, desaparece. Verificación: navegador (apagar/encender el servidor).
+- [x] **U-02 · Banda de reintento** — si `/api/state` falla 3 veces seguidas, se levanta la banda
+  `#warn` con «motor sin respuesta · Reintentar» y un botón que reintenta ya; al volver el motor, la
+  banda se retira sola. Medido en navegador real (CDP, motor aislado): último sondeo bueno → tercera
+  falla **7,50 s** (≤8 s); clic real en `Reintentar` → `GET /api/state` **1 ms** después; motor
+  relanzado → banda oculta y `failures=0`. Hecho en `f502424` (`showOffline`/`markReachable` en
+  `app.js`). *Verificado con apagar/encender el servidor.*
 
 - [ ] **U-03 · Exportar el hilo a Markdown** — botón `Exportar` en `.doc-head`; genera un `.md` con
   `## folio NN · ROL`, el texto y las herramientas, y lo descarga con `Blob`. Aceptación: el blob
