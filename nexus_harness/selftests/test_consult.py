@@ -176,7 +176,7 @@ def test_the_loop_asks_before_giving_up(failures):
     """Un rojo no arreglado deja una pregunta escrita y NO se inventa la decision."""
     import json
     import shutil
-    from .. import autonomy, autonomy_ask
+    from ..autonomy import autonomy, autonomy_ask
     from ..config import HarnessConfig as _Config
     from ..platform.events import Bus
 
@@ -235,7 +235,7 @@ def test_revert_undoes_the_turn(failures):
     """`revertir` no es una palabra: restaura los bytes que el turno tenia antes."""
     import shutil
     from ..verify import checkpoint
-    from .. import autonomy_ask
+    from ..autonomy import autonomy_ask
 
     workspace = Path(tempfile.mkdtemp(prefix="consult-undo-"))
     try:

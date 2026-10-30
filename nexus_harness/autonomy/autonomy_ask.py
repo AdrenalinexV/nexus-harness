@@ -12,8 +12,8 @@ tres salidas, cada una con un efecto declarado sobre el proyecto:
 Sin canales legibles el defecto es **parar**: un bucle que se inventa una decision cuando nadie
 contesta es exactamente lo que este arnes existe para no hacer.
 """
-from .verify import checkpoint
-from . import consult, consult_channels
+from nexus_harness.verify import checkpoint
+from nexus_harness import consult, consult_channels
 
 OPTIONS = ("seguir", "revertir", "parar")
 

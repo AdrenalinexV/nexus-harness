@@ -21,7 +21,8 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 from nexus_harness.platform import backup
-from nexus_harness import autonomy, projects, runner  # noqa: E402
+from nexus_harness.autonomy import autonomy
+from nexus_harness import projects, runner
 from nexus_harness.config import HarnessConfig  # noqa: E402
 from nexus_harness.platform.events import Bus  # noqa: E402
 from nexus_harness.llm.providers import Router  # noqa: E402

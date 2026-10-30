@@ -36,6 +36,7 @@ DECLARED = {
     "context": ("compaction", "context_compiler", "context_pruner", "memory", "repo_map",
                 "savings", "skill_router", "triad_brief"),
     "verify": ("checkpoint", "gate", "linelaw", "oracle", "repair_guard", "worktree_sandbox"),
+    "autonomy": ("autonomy", "autonomy_ask", "daemon", "plan_graph"),
 }
 
 
@@ -131,6 +132,26 @@ def test_every_layer_loads(failures):
     check("y el orden de capas empieza por platform", ORDER[0], "platform", failures)
 
 
+def test_every_module_imports(failures):
+    """TODO modulo del paquete importa. Es la red que caza un movimiento de fichero a medio hacer.
+
+    Cuando un modulo cambia de casa, el fallo no es una suite roja: es un `ModuleNotFoundError` que solo
+    aparece cuando alguien ejecuta ese camino concreto. Al mover `autonomy` rompieron cuatro imports y
+    ninguno de los que el gate corria los tocaba; esto los toca todos, y cuesta un segundo.
+    """
+    import pkgutil
+    import nexus_harness
+    broken = []
+    for found in pkgutil.walk_packages(nexus_harness.__path__, "nexus_harness."):
+        if ".selftests" in found.name:
+            continue
+        try:
+            importlib.import_module(found.name)
+        except Exception as exc:  # noqa: BLE001 -- el import roto ES el hallazgo
+            broken.append("%s: %s: %s" % (found.name, type(exc).__name__, exc))
+    check("cada modulo del paquete importa", broken, [], failures)
+
+
 def run():
     if getattr(sys, "frozen", False):
         # La suite mide CARPETAS del checkout (`nexus_harness/platform`, `context`...). En el binario
@@ -140,4 +161,5 @@ def run():
     test_declared_is_real(failures)
     test_nobody_imports_upwards(failures)
     test_every_layer_loads(failures)
+    test_every_module_imports(failures)
     return failures

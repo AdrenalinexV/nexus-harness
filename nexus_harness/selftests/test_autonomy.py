@@ -10,7 +10,8 @@ import tempfile
 from pathlib import Path
 
 from ..platform import ledger
-from .. import autonomy, projects
+from ..autonomy import autonomy
+from .. import projects
 from ..config import HarnessConfig
 from ..platform.events import Bus
 

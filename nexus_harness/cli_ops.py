@@ -16,7 +16,7 @@ def _config(args):
 def cmd_daemon(args):
     """Trabajo autonomo en bucle. `--once` es un tick (para cron); sin el, hasta Ctrl-C o rondas."""
     import threading
-    from .daemon import Daemon
+    from .autonomy.daemon import Daemon
 
     config = _config(args)
     daemon = Daemon(config, interval=args.interval, iterations=args.iterations)

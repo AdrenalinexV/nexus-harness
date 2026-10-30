@@ -23,11 +23,12 @@ import threading
 import time
 from pathlib import Path
 
-from .platform import backup, ledger
-from . import plan_graph, projects, spec_synth
-from . import autonomy_ask
-from .reflection import lessons_block
-from .context.repo_map import RepoMap
+from nexus_harness.platform import backup, ledger
+from nexus_harness.autonomy import plan_graph
+from nexus_harness import projects, spec_synth
+from nexus_harness.autonomy import autonomy_ask
+from nexus_harness.reflection import lessons_block
+from nexus_harness.context.repo_map import RepoMap
 
 AUTONOMY_LOG = Path(".nexus") / "harness" / "autonomy.jsonl"
 
@@ -57,7 +58,7 @@ def parse_plan(text):
 
 def model_planner(router, config):
     """El planificador de verdad: el Director, con la spec y el progreso delante."""
-    from .core.message import Message
+    from nexus_harness.core.message import Message
 
     def plan(root, goal, progress):
         spec = projects.spec_of(root)

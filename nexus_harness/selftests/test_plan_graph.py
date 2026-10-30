@@ -3,7 +3,7 @@
 Lo que se mide: que un plan de un solo paso se acepte (degradar), que un grafo con dependencias se
 ordene, que un ciclo se RECHAce en vez de ejecutarse a medias, y que el techo de nodos se respete.
 """
-from .. import plan_graph
+from ..autonomy import plan_graph
 
 
 def check(name, got, expected, failures):

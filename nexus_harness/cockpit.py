@@ -18,7 +18,7 @@ from dataclasses import replace
 from pathlib import Path
 
 from . import __version__, panels, runner
-from .autonomy import Autopilot, model_planner
+from .autonomy.autonomy import Autopilot, model_planner
 from .bridge import Bridge
 from .chat import Chat
 from .config import HarnessConfig

@@ -20,7 +20,7 @@ from .fakes import TempProject
 from ..core import tasks
 from .. import improve
 from ..config import HarnessConfig
-from ..daemon import Daemon
+from ..autonomy.daemon import Daemon
 
 
 def check(name, got, expected, failures):

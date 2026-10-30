@@ -24,10 +24,10 @@ import os
 import time
 from pathlib import Path
 
-from . import improve, projects, spec_synth
-from .autonomy import Autopilot
-from .notify import Notifier, summary
-from .core.tasks import Inbox
+from nexus_harness import improve, projects, spec_synth
+from nexus_harness.autonomy.autonomy import Autopilot
+from nexus_harness.notify import Notifier, summary
+from nexus_harness.core.tasks import Inbox
 
 STATE_NAME = "daemon.json"
 LOCK_NAME = "daemon.lock"
@@ -67,8 +67,8 @@ def _alive(pid):
 
 def default_runner(config):
     """El ejecutor real: una triada completa por tarea. Se importa aqui para no cargar el motor en tests."""
-    from .llm.providers import Router
-    from .runner import run_triad
+    from nexus_harness.llm.providers import Router
+    from nexus_harness.runner import run_triad
 
     def run(goal, root):
         result, _triad = run_triad(config, Path(root), goal, Router(config))
@@ -95,8 +95,8 @@ class Daemon:
         if planner is None and runner is None:
             # Produccion: el planificador es el Director real. En pruebas se inyecta un runner y el
             # planificador de reserva convierte el objetivo en un unico paso (sin modelo).
-            from .autonomy import model_planner
-            from .llm.providers import Router
+            from nexus_harness.autonomy.autonomy import model_planner
+            from nexus_harness.llm.providers import Router
             planner = model_planner(Router(config), config)
         self.autopilot = Autopilot(config, runner=runner or default_runner(config),
                                    planner=planner or self._fallback_planner, bus=bus,

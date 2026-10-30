@@ -48,10 +48,18 @@ def absolute(node, package):
 
 
 def retarget(module, mapping):
-    """El prefijo más largo del mapa que case, para no partir nombres por la mitad."""
+    """El prefijo más largo del mapa que case, para no partir nombres por la mitad.
+
+    Es **idempotente**: si el módulo ya empieza por el destino, se deja como está. Sin eso, una segunda
+    pasada del mismo mapa convierte `nexus_harness.autonomy.autonomy` en `...autonomy.autonomy.autonomy`,
+    que es cómo un rewrite 'repetible' deja de serlo.
+    """
     for old in sorted(mapping, key=len, reverse=True):
+        new = mapping[old]
+        if module == new or module.startswith(new + "."):
+            return module
         if module == old or module.startswith(old + "."):
-            return mapping[old] + module[len(old):]
+            return new + module[len(old):]
     return module
 
 
@@ -99,9 +107,10 @@ def rewrite(path, mapping, apply_changes):
         absolute_module = absolute(node, package)
         if absolute_module is None:
             continue
-        groups = _groups(node, absolute_module, mapping)
-        if all(module == absolute_module for module, _names in groups):
-            continue  # nada de esta linea se muda: reconstruirla solo cambiaria el formato
+        base = retarget(absolute_module, mapping)
+        groups = _groups(node, absolute_module, base, mapping)
+        if base == absolute_module and all(module == base for module, _names in groups):
+            continue  # nada de esta línea se muda: reconstruirla solo cambiaría el formato
         pieces = []
         for module, names in groups:
             if node.level:
@@ -133,7 +142,7 @@ def _indented(new, first_line):
     return "\n".join(indent + row for row in new.splitlines()) if indent else new
 
 
-def _groups(node, absolute_module, mapping):
+def _groups(node, absolute_module, fallback, mapping):
     """Reparte los nombres de un `from X import a, b` por su módulo de destino.
 
     `from nexus_harness import plan_graph, projects` importa DOS módulos disfrazados de uno: si uno se
@@ -153,7 +162,7 @@ def _groups(node, absolute_module, mapping):
             module = head or mapping[candidate]
             name = leaf + (" as %s" % alias.asname if alias.asname else "")
         else:
-            module = absolute_module
+            module = fallback
         if module not in groups:
             groups[module] = []
             order.append(module)
