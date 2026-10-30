@@ -22,7 +22,7 @@ Medido hoy: 63 suites · 224 ficheros · 57 módulos planos · 12 carpetas · 0 
 | **1** | Que el repo deje de mentir (B7, B8, B9, B10, B12, B13, B14) | **HECHA** | `40adce5`, `7cfba97`, `5ef6acb`, `d018c64` · `doc_truth` GREEN · CI 8/8 |
 | **2** | Cerrar la arquitectura por capas: de 6/9 a 9/9 | **HECHA** | `cb7a6a4`, `cd3e8de`, `144c526`, `6d8bde2` · 9 paquetes, 50 módulos planos, `test_layers` con el invariante intacto |
 | **3** | Paridad competitiva: G, C, D, B, H | **HECHA** — los cinco pasos con su suite | `88c8018` · suite `hooks` · gate obedece 0/10/20/30 · `41de9b8` · suite `stream` · `chat()` = `fold(stream())` · `a5f79eb` · suite `sandbox` · `unrestricted` sin jaula se niega · `3ba9c5d` · suite `lsp` · `definition` con fallback declarado · `e19fd2c` · suite `eval` · 20 tareas y mutation smoke |
-| **4** | Release: `dist/` fresco, versión, B6 | **EN CURSO** — frescura HECHA, B6 pendiente | `verify.py --frozen` verde con 1.2.0 instalado |
+| **4** | Release: `dist/` fresco, versión, B6 | **HECHA** | `verify.py --frozen` → `frozen exit 0 suites=63` · 1.2.0 instalado con el sha256 del repo · `f30ea31` |
 
 **Puntuación de referencia (no re-puntuada):** `AUDIT_2026-10-29.md` §4 midió **media 4,55/10** con estos
 diez ejes: gobernanza **8,5** · autonomía **8,0** · contexto **7,0** · ecosistema **6,0** · UI **5,5** ·
@@ -93,7 +93,7 @@ lo que ya ganamos no mueve la media.
 | # | paso | criterio |
 |---|---|---|
 | **14** | **I**: versión **1.2.0**, `dist/` reconstruido (motor 19,3 MB + instalador 19,5 MB) y frescura medida | **cumplido**: `verify.py --frozen` → `frozen exit 0 suites=63 failures=0 skipped=7`; `find … -newer dist/nexus-harness-engine.exe \| wc -l` → **0**; instalado en `%LOCALAPPDATA%\Nexus Harness` con el sha256 del repositorio (`installer_verify --verify` → 0) |
-| **15** | **B6**: `TurnLedger.rows()` deduplica igual que `history()` | fixture con dos escritores → **1 fila** por corrida |
+| **15** | **B6**: `TurnLedger.rows()` deduplica igual que `history()` — **HECHA** (`f30ea31`) | **cumplido**: fixture con dos escritores → **1 fila** (120 tokens, no 240); y dos ciclos distintos siguen siendo 2 filas |
 
 Un binario viejo pasa cualquier proof que solo mire `failures=0`: por eso la frescura es un criterio de
 release, no una nota.
