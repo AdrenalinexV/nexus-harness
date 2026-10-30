@@ -50,7 +50,7 @@ def _render(rows):
 
 
 def ast_references(root, name, limit=400):
-    """Usos del NOMBRE en el AST del proyecto. No es resolucion de simbolos: se dice en la respuesta."""
+    """Apariciones del NOMBRE en el AST (definicion, imports y usos). No resuelve simbolos: se dice."""
     needle = str(name or "").strip()
     if not needle:
         return [], "sin simbolo que buscar"
@@ -67,8 +67,16 @@ def ast_references(root, name, limit=400):
         except (OSError, SyntaxError):
             continue
         for node in ast.walk(tree):
-            name_of = node.id if isinstance(node, ast.Name) else (
-                node.attr if isinstance(node, ast.Attribute) else "")
+            if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)):
+                name_of = node.name
+            elif isinstance(node, ast.alias):
+                name_of = node.name
+            elif isinstance(node, ast.Name):
+                name_of = node.id
+            elif isinstance(node, ast.Attribute):
+                name_of = node.attr
+            else:
+                continue
             if name_of == needle:
                 found.append({"path": path.relative_to(base).as_posix(),
                               "line": int(getattr(node, "lineno", 0) or 0), "character": 0})

@@ -158,15 +158,20 @@ def test_references_finds_every_use(failures):
         finally:
             client.close()
 
-    text, meta = lsp_tools.references(".", {"symbol": "check"}, None)
-    check("el fallback por nombre encuentra usos", meta.get("source"), "ast", failures)
-    check("y lo dice en la respuesta", text.startswith("[mapa AST"), True, failures)
-    try:
-        lsp_tools.references(".", {"symbol": "no_existe_jamas_123"}, None)
-        raised = ""
-    except ValueError as exc:
-        raised = str(exc)
-    check("sin coincidencias se dice", "no references" in raised, True, failures)
+    # El fallback se mide en un proyecto de usar y tirar: buscar en el cwd hacia que esta suite
+    # dependiera del checkout (y fallara en el wheel, donde no hay repo alrededor).
+    with Project({"uno.py": "def target():\n    return 1\n",
+                  "dos.py": "from uno import target\n\ntarget()\n"}) as root:
+        text, meta = lsp_tools.references(root, {"symbol": "target"}, None)
+        check("el fallback por nombre encuentra usos", meta.get("source"), "ast", failures)
+        check("y lo dice en la respuesta", text.startswith("[mapa AST"), True, failures)
+        check("con los dos ficheros", (text.count("uno.py"), text.count("dos.py")), (1, 2), failures)
+        try:
+            lsp_tools.references(root, {"symbol": "no_existe_jamas_123"}, None)
+            raised = ""
+        except ValueError as exc:
+            raised = str(exc)
+        check("sin coincidencias se dice", "no references" in raised, True, failures)
 
 
 def run():
