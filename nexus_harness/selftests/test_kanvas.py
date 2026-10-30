@@ -202,9 +202,12 @@ def test_the_page_serves_the_graph(failures):
             page = urllib.request.urlopen(urllib.request.Request(base + "/kanvas", headers=headers),
                                           timeout=10).read().decode("utf-8")
             check("la pagina trae el lienzo del grafo", 'id="k-edges"' in page, True, failures)
+            check("y la cola de proyectos", 'id="k-projects"' in page, True, failures)
             check("y su script", 'src="kanvas.js"' in page, True, failures)
             payload = json.loads(urllib.request.urlopen(
                 urllib.request.Request(base + "/api/kanvas", headers=headers), timeout=10).read())
+            check("la API trae la cola de proyectos", isinstance(payload.get("portfolio"), list), True,
+                  failures)
             check("la API devuelve el tablero", [row["id"] for row in payload["tasks"]],
                   ["TK-01", "TK-02"], failures)
             check("con el estado efectivo", [row["status"] for row in payload["tasks"]],

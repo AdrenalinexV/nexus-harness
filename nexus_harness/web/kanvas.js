@@ -1,13 +1,16 @@
-/* El tablero vivo: pinta el grafo desde `/api/kanvas` y se refresca con el bus (SSE).
-
-   Nada de estado propio que pueda mentir: el tablero que se pinta es el que devuelve el motor, y cada
-   accion vuelve a pedirlo. Las flechas son curvas bezier calculadas desde la posicion real de las
-   entradas, asi que siguen siendo ciertas cuando la ventana cambia de ancho. */
+/* El tablero vivo: la cola de proyectos a la izquierda, UN proyecto a la derecha, y el bus (SSE) para
+   refrescar. Nada de estado propio que pueda mentir: lo que se pinta es lo que devuelve `/api/kanvas`, y
+   cada accion vuelve a pedirlo. Las flechas son bezier calculadas desde la posicion real de las entradas,
+   asi que siguen siendo ciertas cuando la ventana cambia de ancho. */
 window.NexusKanvas = (function () {
   const $ = (id) => document.getElementById(id);
   const TOKEN = window.NexusToken || '';
   const STATUS_ORDER = ['proposed', 'blocked', 'todo', 'doing', 'review', 'done'];
-  const state = {board: null, filter: '', since: 0, running: false, source: null};
+  // Lo que esta vivo primero; lo cerrado, al final y atenuado: asi se lee que toca sin contar ids.
+  const WEIGHT = {doing: 0, review: 1, todo: 2, blocked: 3, proposed: 4, done: 5};
+  const params = new URLSearchParams(location.search);
+  const state = {board: null, filter: '', since: 0, running: false, source: null,
+                 project: params.get('project') || ''};
 
   function esc(text) {
     return String(text == null ? '' : text)
@@ -32,24 +35,23 @@ window.NexusKanvas = (function () {
     box.hidden = !text;
   }
 
-  async function load() {
-    const {ok, data} = await api('/api/kanvas');
-    if (!ok) { warn('el motor no contesta a /api/kanvas'); return; }
-    state.board = data;
-    paint();
+  function url() {
+    return '/api/kanvas' + (state.project ? '?project=' + encodeURIComponent(state.project) : '');
   }
 
-  function visible(task) {
-    if (!state.filter) return true;
-    const needle = state.filter.toLowerCase();
-    return [task.id, task.title, task.track, task.status].join(' ').toLowerCase().includes(needle);
+  async function load() {
+    const {ok, data} = await api(url());
+    if (!ok) { warn('el motor no contesta a /api/kanvas'); return; }
+    state.board = data;
+    paintRail();
+    paint();
   }
 
   /* Todo lo que entra por `innerHTML` pasa por `esc()`; las flechas solo llevan numeros.
      Un titulo de tarea lo escribe un modelo, asi que se trata como texto, nunca como marcado. */
   function card(task) {
     const el = document.createElement('article');
-    el.className = 'ktask';
+    el.className = 'ktask' + (task.status === 'done' ? ' closed' : '');
     el.dataset.id = task.id;
     el.dataset.status = task.status;
     el.dataset.deps = (task.depends_on || []).join(',');
@@ -73,7 +75,7 @@ window.NexusKanvas = (function () {
     if (task.yolo) {
       const mark = document.createElement('span');
       mark.className = 'kyolo';
-      mark.textContent = '⚡ yolo';
+      mark.textContent = 'yolo';
       foot.appendChild(mark);
     }
     for (const [label, action, show] of [
@@ -81,7 +83,7 @@ window.NexusKanvas = (function () {
         !(task.pending || []).length],
       ['Aprobar', 'approve', task.status === 'review'],
       ['Devolver', 'send_back', task.status === 'review' || task.status === 'doing'],
-      ['⚡', 'toggle_yolo', task.status !== 'done'],
+      ['yolo', 'toggle_yolo', task.status !== 'done'],
     ]) {
       if (!show) continue;
       const button = document.createElement('button');
@@ -89,8 +91,8 @@ window.NexusKanvas = (function () {
       button.type = 'button';
       button.dataset.act = action;
       button.textContent = label;
-      button.title = action === 'approve' ? 'Cierra la tarea (queda el gate en la nota)'
-        : action === 'toggle_yolo' ? 'Ejecución autónoma gobernada por Gate y Juez'
+      button.title = action === 'approve' ? 'Cierra la tarea (el gate queda en la evidencia)'
+        : action === 'toggle_yolo' ? 'Ejecucion autonoma gobernada por Gate y Juez'
         : action;
       button.onclick = () => act(action, {task: task.id});
       foot.appendChild(button);
@@ -100,21 +102,82 @@ window.NexusKanvas = (function () {
     return el;
   }
 
+  function visible(task) {
+    if (!state.filter) return true;
+    const needle = state.filter.toLowerCase();
+    return [task.id, task.title, task.track, task.status].join(' ').toLowerCase().includes(needle);
+  }
+
+  /* La cola de proyectos: el #1 es el que arranca el autopilot. Los botones suben/bajan el puesto y
+     escriben la MISMA cola que el panel de Espacio de trabajo (`harness.json`), no una copia. */
+  function paintRail() {
+    const list = $('k-projects');
+    const rows = (state.board && state.board.portfolio) || [];
+    list.innerHTML = '';
+    for (const row of rows) {
+      const li = document.createElement('li');
+      const mine = row.name === state.board.project;
+      li.className = 'kproj' + (mine ? ' on' : '');
+      const folio = document.createElement('span');
+      folio.className = 'folio';
+      folio.textContent = String(row.position || 0).padStart(2, '0');
+      const link = document.createElement('a');
+      link.className = 'kproj-name';
+      link.href = '/kanvas?project=' + encodeURIComponent(row.name);
+      link.textContent = row.name;
+      const pct = document.createElement('span');
+      pct.className = 'mono kproj-pct';
+      pct.textContent = row.error ? '?' : (row.percent || 0) + '%';
+      li.appendChild(folio);
+      li.appendChild(link);
+      li.appendChild(pct);
+      if (!row.error) {
+        const bar = document.createElement('span');
+        bar.className = 'kproj-bar';
+        bar.innerHTML = '<i style="width:' + Number(row.percent || 0) + '%"></i>';
+        li.appendChild(bar);
+        const next = document.createElement('span');
+        next.className = 'kproj-next';
+        next.textContent = row.next ? 'ahora: ' + row.next : 'sin tareas listas';
+        li.appendChild(next);
+      }
+      const order = document.createElement('span');
+      order.className = 'kproj-order';
+      for (const [glyph, dir, title] of [['\u2191', 'up', 'Sube este proyecto en la cola'],
+                                         ['\u2193', 'down', 'Baja este proyecto en la cola']]) {
+        const button = document.createElement('button');
+        button.className = 'kact';
+        button.type = 'button';
+        button.textContent = glyph;
+        button.title = title;
+        button.onclick = () => act('move_project', {project: row.name, dir});
+        order.appendChild(button);
+      }
+      li.appendChild(order);
+      list.appendChild(li);
+    }
+  }
+
   function paint() {
     const board = state.board;
     if (!board) return;
     $('k-project').textContent = board.project || 'sin nombre';
     $('k-updated').textContent = board.updated_at || '';
     $('k-percent').textContent = (board.stats.percent || 0) + '%';
-    const counts = $('k-counts');
-    counts.innerHTML = STATUS_ORDER.map((name) =>
+    $('k-counts').innerHTML = STATUS_ORDER.map((name) =>
       '<li><b>' + (board.stats.counts[name] || 0) + '</b> ' + name + '</li>').join('');
+    const alive = board.tasks.filter((task) => task.status === 'doing' || task.status === 'review');
+    const now = $('k-now');
+    now.hidden = !alive.length;
+    now.textContent = alive.length
+      ? 'En marcha: ' + alive.map((task) => task.id + ' ' + task.title).join(' \u00b7 ')
+      : '';
     const lanes = $('k-lanes');
     lanes.innerHTML = '';
-    const tracks = board.tracks && board.tracks.length ? board.tracks
-      : [{id: 'core', title: 'Core'}];
+    const tracks = board.tracks && board.tracks.length ? board.tracks : [{id: 'core', title: 'Core'}];
     for (const track of tracks) {
-      const tasks = board.tasks.filter((task) => task.track === track.id);
+      const tasks = board.tasks.filter((task) => task.track === track.id)
+        .sort((a, b) => (WEIGHT[a.status] - WEIGHT[b.status]) || a.id.localeCompare(b.id));
       if (!tasks.length) continue;
       const lane = document.createElement('section');
       lane.className = 'klane';
@@ -164,7 +227,7 @@ window.NexusKanvas = (function () {
     const body = Object.assign({action}, payload || {});
     const result = await api('/api/kanvas', {method: 'POST', body: JSON.stringify(body)});
     if (!result.ok || result.data.ok === false) {
-      warn(result.data.reason || ('el motor respondió ' + result.status));
+      warn(result.data.reason || result.data.detail || ('el motor respondio ' + result.status));
       return;
     }
     warn('');
@@ -172,12 +235,12 @@ window.NexusKanvas = (function () {
   }
 
   async function decompose(goal) {
-    const text = 'Descompón este objetivo en el tablero: usa kanvas_board(action="decompose") con ' +
-      'tareas pequeñas y verificables (title, track, depends_on, verify_cmd) y después ' +
+    const text = 'Descompon este objetivo en el tablero: usa kanvas_board(action="decompose") con ' +
+      'tareas pequenas y verificables (title, track, depends_on, verify_cmd) y despues ' +
       'kanvas_board(action="status") para confirmar. Objetivo: ' + goal;
     const result = await api('/api/chat', {method: 'POST', body: JSON.stringify({text})});
-    warn(result.ok ? 'el Director está descomponiendo; el tablero se refrescará solo'
-      : (result.data.reason || 'no se pudo pedir la descomposición'));
+    warn(result.ok ? 'el Director esta descomponiendo; el tablero se refrescara solo'
+      : (result.data.reason || 'no se pudo pedir la descomposicion'));
   }
 
   function startEvents() {
@@ -205,7 +268,7 @@ window.NexusKanvas = (function () {
       paint();
     });
     $('k-add').onclick = () => {
-      const title = window.prompt('Título de la tarea');
+      const title = window.prompt('Titulo de la tarea');
       if (!title) return;
       const track = window.prompt('Carril (core, ui, tests, release)', 'core') || 'core';
       act('add', {title, track});
@@ -216,7 +279,8 @@ window.NexusKanvas = (function () {
     };
     $('k-yolo').onclick = () => act('yolo_all', {chain: true});
     $('k-run').onclick = async () => {
-      const result = await api('/api/kanvas', {method: 'POST', body: JSON.stringify({action: 'yolo_run'})});
+      const result = await api('/api/kanvas',
+        {method: 'POST', body: JSON.stringify({action: 'yolo_run', project: state.project})});
       if (!result.ok) { warn(result.data.reason || 'no se pudo arrancar la cadena'); return; }
       state.running = true;
       $('k-stop').hidden = false;

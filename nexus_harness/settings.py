@@ -43,6 +43,9 @@ def _render(name, cockpit, sub, item, query):
         return (settings_autonomy.TITLE,
                 "Qu\\u00e9 decidi\\u00f3 el bucle solo, qu\\u00e9 te est\\u00e1 preguntando y por d\\u00f3nde puede o\\u00edrte.",
                 settings_autonomy.block(cockpit))
+    if name == "kanvas":
+        from . import settings_kanvas
+        return settings_kanvas.panel(cockpit)
     if name == "apariencia":
         from . import settings_theme
         return settings_theme.panel(cockpit)

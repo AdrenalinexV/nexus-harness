@@ -361,3 +361,16 @@
   color: var(--ink-3);
 }
 .subgroup:first-child { margin-top: 0; border-top: 0; padding-top: 0; }
+
+/* El panel del tablero (§08): una fila por proyecto, con su barra y su enlace. Reglas de 1px, sin cajas. */
+.kanvas-queue { list-style: none; margin: 0; padding: 0; }
+.kanvas-queue .kanvas-row { padding: 9px 0; border-bottom: 1px solid var(--rule); }
+.krow-top { display: flex; gap: 10px; align-items: baseline; }
+.krow-top b { flex: 1; font-family: var(--font-text); font-weight: 500; }
+.krow-bot { display: flex; justify-content: space-between; gap: 10px; margin-top: 3px; }
+.kanvas-row .mono { color: var(--muted); font-size: var(--fs-micro); }
+.kanvas-row .dim { color: var(--muted); font-size: var(--fs-micro); }
+.kanvas-row .navlink { font-size: var(--fs-micro); }
+.kbar-mini { display: block; height: 2px; margin-top: 5px; background: var(--rule); }
+.kbar-mini i { display: block; height: 2px; background: var(--ok); }
+.kanvas-row.bad { color: var(--seal); }

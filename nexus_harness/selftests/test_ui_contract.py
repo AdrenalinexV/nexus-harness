@@ -192,7 +192,7 @@ def test_iconography_is_svg(base, failures):
           failures)
     check("y trae el sprite inline", '<symbol id="i-search"' in index, True, failures)
     for name in ("modelos", "espacio", "seguridad", "memoria", "skills", "mcp", "puente",
-                 "autonomia", "vps", "apariencia", "stats", "about"):
+                 "autonomia", "kanvas", "vps", "apariencia", "stats", "about"):
         status, page = _get(base, "/settings?section=" + name)
         check("settings/%s se sirve" % name, status, 200, failures)
         check("settings/%s no tiene emojis" % name, _emoji(page), [], failures)
@@ -201,6 +201,24 @@ def test_iconography_is_svg(base, failures):
         status, body = _get(base, "/" + asset)
         check("%s se sirve" % asset, status, 200, failures)
         check("%s no tiene emojis" % asset, _emoji(body), [], failures)
+
+
+def test_the_navigation_has_one_door(base, failures):
+    """Una sola puerta en la cabina: Configuración. El chat no repite el indice del manual.
+
+    Antes habia un bloque «Puertas» en la barra lateral con tres enlaces que ya vivian (o deben vivir)
+    dentro de Configuración; y el arbol del manual desplegaba un submenú anidado de la triada que no se
+    abria bien y repetia las tarjetas del propio panel.
+    """
+    status, index = _get(base, "/")
+    check("el chat se sirve", status, 200, failures)
+    check("el chat no repite el indice (sin bloque Puertas)", "Puertas" in index, False, failures)
+    check("y lleva Configuración en la cabecera", 'id="settings"' in index, True, failures)
+    status, page = _get(base, "/settings?section=kanvas")
+    check("el manual se sirve", status, 200, failures)
+    check("sin submenus anidados", "<details" in page, False, failures)
+    check("con el tablero como seccion propia", "Tablero (Kanvas)" in page, True, failures)
+    check("y las trece secciones planas", page.count('class="scat-leaf'), 13, failures)
 
 
 def run():
@@ -215,6 +233,7 @@ def run():
         test_verdict_classes(failures)
         test_401_is_not_a_dead_engine(base, failures)
         test_iconography_is_svg(base, failures)
+        test_the_navigation_has_one_door(base, failures)
         test_aborted_client_does_not_kill_the_engine(base, failures)
     finally:
         server.shutdown()

@@ -1,4 +1,4 @@
-"""El índice del manual: once categorías en doce destinos, agrupadas y numeradas.
+"""El índice del manual: trece destinos en cuatro grupos, planos y numerados.
 
 Vive aparte de `settings.py` por la ley de 400 líneas y por responsabilidad: aquí se decide QUÉ se
 puede visitar y cómo se numera; en `settings.py` se pinta la página y se guarda lo que manda un panel.
@@ -13,7 +13,7 @@ from urllib.parse import quote
 GROUPS = (
     ("Modelo", "cpu", ("modelos", "memoria")),
     ("Trabajo", "folder", ("espacio", "skills")),
-    ("Operación", "plug", ("mcp", "puente", "autonomia", "vps")),
+    ("Operación", "plug", ("mcp", "puente", "autonomia", "kanvas", "vps")),
     ("Sistema", "shield", ("seguridad", "apariencia", "stats", "about")),
 )
 SECTIONS = (
@@ -29,6 +29,7 @@ SECTIONS = (
     ("mcp", "Conectores MCP", "plug", ()),
     ("puente", "Puente móvil", "plug", ()),
     ("autonomia", "Autonomía y preguntas", "bolt", ()),
+    ("kanvas", "Tablero (Kanvas)", "chart", ()),
     ("vps", "VPS 24/7", "cpu", ()),
     ("apariencia", "Apariencia (pantones)", "sliders", ()),
     ("stats", "Estadísticas y auditoría", "chart", ()),
@@ -51,6 +52,7 @@ SEARCH_TERMS = {
     "mcp": "mcp conectores tools servidores",
     "puente": "puente bots telegram discord movil daemon",
     "autonomia": "autonomia autopilot preguntas pendientes bucle",
+    "kanvas": "tablero kanvas tareas dag dependencias carriles yolo autopilot prioridad",
     "vps": "vps deploy 24/7 servidor remoto colmena",
     "stats": "estadisticas auditoria ledger graficos ahorro coste",
     "about": "acerca de version api uptime contrato salud motor informacion comprobar",
@@ -108,17 +110,13 @@ def tree(active, sub, needle, state, token=""):
             group = row["group"]
             blocks.append('<p class="sgroup">%s</p>' % escape(group))
         folio = '<span class="folio">%02d</span>' % row["n"]
+        # Un solo nivel: las cuatro vistas de la triada ya viven dentro de su panel (las tarjetas), asi
+        # que el arbol no las repite. Un desplegable anidado que ademas no se abria bien era ruido.
+        where = "/settings?section=%s%s" % (escape(name), gt)
         if subs:
-            opened = " open" if name == active else ""
-            items = "".join('<li class="%s"><a href="/settings?section=%s&sub=%s%s">%s</a></li>'
-                            % ("on" if (name == active and value == sub) else "", escape(name),
-                               escape(value), gt, escape(text)) for value, text in subs)
-            blocks.append('<details class="scat%s"%s><summary>%s%s</summary>'
-                          '<ul class="ssubs">%s</ul></details>'
-                          % (" on" if name == active else "", opened, folio, escape(label), items))
-        else:
-            blocks.append('<a class="scat-leaf%s" href="/settings?section=%s%s">%s%s</a>'
-                          % (" on" if name == active else "", escape(name), gt, folio, escape(label)))
+            where = "/settings?section=%s&sub=%s%s" % (escape(name), escape(subs[0][0]), gt)
+        blocks.append('<a class="scat-leaf%s" href="%s">%s%s</a>'
+                      % (" on" if name == active else "", where, folio, escape(label)))
     if not blocks:
         blocks.append('<p class="dim">Nada coincide con «%s».</p>' % escape(needle))
     config = state.get("config") or {}

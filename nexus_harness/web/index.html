@@ -20,14 +20,15 @@
 <!--NEXUS_SPRITE-->
 
 <!-- El cuaderno de obra: masthead de una línea, índice a la izquierda y el hilo como documento.
-     La configuración (`/settings`) y la gobernanza (`/gov`) son las dos puertas del índice.
+     Configuración es la unica puerta de la cabina: dentro viven las secciones (modelos, memoria,
+     autonomía, tablero) y el enlace a la gobernanza del protocolo.
      La línea de estado la pinta `activity.js` desde `/api/activity`. -->
 <header class="masthead chat-top">
   <a class="brand" href="/?token={{token}}">NEXUS<span>·</span>HARNESS</a>
   <span class="meta">motor <b id="engine"></b> · v<span id="version"></span></span>
   <div class="top-right">
-    <a id="kanvas-top" class="navlink" href="/kanvas?token={{token}}"
-       title="Tablero de tareas: carriles, dependencias y modo yolo">▦ Tablero</a>
+    <a id="settings" class="navlink top-link" href="/settings?token={{token}}"
+       title="Modelos, claves, memoria, skills, autonomía, tablero y el resto del manual">Configuración</a>
     <button id="activity" class="activity idle" type="button" aria-expanded="false"
             aria-controls="activity-pop" role="status" title="Estado del motor en vivo">
       <span id="activity-glyph" class="aglyph" aria-hidden="true"></span>
@@ -76,13 +77,6 @@
            aria-label="Buscar conversación">
     <ul id="sessions" class="sessions" role="listbox" aria-label="Conversaciones"></ul>
     <div class="spacer"></div>
-    <div class="side-title">Puertas</div>
-    <a id="settings" class="navlink" href="/settings?token={{token}}">
-      <span class="sigil" aria-hidden="true">§</span>Configuración</a>
-    <a id="gov" class="navlink" href="/gov?token={{token}}">
-      <span class="sigil" aria-hidden="true">◇</span>Gobernanza</a>
-    <a id="kanvas" class="navlink" href="/kanvas?token={{token}}">
-      <span class="sigil" aria-hidden="true">▦</span>Tablero</a>
     <div class="foot mono"><span id="engine-root"></span></div>
   </aside>
 

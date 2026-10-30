@@ -8,6 +8,7 @@ cierra.
 import threading
 from pathlib import Path
 
+from . import projects
 from .platform.kanvas import Board, KanvasError
 
 STOP = threading.Event()
@@ -27,15 +28,40 @@ def _emit(cockpit, kind, detail, **payload):
     cockpit.bus.emit(kind, detail, **payload)
 
 
+def portfolio(cockpit):
+    """La cola de proyectos con el estado de SU tablero: es el kanvas general que ordena el autopilot."""
+    rows = []
+    for row in projects.queue(cockpit.config):
+        try:
+            board = Board.load(row["root"])
+            stats = board.stats()
+            alive = [task for task in board.tasks if board.effective(task) in ("doing", "review")]
+            ready = board.ready()
+        except KanvasError as exc:
+            rows.append({"name": row["name"], "position": row["position"], "error": str(exc)})
+            continue
+        rows.append({"name": row["name"], "position": row["position"], "root": row["root"],
+                     "percent": stats["percent"], "done": stats["done"], "total": stats["total"],
+                     "next": (alive[0].title if alive else (ready[0].title if ready else ""))[:90]})
+    return rows
+
+
 def get(cockpit, query=None):
     board = Board.load(_root(cockpit, (query or {}).get("project")))
-    return 200, dict(board.as_dict(), path=str(board.path or ""))
+    return 200, dict(board.as_dict(), path=str(board.path or ""), portfolio=portfolio(cockpit))
 
 
 def post(cockpit, body):
     """Una accion, un cambio validado. Devuelve `(status, payload)` como el resto de la API."""
     body = body if isinstance(body, dict) else {}
     action = str(body.get("action") or "").strip()
+    if action == "move_project":
+        names, note = projects.move(cockpit.config, str(body.get("project") or ""),
+                                    str(body.get("dir") or "up"))
+        cockpit.config.project_order = list(names)
+        _emit(cockpit, "kanvas.move", note or "cola reordenada", action=action,
+              task=str(body.get("project") or ""))
+        return 200, {"ok": not note, "detail": note or "cola reordenada", "portfolio": portfolio(cockpit)}
     if action == "yolo_run":
         return start_chain(cockpit, body.get("project"))
     if action == "yolo_stop":

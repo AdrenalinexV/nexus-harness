@@ -16,40 +16,56 @@
 <link rel="stylesheet" href="kanvas.css">
 </head>
 <body class="kanvas-page">
-<a class="skip" href="#k-lanes">Saltar al tablero</a>
+<a class="skip" href="#k-board">Saltar al tablero</a>
 
-<!-- El tablero es una hoja del cuaderno: folio, reglas de 1px y el grafo como margen. Sin tarjetas. -->
+<!-- El tablero es una hoja del cuaderno: a la izquierda la cola de proyectos; a la derecha, UN proyecto.
+     Sin tarjetas, reglas de 1px y el grafo como margen. -->
 <header class="masthead">
   <a class="brand" href="/">NEXUS<span>·</span>HARNESS</a>
   <span class="meta">tablero · <b id="k-project">…</b> · <span id="k-updated" class="mono"></span></span>
   <div class="top-right">
-    <a class="navlink" href="/">← chat</a>
+    <a class="navlink top-link" href="/settings?section=kanvas">Configuración</a>
+    <a class="navlink top-link" href="/">← chat</a>
   </div>
 </header>
 
 <div id="k-warn" class="warn" role="status" aria-live="polite" hidden></div>
 
 <main class="kanvas">
-  <section class="kbar" aria-label="Resumen del tablero">
-    <p class="kpercent"><b id="k-percent">0%</b> completado</p>
-    <ul id="k-counts" class="kcounts" aria-label="Contadores por estado"></ul>
-    <input id="k-filter" class="search" type="search" placeholder="filtrar tareas…"
-           aria-label="Filtrar tareas">
-    <button id="k-add" class="ghost" type="button">+ Tarea</button>
-    <button id="k-decompose" class="ghost" type="button">Descomponer</button>
-    <button id="k-yolo" class="ghost" type="button">⚡ YOLO en cadena</button>
-    <button id="k-run" class="primary" type="button"
-            title="Ejecuta las tareas ⚡ con el Gate y el Juez: sin verde no se cierra ninguna">Ejecutar</button>
-    <button id="k-stop" class="ghost" type="button" hidden>Detener</button>
-  </section>
+  <aside class="krail" aria-label="Proyectos en orden de importancia">
+    <p class="side-title">Proyectos · cola del autopilot</p>
+    <ol id="k-projects" class="kprojects"></ol>
+    <p class="krail-note dim">El <b>#1</b> es el primero que corre el bucle autónomo. ↑/↓ cambian la cola
+      y se guarda en <code>harness.json</code>.</p>
+  </aside>
+
+  <section class="kmain">
+    <div class="ksummary">
+      <p class="kpercent"><b id="k-percent">0%</b> completado</p>
+      <ul id="k-counts" class="kcounts" aria-label="Contadores por estado"></ul>
+    </div>
+    <div class="ktools" aria-label="Acciones del tablero">
+      <input id="k-filter" class="search" type="search" placeholder="filtrar tareas…"
+             aria-label="Filtrar tareas">
+      <button id="k-add" class="ghost" type="button">+ Tarea</button>
+      <button id="k-decompose" class="ghost" type="button">Descomponer</button>
+      <button id="k-yolo" class="ghost" type="button">YOLO en cadena</button>
+      <button id="k-run" class="primary" type="button"
+              title="Ejecuta las tareas marcadas con el Gate y el Juez: sin verde no se cierra ninguna">Ejecutar</button>
+      <button id="k-stop" class="ghost" type="button" hidden>Detener</button>
+    </div>
+
+    <p id="k-now" class="know" hidden></p>
 
   <div id="k-board" class="kboard">
     <svg id="k-edges" class="kedges" aria-hidden="true"></svg>
     <div id="k-lanes"></div>
   </div>
-  <p id="k-empty" class="kempty" hidden>El tablero está vacío: pide al Director que lo descomponga.</p>
+  <p id="k-empty" class="kempty" hidden>Este proyecto no tiene tablero todavía: pide al Director que lo
+    descomponga, o crea la primera tarea desde aquí.</p>
   <p class="kfoot dim">El estado <b>done</b> no se escribe a mano: lo firma el Gate (verde) y, en modo
-    ⚡, también el Juez. <span class="mono">.nexus/kanvas.json</span></p>
+    yolo, también el Juez. <span class="mono">.nexus/kanvas.json</span></p>
+  </section>
 </main>
 
 <script src="token.js"></script>
