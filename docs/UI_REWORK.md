@@ -345,3 +345,25 @@ primera si no hay activa—, `-1` en el resto): un Tab entra en el índice, no e
 
 El eje se anuncia en la hoja de atajos (`?`): «↑ ↓ · recorrer el índice · Enter abre».
 Captura: `u07-indice-foco.png` (una fila con el foco de teclado y la regla de 1px).
+
+## 12. Copiar código (U-08)
+
+Un mensaje no es solo prosa: cuando el modelo contesta con un bloque cercado (```` ```…``` ````), el
+cuaderno lo pintaba como texto plano y había que seleccionarlo a mano. Ahora cada valla se compone:
+prosa en nodos de texto (respeta el `white-space: pre-wrap` del asiento) y el código en un `<pre>`
+con su propio botón `copiar`, un rótulo con el lenguaje y `tab-size: 4`. El contenido va por
+`textContent` — nunca `innerHTML` — así que un mensaje no puede inyectar marcado. El reparto entre
+prosa y bloque vive en `fillBubble` (`chat_stream.js`); el corte es la expresión `FENCE` y una valla
+sin cerrar se trata como bloque hasta el final.
+
+| criterio | medida real (motor aislado `:8798`, `NEXUS_HOME` en scratch, `NEXUS_HARNESS_TOKEN`, conversación sembrada con dos fences) |
+|---|---|
+| 1 botón por bloque | ```` ```python\n…\n```\n…\n```bash\n…\n``` ```` → `.codeblock` **2**, `pre.code` **2**, `.code-copy` **2** |
+| un solo `pre` por bloque | los `pre.code` llevan `border-left: 1px` (cita del taller), sin caja ni fondo |
+| `tab-size: 4` | `getComputedStyle(pre).tabSize` = `4` en los dos bloques |
+| cada botón copia SU bloque | clic real (CDP) con sonda sobre `navigator.clipboard.writeText`: botón 1 → `def suma(a, b):\n\treturn a + b\n`; botón 2 → `ls -la\ncat notas.txt\n` (el tabulador se conserva) |
+| valla sin cerrar | mensaje inyectado `uno ⏎ ```js ⏎ const x = 1; ⏎ ``` ⏎ dos ⏎ ``` ⏎ sin cierre` → **+2** bloques (la última valla cierra en el final del texto) |
+| prosa intacta | `.bubble` alterna `text, FIGURE, text, FIGURE, text`; el botón de mensaje (U-01) sigue habiendo **1** |
+| sonda anti-slop | 0 radius>2 · 0 sombras · 0 pills · 0 azul de corpus · 0 emojis · 0 enlaces sin token |
+
+Captura: `u08-codigo.png` (el hilo con los dos bloques, sus rótulos y sus botones).

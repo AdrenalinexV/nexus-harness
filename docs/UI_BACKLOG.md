@@ -75,8 +75,14 @@
   token. La hoja de atajos (`?`) anuncia «↑ ↓ · recorrer el índice · Enter abre». Hecho en `0cd3d6d`.
   *Verificado con `Input.dispatchKeyEvent` (CDP) sobre el motor aislado.*
 
-- [ ] **U-08 · Copiar código** — bloques `pre`/fences del mensaje con botón copiar y `tab-size: 4`.
-  Aceptación: 1 botón por bloque detectado (```...```). Verificación: JS.
+- [x] **U-08 · Copiar código** — bloques `pre`/fences del mensaje con botón copiar y `tab-size: 4`.
+  Aceptación: 1 botón por bloque detectado (```...```). Verificación: JS. Medido en motor aislado
+  `:8798` con una conversación sembrada de dos fences: `.codeblock` **2** / `pre.code` **2** /
+  `.code-copy` **2**, `tabSize` `4`, clic real (CDP) con sonda sobre `navigator.clipboard.writeText` →
+  el botón 1 copia su bloque y el 2 el suyo (tabulador conservado), una valla sin cerrar añade un
+  bloque y la prosa sigue en nodos de texto; sonda 0 radius>2 / 0 sombras / 0 pills / 0 emojis /
+  0 azul de corpus / 0 enlaces sin token. Hecho en `f3de194`.
+  *Verificado con un clic real sobre cada botón y la sonda del portapapeles.*
 
 - [ ] **U-09 · Guía de uso** (`docs/UI_GUIDE.md`) — los cuatro ejes con capturas, atajos, accesibilidad
   (salto, reduced-motion, contraste) y cómo añadir un diseño o un pantón. Aceptación: enlaza capturas
