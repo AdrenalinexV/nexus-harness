@@ -6,12 +6,13 @@ cosa y el transcript guarda otra; esta suite es la que lo impide.
 
 Los parsers de cada formato (SSE de OpenAI, NDJSON de Ollama, `content_block_delta` de Anthropic) se
 prueban en la suite de su transporte contra el mismo JSON cortado a la mitad. Aqui se mide el pliegue,
-que es comun a los cuatro.
+que es comun a los cuatro. El cable -- socket, SSE y un turno entero -- vive en `stream_wire.py`.
 """
 import json
 
 from ..core import streaming
 from ..core.message import Reply, ToolCall, Usage
+from .stream_wire import run as run_wire
 
 
 def check(name, got, expected, failures):
@@ -148,78 +149,6 @@ def test_stop_cuts_the_live_stream(failures):
     check("olvidar un handle que no estaba no rompe", streaming.in_flight(), 0, failures)
 
 
-def test_a_hung_stream_is_cut_by_close_all(failures):
-    """El criterio del paso 10: 3 deltas, el modelo se cuelga, Detener corta de verdad en <=1 s.
-
-    Un servidor local entrega tres lineas SSE y despues espera. El lector esta bloqueado dentro de
-    `readline()`: si `close_all()` solo pusiera una bandera, seguiria ahi. Se mide el tiempo real y que
-    el SERVIDOR vea caer la conexion -- sin eso, "cortado" seria una palabra nuestra, no un hecho.
-    """
-    import http.server
-    import threading
-    import time
-
-    from ..llm.transports import http as transport_http
-
-    class Hung(http.server.BaseHTTPRequestHandler):
-        protocol_version = "HTTP/1.1"
-        timeout = 10
-        seen = []
-
-        def log_message(self, *args):  # el servidor de prueba no ensucia la salida del gate
-            return None
-
-        def do_POST(self):
-            length = int(self.headers.get("Content-Length") or 0)
-            self.rfile.read(length)
-            self.send_response(200)
-            self.send_header("Content-Type", "text/event-stream")
-            self.send_header("Connection", "close")
-            self.end_headers()
-            for index in range(3):
-                self.wfile.write(b'data: {"choices": [{"delta": {"content": "%d"}}]}\n' % index)
-                self.wfile.flush()
-            Hung.seen.append("sent")
-            try:
-                while self.rfile.read(1):
-                    continue
-            except OSError:
-                Hung.seen.append("client-gone")
-            else:
-                Hung.seen.append("client-gone")
-
-    server = http.server.ThreadingHTTPServer(("127.0.0.1", 0), Hung)
-    threading.Thread(target=server.serve_forever, daemon=True).start()
-    url = "http://127.0.0.1:%d/v1/chat/completions" % server.server_address[1]
-    received, finished = [], threading.Event()
-
-    def read():
-        try:
-            for line in transport_http.stream_lines(url, {"model": "prueba"}, timeout=10):
-                received.append(line)
-        except Exception as exc:  # noqa: BLE001 -- el hallazgo ES la excepcion
-            received.append("EXC:%s" % type(exc).__name__)
-        finally:
-            finished.set()
-
-    threading.Thread(target=read, daemon=True).start()
-    deadline = time.time() + 5
-    while len(received) < 3 and time.time() < deadline:
-        time.sleep(0.02)
-    check("el stream entrega las tres lineas antes de que el modelo termine",
-          len(received) >= 3, True, failures)
-    started = time.time()
-    streaming.close_all()
-    finished.wait(2.0)
-    elapsed = time.time() - started
-    check("cortar el socket termina el iterador en menos de 1 s", elapsed < 1.0, True, failures)
-    check("el iterador no mintio con una excepcion", [r for r in received if r.startswith("EXC:")], [], failures)
-    check("el servidor ve caer la conexion", "client-gone" in Hung.seen, True, failures)
-    check("el registro queda vacio", streaming.in_flight(), 0, failures)
-    server.shutdown()
-    server.server_close()
-
-
 def test_the_cockpit_sees_text_before_the_answer(failures):
     """El criterio de la cabina, medido en el bus: hay texto ANTES del `done`.
 
@@ -263,60 +192,6 @@ def test_the_cockpit_sees_text_before_the_answer(failures):
               kinds.index("worker.delta") < kinds.index("chat.assistant"), True, failures)
 
 
-def test_the_sse_endpoint_serves_the_bus(failures):
-    """La decision (b) del operador: el bus por `/api/events/stream`, con token y con `id:`.
-
-    Un evento tiene que llegar con su `seq` como id -- es lo que permite que el navegador reanude con
-    `Last-Event-ID` sin repetir ni perder -- y la ruta tiene que negarse sin credencial como el resto
-    de `/api/*`.
-    """
-    import threading
-    import urllib.error
-    import urllib.request
-
-    from .fakes import FakeRouter, ScriptedProvider, TempProject, reply
-    from ..cockpit import Cockpit
-    from ..config import HarnessConfig
-    from ..ui import build
-
-    with TempProject() as root:
-        config = HarnessConfig(default_root=root, workspace=root, test_command=None,
-                               roles={"director": "fake:d", "worker": "fake:w", "judge": "fake:j"},
-                               host="127.0.0.1", port=0, lang="es", secrets={})
-        cockpit = Cockpit(config)
-        cockpit.router = FakeRouter(workers=ScriptedProvider([reply("hola")]))
-        event = cockpit.bus.emit("worker.delta", "Hola", step=0)
-        server = build(cockpit, port=0, token="t0k")
-        threading.Thread(target=server.serve_forever, daemon=True).start()
-        base = "http://127.0.0.1:%d" % server.server_address[1]
-        try:
-            request = urllib.request.Request(
-                base + "/api/events/stream?since=%d" % (event.seq - 1),
-                headers={"X-Nexus-Token": "t0k"})
-            with urllib.request.urlopen(request, timeout=10) as response:
-                check("el content-type es SSE",
-                      response.headers.get("Content-Type", "").startswith("text/event-stream"),
-                      True, failures)
-                block = []
-                for _ in range(8):
-                    line = response.readline().decode("utf-8")
-                    block.append(line)
-                    if not line.strip() and any(row.startswith("id: ") for row in block):
-                        break
-                text = "".join(block)
-                check("el evento viaja con su seq como id", ("id: %d" % event.seq) in text, True,
-                      failures)
-                check("y con su payload", '"kind": "worker.delta"' in text, True, failures)
-            try:
-                urllib.request.urlopen(base + "/api/events/stream", timeout=5)
-                failures.append("la ruta SSE sin token deberia dar 401")
-            except urllib.error.HTTPError as exc:
-                check("sin token es 401", exc.code, 401, failures)
-        finally:
-            server.shutdown()
-            server.server_close()
-
-
 def run():
     failures = []
     test_fold_rebuilds_the_same_reply(failures)
@@ -326,7 +201,6 @@ def run():
     test_lines_survive_a_split_json(failures)
     test_an_event_serializes_flat(failures)
     test_stop_cuts_the_live_stream(failures)
-    test_a_hung_stream_is_cut_by_close_all(failures)
     test_the_cockpit_sees_text_before_the_answer(failures)
-    test_the_sse_endpoint_serves_the_bus(failures)
+    run_wire(failures)
     return failures

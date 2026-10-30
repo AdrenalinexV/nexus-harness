@@ -37,7 +37,7 @@ pequeña.
 
 ```
 $ python tools/verify.py
-lint      exit 0   files=216 findings=0 max_lines=400 ignored_runtime=0
+lint      exit 0   files=217 findings=0 max_lines=400 ignored_runtime=0
 selftest  exit 0   suites=61 failures=0
 verify: GREEN
 
@@ -51,7 +51,7 @@ run serve chat checkpoint selftest lint models gate relay spec daemon task notif
 | dato | valor | fuente |
 |---|---|---|
 | Suites deterministas | **61, 0 fallos, sin red** | `verify.py` |
-| Hallazgos de lint / ficheros > 400 líneas | **0 / 0** en 216 ficheros | `verify.py` |
+| Hallazgos de lint / ficheros > 400 líneas | **0 / 0** en 217 ficheros | `verify.py` |
 | Dependencias de terceros | **0** | `pyproject.toml` |
 | Líneas de fuente | ~21.300 (motor) · ~27.500 (con tools/apps) | `wc -l` |
 | Módulo más largo | 399 líneas (techo 400) — *en el techo* | `wc -l` |
@@ -168,7 +168,7 @@ nosotros, y por partida doble (gobernanza y coste). Nuestro arrastre es un solo 
    ejecutables, parada **por criterios y no por reloj**, y un canal de consulta bidireccional real
    (Telegram/Discord) con **default declarado** al expirar el plazo.
 6. **0 dependencias y 400 líneas.** Portabilidad extrema y auditabilidad total (la ley de tamaño se cumple
-   sola: 0 infracciones en 216 ficheros).
+   sola: 0 infracciones en 217 ficheros).
 
 ## 5. Dónde perdemos (honestidad, sin adornos)
 
