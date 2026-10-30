@@ -23,7 +23,7 @@ Medido hoy: 64 suites · 232 ficheros · 57 módulos planos · 12 carpetas · 0 
 | **2** | Cerrar la arquitectura por capas: de 6/9 a 9/9 | **HECHA** | `cb7a6a4`, `cd3e8de`, `144c526`, `6d8bde2` · 9 paquetes, 50 módulos planos, `test_layers` con el invariante intacto |
 | **3** | Paridad competitiva: G, C, D, B, H | **HECHA** — los cinco pasos con su suite | `88c8018` · suite `hooks` · gate obedece 0/10/20/30 · `41de9b8` · suite `stream` · `chat()` = `fold(stream())` · `a5f79eb` · suite `sandbox` · `unrestricted` sin jaula se niega · `3ba9c5d` · suite `lsp` · `definition` con fallback declarado · `e19fd2c` · suite `eval` · 20 tareas y mutation smoke |
 | **4** | Release: `dist/` fresco, versión, B6 | **HECHA** | `verify.py --frozen` → `frozen exit 0 suites=63` · 1.2.0 instalado con el sha256 del repo · `f30ea31` |
-| **5** | Tablero Kanvas: plan versionado, DAG y `done` firmado por Gate+Juez | **HECHA** | `(esta fase)` · suite `kanvas` (9 casos) · vista `/kanvas` |
+| **5** | Tablero Kanvas: plan versionado, DAG y `done` firmado por Gate+Juez | **HECHA** | `5df79b4` · suite `kanvas` (9 casos) · vista `/kanvas` |
 
 **Puntuación de referencia (no re-puntuada):** `AUDIT_2026-10-29.md` §4 midió **media 4,55/10** con estos
 diez ejes: gobernanza **8,5** · autonomía **8,0** · contexto **7,0** · ecosistema **6,0** · UI **5,5** ·
