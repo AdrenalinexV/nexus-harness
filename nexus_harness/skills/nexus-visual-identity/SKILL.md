@@ -17,11 +17,15 @@ metadata:
       - "docs/DESIGN.md"
   hermes:
     tags: [design, palettes, themes, contrast, ui]
-    related_skills: [nexus-ui-surgeon, nexus-ui-taste]
+    related_skills: [ui-design-system, nexus-layout-skins, nexus-ui-surgeon]
 allowed-tools: [read_file, write_file, patch, terminal, search_files, browser_exec]
 ---
 
 # Nexus visual identity
+> **Método portable:** la auditoría por medida, los umbrales de contraste y la plantilla de
+> dirección viven en la skill `ui-design-system`. Esta es el *binding* a este repositorio:
+> rutas, comandos y trampas concretas.
+
 
 Use when the cockpit needs a **new colour** — a palette, a "pantón", or the paper mode — without
 redrawing the product. Colour is now two layers: **mode** (dark/light paper) × **accent** (hue), 12

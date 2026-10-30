@@ -15,11 +15,15 @@ metadata:
       - "nexus_harness/settings_theme.py"
   hermes:
     tags: [design, layout, skins, ui, typography]
-    related_skills: [nexus-visual-identity, nexus-ui-surgeon, nexus-ui-taste]
+    related_skills: [ui-design-system, nexus-visual-identity, nexus-ui-surgeon]
 allowed-tools: [read_file, write_file, patch, terminal, search_files, browser_exec]
 ---
 
 # Nexus layout skins
+> **Método portable:** la auditoría por medida, los umbrales de contraste y la plantilla de
+> dirección viven en la skill `ui-design-system`. Esta es el *binding* a este repositorio:
+> rutas, comandos y trampas concretas.
+
 
 Use when the cockpit needs a **different composition** — not a different colour. Colour lives in
 `nexus-visual-identity`; here the type, the density, where the state lives and how a message is drawn.

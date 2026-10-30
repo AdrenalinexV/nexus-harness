@@ -17,6 +17,10 @@ allowed-tools: [read_file, write_file, patch, terminal, search_files, browser_ex
 ---
 
 # Nexus-Harness UI surgeon
+> **Método portable:** la auditoría por medida, los umbrales de contraste y la plantilla de
+> dirección viven en la skill `ui-design-system`. Esta es el *binding* a este repositorio:
+> rutas, comandos y trampas concretas.
+
 
 Use when the cockpit (`/` chat, `/settings` manual, `/gov` governance — served by `ui.py`) has to be
 fixed **or designed**. A UI change here is only done when a real browser returned the numbers and the
