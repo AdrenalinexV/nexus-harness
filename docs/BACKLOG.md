@@ -29,7 +29,7 @@ Medido hoy: 60 suites · 213 ficheros · 0 hallazgos de lint · 0 ficheros > 400
 | **D · Sandbox** | **AUSENTE**: `policy.classify('rm -rf build','unrestricted')` → `allowed=True` | `shell_policy.py`; `policy.py` | la autonomía es un riesgo declarado, no un módulo | puerto fail-closed (Job Object/AppContainer, bwrap+Landlock, Seatbelt); sin jaula, `unrestricted` se **niega** con razón |
 | **C · Streaming** | **AUSENTE**: `stream: False`; `Reply` es una dataclass plana; Detener corta entre pasos, no la request | `transports/*`; `llm/portfolio.py` | no hay un camino, dos modos; no hay cancelación real | transporte que devuelve **iterador** de eventos (`delta/reasoning/tool_call/done`) y `Reply` plegándolos |
 | **B · LSP** | **AUSENTE**: 0 coincidencias; `mcp_client.py` es JSON-RPC **MCP**, no LSP | — | paridad de herramientas con Codex/Claude Code | 3 tools (definition/references/diagnostics) sobre el stdio que ya existe, degradando al mapa AST **con razón impresa** |
-| **G · Hooks** | **AUSENTE**: no hay `nexus_harness.toml`, ni `pre_verify`, ni exit **30** | — | es el eje que convierte el producto en ecosistema | contrato JSON-in/mensaje-out en `before_turn/after_tool/before_commit/pre_verify`; hook que devuelve 10 → gate rojo, 0 → verde, 30 → no verificable |
+| **G · Hooks** | ~~AUSENTE~~ **CERRADA** en la fase 3: 4 puntos, contrato 0/10/20/30, fail-closed | `88c8018` | — | `selftest hooks` → OK (9 casos) |
 | **H · Evals** | 7 tareas y **1 solo lenguaje**; sin mutation smoke | `eval_tasks.py`; `tools/eval.py` | mide capacidad, no autoestima | ~20 tareas en 3 lenguajes + mutar 3 líneas pone ≥1 test rojo; la negativa sigue en 10/10 |
 
 ## 2. Cerrado en esta sesión (con su comando)

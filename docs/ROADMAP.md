@@ -21,7 +21,7 @@ Medido hoy: 60 suites · 213 ficheros · 57 módulos planos · 12 carpetas · 0 
 | **0** | Tipografía determinista: 2 familias OFL en el paquete, 0 recursos externos | **HECHA** | `ef36f95` · suite `fonts` · DOM `[href],[src]` con `^https?` → 0 |
 | **1** | Que el repo deje de mentir (B7, B8, B9, B10, B12, B13, B14) | **HECHA** | `40adce5`, `7cfba97`, `5ef6acb`, `d018c64` · `doc_truth` GREEN · CI 8/8 |
 | **2** | Cerrar la arquitectura por capas: de 6/9 a 9/9 | **HECHA** | `cb7a6a4`, `cd3e8de`, `144c526`, `6d8bde2` · 9 paquetes, 50 módulos planos, `test_layers` con el invariante intacto |
-| **3** | Paridad competitiva: G, C, D, B, H | **SIGUIENTE** | — |
+| **3** | Paridad competitiva: G, C, D, B, H | **EN CURSO** — G hecha | `88c8018` · suite `hooks` · gate obedece 0/10/20/30 |
 | **4** | Release: `dist/` fresco, versión, B6 | pendiente | — |
 
 **Puntuación de referencia (no re-puntuada):** `AUDIT_2026-10-29.md` §4 midió **media 4,55/10** con estos
@@ -77,7 +77,7 @@ mismo commit que mueve los ficheros. Cierre de fase: **9 paquetes**, `flat` de 5
 
 | # | salto | eje que sube | por qué en este orden | criterio rojo → verde |
 |---|---|---|---|---|
-| **9** | **G · Hooks/plugins** | extensibilidad 1,5 → 8 | convierte el producto en ecosistema; reutiliza el contrato 0/10/20/**30** que ya existe | `nexus_harness.toml` con `pre_verify` que devuelve 10 → gate rojo · 0 → verde · 30 → «no verificable» · sin fichero, motor inerte |
+| **9** | **G · Hooks/plugins** — **HECHA** (`88c8018`) | extensibilidad 1,5 → 8 | convierte el producto en ecosistema; reutiliza el contrato 0/10/20/**30** que ya existe | **cumplido**: `nexus_harness.toml` con `pre_verify` 10 → gate rojo · 0 → verde · 30 → no cambia el veredicto · sin fichero, motor inerte. Suite `hooks`, 9 casos, incluido un `before_commit` que impide un commit real |
 | **10** | **C · Streaming** | agéntico 5 → 7 | cambia el tipo de retorno y ordena los transportes en uno: se hace una vez | un proveedor guionizado devuelve un **iterador** de `delta/reasoning/tool_call/done`; Detener cierra la request en vuelo |
 | **11** | **D · Sandbox de proceso** | seguridad 4 → 7 | sin jaula, la autonomía es riesgo declarado | `policy.classify('rm -rf build','unrestricted')` → **negado** con razón; matriz 3 modos × 3 SO con SKIP explícito |
 | **12** | **B · LSP** | código 6 → 8 | el stdio JSON-RPC ya existe; degrada al mapa AST | tool `definition` sobre un fixture devuelve `fichero:línea`; sin servidor → fallback **con razón impresa** |
