@@ -13,10 +13,10 @@ con su gate delante; congelar criterios sin ejecutarlos seria volver al principi
 """
 from pathlib import Path
 
-from .platform import ledger
-from .core import tasks
-from .verify import oracle
-from .spec.spec_synth import SPEC_REL
+from nexus_harness.platform import ledger
+from nexus_harness.core import tasks
+from nexus_harness.verify import oracle
+from nexus_harness.spec.spec_synth import SPEC_REL
 
 MAX_FILES = 400
 BIG_FILE = 350

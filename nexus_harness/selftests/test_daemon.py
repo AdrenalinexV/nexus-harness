@@ -18,7 +18,7 @@ from pathlib import Path
 
 from .fakes import TempProject
 from ..core import tasks
-from .. import improve
+from ..learning import improve
 from ..config import HarnessConfig
 from ..autonomy.daemon import Daemon
 

@@ -10,7 +10,7 @@
 > motor y pone el build rojo. (3) El orden no se reordena por vistosidad: se reordena solo si un dato
 > medido lo obliga, y entonces se dice en el commit.
 
-Medido hoy: 59 suites · 207 ficheros · 57 módulos planos · 11 carpetas · 0 ficheros > 400 líneas.
+Medido hoy: 59 suites · 208 ficheros · 57 módulos planos · 12 carpetas · 0 ficheros > 400 líneas.
 
 ---
 
@@ -47,7 +47,7 @@ superficie**.
 | **7** | **B15**: mover `nexus_harness/transports/` a `llm/transports/` y reescribir los 5 imports hacia arriba | `test_layers` verde con `llm` conteniendo `transports/`; 0 imports `llm → ..transports` |
 | **8a** | `autonomy/`: autonomy, autonomy_ask, daemon, plan_graph | `verify` GREEN en los dos modos, `wc -l` de cada fichero tocado < 400 |
 | **8b** | `spec/`: spec_synth — **`criteria` no existe**: `Candidate`/`GREEN` viven dentro de `spec_synth.py`, y no se inventa un fichero para que el dibujo cuadre | ídem |
-| **8c** | `learning/`: reflection, improve, skill_forge, skill_router | ídem |
+| **8c** | `learning/`: reflection, improve. **`skill_forge` y `skill_router` NO vienen** (medido): los usa `tools/toolbox/skill_tools.py` y `context/savings.py`, así que moverlos haría que tools y context importaran hacia arriba | `test_layers` verde; `ORDER` pasa a `… verify, spec, learning, autonomy` porque el código manda: `autonomy` importa `spec_synth` e `improve`, y `improve` importa `spec` |
 
 Un paquete por commit, imports reescritos con AST (no `sed`), y `test_layers.DECLARED` actualizado en el
 mismo commit que mueve los ficheros. Cierre de fase: **9 paquetes**, `flat` baja de 57, y

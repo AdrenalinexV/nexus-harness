@@ -29,7 +29,7 @@ from .verify.gate import EXIT_GREEN, EXIT_UNAVAILABLE, Gate
 from .llm.judge import judge_for
 from .core.message import Message, as_text
 from .llm.portfolio import maybe_escalate
-from .reflection import learn
+from .learning.reflection import learn
 from .verify.repair_guard import isolated_repair
 from .context.savings import CACHE_REL as SKILLS_CACHE, SavingsLedger
 from .tools.subagents import Delegate

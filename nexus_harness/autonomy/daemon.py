@@ -24,7 +24,8 @@ import os
 import time
 from pathlib import Path
 
-from nexus_harness import improve, projects
+from nexus_harness.learning import improve
+from nexus_harness import projects
 from nexus_harness.spec import spec_synth
 from nexus_harness.autonomy.autonomy import Autopilot
 from nexus_harness.notify import Notifier, summary

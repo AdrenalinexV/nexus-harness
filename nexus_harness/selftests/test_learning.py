@@ -9,7 +9,7 @@ from pathlib import Path
 
 from .fakes import TempProject
 from ..core import outcomes
-from .. import reflection
+from ..learning import reflection
 from ..config import HarnessConfig
 
 

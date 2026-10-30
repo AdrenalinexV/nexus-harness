@@ -25,7 +25,7 @@ from . import Skip
 PKG = Path(__file__).resolve().parents[1]
 
 # El orden es la ley: cada capa puede importar las de su izquierda, nunca las de su derecha.
-ORDER = ("platform", "core", "llm", "tools", "context", "verify", "autonomy", "spec", "learning")
+ORDER = ("platform", "core", "llm", "tools", "context", "verify", "spec", "learning", "autonomy")
 DECLARED = {
     "platform": ("backup", "console", "digest", "events", "hardware_probe", "ledger", "policy",
                  "skillfiles", "tokenizer", "transcripts", "vault"),
@@ -38,6 +38,7 @@ DECLARED = {
     "verify": ("checkpoint", "gate", "linelaw", "oracle", "repair_guard", "worktree_sandbox"),
     "autonomy": ("autonomy", "autonomy_ask", "daemon", "plan_graph"),
     "spec": ("spec_synth",),
+    "learning": ("reflection", "improve"),
 }
 
 

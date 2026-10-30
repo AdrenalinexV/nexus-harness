@@ -13,7 +13,7 @@
 > (3) Ninguna cifra se teclea: `python tools/doc_truth.py` la compara con el motor y pone el build rojo.
 > (4) Lo que no se pudo medir se escribe **no medido** con el comando que lo cerraría.
 
-Medido hoy: 59 suites · 207 ficheros · 0 hallazgos de lint · 0 ficheros > 400 líneas.
+Medido hoy: 59 suites · 208 ficheros · 0 hallazgos de lint · 0 ficheros > 400 líneas.
 
 ---
 
@@ -24,8 +24,8 @@ Medido hoy: 59 suites · 207 ficheros · 0 hallazgos de lint · 0 ficheros > 400
 | **B6** | `TurnLedger.rows()` no deduplica (`history()` sí) y `improve.py:96` lo lee directo | `platform/ledger.py:44`; `improve.py:96` | el planificador de mejoras ve turnos rojos duplicados e infla tokens ×1,87 | fixture con dos escritores → **1 fila** por corrida |
 | **B11** | `dist/` obsoleto: el `.exe` y el instalador son más viejos que el fuente | `dist/` | un binario viejo pasa cualquier proof que solo mire `failures=0` | `find nexus_harness -name '*.py' -newer dist/nexus-harness-engine.exe \| wc -l` → **0** |
 | **B13** | `docs/VERIFICATION.md` se commitea con la corrida **sin** gobernador | `docs/VERIFICATION.md` | el CI publicaría otro número que el documento | regenerar con `--write-doc` en modo gobernador y dejar escrito que el CI publica el otro |
-| **B15** | `llm/` está a medias: `nexus_harness/transports/` sigue fuera y `llm/providers.py` lo importa hacia arriba (×5) | `llm/providers.py:14-16` | «6/9 capas» es optimista: son 6 paquetes, no 6 capas cerradas | mover a `llm/transports/`, matriz de imports sin ciclos |
-| **Capas** | 6 de 9 paquetes migrados; faltan `autonomy/` (autonomy, autonomy_ask, daemon, plan_graph), `spec/` (spec_synth, criteria) y `learning/` (reflection, improve, skill_forge, skill_router) | `nexus_harness/*.py` | el techo de 400 duele porque hay 57 módulos planos y 10 carpetas | un paquete por commit; `selftests/test_layers.py` verde con el invariante intacto |
+| **B15** | ~~`llm/` a medias~~ **CERRADO** en la fase 2: `transports/` vive en `llm/transports/`, 0 imports hacia arriba | `llm/providers.py` | — | `grep "from \.\.transports" nexus_harness/llm/` → 0 |
+| **Capas** | **9 de 9 paquetes** migrados (fase 2 cerrada). `skill_forge` y `skill_router` se quedan en tools/ y context/ — medido: moverlos invertiría la dependencia | `nexus_harness/*.py` | quedan 50 módulos planos: el techo de 400 sigue doliendo ahí | `selftests/test_layers.py` verde con el invariante intacto |
 | **D · Sandbox** | **AUSENTE**: `policy.classify('rm -rf build','unrestricted')` → `allowed=True` | `shell_policy.py`; `policy.py` | la autonomía es un riesgo declarado, no un módulo | puerto fail-closed (Job Object/AppContainer, bwrap+Landlock, Seatbelt); sin jaula, `unrestricted` se **niega** con razón |
 | **C · Streaming** | **AUSENTE**: `stream: False`; `Reply` es una dataclass plana; Detener corta entre pasos, no la request | `transports/*`; `llm/portfolio.py` | no hay un camino, dos modos; no hay cancelación real | transporte que devuelve **iterador** de eventos (`delta/reasoning/tool_call/done`) y `Reply` plegándolos |
 | **B · LSP** | **AUSENTE**: 0 coincidencias; `mcp_client.py` es JSON-RPC **MCP**, no LSP | — | paridad de herramientas con Codex/Claude Code | 3 tools (definition/references/diagnostics) sobre el stdio que ya existe, degradando al mapa AST **con razón impresa** |

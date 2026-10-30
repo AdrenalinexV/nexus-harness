@@ -19,11 +19,11 @@ import re
 import time
 from pathlib import Path
 
-from .tools import skill_forge
-from .core.outcomes import record_skills
-from .tools.skill_forge import ForgeTrigger
-from .context.skill_router import EXTENSIONS
-from .verify import oracle
+from nexus_harness.tools import skill_forge
+from nexus_harness.core.outcomes import record_skills
+from nexus_harness.tools.skill_forge import ForgeTrigger
+from nexus_harness.context.skill_router import EXTENSIONS
+from nexus_harness.verify import oracle
 
 COUNTERS_REL = Path(".nexus") / "harness" / "forge_trigger.json"
 LESSONS_REL = Path(".nexus") / "harness" / "lessons.jsonl"
@@ -200,7 +200,7 @@ def learn(config, payload, tag="", skills=None, goal=""):
     root = Path(getattr(config, "default_root", ".") or ".")
     verdict = payload.get("verdict") or {}
     judgement = payload.get("judgement") or {}
-    from .tools.recall import remember_turn
+    from nexus_harness.tools.recall import remember_turn
 
     exit_code = payload.get("exit")
     if exit_code is not None:
