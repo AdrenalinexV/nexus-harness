@@ -27,7 +27,7 @@ Medido hoy: 61 suites · 217 ficheros · 0 hallazgos de lint · 0 ficheros > 400
 | **B15** | ~~`llm/` a medias~~ **CERRADO** en la fase 2: `transports/` vive en `llm/transports/`, 0 imports hacia arriba | `llm/providers.py` | — | `grep "from \.\.transports" nexus_harness/llm/` → 0 |
 | **Capas** | **9 de 9 paquetes** migrados (fase 2 cerrada). `skill_forge` y `skill_router` se quedan en tools/ y context/ — medido: moverlos invertiría la dependencia | `nexus_harness/*.py` | quedan 50 módulos planos: el techo de 400 sigue doliendo ahí | `selftests/test_layers.py` verde con el invariante intacto |
 | **D · Sandbox** | **AUSENTE**: `policy.classify('rm -rf build','unrestricted')` → `allowed=True` | `shell_policy.py`; `policy.py` | la autonomía es un riesgo declarado, no un módulo | puerto fail-closed (Job Object/AppContainer, bwrap+Landlock, Seatbelt); sin jaula, `unrestricted` se **niega** con razón |
-| **C · Streaming** | **AUSENTE**: `stream: False`; `Reply` es una dataclass plana; Detener corta entre pasos, no la request | `transports/*`; `llm/portfolio.py` | no hay un camino, dos modos; no hay cancelación real | transporte que devuelve **iterador** de eventos (`delta/reasoning/tool_call/done`) y `Reply` plegándolos |
+| **C · Streaming** | ~~AUSENTE~~ **CERRADA** en la fase 3: los cuatro transportes devuelven eventos, `chat()` = `fold(stream())` y Detener corta el socket en vuelo | `2627150` · `41de9b8` · `d88be86` | — | `selftest stream` → OK (11 casos); `verify` GREEN en los dos modos |
 | **B · LSP** | **AUSENTE**: 0 coincidencias; `mcp_client.py` es JSON-RPC **MCP**, no LSP | — | paridad de herramientas con Codex/Claude Code | 3 tools (definition/references/diagnostics) sobre el stdio que ya existe, degradando al mapa AST **con razón impresa** |
 | **G · Hooks** | ~~AUSENTE~~ **CERRADA** en la fase 3: 4 puntos, contrato 0/10/20/30, fail-closed | `88c8018` | — | `selftest hooks` → OK (9 casos) |
 | **H · Evals** | 7 tareas y **1 solo lenguaje**; sin mutation smoke | `eval_tasks.py`; `tools/eval.py` | mide capacidad, no autoestima | ~20 tareas en 3 lenguajes + mutar 3 líneas pone ≥1 test rojo; la negativa sigue en 10/10 |
@@ -43,6 +43,7 @@ Medido hoy: 61 suites · 217 ficheros · 0 hallazgos de lint · 0 ficheros > 400
 | **B8** | el docstring del gate describe la conducta real (comando declarado → runner detectado → humo de importación → 20) | (esta fase) | `gate --project t --touched calc.py` → `behavior OK humo de importacion: smoke: 1/1` exit 0 |
 | **B14** | **no reproducible**: `nexus/` no está muerto, es el puntero al gobernador; ahora lo exige la suite `protocol_pointer` | (esta fase) | OK con gobernador · **FAIL** con el puntero roto · SKIP sin gobernador |
 | **B12** | `docs/EVAL.md` contaba las omitidas como resueltas: 7/7 → **5/7 + 2 omitidas** | (esta fase) | `doc_truth` compara el titular con su propia tabla |
+| **C** | **Streaming**: eventos `delta/reasoning/tool_call/done`, `Reply` por `fold`, failover solo antes del primer evento, Detener cierra el socket, cabina por SSE | `2627150` · `41de9b8` · `5873cfd` | `selftest stream` → OK (11 casos): JSON partido, servidor que se cuelga (0,52 s) y turno entero por el cable |
 
 ## 3. Decisiones cerradas por el operador (no se reabren)
 
@@ -56,4 +57,4 @@ Medido hoy: 61 suites · 217 ficheros · 0 hallazgos de lint · 0 ficheros > 400
 |---|---|---|
 | Ahorro real −57,9 % contra un modelo en la nube | `benchmark_ab_savings.py --doc-only` es determinista y no llama a ningún proveedor | `python tools/benchmark_ab_savings.py --steps 8 --vendor <proveedor>` con clave |
 | Juez real sobre un turno de código | no hay proveedor configurado en esta máquina | `python -m nexus_harness run "<goal>" --project <tmp>` y leer el veredicto |
-| Sandbox / streaming / LSP / hooks | no existen (0 coincidencias en producción) | sus suites de aceptación, que hay que escribir (arriba, columna derecha) |
+| Sandbox / LSP | no existen (0 coincidencias en producción) | sus suites de aceptación, que hay que escribir (arriba, columna derecha) |
