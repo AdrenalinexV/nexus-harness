@@ -184,24 +184,34 @@
   --pad: 2.2rem;
 }
 [data-skin="editorial"] .app { display: flex; flex-direction: column; min-height: 0; }
+/* Sin esto el hilo no crece (el `.main` es hijo de un flex column) y el compositor flotaba a media
+   página, con un hueco enorme debajo. */
+[data-skin="editorial"] .main { flex: 1 1 auto; min-height: 0; }
+/* La cinta es UNA linea: si envuelve, se come 150px de alto y el hilo pierde la mitad de la pagina
+   (medido: main 375px de 569). Los rotulos sobran en una cinta; el nombre del campo ya dice que es. */
 [data-skin="editorial"] .sidebar {
-  flex-direction: row; flex-wrap: wrap; align-items: baseline; gap: .4rem 1.4rem;
-  border-right: 0; border-bottom: 1px solid var(--rule); padding: .55rem 2.2rem; overflow: visible;
+  flex-direction: row; flex-wrap: nowrap; align-items: center; gap: .1rem 1rem;
+  border-right: 0; border-bottom: 1px solid var(--rule); padding: .3rem 2.2rem;
+  overflow: hidden; flex: 0 0 auto;
 }
+[data-skin="editorial"] .side-title { display: none; }
 [data-skin="editorial"] .sidebar > .spacer { display: none; }
 [data-skin="editorial"] .volume { flex: 0 0 auto; }
-[data-skin="editorial"] .volume select { border-bottom: 0; max-width: 11rem; }
+[data-skin="editorial"] .volume select { border-bottom: 0; max-width: 8.5rem; }
 [data-skin="editorial"] #new-chat {
-  flex: 0 0 auto; border-bottom: 0; padding: 0; font-family: var(--font-ui); font-size: 11px;
-  letter-spacing: .12em;
+  /* `.wide` (width:100%) hacia que este boton se comiera la cinta entera y dejara el buscador, el
+     indice y las puertas a 0px de ancho. En una cinta, cada pieza mide lo suyo. */
+  flex: 0 0 auto; width: auto; border-bottom: 0; padding: 0;
+  font-family: var(--font-ui); font-size: 11px; letter-spacing: .12em;
 }
-[data-skin="editorial"] .side-title {
-  flex: 0 0 auto; border: 0; margin: 0; padding: 0; font-size: 9.5px; letter-spacing: .22em;
+[data-skin="editorial"] #session-search {
+  flex: 0 1 9rem; border: 0; border-bottom: 1px solid var(--rule); padding: .1rem 0;
 }
-[data-skin="editorial"] #session-search { flex: 0 1 12rem; border: 0; border-bottom: 1px solid var(--rule); }
 [data-skin="editorial"] .sessions {
-  flex: 1 1 100%; flex-direction: row; overflow-x: auto; gap: 1.3rem; margin: 0; padding-bottom: .2rem;
+  flex: 1 1 auto; flex-direction: row; overflow-x: auto; gap: 1.1rem; margin: 0; min-width: 0;
+  padding-bottom: 0;
 }
+[data-skin="editorial"] .sessions li { max-width: 30ch; }
 [data-skin="editorial"] .sessions li {
   grid-template-columns: minmax(0, auto) auto; border-left: 0; padding: .1rem 0; white-space: nowrap;
   font-size: 12px;
@@ -248,6 +258,7 @@
   grid-template-columns: 15rem minmax(0, 1fr); padding: .65rem 0; border-bottom: 1px solid var(--rule);
 }
 [data-skin="editorial"] .sfield .slabel { text-transform: none; letter-spacing: .01em; font-size: 12.5px; }
+
 
 /* =====================================================================================
    VOZ (modificador de accesibilidad, no un catálogo de fuentes): la tríada es del diseño.

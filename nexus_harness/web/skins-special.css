@@ -159,6 +159,24 @@
   padding: .55rem .6rem; background: linear-gradient(180deg, var(--paper-2), var(--paper)); }
 
 
+/* matrix se distingue de terminal por la COMPOSICIÓN: columna estrecha centrada, sin buscador y con
+   la marca como una línea de estado entre corchetes. Mismo pantón (fósforo), otra distribución. */
+[data-skin="matrix"] .masthead { justify-content: center; }
+[data-skin="matrix"] .masthead .brand { letter-spacing: .34em; font-size: 10.5px; }
+[data-skin="matrix"] .masthead .meta { border-right: 0; }
+[data-skin="matrix"] #session-search { display: none; }
+[data-skin="matrix"] .app { grid-template-columns: 176px minmax(0, 1fr); }
+[data-skin="matrix"] .sidebar { border-right: 1px dotted var(--rule-2); }
+[data-skin="matrix"] .doc-head { max-width: 64ch; margin: 0 auto; width: 100%; padding: .8rem 0 .3rem; }
+[data-skin="matrix"] .thread { padding: .5rem 1rem 1rem; }
+[data-skin="matrix"] .msg { width: 100%; max-width: 64ch; margin: 0 auto; }
+[data-skin="matrix"] .empty { max-width: 56ch; margin: auto; padding: 0 1rem; }
+[data-skin="matrix"] .composer-box { max-width: 64ch; margin: 0 auto; }
+[data-skin="matrix"] .composer-foot { max-width: 64ch; margin: .3rem auto 0; }
+[data-skin="matrix"] .brand::before { content: "[ "; color: var(--ink-3); }
+[data-skin="matrix"] .brand::after { content: " ]"; color: var(--ink-3); }
+
+
 /* ---------- pantallas estrechas ----------
    Va aquí, en la ÚLTIMA hoja, y con la especificidad de una skin (`[data-skin] .app`): cada diseño
    declara su propia rejilla y una regla suelta en `app.css` perdía contra ellas. */
