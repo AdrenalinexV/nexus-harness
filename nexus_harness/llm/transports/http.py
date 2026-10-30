@@ -2,7 +2,15 @@
 
 Every transport needs the same four things: a UA header some gateways require, a timeout, a retry on
 the two statuses that mean "not now" (429, 5xx), and an error that carries the status and the body so
-the caller can print something a human can act on. Standard library only: `urllib.request`.
+the caller can print something a human can act on.
+
+Dos clientes, y el motivo de que sean dos:
+
+* `post_json` / `get_json` -- `urllib.request`, que respeta proxies por variable de entorno.
+* `stream_lines` -- `http.client`, porque hay que sujetar el socket para poder cerrarlo cuando el
+  operador pulsa Detener. Un `urllib` no expone el socket, y una bandera no despierta un `readline()`
+  bloqueado. Contrapartida declarada: **el stream no usa el proxy de las variables de entorno**; va
+  directo al endpoint del modelo.
 """
 import codecs
 import contextlib

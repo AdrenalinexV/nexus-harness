@@ -81,6 +81,8 @@ async function checkEngine() {
   }
   // Lo que el motor dice de si mismo. `chat_stream` solo abre SSE contra un motor que lo sirve.
   state.engineApi = data.api || 0;
+  // Arrancar en la cabeza del bus: al abrir la ventana no se reproduce el turno de ayer en la tira.
+  if (!state.since && data.seq) state.since = data.seq;
   if (state.engineApi < API_VERSION) {
     warn(`El motor en marcha es más viejo que esta interfaz (api ${data.api || 0} < ${API_VERSION}): por eso los botones no hacen nada. Cierra esta ventana y vuelve a lanzar Nexus-Harness.bat.`);
   }
