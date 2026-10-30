@@ -128,6 +128,8 @@ A spec is `provider:model`, with `lmstudio`, `ollama`, `openai`, `deepseek`, `op
 never from this repository. The judge is deliberately a different model from the worker.
 
 Design and module map: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
+Where this is going and in what order: [docs/ROADMAP.md](docs/ROADMAP.md).
+What is open right now: [docs/BACKLOG.md](docs/BACKLOG.md).
 What was learned from Hermes / Aider / OpenCode: [docs/FORENSICS.md](docs/FORENSICS.md).
 What was actually run, with exit codes: [docs/VERIFICATION.md](docs/VERIFICATION.md).
 What the adversarial reviewer found and what was rejected: [docs/AUDIT.md](docs/AUDIT.md).

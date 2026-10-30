@@ -1,5 +1,8 @@
 # Backlog — la única fuente de lo que queda abierto
 
+> **El orden en que se arregla** vive en `docs/ROADMAP.md`; este fichero dice **qué** está abierto y ese
+> dice **cuándo** toca. Si se contradicen, manda el roadmap y este fichero se corrige en el mismo commit.
+>
 > **Por qué este fichero existe.** La verdad estaba repartida entre `AUDIT_2026-10-29.md` (que se
 > describe como medición de un día y no como cola), `UI_BACKLOG.md` (cerrado) y
 > `ARCHITECTURE_V2_PROPOSAL.md` (una crítica, no un plan aprobado). Así es como un número viejo sobrevive

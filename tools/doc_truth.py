@@ -34,7 +34,7 @@ MARK = "Congelado en `%s`"
 # --- documentos que hablan del árbol de HOY ------------------------------------------------------
 CURRENT = ("README.md", "docs/ARCHITECTURE.md", "docs/ARCHITECTURE_V2_PROPOSAL.md",
            "docs/COMPETITIVE_AUDIT_V2.md", "docs/DOSSIER_RELEASE.md", "docs/EVAL.md",
-           "docs/BACKLOG.md", ".github/workflows/verify.yml")
+           "docs/BACKLOG.md", "docs/ROADMAP.md", ".github/workflows/verify.yml")
 
 # --- documentos que retratan un commit pasado ----------------------------------------------------
 # El sha es el árbol que describen. Si no existe en `git log`, la marca es decorativa y no vale.
@@ -126,6 +126,8 @@ RULES = (
     ("docs/DOSSIER_RELEASE.md", r"−(\d+[,.]\d) % de tokens", "savings"),
     ("docs/BACKLOG.md", r"Medido hoy: (\d+) suites", "suites"),
     ("docs/BACKLOG.md", r"· (\d+) ficheros ·", "files"),
+    ("docs/ROADMAP.md", r"Medido hoy: (\d+) suites", "suites"),
+    ("docs/ROADMAP.md", r"· (\d+) ficheros ·", "files"),
 )
 
 
