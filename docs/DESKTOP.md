@@ -7,7 +7,7 @@ corre el motor de este repositorio, congelado, y el protocolo Nexus vive en él:
 plugin, no depende de tener Python en el equipo destino.
 
 ```
-NexusHarness-Setup-1.0.0.exe          instalador NSIS, por usuario, sin permisos de administrador
+NexusHarness-Setup-1.2.0.exe          instalador NSIS, por usuario, sin permisos de administrador
 └── %LOCALAPPDATA%\Nexus Harness\
     ├── nexus-harness-desktop.exe     ventana nativa (Tauri 2 / WebView2)
     ├── engine\nexus-harness-engine.exe   motor congelado (Python + NexusProtocol dentro)
@@ -149,7 +149,7 @@ una sala de usar y tirar, compara bytes y la desinstala:
 ```
 $ python tools/nightshift.py install --check
 sala       : C:\Users\<usuario>\AppData\Local\NexusHarnessVerify (no existia)
-instalador : NexusHarness-Setup-1.0.0.exe -> exit 0
+instalador : NexusHarness-Setup-1.2.0.exe -> exit 0
 ventana    : nexus-harness-desktop.exe subsystem=2 (2 = interfaz)
 motor      : repo     sha256=82589bc520e8
            : instalado sha256=82589bc520e8

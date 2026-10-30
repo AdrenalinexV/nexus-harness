@@ -14,6 +14,8 @@ import sys
 import tempfile
 from pathlib import Path
 
+from . import Skip
+
 from ..platform import hooks as hooks_mod
 
 # En una cadena literal de TOML las barras invertidas son LITERALES: un `%r` de una ruta de Windows las
@@ -167,6 +169,8 @@ def test_commit_hook_stops(failures):
 
 
 def run():
+    if getattr(sys, "frozen", False):
+        raise Skip("arranca un hijo python para cada hook: en el .exe no hay interprete que lanzar")
     failures = []
     test_inert(failures)
     test_codes(failures)

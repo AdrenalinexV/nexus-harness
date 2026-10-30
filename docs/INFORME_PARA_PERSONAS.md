@@ -169,7 +169,7 @@ verify: GREEN
 | Dependencias de terceros | **0** |
 | Proveedores de IA soportados | 6 |
 | Herramientas que la IA puede usar | 16 |
-| Instalador | `NexusHarness-Setup-1.0.0.exe` (~20 MB) |
+| Instalador | `NexusHarness-Setup-1.2.0.exe` (~20 MB) |
 | Versión | 1.0.0 |
 
 Ese `verify: GREEN` es, literalmente, la prueba. No es una captura de pantalla: es lo que devolvió el

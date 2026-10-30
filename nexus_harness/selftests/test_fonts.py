@@ -9,9 +9,14 @@ Esta suite mide las cuatro cosas que pueden romperse en silencio: que los ficher
 `web/`, no en una subcarpeta que `web/*` no empaqueta), que sean woff2 de verdad, que la licencia OFL
 viaje a su lado, y que ninguna hoja de estilos pida nada por red.
 """
+import sys
 from pathlib import Path
 
-WEB = Path(__file__).resolve().parent.parent / "web"
+# El mismo resolutor que `ui.py`: el motor congelado descomprime `web/` en `sys._MEIPASS`. Una suite que
+# mire `nexus_harness/web` dentro del .exe mide una ruta que no existe y llama "falta la tipografia" a
+# un paquete que la lleva.
+_FROZEN = getattr(sys, "_MEIPASS", "")
+WEB = (Path(_FROZEN) / "web") if _FROZEN else (Path(__file__).resolve().parent.parent / "web")
 
 # La horquilla que fijó el operador: las dos familias juntas, subseted a latino+español, ≤150 KB.
 BUDGET_BYTES = 150 * 1024

@@ -8,6 +8,7 @@ diria pyright, y por eso no se afirma.
 import sys
 from pathlib import Path
 
+from . import Skip
 from .fakes import TempProject
 from ..platform import lsp
 from ..tools.toolbox import lsp_tools
@@ -133,6 +134,8 @@ def test_a_write_leaves_the_verdict_in_the_observation(failures):
 
 
 def run():
+    if getattr(sys, "frozen", False):
+        raise Skip("arranca el servidor de prueba con `sys.executable`: en el .exe eso es el motor")
     failures = []
     test_the_protocol_with_a_fake_server(failures)
     test_without_a_server_it_says_why(failures)

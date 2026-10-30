@@ -3,6 +3,26 @@
 All notable changes to Nexus-Harness, newest first. Versions before 1.0.0 were internal
 milestones of the same tree (there are no separate tags for them).
 
+## 1.2.0 — 2026-10-30
+
+The phase that stops the harness from *saying* things it cannot back: streaming, a real cage, a
+language server, and an eval that can fail.
+
+- **Streaming (C)**: the four transports return an iterator of `delta`/`reasoning`/`tool_call`/`done`
+  events and `chat()` is `fold(stream())` — one path, two modes. Detener closes the socket
+  (`shutdown(SHUT_RDWR)`), so it cuts the request in flight instead of waiting for the provider. The
+  cockpit receives `worker.delta` over `/api/events/stream` (SSE, api 4) and paints a draft.
+- **Sandbox (D)**: `unrestricted` is refused when the machine has no filesystem cage; the Windows Job
+  Object (kill-on-close, memory and process caps), bwrap and seatbelt are detected and applied. The
+  3 modes × 3 cages matrix is measured, and a child that asks for more memory than the cap dies.
+- **LSP (B)**: a JSON-RPC client over stdio; diagnostics land in the result of every
+  `patch`/`write_file` (1.2 s budget, never holds the write), and `definition` falls back to the AST
+  map **stating why**.
+- **Evals (H)**: 20 tasks in three languages (Python, JavaScript, Bash) plus mutation smoke — three
+  mutations per task and none survives. `over-400` keeps ending at exit 10.
+- **Release (I)**: version 1.2.0, fresh `dist/`, and `verify.py --frozen` comparing the binary's suite
+  summary against the source instead of a hand-typed number.
+
 ## 1.1.0 — 2026-10-28
 
 Autonomy that asks instead of inventing a decision.

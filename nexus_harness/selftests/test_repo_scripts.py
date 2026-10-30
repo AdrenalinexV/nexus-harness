@@ -20,6 +20,10 @@ SCRIPTS = ("audit_context", "benchmark_ab_savings", "prove_repair_cycle", "adver
 
 
 def run():
+    if getattr(sys, "frozen", False):
+        # El .exe lleva `tools/` empaquetado como datos, pero no es un arbol de scripts importables:
+        # medir el checkout desde el binario es medir otra cosa.
+        raise Skip("mide el arbol del checkout: el binario congelado no corre los scripts de tools/")
     problems = []
     if not Path(TOOLS).is_dir():
         # En un wheel instalado no hay `tools/`: los scripts viven en el repo, no en el paquete. No es

@@ -61,7 +61,7 @@ run serve chat checkpoint selftest lint models gate relay spec daemon task notif
 | Skills indexadas | **180** → 3.561 tokens como índice / 451.606 como cuerpos | `savings.py` |
 | Eval de capacidad | **7/7 tareas golden** resueltas (run real, modelo local, temp 0) | `docs/EVAL.md` |
 | A/B de contexto | **−57,9 % de tokens de prompt** vs harness tradicional (misma tarea) | `docs/BENCHMARK_AB.md` |
-| Instalador | `NexusHarness-Setup-1.0.0.exe` (~20 MB, motor congelado) | `dist/` |
+| Instalador | `NexusHarness-Setup-1.2.0.exe` (~20 MB, motor congelado) | `dist/` |
 
 **Lo que NO está verde, y se dice:** sin sandbox de proceso, sin streaming de tokens, sin LSP, sin
 sistema de plugins/hooks. Y las llamadas en la nube (openai/deepseek/…): **no verificadas en vivo** (no

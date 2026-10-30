@@ -21,8 +21,8 @@ Medido hoy: 63 suites · 224 ficheros · 57 módulos planos · 12 carpetas · 0 
 | **0** | Tipografía determinista: 2 familias OFL en el paquete, 0 recursos externos | **HECHA** | `ef36f95` · suite `fonts` · DOM `[href],[src]` con `^https?` → 0 |
 | **1** | Que el repo deje de mentir (B7, B8, B9, B10, B12, B13, B14) | **HECHA** | `40adce5`, `7cfba97`, `5ef6acb`, `d018c64` · `doc_truth` GREEN · CI 8/8 |
 | **2** | Cerrar la arquitectura por capas: de 6/9 a 9/9 | **HECHA** | `cb7a6a4`, `cd3e8de`, `144c526`, `6d8bde2` · 9 paquetes, 50 módulos planos, `test_layers` con el invariante intacto |
-| **3** | Paridad competitiva: G, C, D, B, H | **HECHA** — los cinco pasos con su suite | `88c8018` · suite `hooks` · gate obedece 0/10/20/30 · `41de9b8` · suite `stream` · `chat()` = `fold(stream())` · `a5f79eb` · suite `sandbox` · `unrestricted` sin jaula se niega · `3ba9c5d` · suite `lsp` · `definition` con fallback declarado · `(esta fase)` · suite `eval` · 20 tareas y mutation smoke |
-| **4** | Release: `dist/` fresco, versión, B6 | pendiente | — |
+| **3** | Paridad competitiva: G, C, D, B, H | **HECHA** — los cinco pasos con su suite | `88c8018` · suite `hooks` · gate obedece 0/10/20/30 · `41de9b8` · suite `stream` · `chat()` = `fold(stream())` · `a5f79eb` · suite `sandbox` · `unrestricted` sin jaula se niega · `3ba9c5d` · suite `lsp` · `definition` con fallback declarado · `e19fd2c` · suite `eval` · 20 tareas y mutation smoke |
+| **4** | Release: `dist/` fresco, versión, B6 | **EN CURSO** — frescura HECHA, B6 pendiente | `verify.py --frozen` verde con 1.2.0 instalado |
 
 **Puntuación de referencia (no re-puntuada):** `AUDIT_2026-10-29.md` §4 midió **media 4,55/10** con estos
 diez ejes: gobernanza **8,5** · autonomía **8,0** · contexto **7,0** · ecosistema **6,0** · UI **5,5** ·
@@ -81,7 +81,7 @@ mismo commit que mueve los ficheros. Cierre de fase: **9 paquetes**, `flat` de 5
 | **10** | **C · Streaming** — **HECHA** (`41de9b8`, `d88be86`) | agéntico 5 → 7 | cambia el tipo de retorno y ordena los transportes en uno: se hace una vez | **cumplido**: un proveedor guionizado devuelve el **iterador** de `delta/reasoning/tool_call/done` y `fold()` da el MISMO `Reply`; los cuatro parsers sobreviven a un JSON partido a la mitad; Detener cierra el socket (0,52 s, y el servidor ve caer la conexión); la cabina pide los deltas por `/api/events/stream` (SSE, api 4). Suite `stream`, 12 casos |
 | **11** | **D · Sandbox de proceso** — **HECHA** (`a5f79eb`) | seguridad 4 → 7 | sin jaula, la autonomía es riesgo declarado | **cumplido**: `classify('rm -rf build','unrestricted')` → negado con nivel `sandbox` y motivo; con jaula de ficheros → permitido; matriz 3 modos × 3 jaulas medida; Job Object con kill-on-close y tope de memoria medidos. Suite `sandbox`, 6 casos |
 | **12** | **B · LSP** — **HECHA** (`3ba9c5d`) | código 6 → 8 | el stdio JSON-RPC ya existe; degrada al mapa AST | **cumplido**: `definition` devuelve `fichero:línea` por LSP (servidor falso que habla el protocolo) y, sin servidor, el mapa AST con la razón impresa; los diagnósticos del servidor entran en el resultado de cada `patch`/`write_file` con presupuesto de 1,2 s. Suite `lsp`, 5 casos |
-| **13** | **H · Evals** — **HECHA** (`(esta fase)`) | tareas 6 → 8 | mide capacidad; hoy son 7 tareas en 1 lenguaje | **cumplido**: 20 tareas en 3 lenguajes (10 Python, 5 JavaScript, 5 Bash); mutation smoke con 3 mutaciones por tarea y 18/18 tareas con al menos una roja; la negativa sigue en 10/10. Suite `eval`, 9,3 s |
+| **13** | **H · Evals** — **HECHA** (`e19fd2c`) | tareas 6 → 8 | mide capacidad; hoy son 7 tareas en 1 lenguaje | **cumplido**: 20 tareas en 3 lenguajes (10 Python, 5 JavaScript, 5 Bash); mutation smoke con 3 mutaciones por tarea y 18/18 tareas con al menos una roja; la negativa sigue en 10/10. Suite `eval`, 9,3 s |
 
 Los ejes «gobernanza» y «contexto» ya están en 8,5 / 7,0: no se tocan hasta que el resto suba. Un 10 en
 lo que ya ganamos no mueve la media.
@@ -92,7 +92,7 @@ lo que ya ganamos no mueve la media.
 
 | # | paso | criterio |
 |---|---|---|
-| **14** | **I**: subir versión (1.2.0), reconstruir `dist/` (motor + instalador) y automatizar la prueba de **frescura** | `verify.py --frozen` verde **y** `find nexus_harness -name '*.py' -newer dist/nexus-harness-engine.exe \| wc -l` → **0**; el instalador publicado coincide con la versión del paquete |
+| **14** | **I**: versión **1.2.0**, `dist/` reconstruido (motor 19,3 MB + instalador 19,5 MB) y frescura medida | **cumplido**: `verify.py --frozen` → `frozen exit 0 suites=63 failures=0 skipped=7`; `find … -newer dist/nexus-harness-engine.exe \| wc -l` → **0**; instalado en `%LOCALAPPDATA%\Nexus Harness` con el sha256 del repositorio (`installer_verify --verify` → 0) |
 | **15** | **B6**: `TurnLedger.rows()` deduplica igual que `history()` | fixture con dos escritores → **1 fila** por corrida |
 
 Un binario viejo pasa cualquier proof que solo mire `failures=0`: por eso la frescura es un criterio de
