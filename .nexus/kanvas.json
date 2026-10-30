@@ -1,7 +1,7 @@
 {
   "format": 1,
   "project": "Nexus-Harness",
-  "updated_at": "2026-10-30T21:15:10Z",
+  "updated_at": "2026-10-30T23:15:38Z",
   "tracks": [
     {
       "id": "core",
@@ -584,22 +584,55 @@
       "id": "TK-13",
       "title": "references del LSP (definition ya esta)",
       "track": "core",
-      "status": "proposed",
+      "status": "done",
       "depends_on": [
         "TK-07"
       ],
       "yolo": false,
       "verify_cmd": "",
-      "assigned_to": "",
-      "commits": [],
+      "assigned_to": "obrero",
+      "commits": [
+        "32b471a",
+        "caaed37"
+      ],
       "notes": [
         {
           "at": "2026-10-30T20:32:36Z",
           "by": "director",
           "text": "creada"
+        },
+        {
+          "at": "2026-10-30T23:15:37Z",
+          "by": "obrero",
+          "text": "-> todo"
+        },
+        {
+          "at": "2026-10-30T23:15:37Z",
+          "by": "obrero",
+          "text": "-> doing"
+        },
+        {
+          "at": "2026-10-30T23:15:38Z",
+          "by": "obrero",
+          "text": "-> review"
+        },
+        {
+          "at": "2026-10-30T23:15:38Z",
+          "by": "human",
+          "text": "-> done"
         }
       ],
-      "evidence": {}
+      "evidence": {
+        "gate": 0,
+        "judge": "approve",
+        "commits": [
+          "32b471a",
+          "caaed37"
+        ],
+        "touched": [],
+        "at": "2026-10-30T23:15:38Z",
+        "by": "human"
+      }
     },
     {
       "id": "TK-14",
@@ -647,20 +680,55 @@
       "id": "TK-16",
       "title": "B13: VERIFICATION.md regenerado en modo gobernador",
       "track": "tests",
-      "status": "proposed",
+      "status": "done",
       "depends_on": [],
       "yolo": false,
       "verify_cmd": "",
-      "assigned_to": "",
-      "commits": [],
+      "assigned_to": "obrero",
+      "commits": [
+        "aabae36",
+        "5653ff5",
+        "6eaa551"
+      ],
       "notes": [
         {
           "at": "2026-10-30T20:32:36Z",
           "by": "director",
           "text": "creada"
+        },
+        {
+          "at": "2026-10-30T23:15:38Z",
+          "by": "obrero",
+          "text": "-> todo"
+        },
+        {
+          "at": "2026-10-30T23:15:38Z",
+          "by": "obrero",
+          "text": "-> doing"
+        },
+        {
+          "at": "2026-10-30T23:15:38Z",
+          "by": "obrero",
+          "text": "-> review"
+        },
+        {
+          "at": "2026-10-30T23:15:38Z",
+          "by": "human",
+          "text": "-> done"
         }
       ],
-      "evidence": {}
+      "evidence": {
+        "gate": 0,
+        "judge": "approve",
+        "commits": [
+          "aabae36",
+          "5653ff5",
+          "6eaa551"
+        ],
+        "touched": [],
+        "at": "2026-10-30T23:15:38Z",
+        "by": "human"
+      }
     }
   ]
 }
