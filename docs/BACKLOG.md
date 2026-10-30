@@ -23,7 +23,7 @@ Medido hoy: 64 suites · 234 ficheros · 0 hallazgos de lint · 0 ficheros > 400
 |---|---|---|---|---|
 | **B6** | ~~`rows()` no deduplica~~ **CERRADO** en la fase 4: la fila lleva la identidad de la corrida (`id`/`started`/checkpoint) y `rows()` deduplica | `f30ea31` | — | `selftest projects` → dos escritores, **1 fila**, 120 tokens; `selftest autonomy` → dos ciclos, 2 filas |
 | **B11** | ~~`dist/` obsoleto~~ **CERRADO** en la fase 4: motor 1.2.0 construido del árbol y `--frozen` comparando suites contra el fuente | `dist/` | — | `find nexus_harness -name '*.py' -newer dist/nexus-harness-engine.exe \| wc -l` → **0**; `verify.py --frozen` → `frozen exit 0 suites=63 failures=0` |
-| **B13** | `docs/VERIFICATION.md` se commitea con la corrida **sin** gobernador | `docs/VERIFICATION.md` | el CI publicaría otro número que el documento | regenerar con `--write-doc` en modo gobernador y dejar escrito que el CI publica el otro |
+| **B13** | ~~`VERIFICATION.md` con la corrida sin gobernador~~ **CERRADO** en la fase 5: regenerado en modo gobernador (234/64, `protocol`) y la cabecera dice cuál de las dos corridas es cada una | `aabae36` | — | `self` bloque de `docs/VERIFICATION.md` mide 234/64; el CI publica `builtin` + `skipped=3`, escrito arriba |
 | **B15** | ~~`llm/` a medias~~ **CERRADO** en la fase 2: `transports/` vive en `llm/transports/`, 0 imports hacia arriba | `llm/providers.py` | — | `grep "from \.\.transports" nexus_harness/llm/` → 0 |
 | **Capas** | **9 de 9 paquetes** migrados (fase 2 cerrada). `skill_forge` y `skill_router` se quedan en tools/ y context/ — medido: moverlos invertiría la dependencia | `nexus_harness/*.py` | quedan 50 módulos planos: el techo de 400 sigue doliendo ahí | `selftests/test_layers.py` verde con el invariante intacto |
 | **D · Sandbox** | ~~AUSENTE~~ **CERRADA** en la fase 3: `policy` exige jaula de ficheros para `unrestricted`; Job Object (Win), bwrap (Linux) y seatbelt (macOS) se aplican al ejecutar | `a5f79eb` | — | `selftest sandbox` → OK (6 casos, incluido un hijo que muere con tope de 64 MB y el Job que mata el árbol) |
@@ -32,7 +32,7 @@ Medido hoy: 64 suites · 234 ficheros · 0 hallazgos de lint · 0 ficheros > 400
 | **G · Hooks** | ~~AUSENTE~~ **CERRADA** en la fase 3: 4 puntos, contrato 0/10/20/30, fail-closed | `88c8018` | — | `selftest hooks` → OK (9 casos) |
 | **H · Evals** | ~~PARCIAL~~ **CERRADA** en la fase 3: 20 tareas en 3 lenguajes (Python, JavaScript, Bash) y mutation smoke sobre 18 de ellas | `e19fd2c` | — | `selftest eval` → OK (20 tareas + 54 mutaciones); la negativa `over-400` sigue en 10/10 |
 
-| **K1** | LSP `references` no existe: solo `definition` y diagnósticos | `platform/lsp.py` | un renombrado enseña los usos en `definition` pero no todos | tool `references` sobre el cliente que ya habla el protocolo; servidor falso en la suite |
+| **K1** | ~~LSP `references`~~ **CERRADO** en la fase 5: `textDocument/references` + herramienta con caída al AST **declarada** (no es resolución de símbolos) | `32b471a` | — | `selftest lsp` → OK (6 casos); `references(symbol=build_prefix)` → usos con `[mapa AST]` |
 | **K2** | jaula de ficheros real en Windows: el Job Object contiene procesos, no escrituras | `platform/sandbox.py` | `unrestricted` sigue negado en Windows (fail-closed, por diseño) | AppContainer + ACL del proyecto, o bwrap por WSL, con la matriz ampliada |
 | **K3** | la cadena ⚡ es secuencial: dos ramas independientes no corren a la vez | `autonomy/kanvas_runner.py` | un grafo ancho tarda lo que suma, no lo que el máximo | dos worktrees (`verify/worktree_sandbox.py`) y el mismo gate por rama |
 
@@ -51,6 +51,8 @@ Medido hoy: 64 suites · 234 ficheros · 0 hallazgos de lint · 0 ficheros > 400
 | **D** | **Sandbox**: `unrestricted` sin jaula de ficheros se niega con motivo; matriz 3 modos × 3 jaulas; Job Object con kill-on-close y tope de memoria medidos | `a5f79eb` | `selftest sandbox` → OK (6 casos); `verify` GREEN en los dos modos |
 | **B** | **LSP**: cliente JSON-RPC 2.0 por stdio, `definition` (LSP → AST con la razón impresa) y diagnósticos en el resultado de cada `patch`/`write_file` | `3ba9c5d` | `selftest lsp` → OK (5 casos); `definition(symbol=build_prefix)` → `context_compiler.py:81` |
 | **H** | **Evals**: 20 tareas (10 Python, 5 JavaScript, 5 Bash) y mutation smoke — 3 mutaciones por tarea y ninguna sobrevive | `e19fd2c` | `selftest eval` → OK (9,3 s); `over-400-is-rejected` → exit 10 |
+| **K1** | **LSP `references`**: usos de un símbolo por el protocolo, con caída al AST declarada | `32b471a` | `selftest lsp` → OK (6 casos) |
+| **B13** | **`VERIFICATION.md`** regenerado en modo gobernador; la cabecera nombra las dos corridas (gobernador y CI) | `aabae36` | bloque a 234/64 con `linter=protocol(...)` |
 | **I** | **Release**: versión 1.2.0 en paquete y app, motor y instalador reconstruidos, instalación real actualizada por sha256, `--frozen` contra el fuente | `f181119` | `verify.py --frozen` → `frozen exit 0 suites=63 failures=0 skipped=7`; `installer_verify --verify` → 0 |
 | **B6** | **Ledger**: identidad de corrida (`RunResult.id` uuid) y `rows()` deduplicado; dos escritores suman una vez y dos ciclos siguen sumando dos | `f30ea31` | `selftest projects` → 1 fila / 120 tokens; `selftest autonomy` → 2 filas |
 
