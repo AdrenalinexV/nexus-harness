@@ -17,6 +17,29 @@ window.NexusStream = (function () {
     'session.relay': 'RELEVO', 'chat.rename': 'RENOMBRADA', 'skills.saved': 'SKILL',
   };
 
+  /* Portapapeles con red: la API moderna exige contexto seguro y, en algunos webviews, permiso; el
+     camino viejo (textarea + execCommand) funciona en el escritorio y no pide nada. */
+  function legacyCopy(text) {
+    const area = document.createElement('textarea');
+    area.value = text;
+    area.setAttribute('readonly', '');
+    area.style.position = 'fixed';
+    area.style.top = '-1000px';
+    document.body.appendChild(area);
+    area.select();
+    let ok = false;
+    try { ok = document.execCommand('copy'); } catch (error) { ok = false; }
+    area.remove();
+    if (!ok) throw new Error('execCommand fallo');
+  }
+
+  function copyText(text) {
+    if (navigator.clipboard && window.isSecureContext) {
+      return navigator.clipboard.writeText(text).catch(() => legacyCopy(text));
+    }
+    return Promise.resolve().then(() => legacyCopy(text));
+  }
+
   function msgText(content) {
     if (Array.isArray(content)) {
       return content.filter((part) => part && part.type === 'text'
@@ -53,6 +76,25 @@ window.NexusStream = (function () {
         box.appendChild(chip);
       }
       body.appendChild(box);
+    }
+    if (role === 'assistant' && String(text || '').trim()) {
+      // Copiar lo que dijo el modelo, sin seleccionar a mano. El botón solo existe si hay texto.
+      const copy = document.createElement('button');
+      copy.className = 'copy';
+      copy.type = 'button';
+      copy.textContent = 'copiar';
+      copy.title = 'Copiar este mensaje';
+      copy.onclick = async () => {
+        try {
+          await copyText(String(text));
+          copy.textContent = 'copiado';
+          copy.classList.add('done');
+        } catch (error) {
+          copy.textContent = 'no se pudo';
+        }
+        window.setTimeout(() => { copy.textContent = 'copiar'; copy.classList.remove('done'); }, 1600);
+      };
+      wrap.querySelector('.body').appendChild(copy);
     }
     if (meta && meta.tools && meta.tools.length) {
       const chips = document.createElement('div');
