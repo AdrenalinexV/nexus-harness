@@ -271,6 +271,19 @@ body.chat-only > .app { flex: 1 1 auto; min-height: 0; }
 .copy.done { color: var(--ok); opacity: 1; }
 @media (hover: none) { .copy { opacity: .6; } }
 
+/* Copiar código: cada bloque cercado (```...```) es un `<pre>` con su propia acción y `tab-size: 4`,
+   para que una tabulación se lea igual en cualquier navegador. Se cita como el taller: regla a la
+   izquierda, mono, sin caja ni fondo. */
+.codeblock { margin: .4rem 0; border-left: 1px solid var(--rule-2); padding-left: .8rem; }
+.code-head { display: flex; align-items: baseline; gap: .7rem; }
+.code-lang { font-family: var(--mono); font-size: var(--fs-micro); letter-spacing: .12em;
+  text-transform: uppercase; color: var(--ink-3); }
+.code { margin: .15rem 0 0; max-width: var(--measure); overflow: auto; white-space: pre;
+  font-family: var(--mono); font-size: var(--fs-xs); line-height: 1.55; color: var(--ink-2);
+  tab-size: 4; -moz-tab-size: 4; }
+.code-copy { opacity: .55; }
+.codeblock:hover .code-copy, .code-copy:focus-visible { opacity: 1; }
+
 /* Exportar: la acción del título del documento, discreta como `copiar` pero siempre visible (el
    cuaderno no esconde sus salidas detrás de un hover). */
 .doc-act {

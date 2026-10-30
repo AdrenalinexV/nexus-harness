@@ -40,6 +40,59 @@ window.NexusStream = (function () {
     return Promise.resolve().then(() => legacyCopy(text));
   }
 
+  /* Un bloque cercado (```...```) del mensaje no se deja como texto: se pinta como `<pre>` con su
+     propia acción de copiar, para no seleccionar el código a mano. El contenido va por `textContent`
+     — nunca `innerHTML` — así que el modelo no puede inyectar marcado desde un mensaje. */
+  const FENCE = /```([^\n`]*)\n?([\s\S]*?)(?:```|$)/g;
+
+  function codeBlock(code, lang) {
+    const box = document.createElement('figure');
+    box.className = 'codeblock';
+    const head = document.createElement('div');
+    head.className = 'code-head';
+    const tag = document.createElement('span');
+    tag.className = 'code-lang';
+    tag.textContent = lang || 'codigo';
+    head.appendChild(tag);
+    const copy = document.createElement('button');
+    copy.className = 'copy code-copy';
+    copy.type = 'button';
+    copy.textContent = 'copiar';
+    copy.title = 'Copiar este bloque';
+    copy.onclick = async () => {
+      try { await copyText(code); copy.textContent = 'copiado'; copy.classList.add('done'); }
+      catch (error) { copy.textContent = 'no se pudo'; }
+      window.setTimeout(() => { copy.textContent = 'copiar'; copy.classList.remove('done'); }, 1600);
+    };
+    head.appendChild(copy);
+    const pre = document.createElement('pre');
+    pre.className = 'code';
+    pre.textContent = code.replace(/\n+$/, '');
+    box.appendChild(head);
+    box.appendChild(pre);
+    return box;
+  }
+
+  /* El asiento alterna prosa y bloques: el texto se parte por las vallas y cada trozo se pinta como
+     nodo de texto (respeta el `white-space: pre-wrap` del cuaderno) o como bloque de código. */
+  function fillBubble(bubble, text) {
+    const raw = String(text == null ? '' : text);
+    bubble.textContent = '';
+    FENCE.lastIndex = 0;
+    let cursor = 0;
+    let found = false;
+    let match;
+    while ((match = FENCE.exec(raw)) !== null) {
+      if (match[0].length === 0) break; // red de seguridad: un match vacio no avanza el cursor
+      if (match.index > cursor) bubble.appendChild(document.createTextNode(raw.slice(cursor, match.index)));
+      bubble.appendChild(codeBlock(match[2], match[1].trim()));
+      cursor = match.index + match[0].length;
+      found = true;
+    }
+    if (cursor < raw.length) bubble.appendChild(document.createTextNode(raw.slice(cursor)));
+    if (!found) bubble.textContent = raw;
+  }
+
   function msgText(content) {
     if (Array.isArray(content)) {
       return content.filter((part) => part && part.type === 'text'
@@ -66,7 +119,8 @@ window.NexusStream = (function () {
     wrap.className = 'msg ' + role;
     wrap.innerHTML = `<div class="folio">${String(state.folio).padStart(2, '0')}</div>
                       <div class="body"><div class="who">${role === 'user' ? 'TÚ' : 'NEXUS'}</div>
-                      <div class="bubble">${esc(text)}</div></div>`;
+                      <div class="bubble"></div></div>`;
+    fillBubble(wrap.querySelector('.bubble'), text);
     const body = wrap.querySelector('.body');
     if (meta && meta.attachments && meta.attachments.length) {
       const box = document.createElement('div');
