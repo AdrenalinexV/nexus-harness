@@ -33,7 +33,7 @@ DECLARED = {
     "llm": ("context_window", "judge", "portfolio", "provider_discovery", "providers", "transports"),
     "tools": ("attachments", "mcp_client", "recall", "repair_hint", "registry", "sidecar",
               "skill_forge", "subagents", "toolbox"),
-    "context": ("compaction", "context_compiler", "context_pruner", "memory", "repo_map",
+    "context": ("accounting", "compaction", "context_compiler", "context_pruner", "memory", "repo_map",
                 "savings", "skill_router", "triad_brief"),
     "verify": ("checkpoint", "gate", "linelaw", "oracle", "repair_guard", "worktree_sandbox"),
     "autonomy": ("autonomy", "autonomy_ask", "daemon", "plan_graph"),

@@ -21,13 +21,13 @@ from .platform import ledger
 from .verify import checkpoint
 from .core import streaming
 from .core.budget import CostBudget
+from .context.accounting import ChatAccounting
 from .context.compaction import Compactor
 from .context.context_compiler import TurnWindow
 from .core.message import Message, as_text
 from .core.turn_support import ChatTurn
 from .llm.portfolio import maybe_escalate
 from .learning.reflection import learn
-from .platform.tokenizer import calibration, count_messages
 from .turn_context import apply_budget, chat_prefix, inject_skills, split_history
 from .turn_engine import TurnEngine
 from .context.savings import CACHE_REL as SKILLS_CACHE, SavingsLedger
@@ -53,7 +53,7 @@ REPAIR = """El gate ha devuelto ROJO (exit 10). Hallazgos observados:
 Repara exactamente eso. No expliques: actúa."""
 
 
-class Chat:
+class Chat(ChatAccounting):
     """One conversation, many turns, one gate at the end of any turn that changed something."""
 
     def __init__(self, router, config, registry, gate, skills, bus=None, memory=None,
@@ -215,39 +215,6 @@ class Chat:
         else:
             self._emit("chat.limit", "max_steps=%d" % int(max_steps or self.config.max_steps))
         return text, steps
-
-    def _count_savings(self, reply, messages):
-        """Cierra la request en el libro de ahorro del turno (baseline, ahorro y multiplicador).
-
-        Ademas calibra el contador: compara la estimacion propia con el `prompt_tokens` que el
-        proveedor devolvio, para que el proximo presupuesto (55/70 %) mida con el sesgo de ESTE modelo
-        y no con un `chars / 4` que se desvia un 20-30 %.
-        """
-        from .context.compaction import estimate
-        model = self._model_of("worker") or str(getattr(reply, "model", "") or "")
-        measured = bool(getattr(reply.usage, "measured", False))
-        sent = int(getattr(reply.usage, "prompt", 0) or 0) or estimate(messages)[1]
-        if measured and sent > 0:
-            calibration().observe(model, count_messages(messages, model), sent)
-        first_map = 0 if self.savings.repomap_tokens else self._map_tokens
-        row = self.savings.request(sent, injected_skill_tokens=self._injected_tokens,
-                                   repomap_tokens=first_map, measured=measured,
-                                   cached_tokens=int(getattr(reply.usage, "cached", 0) or 0))
-        self._emit("context.savings", self.savings.note(), row=row, totals=self.savings.as_dict())
-        return row
-
-    def _model_of(self, role):
-        """El id del modelo de un rol, sin romper el turno si el router no puede decirlo."""
-        try:
-            return str(self.router.info(role).model or "")
-        except Exception:  # noqa: BLE001 -- la calibracion es una mejora, no un requisito
-            return ""
-
-    # -- ventana del motor ---------------------------------------------------------------------
-    @property
-    def window_tokens(self):
-        """La ventana que el motor declaro en este turno. 0 = no la publica, y entonces no hay recorte."""
-        return int(getattr(self.engine, "window", 0) or 0)
 
     def _resync(self, messages, window):
         """Tras reescribir el prompt, la historia y los deltas vuelven a separarse por su marca."""

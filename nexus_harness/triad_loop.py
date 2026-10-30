@@ -14,7 +14,6 @@ Exit codes are the protocol's: `0` green, `10` red, `20` the harness could not v
 """
 import threading
 import time
-from dataclasses import dataclass, field
 from pathlib import Path
 
 from .platform import ledger
@@ -37,42 +36,7 @@ from .tools.subagents import Delegate
 from .tools.toolbox import process_manager
 from .tools import default_registry
 from .context.triad_brief import CLOSE_PROMPT, JUDGE_REJECT, REPAIR_PROMPT, WORKER_PROMPT
-from .core.turn_support import TurnSupport
-
-@dataclass
-class RunResult:
-    goal: str = ""
-    root: str = ""
-    ok: bool = False
-    exit: int = 10
-    summary: str = ""
-    steps: int = 0
-    repairs: int = 0
-    touched: list = field(default_factory=list)
-    sessions: list = field(default_factory=list)
-    phases: list = field(default_factory=list)
-    verdict: dict = field(default_factory=dict)
-    judgement: dict = field(default_factory=dict)
-    budget: dict = field(default_factory=dict)
-    cost: dict = field(default_factory=dict)
-    tokens: dict = field(default_factory=dict)
-    savings: dict = field(default_factory=dict)
-    recorded: bool = False
-    started: str = ""
-    finished: str = ""
-
-    def as_dict(self):
-        return {"goal": self.goal, "root": self.root, "ok": self.ok, "exit": self.exit, "summary": self.summary,
-                "steps": self.steps, "repairs": self.repairs, "touched": self.touched,
-                "sessions": self.sessions, "phases": self.phases, "verdict": self.verdict,
-                "judgement": self.judgement, "budget": self.budget, "cost": self.cost,
-                "tokens": self.tokens, "savings": self.savings, "recorded": self.recorded,
-                "started": self.started, "finished": self.finished}
-
-
-def _now():
-    return time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
-
+from .core.turn_support import RunResult, TurnSupport, now
 
 class Triad(TurnSupport):
     def __init__(self, router, config, registry=None, gate=None, judge=None, skills=None,
@@ -289,7 +253,7 @@ class Triad(TurnSupport):
         steps_total, repairs, reds = 0, 0, 0
         max_steps = int(max_steps or self.config.max_steps)
         max_repairs = int(max_repairs if max_repairs is not None else self.config.max_repairs)
-        result = RunResult(goal=goal, root=str(self.config.default_root), started=_now())
+        result = RunResult(goal=goal, root=str(self.config.default_root), started=now())
         self._emit("run.start", goal, root=str(self.config.default_root))
         # El presupuesto se resuelve contra la ventana del motor ANTES de la primera llamada.
         self.engine.fit()
@@ -328,7 +292,7 @@ class Triad(TurnSupport):
                 result.exit = verdict.exit
                 result.summary = text
                 result.steps, result.repairs = steps_total, repairs
-                result.touched, result.finished = sorted(self.touched), _now()
+                result.touched, result.finished = sorted(self.touched), now()
                 result.phases.append({"id": (phase or {}).get("id", "run"), "ok": False,
                                       "exit": verdict.exit})
                 break
@@ -359,7 +323,7 @@ class Triad(TurnSupport):
         result.cost = self.cost.state()
         result.tokens = dict(self.tokens, total=sum(self.tokens.values()))
         result.savings = self.savings.as_dict()
-        result.touched, result.finished = sorted(self.touched), _now()
+        result.touched, result.finished = sorted(self.touched), now()
         if self.relay is not None:
             self.relay.finish(result.exit)
             result.budget = self.relay.meter.state()

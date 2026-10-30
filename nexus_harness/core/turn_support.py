@@ -84,3 +84,44 @@ class TurnSupport:
         results = declared.at(point, dict(payload or {}, at=time.strftime("%Y-%m-%dT%H:%M:%SZ",
                                                                         time.gmtime())), cwd=root)
         return hooks_mod.blocked(results)
+
+@dataclass
+class RunResult:
+    """El acta de una corrida de la triada. Vivía en `triad_loop.py`, que llegó a 392 líneas.
+
+    Es un dato, no una decisión: el bucle lo rellena y `_record` lo escribe. Se mueve aquí por la misma
+    razón que `ChatTurn` -- la ley de 400 se respeta moviendo responsabilidad, no apretando comentarios.
+    """
+
+    goal: str = ""
+    root: str = ""
+    ok: bool = False
+    exit: int = 10
+    summary: str = ""
+    steps: int = 0
+    repairs: int = 0
+    touched: list = field(default_factory=list)
+    sessions: list = field(default_factory=list)
+    phases: list = field(default_factory=list)
+    verdict: dict = field(default_factory=dict)
+    judgement: dict = field(default_factory=dict)
+    budget: dict = field(default_factory=dict)
+    cost: dict = field(default_factory=dict)
+    tokens: dict = field(default_factory=dict)
+    savings: dict = field(default_factory=dict)
+    recorded: bool = False
+    started: str = ""
+    finished: str = ""
+
+    def as_dict(self):
+        return {"goal": self.goal, "root": self.root, "ok": self.ok, "exit": self.exit,
+                "summary": self.summary, "steps": self.steps, "repairs": self.repairs,
+                "touched": self.touched, "sessions": self.sessions, "phases": self.phases,
+                "verdict": self.verdict, "judgement": self.judgement, "budget": self.budget,
+                "cost": self.cost, "tokens": self.tokens, "savings": self.savings,
+                "recorded": self.recorded, "started": self.started, "finished": self.finished}
+
+
+def now():
+    """El sello de tiempo del arnés: UTC, ISO y con segundos. Un solo formato en todo el repo."""
+    return time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
