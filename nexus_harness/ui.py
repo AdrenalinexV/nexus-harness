@@ -123,14 +123,18 @@ class Handler(BaseHTTPRequestHandler):
         return False
 
     def _index(self):
-        """El chat: HTML fijo del checkout, con dos cosas que solo existen en marcha.
+        """El chat: el mismo armazon que cualquier pagina del arnes (token, tema y sprite)."""
+        return self._render("index.html")
 
-        El token, para que el enlace a Configuracion y el de Gobernanza lo lleven encima (un enlace
-        sin token es una pantalla que pierde la credencial), y el sprite de iconos SVG, que se sirve
-        inline desde `ui_icons.py`: una pagina que necesita la red para verse bien esta rota.
+    def _render(self, name):
+        """Una pagina del checkout, con dos cosas que solo existen en marcha.
+
+        El token, para que los enlaces la lleven encima (un enlace sin token es una pantalla que pierde
+        la credencial), y el sprite de iconos SVG, que se sirve inline desde `ui_icons.py`: una pagina
+        que necesita la red para verse bien esta rota.
         """
         from . import ui_icons, ui_theme
-        html = (WEB / "index.html").read_text(encoding="utf-8")
+        html = (WEB / name).read_text(encoding="utf-8")
         html = html.replace("{{token}}", quote(self.server.token or "", safe=""))
         config = self.cockpit.config
         html = html.replace("{{accent}}", ui_theme.resolve(config.ui_theme))
@@ -160,6 +164,8 @@ class Handler(BaseHTTPRequestHandler):
             return self._page(self._index())
         if path == "/gov":
             return self._gov((query.get("tab") or [""])[0])
+        if path == "/kanvas":
+            return self._page(self._render("kanvas.html"))
         if path == "/settings":
             from . import settings
             config = self.cockpit.config

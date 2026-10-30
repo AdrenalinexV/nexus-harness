@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="es" data-mode="{{mode}}" data-accent="{{accent}}" data-skin="{{skin}}" data-font="{{font}}" data-density="{{density}}">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="color-scheme" content="dark light">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Crect width='24' height='24' fill='%23121110'/%3E%3Cpath d='M5 7h6v4H5zM13 13h6v4h-6zM11 9h2v4' fill='none' stroke='%23d4502e' stroke-width='1.4'/%3E%3C/svg%3E">
+<meta name="nexus-token" content="{{token}}">
+<title>Tablero · Nexus Harness</title>
+<link rel="stylesheet" href="tokens.css">
+<link rel="stylesheet" href="themes.css">
+<link rel="stylesheet" href="skins.css">
+<link rel="stylesheet" href="skins-special.css">
+<link rel="stylesheet" href="app.css">
+<link rel="stylesheet" href="density.css">
+<link rel="stylesheet" href="kanvas.css">
+</head>
+<body class="kanvas-page">
+<a class="skip" href="#k-lanes">Saltar al tablero</a>
+
+<!-- El tablero es una hoja del cuaderno: folio, reglas de 1px y el grafo como margen. Sin tarjetas. -->
+<header class="masthead">
+  <a class="brand" href="/">NEXUS<span>·</span>HARNESS</a>
+  <span class="meta">tablero · <b id="k-project">…</b> · <span id="k-updated" class="mono"></span></span>
+  <div class="top-right">
+    <a class="navlink" href="/">← chat</a>
+  </div>
+</header>
+
+<div id="k-warn" class="warn" role="status" aria-live="polite" hidden></div>
+
+<main class="kanvas">
+  <section class="kbar" aria-label="Resumen del tablero">
+    <p class="kpercent"><b id="k-percent">0%</b> completado</p>
+    <ul id="k-counts" class="kcounts" aria-label="Contadores por estado"></ul>
+    <input id="k-filter" class="search" type="search" placeholder="filtrar tareas…"
+           aria-label="Filtrar tareas">
+    <button id="k-add" class="ghost" type="button">+ Tarea</button>
+    <button id="k-decompose" class="ghost" type="button">Descomponer</button>
+    <button id="k-yolo" class="ghost" type="button">⚡ YOLO en cadena</button>
+    <button id="k-run" class="primary" type="button"
+            title="Ejecuta las tareas ⚡ con el Gate y el Juez: sin verde no se cierra ninguna">Ejecutar</button>
+    <button id="k-stop" class="ghost" type="button" hidden>Detener</button>
+  </section>
+
+  <div id="k-board" class="kboard">
+    <svg id="k-edges" class="kedges" aria-hidden="true"></svg>
+    <div id="k-lanes"></div>
+  </div>
+  <p id="k-empty" class="kempty" hidden>El tablero está vacío: pide al Director que lo descomponga.</p>
+  <p class="kfoot dim">El estado <b>done</b> no se escribe a mano: lo firma el Gate (verde) y, en modo
+    ⚡, también el Juez. <span class="mono">.nexus/kanvas.json</span></p>
+</main>
+
+<script src="token.js"></script>
+<script src="kanvas.js"></script>
+</body>
+</html>

@@ -83,6 +83,9 @@ def get(cockpit, path, query=None):
         return (200 if payload.get("ok", True) else 404), payload
     if path == "/api/bridge/daemon":
         return 200, cockpit.daemon_state()
+    if path == "/api/kanvas":
+        from . import kanvas_api
+        return kanvas_api.get(cockpit, query)
     if path == "/api/events":
         since = int(_one(query, "since", "0") or 0)
         return 200, {"events": cockpit.bus.since(since), "seq": cockpit.bus.seq}
@@ -126,6 +129,9 @@ def post(cockpit, path, body=None, query=None):
         if str(body.get("action") or "toggle") == "stop":
             return 200, cockpit.daemon_stop()
         return 200, cockpit.daemon_toggle(body.get("provider") or "")
+    if path == "/api/kanvas":
+        from . import kanvas_api
+        return kanvas_api.post(cockpit, body)
     if path == "/api/stop":
         return 200, {"ok": True, "stopped": cockpit.stop()}
     if path == "/api/chat/new":

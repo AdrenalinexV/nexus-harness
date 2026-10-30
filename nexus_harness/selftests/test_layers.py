@@ -28,7 +28,7 @@ PKG = Path(__file__).resolve().parents[1]
 ORDER = ("platform", "core", "llm", "tools", "context", "verify", "spec", "learning", "autonomy")
 DECLARED = {
     "platform": ("backup", "console", "digest", "events", "gitcommit", "hardware_probe", "hooks",
-                 "ledger", "lsp", "policy", "sandbox", "skillfiles", "tokenizer", "transcripts",
+                 "kanvas", "ledger", "lsp", "policy", "sandbox", "skillfiles", "tokenizer", "transcripts",
                  "vault"),
     "core": ("budget", "message", "outcomes", "streaming", "tasks", "turn_support"),
     "llm": ("context_window", "judge", "portfolio", "provider_discovery", "providers", "transports"),
@@ -37,7 +37,7 @@ DECLARED = {
     "context": ("accounting", "compaction", "context_compiler", "context_pruner", "memory", "repo_map",
                 "savings", "skill_router", "triad_brief"),
     "verify": ("checkpoint", "gate", "linelaw", "oracle", "repair_guard", "worktree_sandbox"),
-    "autonomy": ("autonomy", "autonomy_ask", "daemon", "plan_graph"),
+    "autonomy": ("autonomy", "autonomy_ask", "daemon", "kanvas_runner", "plan_graph"),
     "spec": ("spec_synth",),
     "learning": ("reflection", "improve"),
 }

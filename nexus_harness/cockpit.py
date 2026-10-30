@@ -17,6 +17,7 @@ import time
 from dataclasses import replace
 from pathlib import Path
 
+from .cockpit_panels import Panels
 from . import __version__, panels, runner
 from .autonomy.autonomy import Autopilot, model_planner
 from .bridge import Bridge
@@ -41,7 +42,7 @@ def _dirs(workspace):
         return []
 
 
-class Cockpit:
+class Cockpit(Panels):
     def __init__(self, config=None, bus=None, runner=None, bridge=None, memory=None):
         self.config = config or HarnessConfig.load()
         self.bus = bus or Bus()
@@ -135,38 +136,6 @@ class Cockpit:
         chat = self.chat_for(self._project_root(project))
         return chat.load(session_id)
 
-    # -- product panels ----------------------------------------------------------------------
-    def onboarding_state(self):
-        return panels.onboarding_status(self)
-
-    def onboarding_apply(self, payload):
-        return panels.onboarding_apply(self, payload)
-
-    def mcp_state(self):
-        return panels.mcp_status(self)
-
-    def mcp_reload(self):
-        self.mcp()
-        return panels.mcp_reload(self)
-
-    def skills_list(self):
-        return panels.skills_list(self)
-
-    def skill_read(self, name):
-        return panels.skills_read(self, name)
-
-    def skill_save(self, name, text):
-        return panels.skills_save(self, name, text)
-
-    def daemon_state(self):
-        return panels.daemon_status(self)
-
-    def daemon_toggle(self, provider=""):
-        return panels.daemon_toggle(self, provider or "telegram")
-
-    def daemon_stop(self):
-        return panels.daemon_stop(self)
-
     def send(self, text, attachments=None):
         """Start one chat turn. Returns (accepted, payload); refuses while something is in flight."""
         text = str(text or "").strip()
@@ -209,6 +178,18 @@ class Cockpit:
         if self._autopilot is not None and self._autopilot.stop():
             stopped = True
         return stopped
+
+    def reserve(self):
+        """Toma el turno para un trabajo que no es un chat (la cadena yolo). `False` si ya hay uno."""
+        with self._lock:
+            if self._busy:
+                return False
+            self._busy = True
+        return True
+
+    def release(self):
+        with self._lock:
+            self._busy = False
 
     @property
     def busy(self):

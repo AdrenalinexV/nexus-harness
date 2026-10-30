@@ -17,14 +17,14 @@ from dataclasses import dataclass, field
 from pathlib import Path
 
 from .repair_hint import RepairHints
-from .toolbox import (browser, edit, file_ops, lsp_tools, memory_tools, patch_v4a, process_manager,
-                      repo_search, shell_session, skill_tools, web)
+from .toolbox import (browser, edit, file_ops, kanvas_tools, lsp_tools, memory_tools, patch_v4a,
+                      process_manager, repo_search, shell_session, skill_tools, web)
 
 WRITE_TOOLS = frozenset({"write_file", "patch_replace", "apply_blocks", "apply_patch"})
 ROOT_HANDLERS = (repo_search.HANDLERS, file_ops.HANDLERS, edit.HANDLERS, patch_v4a.HANDLERS,
                  shell_session.HANDLERS, process_manager.HANDLERS, web.HANDLERS,
                  skill_tools.HANDLERS, browser.HANDLERS, memory_tools.HANDLERS,
-                 lsp_tools.HANDLERS)
+                 lsp_tools.HANDLERS, kanvas_tools.HANDLERS)
 READ_ONLY = frozenset({"read_file", "search_files", "list_dir"})
 MAX_PARALLEL = 4
 
@@ -52,6 +52,21 @@ SCHEMAS = [
              "file_glob": {"type": "string", "description": "e.g. *.py"},
              "context": {"type": "integer", "description": "Lines of context around a match"},
              "limit": {"type": "integer"}}, ["pattern"]),
+    _schema("kanvas_board",
+            "El tablero del proyecto: carriles y tareas con dependencias (DAG). actions: status, "
+            "propose, decompose, claim, note, submit_for_gate, toggle_yolo. No hay `approve`: el cierre "
+            "lo firma el operador (1 clic) o el ejecutor yolo con Gate verde y Juez de acuerdo.",
+            {"action": {"type": "string", "enum": ["status", "propose", "decompose", "claim", "note",
+                                                   "submit_for_gate", "toggle_yolo"]},
+             "task": {"type": "string", "description": "id de la tarea, p.ej. TK-03"},
+             "title": {"type": "string"}, "track": {"type": "string"},
+             "depends_on": {"type": "array", "items": {"type": "string"}},
+             "tasks": {"type": "array", "items": {"type": "object"},
+                       "description": "decompose: [{title, track, depends_on, verify_cmd}]"},
+             "text": {"type": "string"}, "commits": {"type": "array", "items": {"type": "string"}},
+             "gate": {"type": "integer"}, "judge": {"type": "string"}, "chain": {"type": "boolean"},
+             "verify_cmd": {"type": "string"}, "yolo": {"type": "boolean"}, "by": {"type": "string"}},
+            ["action"]),
     _schema("definition",
             "Where a symbol is defined: file:line. Uses the language server when one is installed "
             "and falls back to the AST map (stating that it did) when it is not.",

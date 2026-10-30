@@ -10,7 +10,7 @@
 > motor y pone el build rojo. (3) El orden no se reordena por vistosidad: se reordena solo si un dato
 > medido lo obliga, y entonces se dice en el commit.
 
-Medido hoy: 63 suites · 224 ficheros · 57 módulos planos · 12 carpetas · 0 ficheros > 400 líneas.
+Medido hoy: 64 suites · 232 ficheros · 57 módulos planos · 12 carpetas · 0 ficheros > 400 líneas.
 
 ---
 
@@ -23,6 +23,7 @@ Medido hoy: 63 suites · 224 ficheros · 57 módulos planos · 12 carpetas · 0 
 | **2** | Cerrar la arquitectura por capas: de 6/9 a 9/9 | **HECHA** | `cb7a6a4`, `cd3e8de`, `144c526`, `6d8bde2` · 9 paquetes, 50 módulos planos, `test_layers` con el invariante intacto |
 | **3** | Paridad competitiva: G, C, D, B, H | **HECHA** — los cinco pasos con su suite | `88c8018` · suite `hooks` · gate obedece 0/10/20/30 · `41de9b8` · suite `stream` · `chat()` = `fold(stream())` · `a5f79eb` · suite `sandbox` · `unrestricted` sin jaula se niega · `3ba9c5d` · suite `lsp` · `definition` con fallback declarado · `e19fd2c` · suite `eval` · 20 tareas y mutation smoke |
 | **4** | Release: `dist/` fresco, versión, B6 | **HECHA** | `verify.py --frozen` → `frozen exit 0 suites=63` · 1.2.0 instalado con el sha256 del repo · `f30ea31` |
+| **5** | Tablero Kanvas: plan versionado, DAG y `done` firmado por Gate+Juez | **HECHA** | `(esta fase)` · suite `kanvas` (9 casos) · vista `/kanvas` |
 
 **Puntuación de referencia (no re-puntuada):** `AUDIT_2026-10-29.md` §4 midió **media 4,55/10** con estos
 diez ejes: gobernanza **8,5** · autonomía **8,0** · contexto **7,0** · ecosistema **6,0** · UI **5,5** ·
@@ -97,6 +98,22 @@ lo que ya ganamos no mueve la media.
 
 Un binario viejo pasa cualquier proof que solo mire `failures=0`: por eso la frescura es un criterio de
 release, no una nota.
+
+---
+
+## 4b. Fase 5 — el tablero (Kanvas), cerrada
+
+El plan deja de vivir en la cabeza de una sesión: `.nexus/kanvas.json` viaja en git, sobrevive a un
+relevo y lo leen igual la cabina, la herramienta del modelo y el CLI. Lo que lo separa de un Kanban
+normal es quién firma el `done`.
+
+| # | paso | criterio rojo → verde |
+|---|---|---|
+| **16** | **Kanvas** — carriles, tareas y DAG con `proposed/blocked/todo/doing/review/done` | **cumplido**: el estado de una tarea no se escribe a mano (`blocked` se calcula); `review` exige commit/diff y gate 0; `done` exige gate 0 y, con Juez, su aprobación; la cadena ⚡ cierra pasando por `review` igual que un humano y **para** con el gate rojo. Vista `/kanvas` con resumen, filtro y flechas bezier SVG en vivo por SSE. Suite `kanvas`, 9 casos |
+
+Reglas que no se negocian, escritas en el motor y probadas: `done` es final (reabrir es otra tarea con
+nota); el agente **no** tiene `approve` (solo el operador por la cabina/CLI, o el ejecutor con Gate+Juez);
+y crear una tarea ya `done` está prohibido — se nace `proposed` o `todo`.
 
 ---
 

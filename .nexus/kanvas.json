@@ -1,0 +1,643 @@
+{
+  "format": 1,
+  "project": "Nexus-Harness",
+  "updated_at": "2026-10-30T20:32:36Z",
+  "tracks": [
+    {
+      "id": "core",
+      "title": "Core Engine"
+    },
+    {
+      "id": "ui",
+      "title": "UI & UX"
+    },
+    {
+      "id": "tests",
+      "title": "Tests & Gate"
+    },
+    {
+      "id": "release",
+      "title": "Release"
+    }
+  ],
+  "tasks": [
+    {
+      "id": "TK-01",
+      "title": "Fase 0: tipografia determinista (2 OFL, 0 recursos externos)",
+      "track": "ui",
+      "status": "done",
+      "depends_on": [],
+      "yolo": false,
+      "verify_cmd": "",
+      "assigned_to": "obrero",
+      "commits": [
+        "ef36f95"
+      ],
+      "notes": [
+        {
+          "at": "2026-10-30T20:32:36Z",
+          "by": "director",
+          "text": "creada"
+        },
+        {
+          "at": "2026-10-30T20:32:36Z",
+          "by": "obrero",
+          "text": "-> doing"
+        },
+        {
+          "at": "2026-10-30T20:32:36Z",
+          "by": "obrero",
+          "text": "-> review"
+        },
+        {
+          "at": "2026-10-30T20:32:36Z",
+          "by": "human",
+          "text": "-> done"
+        },
+        {
+          "at": "2026-10-30T20:00:00Z",
+          "by": "director",
+          "text": "cerrada con su commit y el gate verde de su fase"
+        }
+      ],
+      "evidence": {
+        "gate": 0,
+        "judge": "approve",
+        "commits": [
+          "ef36f95"
+        ],
+        "touched": [],
+        "at": "2026-10-30T20:32:36Z",
+        "by": "human"
+      }
+    },
+    {
+      "id": "TK-02",
+      "title": "Fase 1: el repo deja de mentir (doc_truth, verify limpio, CI)",
+      "track": "tests",
+      "status": "done",
+      "depends_on": [],
+      "yolo": false,
+      "verify_cmd": "",
+      "assigned_to": "obrero",
+      "commits": [
+        "40adce5",
+        "7cfba97"
+      ],
+      "notes": [
+        {
+          "at": "2026-10-30T20:32:36Z",
+          "by": "director",
+          "text": "creada"
+        },
+        {
+          "at": "2026-10-30T20:32:36Z",
+          "by": "obrero",
+          "text": "-> doing"
+        },
+        {
+          "at": "2026-10-30T20:32:36Z",
+          "by": "obrero",
+          "text": "-> review"
+        },
+        {
+          "at": "2026-10-30T20:32:36Z",
+          "by": "human",
+          "text": "-> done"
+        },
+        {
+          "at": "2026-10-30T20:00:00Z",
+          "by": "director",
+          "text": "cerrada con su commit y el gate verde de su fase"
+        }
+      ],
+      "evidence": {
+        "gate": 0,
+        "judge": "approve",
+        "commits": [
+          "40adce5",
+          "7cfba97"
+        ],
+        "touched": [],
+        "at": "2026-10-30T20:32:36Z",
+        "by": "human"
+      }
+    },
+    {
+      "id": "TK-03",
+      "title": "Fase 2: arquitectura por capas 9/9",
+      "track": "core",
+      "status": "done",
+      "depends_on": [],
+      "yolo": false,
+      "verify_cmd": "",
+      "assigned_to": "obrero",
+      "commits": [
+        "cb7a6a4",
+        "cd3e8de",
+        "144c526",
+        "6d8bde2"
+      ],
+      "notes": [
+        {
+          "at": "2026-10-30T20:32:36Z",
+          "by": "director",
+          "text": "creada"
+        },
+        {
+          "at": "2026-10-30T20:32:36Z",
+          "by": "obrero",
+          "text": "-> doing"
+        },
+        {
+          "at": "2026-10-30T20:32:36Z",
+          "by": "obrero",
+          "text": "-> review"
+        },
+        {
+          "at": "2026-10-30T20:32:36Z",
+          "by": "human",
+          "text": "-> done"
+        },
+        {
+          "at": "2026-10-30T20:00:00Z",
+          "by": "director",
+          "text": "cerrada con su commit y el gate verde de su fase"
+        }
+      ],
+      "evidence": {
+        "gate": 0,
+        "judge": "approve",
+        "commits": [
+          "cb7a6a4",
+          "cd3e8de",
+          "144c526",
+          "6d8bde2"
+        ],
+        "touched": [],
+        "at": "2026-10-30T20:32:36Z",
+        "by": "human"
+      }
+    },
+    {
+      "id": "TK-04",
+      "title": "G: hooks en 4 puntos con contrato 0/10/20/30",
+      "track": "core",
+      "status": "done",
+      "depends_on": [],
+      "yolo": false,
+      "verify_cmd": "",
+      "assigned_to": "obrero",
+      "commits": [
+        "88c8018"
+      ],
+      "notes": [
+        {
+          "at": "2026-10-30T20:32:36Z",
+          "by": "director",
+          "text": "creada"
+        },
+        {
+          "at": "2026-10-30T20:32:36Z",
+          "by": "obrero",
+          "text": "-> doing"
+        },
+        {
+          "at": "2026-10-30T20:32:36Z",
+          "by": "obrero",
+          "text": "-> review"
+        },
+        {
+          "at": "2026-10-30T20:32:36Z",
+          "by": "human",
+          "text": "-> done"
+        },
+        {
+          "at": "2026-10-30T20:00:00Z",
+          "by": "director",
+          "text": "cerrada con su commit y el gate verde de su fase"
+        }
+      ],
+      "evidence": {
+        "gate": 0,
+        "judge": "approve",
+        "commits": [
+          "88c8018"
+        ],
+        "touched": [],
+        "at": "2026-10-30T20:32:36Z",
+        "by": "human"
+      }
+    },
+    {
+      "id": "TK-05",
+      "title": "C: streaming SSE, fold(stream()) y Detener por socket",
+      "track": "core",
+      "status": "done",
+      "depends_on": [],
+      "yolo": false,
+      "verify_cmd": "",
+      "assigned_to": "obrero",
+      "commits": [
+        "2627150",
+        "41de9b8",
+        "d88be86"
+      ],
+      "notes": [
+        {
+          "at": "2026-10-30T20:32:36Z",
+          "by": "director",
+          "text": "creada"
+        },
+        {
+          "at": "2026-10-30T20:32:36Z",
+          "by": "obrero",
+          "text": "-> doing"
+        },
+        {
+          "at": "2026-10-30T20:32:36Z",
+          "by": "obrero",
+          "text": "-> review"
+        },
+        {
+          "at": "2026-10-30T20:32:36Z",
+          "by": "human",
+          "text": "-> done"
+        },
+        {
+          "at": "2026-10-30T20:00:00Z",
+          "by": "director",
+          "text": "cerrada con su commit y el gate verde de su fase"
+        }
+      ],
+      "evidence": {
+        "gate": 0,
+        "judge": "approve",
+        "commits": [
+          "2627150",
+          "41de9b8",
+          "d88be86"
+        ],
+        "touched": [],
+        "at": "2026-10-30T20:32:36Z",
+        "by": "human"
+      }
+    },
+    {
+      "id": "TK-06",
+      "title": "D: sandbox fail-closed y Job Object medido",
+      "track": "core",
+      "status": "done",
+      "depends_on": [],
+      "yolo": false,
+      "verify_cmd": "",
+      "assigned_to": "obrero",
+      "commits": [
+        "a5f79eb"
+      ],
+      "notes": [
+        {
+          "at": "2026-10-30T20:32:36Z",
+          "by": "director",
+          "text": "creada"
+        },
+        {
+          "at": "2026-10-30T20:32:36Z",
+          "by": "obrero",
+          "text": "-> doing"
+        },
+        {
+          "at": "2026-10-30T20:32:36Z",
+          "by": "obrero",
+          "text": "-> review"
+        },
+        {
+          "at": "2026-10-30T20:32:36Z",
+          "by": "human",
+          "text": "-> done"
+        },
+        {
+          "at": "2026-10-30T20:00:00Z",
+          "by": "director",
+          "text": "cerrada con su commit y el gate verde de su fase"
+        }
+      ],
+      "evidence": {
+        "gate": 0,
+        "judge": "approve",
+        "commits": [
+          "a5f79eb"
+        ],
+        "touched": [],
+        "at": "2026-10-30T20:32:36Z",
+        "by": "human"
+      }
+    },
+    {
+      "id": "TK-07",
+      "title": "B: LSP definition + diagnosticos tras cada patch",
+      "track": "core",
+      "status": "done",
+      "depends_on": [],
+      "yolo": false,
+      "verify_cmd": "",
+      "assigned_to": "obrero",
+      "commits": [
+        "3ba9c5d"
+      ],
+      "notes": [
+        {
+          "at": "2026-10-30T20:32:36Z",
+          "by": "director",
+          "text": "creada"
+        },
+        {
+          "at": "2026-10-30T20:32:36Z",
+          "by": "obrero",
+          "text": "-> doing"
+        },
+        {
+          "at": "2026-10-30T20:32:36Z",
+          "by": "obrero",
+          "text": "-> review"
+        },
+        {
+          "at": "2026-10-30T20:32:36Z",
+          "by": "human",
+          "text": "-> done"
+        },
+        {
+          "at": "2026-10-30T20:00:00Z",
+          "by": "director",
+          "text": "cerrada con su commit y el gate verde de su fase"
+        }
+      ],
+      "evidence": {
+        "gate": 0,
+        "judge": "approve",
+        "commits": [
+          "3ba9c5d"
+        ],
+        "touched": [],
+        "at": "2026-10-30T20:32:36Z",
+        "by": "human"
+      }
+    },
+    {
+      "id": "TK-08",
+      "title": "H: 20 tareas en 3 lenguajes + mutation smoke",
+      "track": "tests",
+      "status": "done",
+      "depends_on": [],
+      "yolo": false,
+      "verify_cmd": "",
+      "assigned_to": "obrero",
+      "commits": [
+        "e19fd2c"
+      ],
+      "notes": [
+        {
+          "at": "2026-10-30T20:32:36Z",
+          "by": "director",
+          "text": "creada"
+        },
+        {
+          "at": "2026-10-30T20:32:36Z",
+          "by": "obrero",
+          "text": "-> doing"
+        },
+        {
+          "at": "2026-10-30T20:32:36Z",
+          "by": "obrero",
+          "text": "-> review"
+        },
+        {
+          "at": "2026-10-30T20:32:36Z",
+          "by": "human",
+          "text": "-> done"
+        },
+        {
+          "at": "2026-10-30T20:00:00Z",
+          "by": "director",
+          "text": "cerrada con su commit y el gate verde de su fase"
+        }
+      ],
+      "evidence": {
+        "gate": 0,
+        "judge": "approve",
+        "commits": [
+          "e19fd2c"
+        ],
+        "touched": [],
+        "at": "2026-10-30T20:32:36Z",
+        "by": "human"
+      }
+    },
+    {
+      "id": "TK-09",
+      "title": "I: 1.2.0 construido, instalado y --frozen verde",
+      "track": "release",
+      "status": "done",
+      "depends_on": [],
+      "yolo": false,
+      "verify_cmd": "",
+      "assigned_to": "obrero",
+      "commits": [
+        "f181119"
+      ],
+      "notes": [
+        {
+          "at": "2026-10-30T20:32:36Z",
+          "by": "director",
+          "text": "creada"
+        },
+        {
+          "at": "2026-10-30T20:32:36Z",
+          "by": "obrero",
+          "text": "-> doing"
+        },
+        {
+          "at": "2026-10-30T20:32:36Z",
+          "by": "obrero",
+          "text": "-> review"
+        },
+        {
+          "at": "2026-10-30T20:32:36Z",
+          "by": "human",
+          "text": "-> done"
+        },
+        {
+          "at": "2026-10-30T20:00:00Z",
+          "by": "director",
+          "text": "cerrada con su commit y el gate verde de su fase"
+        }
+      ],
+      "evidence": {
+        "gate": 0,
+        "judge": "approve",
+        "commits": [
+          "f181119"
+        ],
+        "touched": [],
+        "at": "2026-10-30T20:32:36Z",
+        "by": "human"
+      }
+    },
+    {
+      "id": "TK-10",
+      "title": "B6: una corrida, una fila (identidad de corrida)",
+      "track": "core",
+      "status": "done",
+      "depends_on": [],
+      "yolo": false,
+      "verify_cmd": "",
+      "assigned_to": "obrero",
+      "commits": [
+        "f30ea31"
+      ],
+      "notes": [
+        {
+          "at": "2026-10-30T20:32:36Z",
+          "by": "director",
+          "text": "creada"
+        },
+        {
+          "at": "2026-10-30T20:32:36Z",
+          "by": "obrero",
+          "text": "-> doing"
+        },
+        {
+          "at": "2026-10-30T20:32:36Z",
+          "by": "obrero",
+          "text": "-> review"
+        },
+        {
+          "at": "2026-10-30T20:32:36Z",
+          "by": "human",
+          "text": "-> done"
+        },
+        {
+          "at": "2026-10-30T20:00:00Z",
+          "by": "director",
+          "text": "cerrada con su commit y el gate verde de su fase"
+        }
+      ],
+      "evidence": {
+        "gate": 0,
+        "judge": "approve",
+        "commits": [
+          "f30ea31"
+        ],
+        "touched": [],
+        "at": "2026-10-30T20:32:36Z",
+        "by": "human"
+      }
+    },
+    {
+      "id": "TK-12",
+      "title": "Kanvas: tablero DAG, yolo gobernado por Gate+Juez y vista SVG",
+      "track": "ui",
+      "status": "doing",
+      "depends_on": [],
+      "yolo": false,
+      "verify_cmd": "",
+      "assigned_to": "obrero",
+      "commits": [],
+      "notes": [
+        {
+          "at": "2026-10-30T20:32:36Z",
+          "by": "director",
+          "text": "creada"
+        },
+        {
+          "at": "2026-10-30T20:32:36Z",
+          "by": "obrero",
+          "text": "-> doing"
+        }
+      ],
+      "evidence": {}
+    },
+    {
+      "id": "TK-13",
+      "title": "references del LSP (definition ya esta)",
+      "track": "core",
+      "status": "proposed",
+      "depends_on": [
+        "TK-07"
+      ],
+      "yolo": false,
+      "verify_cmd": "",
+      "assigned_to": "",
+      "commits": [],
+      "notes": [
+        {
+          "at": "2026-10-30T20:32:36Z",
+          "by": "director",
+          "text": "creada"
+        }
+      ],
+      "evidence": {}
+    },
+    {
+      "id": "TK-14",
+      "title": "jaula de ficheros real en Windows (AppContainer)",
+      "track": "core",
+      "status": "proposed",
+      "depends_on": [
+        "TK-06"
+      ],
+      "yolo": false,
+      "verify_cmd": "",
+      "assigned_to": "",
+      "commits": [],
+      "notes": [
+        {
+          "at": "2026-10-30T20:32:36Z",
+          "by": "director",
+          "text": "creada"
+        }
+      ],
+      "evidence": {}
+    },
+    {
+      "id": "TK-15",
+      "title": "cadena yolo en paralelo con worktrees separados",
+      "track": "core",
+      "status": "proposed",
+      "depends_on": [
+        "TK-12"
+      ],
+      "yolo": false,
+      "verify_cmd": "",
+      "assigned_to": "",
+      "commits": [],
+      "notes": [
+        {
+          "at": "2026-10-30T20:32:36Z",
+          "by": "director",
+          "text": "creada"
+        }
+      ],
+      "evidence": {}
+    },
+    {
+      "id": "TK-16",
+      "title": "B13: VERIFICATION.md regenerado en modo gobernador",
+      "track": "tests",
+      "status": "proposed",
+      "depends_on": [],
+      "yolo": false,
+      "verify_cmd": "",
+      "assigned_to": "",
+      "commits": [],
+      "notes": [
+        {
+          "at": "2026-10-30T20:32:36Z",
+          "by": "director",
+          "text": "creada"
+        }
+      ],
+      "evidence": {}
+    }
+  ]
+}

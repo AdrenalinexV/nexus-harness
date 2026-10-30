@@ -1,7 +1,7 @@
 # Arquitectura v2 · Propuesta desde cero
 
 > Revisión de arquitecto sobre Nexus-Harness v1.1.0 (`f8a2491`), 2026-10-29.
-> Estado medido: `verify: GREEN` — 63 suites, 0 hallazgos, 0 ficheros > 400 líneas, 0 dependencias.
+> Estado medido: `verify: GREEN` — 64 suites, 0 hallazgos, 0 ficheros > 400 líneas, 0 dependencias.
 > Este documento es una **crítica**, no un plan aprobado. Cada decisión lleva problema → decisión →
 > invariante → migración → coste. Ordenado por **coste de hacerlo tarde**, no por vistosidad.
 
@@ -20,7 +20,7 @@
 
 ## 1. El defecto estructural nº1: el espacio de nombres es plano
 
-`nexus_harness/` tiene 52 módulos planos y 12 carpetas (`context/`, `core/`, `llm/`, `platform/`,
+`nexus_harness/` tiene 54 módulos planos y 12 carpetas (`context/`, `core/`, `llm/`, `platform/`,
 `selftests/`, `skills/`, `tools/`, `verify/`, `web/`; `llm/transports/` ya cuelga de su capa), así que el
 espacio de nombres sigue siendo mayoritariamente plano. Eso es lo que hace que el techo de 400 líneas
 **duela**: `triad_loop.py` a 399 no es «un módulo grande», es **una capa entera sin casa**.

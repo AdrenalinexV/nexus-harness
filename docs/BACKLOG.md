@@ -13,7 +13,7 @@
 > (3) Ninguna cifra se teclea: `python tools/doc_truth.py` la compara con el motor y pone el build rojo.
 > (4) Lo que no se pudo medir se escribe **no medido** con el comando que lo cerraría.
 
-Medido hoy: 63 suites · 224 ficheros · 0 hallazgos de lint · 0 ficheros > 400 líneas.
+Medido hoy: 64 suites · 232 ficheros · 0 hallazgos de lint · 0 ficheros > 400 líneas.
 
 ---
 
@@ -31,6 +31,10 @@ Medido hoy: 63 suites · 224 ficheros · 0 hallazgos de lint · 0 ficheros > 400
 | **B · LSP** | ~~AUSENTE~~ **CERRADA** en la fase 3: cliente JSON-RPC por stdio, `definition` y diagnósticos tras cada escritura; `references` queda como siguiente (no estaba en el criterio del paso 12) | `3ba9c5d` | — | `selftest lsp` → OK (5 casos, con un servidor falso que habla el protocolo) |
 | **G · Hooks** | ~~AUSENTE~~ **CERRADA** en la fase 3: 4 puntos, contrato 0/10/20/30, fail-closed | `88c8018` | — | `selftest hooks` → OK (9 casos) |
 | **H · Evals** | ~~PARCIAL~~ **CERRADA** en la fase 3: 20 tareas en 3 lenguajes (Python, JavaScript, Bash) y mutation smoke sobre 18 de ellas | `e19fd2c` | — | `selftest eval` → OK (20 tareas + 54 mutaciones); la negativa `over-400` sigue en 10/10 |
+
+| **K1** | LSP `references` no existe: solo `definition` y diagnósticos | `platform/lsp.py` | un renombrado enseña los usos en `definition` pero no todos | tool `references` sobre el cliente que ya habla el protocolo; servidor falso en la suite |
+| **K2** | jaula de ficheros real en Windows: el Job Object contiene procesos, no escrituras | `platform/sandbox.py` | `unrestricted` sigue negado en Windows (fail-closed, por diseño) | AppContainer + ACL del proyecto, o bwrap por WSL, con la matriz ampliada |
+| **K3** | la cadena ⚡ es secuencial: dos ramas independientes no corren a la vez | `autonomy/kanvas_runner.py` | un grafo ancho tarda lo que suma, no lo que el máximo | dos worktrees (`verify/worktree_sandbox.py`) y el mismo gate por rama |
 
 ## 2. Cerrado en esta sesión (con su comando)
 

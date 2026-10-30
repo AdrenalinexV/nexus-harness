@@ -18,7 +18,10 @@ dist/
 apps/desktop/node_modules/
 apps/desktop/src-tauri/target/
 apps/desktop/src-tauri/engine/*.exe
-.nexus/
+# El estado del arnes no se versiona... salvo el TABLERO: el plan del proyecto es un documento, y el
+# Kanvas de XMihura lo guarda asi precisamente para que viaje en git y sobreviva a un relevo.
+**/.nexus/*
+!/.nexus/kanvas.json
 # Artefactos de `pip install .` (no son fuente).
 build/
 *.egg-info/

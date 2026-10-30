@@ -33,7 +33,7 @@ SUITES = ("providers", "retry", "repair", "tools", "linelaw", "layers", "edit_v4
           "memory", "ui", "bridge", "budget", "charts", "activity", "projects", "autonomy", "ux",
           "learning", "oracle", "tokenizer", "spec", "plan_graph", "portfolio", "eval", "daemon", "notify", "browser", "recall", "ui_contract", "themes", "packaged_skills",
           "context_window", "triad_presets", "triad_balance", "consult", "empty_states", "fonts", "repo_scripts", "doc_truth", "protocol_pointer", "hooks",
-          "stream", "sandbox", "lsp")
+          "stream", "sandbox", "lsp", "kanvas")
 
 
 def run(names=None, stream=None):
