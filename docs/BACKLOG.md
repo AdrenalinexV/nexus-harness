@@ -28,7 +28,7 @@ Medido hoy: 63 suites · 223 ficheros · 0 hallazgos de lint · 0 ficheros > 400
 | **Capas** | **9 de 9 paquetes** migrados (fase 2 cerrada). `skill_forge` y `skill_router` se quedan en tools/ y context/ — medido: moverlos invertiría la dependencia | `nexus_harness/*.py` | quedan 50 módulos planos: el techo de 400 sigue doliendo ahí | `selftests/test_layers.py` verde con el invariante intacto |
 | **D · Sandbox** | ~~AUSENTE~~ **CERRADA** en la fase 3: `policy` exige jaula de ficheros para `unrestricted`; Job Object (Win), bwrap (Linux) y seatbelt (macOS) se aplican al ejecutar | `a5f79eb` | — | `selftest sandbox` → OK (6 casos, incluido un hijo que muere con tope de 64 MB y el Job que mata el árbol) |
 | **C · Streaming** | ~~AUSENTE~~ **CERRADA** en la fase 3: los cuatro transportes devuelven eventos, `chat()` = `fold(stream())` y Detener corta el socket en vuelo | `2627150` · `41de9b8` · `d88be86` | — | `selftest stream` → OK (12 casos); `verify` GREEN en los dos modos |
-| **B · LSP** | **AUSENTE**: 0 coincidencias; `mcp_client.py` es JSON-RPC **MCP**, no LSP | — | paridad de herramientas con Codex/Claude Code | 3 tools (definition/references/diagnostics) sobre el stdio que ya existe, degradando al mapa AST **con razón impresa** |
+| **B · LSP** | ~~AUSENTE~~ **CERRADA** en la fase 3: cliente JSON-RPC por stdio, `definition` y diagnósticos tras cada escritura; `references` queda como siguiente (no estaba en el criterio del paso 12) | `3ba9c5d` | — | `selftest lsp` → OK (5 casos, con un servidor falso que habla el protocolo) |
 | **G · Hooks** | ~~AUSENTE~~ **CERRADA** en la fase 3: 4 puntos, contrato 0/10/20/30, fail-closed | `88c8018` | — | `selftest hooks` → OK (9 casos) |
 | **H · Evals** | 7 tareas y **1 solo lenguaje**; sin mutation smoke | `eval_tasks.py`; `tools/eval.py` | mide capacidad, no autoestima | ~20 tareas en 3 lenguajes + mutar 3 líneas pone ≥1 test rojo; la negativa sigue en 10/10 |
 
@@ -45,6 +45,7 @@ Medido hoy: 63 suites · 223 ficheros · 0 hallazgos de lint · 0 ficheros > 400
 | **B12** | `docs/EVAL.md` contaba las omitidas como resueltas: 7/7 → **5/7 + 2 omitidas** | (esta fase) | `doc_truth` compara el titular con su propia tabla |
 | **C** | **Streaming**: eventos `delta/reasoning/tool_call/done`, `Reply` por `fold`, failover solo antes del primer evento, Detener cierra el socket, cabina por SSE | `2627150` · `41de9b8` · `5873cfd` | `selftest stream` → OK (12 casos): JSON partido, servidor que se cuelga (0,52 s) y turno entero por el cable |
 | **D** | **Sandbox**: `unrestricted` sin jaula de ficheros se niega con motivo; matriz 3 modos × 3 jaulas; Job Object con kill-on-close y tope de memoria medidos | `a5f79eb` | `selftest sandbox` → OK (6 casos); `verify` GREEN en los dos modos |
+| **B** | **LSP**: cliente JSON-RPC 2.0 por stdio, `definition` (LSP → AST con la razón impresa) y diagnósticos en el resultado de cada `patch`/`write_file` | `3ba9c5d` | `selftest lsp` → OK (5 casos); `definition(symbol=build_prefix)` → `context_compiler.py:81` |
 
 ## 3. Decisiones cerradas por el operador (no se reabren)
 
