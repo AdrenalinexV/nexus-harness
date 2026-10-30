@@ -24,6 +24,9 @@ def action(cockpit, body):
     if what.startswith("consult_"):
         from . import settings_autonomy
         return settings_autonomy.action(cockpit, body)
+    if what == "about_probe":
+        from . import settings_about
+        return settings_about.action(cockpit, body)
     if what in ("auto_spec", "project_new", "project_move", "autonomy_start", "autonomy_stop"):
         # Las acciones del panel de proyectos las ejecuta su dueno, con su propia validacion.
         return settings_projects.action(cockpit, body)

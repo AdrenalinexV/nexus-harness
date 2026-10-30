@@ -192,7 +192,7 @@ def test_iconography_is_svg(base, failures):
           failures)
     check("y trae el sprite inline", '<symbol id="i-search"' in index, True, failures)
     for name in ("modelos", "espacio", "seguridad", "memoria", "skills", "mcp", "puente",
-                 "autonomia", "vps", "stats"):
+                 "autonomia", "vps", "apariencia", "stats", "about"):
         status, page = _get(base, "/settings?section=" + name)
         check("settings/%s se sirve" % name, status, 200, failures)
         check("settings/%s no tiene emojis" % name, _emoji(page), [], failures)

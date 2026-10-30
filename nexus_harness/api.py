@@ -8,6 +8,7 @@ medible: se puede probar la API sin abrir un puerto.
 Lo que NO vive aqui: `/api/shutdown` (necesita cerrar el servidor, y eso es transporte) y el editor de
 skills (`settings_api.py`, que tiene su propia validacion de rutas).
 """
+import time
 from pathlib import Path
 
 from .platform import ledger
@@ -15,6 +16,9 @@ from . import __version__, activity, gov, projects
 
 API_VERSION = 3
 NAME = "Nexus-Harness"
+# Cuando arranco este proceso. `/api/health` lo publica como `uptime`, que es la unica forma honesta de
+# que un panel diga «este motor lleva encendido X»: leerlo del reloj del navegador seria inventarlo.
+STARTED = time.time()
 
 
 def _one(query, key, default=""):
@@ -41,7 +45,8 @@ def get(cockpit, path, query=None):
         from . import consult_api
         return consult_api.get(cockpit)
     if path == "/api/health":
-        return 200, {"ok": True, "seq": cockpit.bus.seq, "version": __version__, "api": API_VERSION}
+        return 200, {"ok": True, "seq": cockpit.bus.seq, "version": __version__, "api": API_VERSION,
+                     "uptime": int(time.time() - STARTED)}
     if path == "/api/state":
         return 200, cockpit.state()
     if path == "/api/activity":

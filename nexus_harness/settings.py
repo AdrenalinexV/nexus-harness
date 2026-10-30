@@ -21,7 +21,7 @@ from . import (settings_models, settings_projects, settings_skills, settings_too
 
 TITLE = "Configuración"
 
-# Diez categorías, trece destinos (las cuatro sub-vistas de la tríada). Agrupadas por dominio: trece
+# Once categorías, doce destinos (las cuatro sub-vistas de la tríada). Agrupadas por dominio: doce
 # entradas planas no son un árbol, son una lista larga donde no se encuentra nada.
 def _render(name, cockpit, sub, item, query):
     if name == "modelos":
@@ -49,6 +49,9 @@ def _render(name, cockpit, sub, item, query):
     if name == "vps":
         from . import settings_vps
         return settings_vps.page(cockpit)
+    if name == "about":
+        from . import settings_about
+        return settings_about.page(cockpit)
     return settings_tools.stats(cockpit)
 
 

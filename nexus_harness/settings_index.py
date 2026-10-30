@@ -1,4 +1,4 @@
-"""El índice del manual: diez categorías en once destinos, agrupadas y numeradas.
+"""El índice del manual: once categorías en doce destinos, agrupadas y numeradas.
 
 Vive aparte de `settings.py` por la ley de 400 líneas y por responsabilidad: aquí se decide QUÉ se
 puede visitar y cómo se numera; en `settings.py` se pinta la página y se guarda lo que manda un panel.
@@ -14,7 +14,7 @@ GROUPS = (
     ("Modelo", "cpu", ("modelos", "memoria")),
     ("Trabajo", "folder", ("espacio", "skills")),
     ("Operación", "plug", ("mcp", "puente", "autonomia", "vps")),
-    ("Sistema", "shield", ("seguridad", "apariencia", "stats")),
+    ("Sistema", "shield", ("seguridad", "apariencia", "stats", "about")),
 )
 SECTIONS = (
     ("modelos", "Modelos (tríada)", "cpu",
@@ -32,6 +32,7 @@ SECTIONS = (
     ("vps", "VPS 24/7", "cpu", ()),
     ("apariencia", "Apariencia (pantones)", "sliders", ()),
     ("stats", "Estadísticas y auditoría", "chart", ()),
+    ("about", "Acerca de", "nexus", ()),
 )
 NAMES = tuple(name for name, _label, _icon, _subs in SECTIONS)
 SUBS_OF = {name: tuple(value for value, _text in subs) for name, _label, _icon, subs in SECTIONS}
@@ -52,6 +53,7 @@ SEARCH_TERMS = {
     "autonomia": "autonomia autopilot preguntas pendientes bucle",
     "vps": "vps deploy 24/7 servidor remoto colmena",
     "stats": "estadisticas auditoria ledger graficos ahorro coste",
+    "about": "acerca de version api uptime contrato salud motor informacion comprobar",
     "apariencia": "apariencia tema color panton paleta neon cyberpunk retro fosforo synthwave "
                   "ambar riso contraste",
 }
@@ -68,7 +70,7 @@ def resolve(section, sub):
 
 
 def destinations():
-    """Los trece destinos del manual, en orden, con su número de sección.
+    """Los doce destinos del manual, en orden, con su número de sección.
 
     El número no es decoración: es lo que permite decir «mira el §04» o «folio 07» sin describir la
     pantalla. Se calcula una vez y lo usan el índice, la paleta de Ctrl+K y el título de la página.
@@ -130,7 +132,7 @@ def tree(active, sub, needle, state, token=""):
 
 
 def palette(token=""):
-    """El índice de Ctrl+K: los trece destinos con su número y las palabras con las que se buscan.
+    """El índice de Ctrl+K: los doce destinos con su número y las palabras con las que se buscan.
 
     Va como JSON en el documento para que el buscador sea instantáneo y no pida nada al motor; el
     `<form>` de al lado sigue funcionando sin script, filtrando el índice en el servidor.
